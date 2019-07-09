@@ -15,14 +15,17 @@
   "main": "background.js",
   "dependencies": {
     "core-js": "^2.6.5",
+    "jquery": "^3.4.1",
     "vue": "^2.6.10",
     "vue-class-component": "^7.0.2",
+    "vue-golden-layout": "^1.6.0",
     "vue-property-decorator": "^8.1.0",
     "vue-router": "^3.0.3",
     "vuex": "^3.0.1"
   },
   "devDependencies": {
     "@types/jest": "^23.1.4",
+    "@types/jquery": "^3.3.30",
     "@vue/cli-plugin-babel": "^3.8.0",
     "@vue/cli-plugin-eslint": "^3.8.0",
     "@vue/cli-plugin-typescript": "^3.8.0",
