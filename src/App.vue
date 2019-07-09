@@ -1,21 +1,22 @@
 <template>
   <div>
-    <golden-layout class="hscreen">
+    <golden-layout class="hscreen" @itemCreated="itemCreated">
       <gl-row>
-        <gl-col>
-          <gl-component title="compA" class="test-component">
-            <Editor />
-          </gl-component>
+        <gl-col width="25">
+          <gl-component title="compA" class="test-component" :closable="false"></gl-component>
+          <gl-component title="compA" class="test-component" :closable="false"></gl-component>
         </gl-col>
-        <gl-col>
-          <gl-component title="compA" class="test-component">
-            <h1>CompA</h1>
+
+        <gl-col width="55" ref="canvas">
+          <gl-component title="Editor" class="test-component" height="70" :closable="false">
+            <canvas width="400" height="400" id="editor" />
           </gl-component>
+          <gl-component title="compA" class="test-component" height="30" :closable="false"></gl-component>
         </gl-col>
-        <gl-col>
-          <gl-component title="compA" class="test-component">
-            <h1>CompA</h1>
-          </gl-component>
+
+        <gl-col width="20">
+          <gl-component title="compA" class="test-component" :closable="false"></gl-component>
+          <gl-component title="compA" class="test-component" :closable="false"></gl-component>
         </gl-col>
       </gl-row>
     </golden-layout>
@@ -34,15 +35,56 @@ body {
   padding: 0;
   margin: 0;
 }
+
+.test-component {
+  overflow: hidden;
+}
 </style>
 
 <script lang="ts">
 // https://www.sitepoint.com/class-based-vue-js-typescript/
 import { Component, Prop, Vue } from "vue-property-decorator";
-import Editor from "@/views/Editor.vue";
+import EditorView from "@/views/Editor.vue";
+import { Editor } from "@/lib/editortest";
 
 @Component({
-  components: { Editor }
+  components: { EditorView }
 })
-export default class App extends Vue {}
+export default class App extends Vue {
+  editor!: Editor;
+
+  mounted() {
+    this.editor = new Editor();
+
+    const canv = <HTMLCanvasElement>document.getElementById("editor");
+    this.editor.setSceneCanvas(canv);
+    this.editor.createNewTexture();
+
+    // start animation
+    const draw = () => {
+      if (this.editor) {
+        // might not be loaded as yet
+        this.editor.update();
+        this.editor.draw();
+      }
+      requestAnimationFrame(draw);
+    };
+    requestAnimationFrame(draw);
+  }
+
+  itemCreated(item: any) {
+    if (item.config.title == "Editor") {
+      let container = item.container;
+      item.container.on("resize", function() {
+        const canvas = <HTMLCanvasElement>document.getElementById("editor");
+        canvas.width = container.width;
+        canvas.height = container.height;
+      });
+    }
+  }
+
+  resizeCanvas() {
+    console.log("resize!");
+  }
+}
 </script>
