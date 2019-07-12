@@ -3,20 +3,22 @@
     <golden-layout class="hscreen" @itemCreated="itemCreated">
       <gl-row>
         <gl-col width="25">
-          <gl-component title="compA" class="test-component" :closable="false"></gl-component>
-          <gl-component title="compA" class="test-component" :closable="false"></gl-component>
+          <gl-component title="Texure" class="test-component" :closable="false"></gl-component>
+          <gl-component title="3D View" class="test-component" :closable="false"></gl-component>
         </gl-col>
 
         <gl-col width="55" ref="canvas">
           <gl-component title="Editor" class="test-component" height="70" :closable="false">
             <canvas width="400" height="400" id="editor" />
           </gl-component>
-          <gl-component title="compA" class="test-component" height="30" :closable="false"></gl-component>
+          <gl-component title="Library" class="test-component" height="30" :closable="false">
+            <library-view :editor="this.editor" :library="this.library" />
+          </gl-component>
         </gl-col>
 
         <gl-col width="20">
-          <gl-component title="compA" class="test-component" :closable="false"></gl-component>
-          <gl-component title="compA" class="test-component" :closable="false"></gl-component>
+          <gl-component title="Properties" class="test-component" :closable="false"></gl-component>
+          <gl-component title="Texture Properties" class="test-component" :closable="false"></gl-component>
         </gl-col>
       </gl-row>
     </golden-layout>
@@ -45,17 +47,28 @@ body {
 // https://www.sitepoint.com/class-based-vue-js-typescript/
 import { Component, Prop, Vue } from "vue-property-decorator";
 import EditorView from "@/views/Editor.vue";
+import LibraryView from "@/views/Library.vue";
 import { Editor } from "@/lib/editortest";
+import { createLibrary } from "@/lib/library/libraryv1";
+import { DesignerLibrary } from "@/lib/nodetest";
 
 @Component({
-  components: { EditorView }
+  components: { EditorView, LibraryView }
 })
 export default class App extends Vue {
   editor!: Editor;
+  library!: DesignerLibrary;
+
+  constructor() {
+    super();
+
+    this.editor = new Editor();
+    this.library = createLibrary();
+  }
+
+  created() {}
 
   mounted() {
-    this.editor = new Editor();
-
     const canv = <HTMLCanvasElement>document.getElementById("editor");
     this.editor.setSceneCanvas(canv);
     this.editor.createNewTexture();

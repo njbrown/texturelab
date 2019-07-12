@@ -2,7 +2,7 @@ import { Designer, ImageCanvas } from "./nodetest";
 
 class GraphicsItem
 {
-    protected scene:NodeScene;
+    protected scene!:NodeScene;
     protected  visible:boolean = true;
 
     protected x:number = 0;
@@ -63,10 +63,10 @@ export enum SocketType
 
 export class NodeGraphicsItem extends GraphicsItem
 {
-    id:string;
+    id!:string;
     sockets:SocketGraphicsItem[] = Array();
     public title:string;
-    thumbnail:HTMLImageElement;
+    thumbnail!:HTMLImageElement;
     imageCanvas:ImageCanvas;
 
     constructor(title:string)
@@ -240,10 +240,10 @@ export class NodeGraphicsItem extends GraphicsItem
 
 export class SocketGraphicsItem extends GraphicsItem
 {
-    public id:string;
-    public title:string;
-    public node:NodeGraphicsItem;
-    public socketType:SocketType;
+    public id!:string;
+    public title!:string;
+    public node!:NodeGraphicsItem;
+    public socketType!:SocketType;
     radius:number = 8;
 
     // only in sockets store the connection
@@ -339,9 +339,9 @@ export class SocketGraphicsItem extends GraphicsItem
 
 export class ConnectionGraphicsItem extends GraphicsItem
 {
-    id:string;
-    public socketA:SocketGraphicsItem
-    public socketB:SocketGraphicsItem
+    id!:string;
+    public socketA!:SocketGraphicsItem
+    public socketB!:SocketGraphicsItem
 
     draw(ctx:CanvasRenderingContext2D)
     {
@@ -361,26 +361,26 @@ export class ConnectionGraphicsItem extends GraphicsItem
 export class NodeScene
 {
     canvas:HTMLCanvasElement;
-    context:CanvasRenderingContext2D;
+    context!:CanvasRenderingContext2D;
     contextExtra:any;
 
     nodes:NodeGraphicsItem[];
     conns:ConnectionGraphicsItem[];
 
-    draggedNode:NodeGraphicsItem;
-    hitSocket:SocketGraphicsItem;
-    hitConnection:ConnectionGraphicsItem;
+    draggedNode?:NodeGraphicsItem;
+    hitSocket?:SocketGraphicsItem;
+    hitConnection?:ConnectionGraphicsItem;
 
-    mouseX:number;
-    mouseY:number;
+    mouseX!:number;
+    mouseY!:number;
 
-    panning:boolean;
-    panStart:SVGPoint;
+    panning!:boolean;
+    panStart!:SVGPoint;
 
     // callbacks
-    onconnectioncreated : (ConnectionGraphicsItem)=>void;
-    onconnectiondestroyed : (ConnectionGraphicsItem)=>void;
-    onnodeselected : (NodeGraphicsItem)=>void;
+    onconnectioncreated? : (item:ConnectionGraphicsItem)=>void;
+    onconnectiondestroyed? : (item:ConnectionGraphicsItem)=>void;
+    onnodeselected? : (item:NodeGraphicsItem)=>void;
 
     constructor(canvas:HTMLCanvasElement)
     {
@@ -667,7 +667,7 @@ export class NodeScene
         // handle dragged node
         if (this.draggedNode!=null) {
             var diff = this.canvasToScene(evt.movementX, evt.movementY);
-            console.log("move: ",evt.movementX,evt.movementY);
+            //console.log("move: ",evt.movementX,evt.movementY);
             this.draggedNode.move(evt.movementX, evt.movementY);
         }
     }
@@ -719,11 +719,11 @@ export class NodeScene
     // only save position data to associative array
     save():any
     {
-        var data = {};
+        var data:any = {};
 
         var nodes = {};
         for(let node of this.nodes) {
-            var n = {};
+            var n:any = {};
             n["id"] = node.id;
             n["x"] = node.centerX();
             n["y"] = node.centerY();
@@ -790,12 +790,12 @@ function _getMousePos(canvas, evt) {
   // https://codepen.io/techslides/pen/zowLd
   // add functions that should have been a part of the 2d context api
   //function trackTransforms(ctx){
-function addTransformExtrasToContext(ctx){
+function addTransformExtrasToContext(ctx:any){
     var svg = document.createElementNS("http://www.w3.org/2000/svg",'svg');
     var xform = <SVGMatrix>svg.createSVGMatrix();
     ctx.getTransform = function(){ return xform; };
 
-    var savedTransforms = [];
+    var savedTransforms:SVGMatrix[] = [];
     var save = ctx.save;
     ctx.save = function(){
         savedTransforms.push(xform.translate(0,0));
@@ -804,30 +804,30 @@ function addTransformExtrasToContext(ctx){
   
     var restore = ctx.restore;
     ctx.restore = function(){
-      xform = savedTransforms.pop();
+      xform = <SVGMatrix>savedTransforms.pop();
       return restore.call(ctx);
             };
 
     var scale = ctx.scale;
-    ctx.scale = function(sx,sy){
+    ctx.scale = function(sx:number,sy:number){
       xform = (<any>xform).scaleNonUniform(sx,sy);
       return scale.call(ctx,sx,sy);
             };
   
     var rotate = ctx.rotate;
-    ctx.rotate = function(radians){
+    ctx.rotate = function(radians:number){
         xform = xform.rotate(radians*180/Math.PI);
         return rotate.call(ctx,radians);
     };
   
     var translate = ctx.translate;
-    ctx.translate = function(dx,dy){
+    ctx.translate = function(dx:number,dy:number){
         xform = xform.translate(dx,dy);
         return translate.call(ctx,dx,dy);
     };
   
     var transform = ctx.transform;
-    ctx.transform = function(a,b,c,d,e,f){
+    ctx.transform = function(a:number,b:number,c:number,d:number,e:number,f:number){
         var m2 = svg.createSVGMatrix();
         m2.a=a; m2.b=b; m2.c=c; m2.d=d; m2.e=e; m2.f=f;
         xform = xform.multiply(m2);
@@ -835,7 +835,7 @@ function addTransformExtrasToContext(ctx){
     };
   
     var setTransform = ctx.setTransform;
-    ctx.setTransform = function(a,b,c,d,e,f){
+    ctx.setTransform = function(a:number,b:number,c:number,d:number,e:number,f:number){
         xform.a = a;
         xform.b = b;
         xform.c = c;
@@ -846,17 +846,17 @@ function addTransformExtrasToContext(ctx){
     };
   
     var pt  = svg.createSVGPoint();
-    ctx.transformedPoint = function(x,y){
+    ctx.transformedPoint = function(x:number,y:number){
         pt.x=x; pt.y=y;
         return pt.matrixTransform(xform.inverse());
     }
 
-    ctx.screenToScene = function(x, y) {
+    ctx.screenToScene = function(x:number, y:number) {
         pt.x=x; pt.y=y;
         return pt.matrixTransform(xform.inverse());
     }
 
-    ctx.screenToScene = function(x, y) {
+    ctx.screenToScene = function(x:number, y:number) {
         pt.x=x; pt.y=y;
         return pt.matrixTransform(xform);
     }
