@@ -3,8 +3,13 @@
     <golden-layout class="hscreen" @itemCreated="itemCreated">
       <gl-row>
         <gl-col width="25">
-          <gl-component title="Texure" class="test-component" :closable="false"></gl-component>
-          <gl-component title="3D View" class="test-component" :closable="false"></gl-component>
+          <gl-component title="2D View" class="test-component" :closable="false">
+            <canvas width="100" height="100" id="_2dview" />
+          </gl-component>
+
+          <gl-component title="3D View" class="test-component" :closable="false">
+            <canvas width="100" height="100" id="_3dview" />
+          </gl-component>
         </gl-col>
 
         <gl-col width="55" ref="canvas">
@@ -73,6 +78,9 @@ export default class App extends Vue {
     this.editor.setSceneCanvas(canv);
     this.editor.createNewTexture();
 
+    const _2dview = <HTMLCanvasElement>document.getElementById("_2dview");
+    this.editor.set2DPreview(_2dview);
+
     // start animation
     const draw = () => {
       if (this.editor) {
@@ -86,10 +94,31 @@ export default class App extends Vue {
   }
 
   itemCreated(item: any) {
+    // editor
     if (item.config.title == "Editor") {
       let container = item.container;
       item.container.on("resize", function() {
         const canvas = <HTMLCanvasElement>document.getElementById("editor");
+        canvas.width = container.width;
+        canvas.height = container.height;
+      });
+    }
+
+    // 2d view
+    if (item.config.title == "2D View") {
+      let container = item.container;
+      item.container.on("resize", function() {
+        const canvas = <HTMLCanvasElement>document.getElementById("_2dview");
+        canvas.width = container.width;
+        canvas.height = container.height;
+      });
+    }
+
+    // 3d view
+    if (item.config.title == "3D View") {
+      let container = item.container;
+      item.container.on("resize", function() {
+        const canvas = <HTMLCanvasElement>document.getElementById("_3dview");
         canvas.width = container.width;
         canvas.height = container.height;
       });
