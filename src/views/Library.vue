@@ -16,7 +16,7 @@
         <div>
           <img v-bind:src="calcImagePath(item.name)" class="ui fluid image" />
         </div>
-        <div class="nodecardcontent content">{{item.displayName}}</div>
+        <div class="nodecardcontent content">{{ item.displayName }}</div>
       </a>
     </div>
   </div>
@@ -35,12 +35,12 @@ export default class LibraryView extends Vue {
   @Prop()
   editor!: Editor;
 
-  @Model()
+  @Prop({
+    default: ""
+  })
   filter!: string;
 
-  created() {
-    this.filter = "";
-  }
+  created() {}
 
   get items() {
     return this.library.nodes;
