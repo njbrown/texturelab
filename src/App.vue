@@ -54,6 +54,7 @@ import { Component, Prop, Vue } from "vue-property-decorator";
 import EditorView from "@/views/Editor.vue";
 import LibraryView from "@/views/Library.vue";
 import { Editor } from "@/lib/editortest";
+import { View3D } from "@/lib/view3d";
 import { createLibrary } from "@/lib/library/libraryv1";
 import { DesignerLibrary } from "@/lib/nodetest";
 
@@ -63,6 +64,7 @@ import { DesignerLibrary } from "@/lib/nodetest";
 export default class App extends Vue {
   editor!: Editor;
   library!: DesignerLibrary;
+  view3d!: View3D;
 
   constructor() {
     super();
@@ -80,6 +82,11 @@ export default class App extends Vue {
 
     const _2dview = <HTMLCanvasElement>document.getElementById("_2dview");
     this.editor.set2DPreview(_2dview);
+
+    const _3dview = <HTMLCanvasElement>document.getElementById("_3dview");
+    this.view3d = new View3D();
+    this.view3d.setCanvas(_3dview);
+    //this.editor.set3DScene(scene3D);
 
     // start animation
     const draw = () => {
@@ -117,10 +124,12 @@ export default class App extends Vue {
     // 3d view
     if (item.config.title == "3D View") {
       let container = item.container;
-      item.container.on("resize", function() {
-        const canvas = <HTMLCanvasElement>document.getElementById("_3dview");
-        canvas.width = container.width;
-        canvas.height = container.height;
+      item.container.on("resize", () => {
+        // const canvas = <HTMLCanvasElement>document.getElementById("_3dview");
+        // canvas.width = container.width;
+        // canvas.height = container.height;
+
+        this.view3d.resize(container.width, container.height);
       });
     }
   }

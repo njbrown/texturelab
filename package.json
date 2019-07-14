@@ -16,6 +16,8 @@
   "dependencies": {
     "core-js": "^2.6.5",
     "jquery": "^3.4.1",
+    "three": "^0.106.2",
+    "three-orbitcontrols-ts": "^0.1.2",
     "vue": "^2.6.10",
     "vue-class-component": "^7.0.2",
     "vue-golden-layout": "^1.6.0",
@@ -26,6 +28,7 @@
   "devDependencies": {
     "@types/jest": "^23.1.4",
     "@types/jquery": "^3.3.30",
+    "@types/three": "^0.103.2",
     "@vue/cli-plugin-babel": "^3.8.0",
     "@vue/cli-plugin-eslint": "^3.8.0",
     "@vue/cli-plugin-typescript": "^3.8.0",
