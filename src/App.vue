@@ -22,7 +22,13 @@
         </gl-col>
 
         <gl-col width="20">
-          <gl-component title="Properties" class="test-component" :closable="false"></gl-component>
+          <gl-component title="Properties" class="test-component" :closable="false">
+            <node-properties-view
+              v-if="this.selectedNode!=null"
+              :editor="this.editor"
+              :node="this.selectedNode"
+            />
+          </gl-component>
           <gl-component title="Texture Properties" class="test-component" :closable="false"></gl-component>
         </gl-col>
       </gl-row>
@@ -50,21 +56,26 @@ body {
 
 <script lang="ts">
 // https://www.sitepoint.com/class-based-vue-js-typescript/
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { Component, Prop, Vue, Watch, Model } from "vue-property-decorator";
 import EditorView from "@/views/Editor.vue";
 import LibraryView from "@/views/Library.vue";
 import { Editor } from "@/lib/editortest";
 import { View3D } from "@/lib/view3d";
 import { createLibrary } from "@/lib/library/libraryv1";
-import { DesignerLibrary } from "@/lib/nodetest";
+import { DesignerLibrary, DesignerNode, Designer } from "@/lib/nodetest";
+import NodePropertiesView from "./views/NodeProperties.vue";
 
 @Component({
-  components: { EditorView, LibraryView }
+  components: { EditorView, LibraryView, NodePropertiesView }
 })
 export default class App extends Vue {
   editor!: Editor;
   library!: DesignerLibrary;
   view3d!: View3D;
+
+  selectedNode: DesignerNode = null;
+
+  designer!: Designer;
 
   constructor() {
     super();
@@ -79,6 +90,11 @@ export default class App extends Vue {
     const canv = <HTMLCanvasElement>document.getElementById("editor");
     this.editor.setSceneCanvas(canv);
     this.editor.createNewTexture();
+
+    this.designer = this.editor.designer;
+    this.editor.onnodeselected = node => {
+      this.selectedNode = node;
+    };
 
     const _2dview = <HTMLCanvasElement>document.getElementById("_2dview");
     this.editor.set2DPreview(_2dview);

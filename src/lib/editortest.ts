@@ -1,4 +1,4 @@
-import { NodeScene } from "./scene";
+import { NodeScene, NodeGraphicsItem } from "./scene";
 import { Designer, DesignerVariable, DesignerNode, FloatProperty, Property, IntProperty, DesignerLibrary, BoolProperty, EnumProperty, ColorProperty, StringProperty, Color, DesignerVariableType, Guid, ImageCanvas, PropertyType } from "./nodetest";
 import * as scene from "./scene";
 
@@ -66,6 +66,8 @@ export class Editor
     propGen : PropertyGenerator;
     varGen : VariableGenerator;
     displayNodes : DisplayNodes;
+
+    onnodeselected? : (item:DesignerNode)=>void;
 
     constructor()
     {
@@ -230,7 +232,7 @@ export class Editor
         this.graph.onnodeselected = function(node:scene.NodeGraphicsItem) {
             var dnode = self.designer.getNodeById(node.id);
             self.selectedDesignerNode = dnode;
-            console.log(dnode);
+            //console.log(dnode);
             
             if(true) {
                 self.preview2DCtx.drawImage(node.imageCanvas.canvas,
@@ -251,6 +253,9 @@ export class Editor
             // display node properties
             if (self.propGen)
                 self.propGen.setNode(dnode);
+
+            if (self.onnodeselected)
+                self.onnodeselected(dnode);
         }
 
         // property changes
