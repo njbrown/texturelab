@@ -35,10 +35,7 @@ export default class LibraryView extends Vue {
   @Prop()
   editor!: Editor;
 
-  @Prop({
-    default: ""
-  })
-  filter!: string;
+  filter!: string = "";
 
   created() {}
 

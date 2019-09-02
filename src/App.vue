@@ -14,15 +14,15 @@
 
         <gl-col width="55" ref="canvas">
           <gl-component title="Editor" class="test-component" height="70" :closable="false">
-            <canvas width="400" height="400" id="editor" />
+            <canvas width="400" height="400" id="editor" ondragover="event.preventDefault()" />
           </gl-component>
-          <gl-component title="Library" class="test-component" height="30" :closable="false">
+          <gl-component title="Library" height="30" :closable="false">
             <library-view :editor="this.editor" :library="this.library" />
           </gl-component>
         </gl-col>
 
         <gl-col width="20">
-          <gl-component title="Properties" class="test-component" :closable="false">
+          <gl-component title="Properties" :closable="false">
             <node-properties-view
               v-if="this.selectedNode!=null"
               :editor="this.editor"
@@ -49,8 +49,12 @@ body {
   margin: 0;
 }
 
+.glComponent {
+  background: #333;
+}
 .test-component {
   overflow: hidden;
+  background: #333;
 }
 </style>
 
@@ -88,6 +92,19 @@ export default class App extends Vue {
 
   mounted() {
     const canv = <HTMLCanvasElement>document.getElementById("editor");
+    canv.ondrop = evt => {
+      evt.preventDefault();
+
+      var nodeName = evt.dataTransfer.getData("text/plain");
+      var dnode = this.library.create(nodeName);
+      var rect = canv.getBoundingClientRect();
+      var n = this.editor.addNode(
+        dnode,
+        evt.clientX - rect.left,
+        evt.clientY - rect.top
+      );
+      console.log("drop");
+    };
     this.editor.setSceneCanvas(canv);
     this.editor.createNewTexture();
 

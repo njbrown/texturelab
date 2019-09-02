@@ -1,7 +1,9 @@
 <template>
   <div class="field">
     <label>{{prop.displayName}}</label>
-    <input type="color" :value="prop.value.toHex()" @input="updateValue" style="width:100%" />
+    <div>
+      <input class="color" type="color" :value="prop.value.toHex()" @input="updateValue" />
+    </div>
   </div>
 </template>
 
@@ -32,3 +34,24 @@ export default class ColorPropertyView extends Vue {
   }
 }
 </script>
+
+<style scoped>
+.field {
+  font-size: 12px;
+  padding: 0.9em 0.5em;
+  color: white;
+  border-bottom: 1px rgb(61, 61, 61) solid;
+}
+
+.field label {
+  font-weight: bold;
+  padding: 0.4em;
+  padding-left: 0;
+}
+
+.color {
+  margin-top: 0.4em;
+  width: 100%;
+  width: calc(100% - 4px - 1px);
+}
+</style>

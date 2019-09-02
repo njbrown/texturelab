@@ -1,5 +1,5 @@
 <template>
-  <form class="ui form">
+  <form class="properties">
     <component
       v-for="(p, index) in this.properties"
       :is="p.componentName"
@@ -62,3 +62,9 @@ export default class NodePropertiesView extends Vue {
   }
 }
 </script>
+
+<style scoped>
+.properties {
+  background: #333;
+}
+</style>

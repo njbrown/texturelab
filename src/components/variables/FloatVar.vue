@@ -35,7 +35,7 @@ export default class FloatVariableView extends Vue {
   }
 
   updateValue(evt) {
-    this.node.setProperty(this.prop.name, evt.target.value);
+    this.designer.setVariable(this.prop.name, evt.target.value);
     this.propertyChanged();
   }
 }

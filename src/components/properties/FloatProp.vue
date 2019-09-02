@@ -1,15 +1,30 @@
 <template>
   <div class="field">
-    <label>{{prop.displayName}}</label>
-    <input
-      type="range"
-      :min="prop.minValue"
-      :max="prop.maxValue"
-      :value="prop.value"
-      :step="prop.step"
-      @input="updateValue"
-      class="slider"
-    />
+    <div>
+      <label>{{prop.displayName}}</label>
+    </div>
+    <div class="input-holder">
+      <div style="width:85%; margin-right:10px">
+        <input
+          type="range"
+          :min="prop.minValue"
+          :max="prop.maxValue"
+          :value="prop.value"
+          :step="prop.step"
+          @input="updateValue"
+          class="slider"
+        />
+      </div>
+      <div style="width:15%">
+        <input
+          type="number"
+          :value="prop.value"
+          :step="prop.step"
+          @input="updateValue"
+          class="number"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -43,14 +58,38 @@ export default class FloatPropertyView extends Vue {
 
 
 <style scoped>
+.field {
+  font-size: 12px;
+  padding: 0.9em 0.5em;
+  color: white;
+  border-bottom: 1px rgb(61, 61, 61) solid;
+}
+
+.field label {
+  font-weight: bold;
+  padding: 0.4em;
+  padding-left: 0;
+}
+
+.number {
+  width: calc(100% - 4px - 1px);
+  border: solid gray 1px;
+  padding: 2px;
+  border-radius: 2px;
+}
+
+.input-holder {
+  display: flex;
+}
+
 /* https://www.w3schools.com/howto/howto_js_rangeslider.asp */
 /* http://jsfiddle.net/brenna/f4uq9edL/?utm_source=website&utm_medium=embed&utm_campaign=f4uq9edL */
 .slider {
   -webkit-appearance: none;
   width: 100%;
-  height: 4px;
+  height: 3px;
   border-radius: 4px;
-  background-color: rgba(0, 0, 0);
+  background-color: rgb(255, 255, 255);
   color: rgba(0, 0, 0);
   outline: none;
   -webkit-transition: 0.2s;
@@ -60,8 +99,8 @@ export default class FloatPropertyView extends Vue {
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
   background: #fff -webkit-linear-gradient(transparent, rgba(0, 0, 0, 0.05));
   cursor: pointer;
@@ -70,8 +109,8 @@ export default class FloatPropertyView extends Vue {
 }
 
 .slider::-moz-range-thumb {
-  width: 25px;
-  height: 25px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #fff -webkit-linear-gradient(transparent, rgba(0, 0, 0, 0.05));
   cursor: pointer;

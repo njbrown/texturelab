@@ -416,7 +416,7 @@ export class ColorProperty extends Property
     public setValue(val:any)
     {
         // todo: validate
-        console.log("got color: "+val);
+        //console.log("got color: "+val);
         if (val instanceof Color)
             this.value = val;
         else if (typeof val == "string")
