@@ -48,7 +48,7 @@ export default class BoolPropertyView extends Vue {
 .field {
   font-size: 12px;
   padding: 0.9em 0.5em;
-  color: white;
+  color: rgba(255, 255, 255, 0.7);
   border-bottom: 1px rgb(61, 61, 61) solid;
 }
 

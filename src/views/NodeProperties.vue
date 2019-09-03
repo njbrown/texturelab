@@ -1,14 +1,17 @@
 <template>
   <form class="properties">
-    <component
-      v-for="(p, index) in this.properties"
-      :is="p.componentName"
-      :prop="p.prop"
-      :node="node"
-      :editor="editor"
-      @propertyChanged="propertyChanged"
-      :key="index"
-    ></component>
+    <accordion header="Base Properties"></accordion>
+    <accordion header="Properties">
+      <component
+        v-for="(p, index) in this.properties"
+        :is="p.componentName"
+        :prop="p.prop"
+        :node="node"
+        :editor="editor"
+        @propertyChanged="propertyChanged"
+        :key="index"
+      ></component>
+    </accordion>
   </form>
 </template>
 
@@ -19,6 +22,7 @@ import FloatPropertyView from "@/components/properties/FloatProp.vue";
 import BoolPropertyView from "@/components/properties/BoolProp.vue";
 import EnumPropertyView from "@/components/properties/EnumProp.vue";
 import ColorPropertyView from "@/components/properties/ColorProp.vue";
+import Accordion from "@/components/Accordion.vue";
 import { Editor } from "@/lib/editortest";
 
 class PropHolder {
@@ -32,7 +36,8 @@ class PropHolder {
     int: FloatPropertyView,
     bool: BoolPropertyView,
     enum: EnumPropertyView,
-    color: ColorPropertyView
+    color: ColorPropertyView,
+    Accordion
   }
 })
 export default class NodePropertiesView extends Vue {
@@ -57,7 +62,7 @@ export default class NodePropertiesView extends Vue {
       };
     });
 
-    console.log(props);
+    //console.log(props);
     return props;
   }
 }
