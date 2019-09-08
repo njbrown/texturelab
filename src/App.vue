@@ -4,7 +4,8 @@
       <gl-row>
         <gl-col width="25">
           <gl-component title="2D View" class="test-component" :closable="false">
-            <canvas width="100" height="100" id="_2dview" />
+            <!-- <canvas width="100" height="100" id="_2dview" /> -->
+            <preview2d ref="preview2d" />
           </gl-component>
 
           <gl-component title="3D View" class="test-component" :closable="false">
@@ -68,9 +69,16 @@ import { View3D } from "@/lib/view3d";
 import { createLibrary } from "@/lib/library/libraryv1";
 import { DesignerLibrary, DesignerNode, Designer } from "@/lib/nodetest";
 import NodePropertiesView from "./views/NodeProperties.vue";
+import Preview2D from "./views/Preview2D.vue";
+import Preview3D from "./views/Preview3D.vue";
 
 @Component({
-  components: { EditorView, LibraryView, NodePropertiesView }
+  components: {
+    EditorView,
+    LibraryView,
+    NodePropertiesView,
+    preview2d: Preview2D
+  }
 })
 export default class App extends Vue {
   editor!: Editor;
@@ -113,8 +121,9 @@ export default class App extends Vue {
       this.selectedNode = node;
     };
 
-    const _2dview = <HTMLCanvasElement>document.getElementById("_2dview");
-    this.editor.set2DPreview(_2dview);
+    // const _2dview = <HTMLCanvasElement>document.getElementById("_2dview");
+    // this.editor.set2DPreview(_2dview);
+    (this.$refs.preview2d as any).setEditor(this.editor);
 
     const _3dview = <HTMLCanvasElement>document.getElementById("_3dview");
     this.view3d = new View3D();
@@ -147,10 +156,12 @@ export default class App extends Vue {
     // 2d view
     if (item.config.title == "2D View") {
       let container = item.container;
-      item.container.on("resize", function() {
-        const canvas = <HTMLCanvasElement>document.getElementById("_2dview");
-        canvas.width = container.width;
-        canvas.height = container.height;
+      item.container.on("resize", () => {
+        // const canvas = <HTMLCanvasElement>document.getElementById("_2dview");
+        // canvas.width = container.width;
+        // canvas.height = container.height;
+
+        (this.$refs.preview2d as any).resize(container.width, container.height);
       });
     }
 
@@ -161,8 +172,7 @@ export default class App extends Vue {
         // const canvas = <HTMLCanvasElement>document.getElementById("_3dview");
         // canvas.width = container.width;
         // canvas.height = container.height;
-
-        this.view3d.resize(container.width, container.height);
+        if (this.view3d) this.view3d.resize(container.width, container.height);
       });
     }
   }

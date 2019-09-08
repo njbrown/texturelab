@@ -68,6 +68,7 @@ export class Editor
     displayNodes : DisplayNodes;
 
     onnodeselected? : (item:DesignerNode)=>void;
+    onpreviewnode? : (item:DesignerNode, image:HTMLCanvasElement)=>void;
 
     constructor()
     {
@@ -235,9 +236,16 @@ export class Editor
             //console.log(dnode);
             
             if(true) {
+                if (self.preview2DCtx) {
                 self.preview2DCtx.drawImage(node.imageCanvas.canvas,
                     0,0,
                 self.preview2D.width, self.preview2D.height);
+                }
+
+                // todo: move to double click
+                if (self.onpreviewnode) {
+                    self.onpreviewnode(dnode, node.imageCanvas.canvas)
+                }
                 
                 //console.log(this.scene3D);
                 if (self.scene3D) {
