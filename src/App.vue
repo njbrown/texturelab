@@ -9,7 +9,8 @@
           </gl-component>
 
           <gl-component title="3D View" class="test-component" :closable="false">
-            <canvas width="100" height="100" id="_3dview" />
+            <!-- <canvas width="100" height="100" id="_3dview" /> -->
+            <preview3d ref="preview3d" />
           </gl-component>
         </gl-col>
 
@@ -77,7 +78,8 @@ import Preview3D from "./views/Preview3D.vue";
     EditorView,
     LibraryView,
     NodePropertiesView,
-    preview2d: Preview2D
+    preview2d: Preview2D,
+    preview3d: Preview3D
   }
 })
 export default class App extends Vue {
@@ -125,10 +127,11 @@ export default class App extends Vue {
     // this.editor.set2DPreview(_2dview);
     (this.$refs.preview2d as any).setEditor(this.editor);
 
-    const _3dview = <HTMLCanvasElement>document.getElementById("_3dview");
-    this.view3d = new View3D();
-    this.view3d.setCanvas(_3dview);
+    // const _3dview = <HTMLCanvasElement>document.getElementById("_3dview");
+    // this.view3d = new View3D();
+    // this.view3d.setCanvas(_3dview);
     //this.editor.set3DScene(scene3D);
+    (this.$refs.preview3d as any).setEditor(this.editor);
 
     // start animation
     const draw = () => {
@@ -172,7 +175,8 @@ export default class App extends Vue {
         // const canvas = <HTMLCanvasElement>document.getElementById("_3dview");
         // canvas.width = container.width;
         // canvas.height = container.height;
-        if (this.view3d) this.view3d.resize(container.width, container.height);
+        //if (this.view3d) this.view3d.resize(container.width, container.height);
+        (this.$refs.preview3d as any).resize(container.width, container.height);
       });
     }
   }
