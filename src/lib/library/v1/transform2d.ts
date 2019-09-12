@@ -1,24 +1,22 @@
-import { DesignerNode} from "../../nodetest";
+import { DesignerNode } from "../../designer/designernode";
 
-export class Transform2DNode extends DesignerNode
-{
-    public init()
-    {
-        this.title = "Transform2D";
+export class Transform2DNode extends DesignerNode {
+  public init() {
+    this.title = "Transform2D";
 
-        this.addInput("image");
+    this.addInput("image");
 
-        this.addFloatProperty("translateX", "Translate X", 0, -1.0, 1.0, 0.01);
-        this.addFloatProperty("translateY", "Translate Y", 0, -1.0, 1.0, 0.01);
+    this.addFloatProperty("translateX", "Translate X", 0, -1.0, 1.0, 0.01);
+    this.addFloatProperty("translateY", "Translate Y", 0, -1.0, 1.0, 0.01);
 
-        this.addFloatProperty("scaleX", "Scale X", 1, -2.0, 2.0, 0.01);
-        this.addFloatProperty("scaleY", "Scale Y", 1, -2.0, 2.0, 0.01);
+    this.addFloatProperty("scaleX", "Scale X", 1, -2.0, 2.0, 0.01);
+    this.addFloatProperty("scaleY", "Scale Y", 1, -2.0, 2.0, 0.01);
 
-        this.addFloatProperty("rot", "Rotation", 0, 0.0, 360.0, 0.01);
+    this.addFloatProperty("rot", "Rotation", 0, 0.0, 360.0, 0.01);
 
-        this.addBoolProperty("clamp","Clamp", true);
+    this.addBoolProperty("clamp", "Clamp", true);
 
-        var source = `
+    var source = `
         // https://github.com/glslify/glsl-inverse/blob/master/index.glsl
         mat3 inverse(mat3 m) {
             float a00 = m[0][0], a01 = m[0][1], a02 = m[0][2];
@@ -88,6 +86,6 @@ export class Transform2DNode extends DesignerNode
         }
         `;
 
-        this.buildShader(source);
-    }
+    this.buildShader(source);
+  }
 }

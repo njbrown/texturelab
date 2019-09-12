@@ -1,17 +1,15 @@
-import { DesignerNode } from "../../nodetest";
+import { DesignerNode } from "../../designer/designernode";
 
-export class HexagonNode extends DesignerNode
-{
-    public init()
-    {
-        this.title = "Polygon";
+export class HexagonNode extends DesignerNode {
+  public init() {
+    this.title = "Polygon";
 
-        this.addFloatProperty("scaleX","X Scale",2,1,32,1);
-        this.addFloatProperty("scaleY","Y Scale",2,1,32,1);
-        this.addFloatProperty("margin","Margin",0.9,0.0,1.0,0.01);
-        this.addFloatProperty("gradient","Gradient",0,0,1.0,0.01);
+    this.addFloatProperty("scaleX", "X Scale", 2, 1, 32, 1);
+    this.addFloatProperty("scaleY", "Y Scale", 2, 1, 32, 1);
+    this.addFloatProperty("margin", "Margin", 0.9, 0.0, 1.0, 0.01);
+    this.addFloatProperty("gradient", "Gradient", 0, 0, 1.0, 0.01);
 
-        var source = `
+    var source = `
         // https://www.shadertoy.com/view/Xljczw
         
         //todo: cleanup
@@ -55,6 +53,6 @@ export class HexagonNode extends DesignerNode
         }
         `;
 
-        this.buildShader(source);
-    }
+    this.buildShader(source);
+  }
 }

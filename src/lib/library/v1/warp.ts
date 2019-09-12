@@ -1,19 +1,16 @@
-import { DesignerNode } from "../../nodetest";
+import { DesignerNode } from "../../designer/designernode";
 
+export class WarpNode extends DesignerNode {
+  public init() {
+    this.title = "Warp";
 
-export class WarpNode extends DesignerNode
-{
-    public init()
-    {
-        this.title = "Warp";
+    this.addInput("inputImage");
+    this.addInput("height");
 
-        this.addInput("inputImage");
-        this.addInput("height");
+    this.addFloatProperty("intensity", "Intensity", 0.1, -1.0, 1.0, 0.01);
 
-        this.addFloatProperty("intensity","Intensity",0.1,-1.0,1.0,0.01);
-
-        // calculates normal, then warps uv by it
-        var source = `
+    // calculates normal, then warps uv by it
+    var source = `
         vec4 sample(vec2 uv)
         {
             vec2 step = vec2(1.0,1.0)/_textureSize;
@@ -26,6 +23,6 @@ export class WarpNode extends DesignerNode
         }
         `;
 
-        this.buildShader(source);
-    }
+    this.buildShader(source);
+  }
 }

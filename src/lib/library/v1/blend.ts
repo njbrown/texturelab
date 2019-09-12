@@ -1,17 +1,15 @@
-import { DesignerNode } from "../../nodetest";
+import { DesignerNode } from "../../designer/designernode";
 
-export class BlendNode extends DesignerNode
-{
-    public init()
-    {
-        this.title = "Blend";
+export class BlendNode extends DesignerNode {
+  public init() {
+    this.title = "Blend";
 
-        this.addInput("colorA");
-        this.addInput("colorB");
+    this.addInput("colorA");
+    this.addInput("colorB");
 
-        this.addEnumProperty("type","Type",["Multiply","Add","Subtract"]);
+    this.addEnumProperty("type", "Type", ["Multiply", "Add", "Subtract"]);
 
-        var source = `
+    var source = `
         vec4 sample(vec2 uv)
         {
             vec4 colA = texture2D(colorA,uv);
@@ -28,6 +26,6 @@ export class BlendNode extends DesignerNode
         }
         `;
 
-        this.buildShader(source);
-    }
+    this.buildShader(source);
+  }
 }

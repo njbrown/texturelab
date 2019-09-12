@@ -1,19 +1,17 @@
-import { DesignerNode } from "../../nodetest";
+import { DesignerNode } from "../../designer/designernode";
 
 // https://thebookofshaders.com/edit.php#12/tissue.frag
-export class LineCellNode extends DesignerNode
-{
-    public init()
-    {
-        this.title = "Lined Cell";
+export class LineCellNode extends DesignerNode {
+  public init() {
+    this.title = "Lined Cell";
 
-        this.addIntProperty("scale","Scale",5,0,256);
-        this.addBoolProperty("invert","Invert",false);
-        this.addFloatProperty("entropy","Entropy",0,0,1,0.01);
-        this.addFloatProperty("intensity","Intensity",1,0,2,0.01);
-        this.addFloatProperty("thickness","Line Thickness",0.1,0,0.2,0.01);
+    this.addIntProperty("scale", "Scale", 5, 0, 256);
+    this.addBoolProperty("invert", "Invert", false);
+    this.addFloatProperty("entropy", "Entropy", 0, 0, 1, 0.01);
+    this.addFloatProperty("intensity", "Intensity", 1, 0, 2, 0.01);
+    this.addFloatProperty("thickness", "Line Thickness", 0.1, 0, 0.2, 0.01);
 
-        var source = `
+    var source = `
         vec2 random2( vec2 p ) {
             return fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);
         }
@@ -99,6 +97,6 @@ export class LineCellNode extends DesignerNode
         }
         `;
 
-        this.buildShader(source);
-    }
+    this.buildShader(source);
+  }
 }

@@ -1,20 +1,17 @@
-import { DesignerNode } from "../../nodetest";
+import { DesignerNode } from "../../designer/designernode";
 
+export class DirectionalWarpNode extends DesignerNode {
+  public init() {
+    this.title = "Directional Warp";
 
-export class DirectionalWarpNode extends DesignerNode
-{
-    public init()
-    {
-        this.title = "Directional Warp";
+    this.addInput("inputImage");
+    this.addInput("height");
 
-        this.addInput("inputImage");
-        this.addInput("height");
+    this.addFloatProperty("intensity", "Intensity", 0.1, -0.5, 0.5, 0.01);
+    this.addFloatProperty("angle", "Angle", 0.85, 0.0, 3.142, 0.01);
 
-        this.addFloatProperty("intensity","Intensity",0.1,-0.5,0.5,0.01);
-        this.addFloatProperty("angle","Angle",0.85,0.0,3.142,0.01);
-
-        // calculates normal, then warps uv by it
-        var source = `
+    // calculates normal, then warps uv by it
+    var source = `
         vec4 sample(vec2 uv)
         {
             vec2 step = vec2(1.0,1.0)/_textureSize;
@@ -30,6 +27,6 @@ export class DirectionalWarpNode extends DesignerNode
         }
         `;
 
-        this.buildShader(source);
-    }
+    this.buildShader(source);
+  }
 }

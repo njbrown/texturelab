@@ -1,15 +1,13 @@
-import { DesignerNode } from "../../nodetest";
+import { DesignerNode } from "../../designer/designernode";
 
-export class CopyNode extends DesignerNode
-{
-    public init()
-    {
-        this.title = "Copy";
+export class CopyNode extends DesignerNode {
+  public init() {
+    this.title = "Copy";
 
-        this.addInput("image");
-        this.addStringProperty("name","Name");
+    this.addInput("image");
+    this.addStringProperty("name", "Name");
 
-        var source = `
+    var source = `
         vec4 sample(vec2 uv)
         {
             vec4 col = texture2D(image, uv);
@@ -17,6 +15,6 @@ export class CopyNode extends DesignerNode
         }
         `;
 
-        this.buildShader(source);
-    }
+    this.buildShader(source);
+  }
 }

@@ -1,18 +1,16 @@
-import { DesignerNode } from "../../nodetest";
+import { DesignerNode } from "../../designer/designernode";
 
-export class MapRangeNode extends DesignerNode
-{
-    public init()
-    {
-        this.title = "Map Range";
+export class MapRangeNode extends DesignerNode {
+  public init() {
+    this.title = "Map Range";
 
-        this.addInput("color");
-        this.addFloatProperty("in_min","Input Minimum", 0, 0, 1.0,0.01);
-        this.addFloatProperty("in_max","Input Maximum", 1, 0, 1.0,0.01);
-        this.addFloatProperty("out_min","Output Minimum", 0, 0, 1.0,0.01);
-        this.addFloatProperty("out_max","Output Maximum", 1, 0, 1.0,0.01);
+    this.addInput("color");
+    this.addFloatProperty("in_min", "Input Minimum", 0, 0, 1.0, 0.01);
+    this.addFloatProperty("in_max", "Input Maximum", 1, 0, 1.0, 0.01);
+    this.addFloatProperty("out_min", "Output Minimum", 0, 0, 1.0, 0.01);
+    this.addFloatProperty("out_max", "Output Maximum", 1, 0, 1.0, 0.01);
 
-        var source = `
+    var source = `
         vec4 sample(vec2 uv)
         {
             vec4 col = texture2D(color,uv);
@@ -28,6 +26,6 @@ export class MapRangeNode extends DesignerNode
         }
         `;
 
-        this.buildShader(source);
-    }
+    this.buildShader(source);
+  }
 }

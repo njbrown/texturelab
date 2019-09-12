@@ -1,17 +1,15 @@
-import { DesignerNode } from "../../nodetest";
+import { DesignerNode } from "../../designer/designernode";
 
 // http://www.smart-page.net/smartnormal/js/SmartNormalMapFilter.js
-export class NormalMapNode extends DesignerNode
-{
-    public init()
-    {
-        this.title = "Normal Map";
-        //this.exportName = "result";
-        this.addInput("height");
+export class NormalMapNode extends DesignerNode {
+  public init() {
+    this.title = "Normal Map";
+    //this.exportName = "result";
+    this.addInput("height");
 
-        this.addFloatProperty("strength","Strength",0.001,-0.02,0.02,0.00001);
+    this.addFloatProperty("strength", "Strength", 0.001, -0.02, 0.02, 0.00001);
 
-        var source = `
+    var source = `
         vec4 sample(vec2 uv)
         {
             //vec2 size = textureSize(height);
@@ -49,6 +47,6 @@ export class NormalMapNode extends DesignerNode
         }
         `;
 
-        this.buildShader(source);
-    }
+    this.buildShader(source);
+  }
 }

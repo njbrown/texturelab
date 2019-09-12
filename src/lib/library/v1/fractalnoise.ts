@@ -1,21 +1,25 @@
-import { DesignerNode } from "../../nodetest";
-
+import { DesignerNode } from "../../designer/designernode";
 
 // https://thebookofshaders.com/11/
-export class FractalNoiseNode extends DesignerNode
-{
-    public init()
-    {
-        this.title = "Fractal Noise";
+export class FractalNoiseNode extends DesignerNode {
+  public init() {
+    this.title = "Fractal Noise";
 
-        this.addIntProperty("scale","Scale",1,1,10,1);
-        this.addIntProperty("startBand","Start Band",4,1,10,1);
-        this.addIntProperty("endBand","End Band",8,1,10,1);
-        this.addFloatProperty("persistence","Persistence",0.6,0.0,1.0,0.01);
-        this.addFloatProperty("persistenceStart","Persistence Start",1.0,0.0,1.0,0.01);
-        this.addFloatProperty("brightness","Brightness",0.5,0.0,1.0,0.01);
+    this.addIntProperty("scale", "Scale", 1, 1, 10, 1);
+    this.addIntProperty("startBand", "Start Band", 4, 1, 10, 1);
+    this.addIntProperty("endBand", "End Band", 8, 1, 10, 1);
+    this.addFloatProperty("persistence", "Persistence", 0.6, 0.0, 1.0, 0.01);
+    this.addFloatProperty(
+      "persistenceStart",
+      "Persistence Start",
+      1.0,
+      0.0,
+      1.0,
+      0.01
+    );
+    this.addFloatProperty("brightness", "Brightness", 0.5, 0.0, 1.0, 0.01);
 
-        var source = `
+    var source = `
         //
         // GLSL textureless classic 2D noise "cnoise",
         // with an RSL-style periodic variant "pnoise".
@@ -111,6 +115,6 @@ export class FractalNoiseNode extends DesignerNode
         }
         `;
 
-        this.buildShader(source);
-    }
+    this.buildShader(source);
+  }
 }

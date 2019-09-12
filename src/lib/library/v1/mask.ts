@@ -1,16 +1,14 @@
-import { DesignerNode} from "../../nodetest";
+import { DesignerNode } from "../../designer/designernode";
 
-export class MaskNode extends DesignerNode
-{
-    public init()
-    {
-        this.title = "Mask";
+export class MaskNode extends DesignerNode {
+  public init() {
+    this.title = "Mask";
 
-        this.addInput("textureA");
-        this.addInput("textureB");
-        this.addInput("mask");
+    this.addInput("textureA");
+    this.addInput("textureB");
+    this.addInput("mask");
 
-        var source = `
+    var source = `
         float lum(vec4 col)
         {
             return (col.r + col.g + col.b) / 3.0;
@@ -28,6 +26,6 @@ export class MaskNode extends DesignerNode
         }
         `;
 
-        this.buildShader(source);
-    }
+    this.buildShader(source);
+  }
 }

@@ -1,16 +1,14 @@
-import { DesignerNode} from "../../nodetest";
+import { DesignerNode } from "../../designer/designernode";
 
-export class HeightShiftNode extends DesignerNode
-{
-    public init()
-    {
-        this.title = "Height Shift";
+export class HeightShiftNode extends DesignerNode {
+  public init() {
+    this.title = "Height Shift";
 
-        this.addInput("image");
+    this.addInput("image");
 
-        this.addFloatProperty("shift","Shift", 0.0, -1.0, 1.0, 0.01);
+    this.addFloatProperty("shift", "Shift", 0.0, -1.0, 1.0, 0.01);
 
-        var source = `
+    var source = `
         vec4 sample(vec2 uv)
         {
             vec4 a =  texture2D(image, uv);
@@ -19,6 +17,6 @@ export class HeightShiftNode extends DesignerNode
         }
         `;
 
-        this.buildShader(source);
-    }
+    this.buildShader(source);
+  }
 }
