@@ -144,19 +144,21 @@ export class Editor
         this.designer = designer;
         var self = this;
 
-        designer.onnodetextureupdated = function(node) {
-            var graphNode = self.graph.getNodeById(node.id);
-            self.designer.copyNodeTextureToImageCanvas(node, graphNode.imageCanvas);
+        designer.onnodetextureupdated = function(dnode) {
+            var graphNode = self.graph.getNodeById(dnode.id);
+            self.designer.copyNodeTextureToImageCanvas(dnode, graphNode.imageCanvas);
 
-            
-            if(node == self.selectedDesignerNode) {
-                requestAnimationFrame(function(){
-                    self.preview2DCtx.clearRect(0,0,self.preview2D.width, self.preview2D.height);
-                    self.preview2DCtx.drawImage(graphNode.imageCanvas.canvas,
-                        0,0,
-                    self.preview2D.width, self.preview2D.height);
-                });
+            if (self.onpreviewnode) {
+                self.onpreviewnode(dnode, graphNode.imageCanvas.canvas)
             }
+            // if(node == self.selectedDesignerNode) {
+            //     requestAnimationFrame(function(){
+            //         self.preview2DCtx.clearRect(0,0,self.preview2D.width, self.preview2D.height);
+            //         self.preview2DCtx.drawImage(graphNode.imageCanvas.canvas,
+            //             0,0,
+            //         self.preview2D.width, self.preview2D.height);
+            //     });
+            // }
             
             self.updateDisplayNode(graphNode);
         }
