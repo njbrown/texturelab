@@ -1,6 +1,10 @@
 <template>
-  <div>
-    <golden-layout class="hscreen" @itemCreated="itemCreated">
+  <div class="container">
+    <div class="topbar">
+      <a class="button" href="#">Save</a>
+      <a class="button" href="#">Export</a>
+    </div>
+    <golden-layout class="hscreen" @itemCreated="itemCreated" :headerHeight="30">
       <gl-row>
         <gl-col width="25">
           <gl-component title="2D View" class="test-component" :closable="false">
@@ -39,16 +43,62 @@
 </template>
 
 <style>
-.hscreen {
-  width: 100vw;
-  height: 100vh;
-  padding: 0;
-  margin: 0;
-}
 body {
   overflow: hidden; /* The 'light' theme let a scroll-bar on the right of the main container */
   padding: 0;
   margin: 0;
+}
+
+.lm_tab {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif !important;
+  background: #333 !important;
+  border-radius: 2px 2px 0 0;
+  height: 24px !important;
+  box-sizing: border-box;
+  line-height: 24px;
+}
+</style>
+<style scoped>
+.topbar {
+  background: #333;
+  border-bottom: 2px black solid;
+  flex-grow: 0;
+  /* flex-basis: 100px; */
+  padding: 0.5em;
+}
+
+.button {
+  border-radius: 2px;
+  background: #666;
+  padding: 0.5em 1em;
+  text-decoration: none;
+  color: white;
+  display: block;
+  float: left;
+  margin-right: 0.5em;
+}
+
+.button:hover {
+  background: #999;
+}
+
+.button:active {
+  background: #555;
+}
+
+.hscreen {
+  /* width: 100vw; */
+  /* height: calc(100vh - 2em); */
+  /* height: 100%; */
+  padding: 0;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.container {
+  display: flex;
+  height: 100vh;
+  flex-direction: column;
 }
 
 .glComponent {
