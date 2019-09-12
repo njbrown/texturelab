@@ -149,7 +149,8 @@ export class Editor
             self.designer.copyNodeTextureToImageCanvas(dnode, graphNode.imageCanvas);
 
             if (self.onpreviewnode) {
-                self.onpreviewnode(dnode, graphNode.imageCanvas.canvas)
+                if(dnode == self.selectedDesignerNode) 
+                    self.onpreviewnode(dnode, graphNode.imageCanvas.canvas)
             }
             // if(node == self.selectedDesignerNode) {
             //     requestAnimationFrame(function(){

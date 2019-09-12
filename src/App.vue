@@ -2,7 +2,8 @@
   <div class="container">
     <div class="topbar">
       <a class="button" href="#">Save</a>
-      <a class="button" href="#">Export</a>
+      <a class="button" href="#">Unity Export</a>
+      <a class="button" href="#">Zip Export</a>
     </div>
     <golden-layout class="hscreen" @itemCreated="itemCreated" :headerHeight="30">
       <gl-row>

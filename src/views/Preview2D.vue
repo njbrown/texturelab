@@ -3,12 +3,15 @@
     <div style="height:2em;">
       <a class="btn" href="#" @click="saveTexture()">S</a>
       <a class="btn" href="#" @click="toggleNineTexures()">9</a>
+      <a class="btn" href="#" @click="centerTexture()">C</a>
     </div>
     <canvas id="_2dpreview" ref="canvas" style="display:block;"></canvas>
   </div>
 </template>
 
 <script>
+import { DragZoom, DrawMode } from "./preview2d/previewcanvas2d";
+
 export default {
   // props: {
   //   editor: {
@@ -20,10 +23,20 @@ export default {
       node: null,
       // HtmlCanvasElement...it will auto update when the node's image changes
       image: null,
-      canvas: null
+      canvas: null,
+      dragZoom: null
     };
   },
-  mounted() {},
+  mounted() {
+    let dragZoom = new DragZoom(this.$refs.canvas);
+    const draw = () => {
+      dragZoom.draw();
+      requestAnimationFrame(draw);
+    };
+
+    requestAnimationFrame(draw);
+    this.dragZoom = dragZoom;
+  },
   methods: {
     setEditor(editor) {
       this.editor = editor;
@@ -32,15 +45,19 @@ export default {
         self.node = node;
         self.image = image;
 
-        this.paint();
+        self.dragZoom.setImage(image);
+
+        //this.paint();
       };
     },
     resize(width, height) {
-      console.log("resize");
+      //console.log("resize");
       fitCanvasToContainer(this.$refs.canvas);
 
+      this.dragZoom.onResize(width, height);
+
       // repaint
-      this.paint();
+      //this.paint();
     },
     paint() {
       if (!this.image) return;
@@ -49,13 +66,20 @@ export default {
       let ctx = canvas.getContext("2d");
 
       ctx.drawImage(this.image, 0, 0, canvas.width, canvas.height);
+    },
+    saveTexture() {
+      // todo: save image as png
+    },
+    toggleNineTexures() {
+      // todo: display nine textures instead of one to show tiling
+      if (this.dragZoom.drawMode == DrawMode.Single)
+        this.dragZoom.drawMode = DrawMode.Nine;
+      else this.dragZoom.drawMode = DrawMode.Single;
+    },
+    centerTexture() {
+      // todo: center texture in canvas
+      this.dragZoom.centerImage();
     }
-  },
-  saveTexture() {
-    // todo: save image as png
-  },
-  toggleNineTexures() {
-    // todo: display nine textures instead of one to show tiling
   }
 };
 
