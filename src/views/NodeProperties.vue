@@ -1,5 +1,5 @@
 <template>
-  <form class="properties">
+  <form class="properties" @submit.prevent="cancelSubmit">
     <accordion header="Base Properties"></accordion>
     <accordion header="Properties">
       <component
@@ -17,13 +17,14 @@
 
 <script lang="ts">
 import { Vue, Model, Prop, Component } from "vue-property-decorator";
-import { Property, DesignerNode, Designer } from "@/lib/nodetest";
 import FloatPropertyView from "@/components/properties/FloatProp.vue";
 import BoolPropertyView from "@/components/properties/BoolProp.vue";
 import EnumPropertyView from "@/components/properties/EnumProp.vue";
 import ColorPropertyView from "@/components/properties/ColorProp.vue";
 import Accordion from "@/components/Accordion.vue";
 import { Editor } from "@/lib/editortest";
+import { DesignerNode } from "@/lib/designer/designernode";
+import { Property } from "@/lib/designer/properties";
 
 class PropHolder {
   prop: Property;
@@ -50,6 +51,10 @@ export default class NodePropertiesView extends Vue {
   propertyChanged(propName: string) {
     // if (this.editor.onnodepropertychanged)
     //   this.editor.onnodepropertychanged(self.node, prop);
+  }
+
+  cancelSubmit() {
+    return false;
   }
 
   // calculated

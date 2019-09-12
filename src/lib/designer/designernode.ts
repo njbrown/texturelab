@@ -1,5 +1,5 @@
 import { Guid } from "../utils";
-import { Designer } from "../nodetest";
+import { Designer } from "../designer";
 import {
   Property,
   FloatProperty,

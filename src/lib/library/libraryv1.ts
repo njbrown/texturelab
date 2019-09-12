@@ -1,12 +1,10 @@
-import {DesignerLibrary} from "../nodetest"
-
-import {BrickGeneratorNode} from "./v1/brickgenerator"
-import {NormalMapNode} from "./v1/normalmap"
-import {CellNode} from "./v1/cellnode"
-import {SolidCellNode} from "./v1/solidcell"
-import {LineCellNode} from "./v1/linecell"
-import {PolygonNode, CircleNode} from "./v1/shapes"
-import {BlendNode} from "./v1/blend"
+import { BrickGeneratorNode } from "./v1/brickgenerator";
+import { NormalMapNode } from "./v1/normalmap";
+import { CellNode } from "./v1/cellnode";
+import { SolidCellNode } from "./v1/solidcell";
+import { LineCellNode } from "./v1/linecell";
+import { PolygonNode, CircleNode } from "./v1/shapes";
+import { BlendNode } from "./v1/blend";
 import { InvertNode } from "./v1/invert";
 import { WarpNode } from "./v1/warp";
 import { ColorNode, ColorizeNode } from "./v1/color";
@@ -27,39 +25,43 @@ import { MirrorNode } from "./v1/mirror";
 import { BrightnessContrastNode } from "./v1/brightnesscontrast";
 import { WaveNode } from "./v1/wave";
 import { CopyNode } from "./v1/copy";
+import { DesignerLibrary } from "../designer/library";
 
-export function createLibrary()
-{
-    var lib = new DesignerLibrary();
-    lib.addNode("brickgenerator","Brick Generator", BrickGeneratorNode);
-    lib.addNode("normalmap","Normal Map", NormalMapNode);
-    lib.addNode("cell","Cell", CellNode);
-    lib.addNode("solidcell","Solid Cell", SolidCellNode);
-    lib.addNode("linecell","Line Cell", LineCellNode);
-    lib.addNode("circle","Circle", CircleNode);
-    lib.addNode("polygon","Polygon", PolygonNode);
-    lib.addNode("blend","Blend", BlendNode);
-    lib.addNode("invert","Invert", InvertNode);
-    lib.addNode("warp","Warp", WarpNode);
-    lib.addNode("color","Color", ColorNode);
-    lib.addNode("colorize","Colorize", ColorizeNode);
-    lib.addNode("simplexnoise","Simplex Noise", SimplexNoiseNode);
-    lib.addNode("mask","Mask", MaskNode);
-    lib.addNode("transform2d","Transform2D", Transform2DNode);
-    lib.addNode("maprange","Map Range", MapRangeNode);
-    lib.addNode("splat","Splat", SplatNode);
-    lib.addNode("perlin3d","Perlin 3D", Perlin3DNode);
-    lib.addNode("hexagon","Hexagon", HexagonNode);
-    lib.addNode("fractalnoise","Fractal Noise", FractalNoiseNode);
-    lib.addNode("tile","Tile", TileNode);
-    lib.addNode("threshold","Threshold", ThresholdNode);
-    lib.addNode("heightshift","Height Shift", HeightShiftNode);
-    lib.addNode("checkerboard","CheckerBoard", CheckerBoardNode);
-    lib.addNode("directionalwarp","Directional Warp", DirectionalWarpNode);
-    lib.addNode("mirror","Mirror", MirrorNode);
-    lib.addNode("brightnesscontrast","Brightness Contrast", BrightnessContrastNode);
-    lib.addNode("wave","Wave", WaveNode);
-    lib.addNode("copy","Copy", CopyNode);
+export function createLibrary() {
+  var lib = new DesignerLibrary();
+  lib.addNode("brickgenerator", "Brick Generator", BrickGeneratorNode);
+  lib.addNode("normalmap", "Normal Map", NormalMapNode);
+  lib.addNode("cell", "Cell", CellNode);
+  lib.addNode("solidcell", "Solid Cell", SolidCellNode);
+  lib.addNode("linecell", "Line Cell", LineCellNode);
+  lib.addNode("circle", "Circle", CircleNode);
+  lib.addNode("polygon", "Polygon", PolygonNode);
+  lib.addNode("blend", "Blend", BlendNode);
+  lib.addNode("invert", "Invert", InvertNode);
+  lib.addNode("warp", "Warp", WarpNode);
+  lib.addNode("color", "Color", ColorNode);
+  lib.addNode("colorize", "Colorize", ColorizeNode);
+  lib.addNode("simplexnoise", "Simplex Noise", SimplexNoiseNode);
+  lib.addNode("mask", "Mask", MaskNode);
+  lib.addNode("transform2d", "Transform2D", Transform2DNode);
+  lib.addNode("maprange", "Map Range", MapRangeNode);
+  lib.addNode("splat", "Splat", SplatNode);
+  lib.addNode("perlin3d", "Perlin 3D", Perlin3DNode);
+  lib.addNode("hexagon", "Hexagon", HexagonNode);
+  lib.addNode("fractalnoise", "Fractal Noise", FractalNoiseNode);
+  lib.addNode("tile", "Tile", TileNode);
+  lib.addNode("threshold", "Threshold", ThresholdNode);
+  lib.addNode("heightshift", "Height Shift", HeightShiftNode);
+  lib.addNode("checkerboard", "CheckerBoard", CheckerBoardNode);
+  lib.addNode("directionalwarp", "Directional Warp", DirectionalWarpNode);
+  lib.addNode("mirror", "Mirror", MirrorNode);
+  lib.addNode(
+    "brightnesscontrast",
+    "Brightness Contrast",
+    BrightnessContrastNode
+  );
+  lib.addNode("wave", "Wave", WaveNode);
+  lib.addNode("copy", "Copy", CopyNode);
 
-    return lib;
+  return lib;
 }

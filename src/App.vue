@@ -119,10 +119,12 @@ import LibraryView from "@/views/Library.vue";
 import { Editor } from "@/lib/editortest";
 import { View3D } from "@/lib/view3d";
 import { createLibrary } from "@/lib/library/libraryv1";
-import { DesignerLibrary, DesignerNode, Designer } from "@/lib/nodetest";
 import NodePropertiesView from "./views/NodeProperties.vue";
 import Preview2D from "./views/Preview2D.vue";
 import Preview3D from "./views/Preview3D.vue";
+import { DesignerLibrary } from "./lib/designer/library";
+import { DesignerNode } from "./lib/designer/designernode";
+import { Designer } from "./lib/designer";
 
 @Component({
   components: {

@@ -9,7 +9,8 @@
 
 <script lang="ts">
 import { Vue, Prop, Component, Emit } from "vue-property-decorator";
-import { Designer, DesignerNode } from "@/lib/nodetest";
+import { Designer } from "@/lib/designer";
+import { DesignerNode } from "@/lib/designer/designernode";
 
 @Component
 export default class ColorPropertyView extends Vue {

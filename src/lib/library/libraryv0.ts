@@ -1,6 +1,6 @@
 import { TestShapeNode, TestGradientNode, TestSimplexNode, TestWorleyNode, TestMultiplyNode, TestInvertNode, TestNormalNode, TestBrickNode, TestWarpNode } from "./v0/nodes"
 
-import {DesignerLibrary} from "../nodetest"
+import {DesignerLibrary} from "../designer"
 
 export function createLibrary()
 {

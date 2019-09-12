@@ -35,8 +35,8 @@
 
 <script lang="ts">
 import { Component, Prop, Model, Vue } from "vue-property-decorator";
-import { DesignerLibrary, DesignerNode } from "@/lib/nodetest";
 import { Editor } from "@/lib/editortest";
+import { DesignerLibrary } from "@/lib/designer/library";
 
 @Component
 export default class LibraryView extends Vue {
