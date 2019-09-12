@@ -8,7 +8,7 @@ export class ConnectionGraphicsItem extends GraphicsItem {
 
   draw(ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
-    ctx.strokeStyle = "rgb(200, 200, 0)";
+    ctx.strokeStyle = "rgb(200, 200, 200)";
     ctx.lineWidth = 4;
     ctx.moveTo(this.socketA.centerX(), this.socketA.centerY());
     ctx.bezierCurveTo(

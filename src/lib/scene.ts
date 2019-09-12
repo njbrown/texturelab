@@ -4,6 +4,7 @@ import { NodeGraphicsItem } from "./scene/nodegraphicsitem";
 import { ConnectionGraphicsItem } from "./scene/connectiongraphicsitem";
 import { SocketGraphicsItem, SocketType } from "./scene/socketgraphicsitem";
 import { GraphicsItem } from "./scene/graphicsitem";
+import { SceneView } from "./scene/view";
 
 export class NodeScene {
   canvas: HTMLCanvasElement;
@@ -17,21 +18,17 @@ export class NodeScene {
   hitSocket?: SocketGraphicsItem;
   hitConnection?: ConnectionGraphicsItem;
 
-  mouseX!: number;
-  mouseY!: number;
-
-  panning!: boolean;
-  panStart!: SVGPoint;
-
   // callbacks
   onconnectioncreated?: (item: ConnectionGraphicsItem) => void;
   onconnectiondestroyed?: (item: ConnectionGraphicsItem) => void;
   onnodeselected?: (item: NodeGraphicsItem) => void;
 
+  view: SceneView;
+
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.context = this.canvas.getContext("2d");
-    addTransformExtrasToContext(this.context);
+    this.view = new SceneView(canvas);
     this.contextExtra = this.context;
     this.nodes = new Array();
     this.conns = new Array();
@@ -47,38 +44,12 @@ export class NodeScene {
     canvas.addEventListener("mouseup", function(evt: MouseEvent) {
       self.onMouseUp(evt);
     });
-    canvas.addEventListener("mousewheel", function(evt: WheelEvent) {
-      self.onMouseScroll(evt);
-    });
+    // canvas.addEventListener("mousewheel", function(evt: WheelEvent) {
+    //   self.onMouseScroll(evt);
+    // });
     canvas.addEventListener("contextmenu", function(evt: MouseEvent) {
       evt.preventDefault();
     });
-  }
-
-  canvasToScene(x: number, y: number): SVGPoint {
-    // var pt = new SVGPoint();
-    // pt.x = x;
-    // pt.y = y;
-
-    // var t = this.currentContextTransform().inverse();
-    return this.contextExtra.transformedPoint(x, y);
-    //return this.contextExtra.screenToScene(x,y);
-  }
-
-  // assumes x and y are in canvas space (not scene space)
-  zoom(x: number, y: number, level: number) {
-    var scaleFactor = 1.01;
-    var pt = this.contextExtra.transformedPoint(x, y);
-    this.contextExtra.translate(pt.x, pt.y);
-    var factor = Math.pow(scaleFactor, level);
-    this.contextExtra.scale(factor, factor);
-    this.contextExtra.translate(-pt.x, -pt.y);
-  }
-
-  currentContextTransform(): SVGMatrix {
-    // black magic to make it work
-    // `currentTransform` might still not be a part of the spec
-    return (<any>this.context).currentTransform;
   }
 
   getHitItem(x: number, y: number): GraphicsItem {
@@ -124,10 +95,14 @@ export class NodeScene {
 
   // if the user click drags on a socket then it's making a connection
   drawActiveConnection() {
+    let mouse = this.view.getMouseSceneSpace();
+    let mouseX = mouse.x;
+    let mouseY = mouse.y;
+
     let ctx = this.context;
     if (this.hitSocket) {
       ctx.beginPath();
-      ctx.strokeStyle = "rgb(200, 200, 0)";
+      ctx.strokeStyle = "rgb(200, 200, 200)";
       ctx.lineWidth = 4;
       ctx.moveTo(this.hitSocket.centerX(), this.hitSocket.centerY());
 
@@ -135,42 +110,54 @@ export class NodeScene {
         ctx.bezierCurveTo(
           this.hitSocket.centerX() + 60,
           this.hitSocket.centerY(), // control point 1
-          this.mouseX - 60,
-          this.mouseY,
-          this.mouseX,
-          this.mouseY
+          mouseX - 60,
+          mouseY,
+          mouseX,
+          mouseY
         );
       } else {
         ctx.bezierCurveTo(
           this.hitSocket.centerX() - 60,
           this.hitSocket.centerY(), // control point 1
-          this.mouseX + 60,
-          this.mouseY,
-          this.mouseX,
-          this.mouseY
+          mouseX + 60,
+          mouseY,
+          mouseX,
+          mouseY
         );
       }
+
+      ctx.setLineDash([5, 3]);
       ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.beginPath();
+      ctx.fillStyle = "rgb(200, 200, 200)";
+      const radius = 6;
+      ctx.arc(mouseX, mouseY, radius, 0, 2 * Math.PI);
+      ctx.fill();
     }
   }
 
   clearAndDrawGrid() {
     //this.context.scale(2,2);
-    this.context.fillStyle = "rgb(120, 120, 120)";
-    var topCorner = this.canvasToScene(0, 0);
-    var bottomCorner = this.canvasToScene(
-      this.canvas.clientWidth,
-      this.canvas.clientHeight
-    );
-    this.context.fillRect(
-      topCorner.x,
-      topCorner.y,
-      bottomCorner.x - topCorner.x,
-      bottomCorner.y - topCorner.y
-    );
+    // this.context.fillStyle = "rgb(120, 120, 120)";
+    // var topCorner = this.view.canvasToSceneXY(0, 0);
+    // var bottomCorner = this.view.canvasToSceneXY(
+    //   this.canvas.clientWidth,
+    //   this.canvas.clientHeight
+    // );
+    // this.context.fillRect(
+    //   topCorner.x,
+    //   topCorner.y,
+    //   bottomCorner.x - topCorner.x,
+    //   bottomCorner.y - topCorner.y
+    // );
     //this.context.fillRect(0,0,this.canvas.width, this.canvas.height);
 
     // todo: draw grid
+
+    this.view.clear(this.context, "rgb(120, 120, 120)");
+    this.view.setViewMatrix(this.context);
   }
 
   draw() {
@@ -193,20 +180,13 @@ export class NodeScene {
   // mouse events
   onMouseDown(evt: MouseEvent) {
     var pos = this.getScenePos(evt);
-    this.mouseX = pos.x;
-    this.mouseY = pos.y;
+    let mouseX = pos.x;
+    let mouseY = pos.y;
 
-    if (evt.button == 1 || evt.button == 2) {
-      this.panning = true;
-      this.panStart = this.getScenePos(evt); // need its own copy
-    }
-    //console.log("mouse down: ",evt.button);
-    else if (evt.button == 0) {
+    if (evt.button == 0) {
       // check for a hit socket first
-      let hitSock: SocketGraphicsItem = this.getHitSocket(
-        this.mouseX,
-        this.mouseY
-      );
+      let hitSock: SocketGraphicsItem = this.getHitSocket(mouseX, mouseY);
+
       if (hitSock) {
         // if socket is an in socket with a connection, make hitsocket the connected out socket
         if (hitSock.socketType == SocketType.In && hitSock.hasConnections()) {
@@ -216,10 +196,7 @@ export class NodeScene {
         } else this.hitSocket = hitSock;
       } else {
         // if there isnt a hit socket then check for a hit node
-        let hitNode: NodeGraphicsItem = this.getHitNode(
-          this.mouseX,
-          this.mouseY
-        );
+        let hitNode: NodeGraphicsItem = this.getHitNode(mouseX, mouseY);
         this.draggedNode = hitNode;
         if (hitNode && this.onnodeselected) this.onnodeselected(hitNode);
       }
@@ -228,17 +205,12 @@ export class NodeScene {
 
   onMouseUp(evt: MouseEvent) {
     var pos = this.getScenePos(evt);
-    this.mouseX = pos.x;
-    this.mouseY = pos.y;
+    let mouseX = pos.x;
+    let mouseY = pos.y;
 
-    if (evt.button == 1 || evt.button == 2) {
-      this.panning = false;
-    } else if (evt.button == 0) {
+    if (evt.button == 0) {
       if (this.hitSocket) {
-        let closeSock: SocketGraphicsItem = this.getHitSocket(
-          this.mouseX,
-          this.mouseY
-        );
+        let closeSock: SocketGraphicsItem = this.getHitSocket(mouseX, mouseY);
 
         if (
           closeSock &&
@@ -297,25 +269,7 @@ export class NodeScene {
   }
 
   onMouseMove(evt: MouseEvent) {
-    var lastX = this.mouseX;
-    var lastY = this.mouseY;
     var pos = this.getScenePos(evt);
-    this.mouseX = pos.x;
-    this.mouseY = pos.y;
-
-    if (this.panning) {
-      // convert to scene space first
-      //var lastPt = this.contextExtra.transformedPoint(lastX, lastY);
-      //var pt = this.contextExtra.transformedPoint(this.mouseX, this.mouseY);
-      //this.context.translate(pt.x - lastPt.x, pt.y - lastPt.y);
-      //console.log(pt.x - this.panStart.x, pt.y - this.panStart.y);
-      console.log(this.mouseX - this.panStart.x, this.mouseY - this.panStart.y);
-      this.context.translate(
-        this.mouseX - this.panStart.x,
-        this.mouseY - this.panStart.y
-      );
-      //this.panStart = pos;
-    }
 
     // handle dragged socket
     if (this.hitSocket) {
@@ -323,19 +277,14 @@ export class NodeScene {
 
     // handle dragged node
     if (this.draggedNode != null) {
-      var diff = this.canvasToScene(evt.movementX, evt.movementY);
+      //var diff = this.view.canvasToSceneXY(evt.movementX, evt.movementY);
       //console.log("move: ",evt.movementX,evt.movementY);
-      this.draggedNode.move(evt.movementX, evt.movementY);
+      //this.draggedNode.move(evt.movementX, evt.movementY);
+
+      // view keeps track of dragging
+      let drag = this.view.getMouseDeltaSceneSpace();
+      this.draggedNode.move(drag.x, drag.y);
     }
-  }
-
-  onMouseScroll(evt: WheelEvent) {
-    var pos = _getMousePos(this.canvas, evt);
-    var delta = evt.wheelDelta / 40;
-    this.zoom(pos.x, pos.y, delta);
-
-    evt.preventDefault();
-    return false;
   }
 
   // hit detection
@@ -364,7 +313,7 @@ export class NodeScene {
   // returns the scene pos from the mouse event
   getScenePos(evt: MouseEvent) {
     var canvasPos = _getMousePos(this.canvas, evt);
-    return this.canvasToScene(canvasPos.x, canvasPos.y);
+    return this.view.canvasToSceneXY(canvasPos.x, canvasPos.y);
   }
 
   // SAVE/LOAD
@@ -438,104 +387,5 @@ function _getMousePos(canvas, evt) {
   return {
     x: evt.clientX - rect.left,
     y: evt.clientY - rect.top
-  };
-}
-
-// https://codepen.io/techslides/pen/zowLd
-// add functions that should have been a part of the 2d context api
-//function trackTransforms(ctx){
-function addTransformExtrasToContext(ctx: any) {
-  var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  var xform = <SVGMatrix>svg.createSVGMatrix();
-  ctx.getTransform = function() {
-    return xform;
-  };
-
-  var savedTransforms: SVGMatrix[] = [];
-  var save = ctx.save;
-  ctx.save = function() {
-    savedTransforms.push(xform.translate(0, 0));
-    return save.call(ctx);
-  };
-
-  var restore = ctx.restore;
-  ctx.restore = function() {
-    xform = <SVGMatrix>savedTransforms.pop();
-    return restore.call(ctx);
-  };
-
-  var scale = ctx.scale;
-  ctx.scale = function(sx: number, sy: number) {
-    xform = (<any>xform).scaleNonUniform(sx, sy);
-    return scale.call(ctx, sx, sy);
-  };
-
-  var rotate = ctx.rotate;
-  ctx.rotate = function(radians: number) {
-    xform = xform.rotate((radians * 180) / Math.PI);
-    return rotate.call(ctx, radians);
-  };
-
-  var translate = ctx.translate;
-  ctx.translate = function(dx: number, dy: number) {
-    xform = xform.translate(dx, dy);
-    return translate.call(ctx, dx, dy);
-  };
-
-  var transform = ctx.transform;
-  ctx.transform = function(
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-    e: number,
-    f: number
-  ) {
-    var m2 = svg.createSVGMatrix();
-    m2.a = a;
-    m2.b = b;
-    m2.c = c;
-    m2.d = d;
-    m2.e = e;
-    m2.f = f;
-    xform = xform.multiply(m2);
-    return transform.call(ctx, a, b, c, d, e, f);
-  };
-
-  var setTransform = ctx.setTransform;
-  ctx.setTransform = function(
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-    e: number,
-    f: number
-  ) {
-    xform.a = a;
-    xform.b = b;
-    xform.c = c;
-    xform.d = d;
-    xform.e = e;
-    xform.f = f;
-    return setTransform.call(ctx, a, b, c, d, e, f);
-  };
-
-  var pt = svg.createSVGPoint();
-  ctx.transformedPoint = function(x: number, y: number) {
-    pt.x = x;
-    pt.y = y;
-    return pt.matrixTransform(xform.inverse());
-  };
-
-  ctx.screenToScene = function(x: number, y: number) {
-    pt.x = x;
-    pt.y = y;
-    return pt.matrixTransform(xform.inverse());
-  };
-
-  ctx.screenToScene = function(x: number, y: number) {
-    pt.x = x;
-    pt.y = y;
-    return pt.matrixTransform(xform);
   };
 }

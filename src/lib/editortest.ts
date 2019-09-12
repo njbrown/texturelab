@@ -317,7 +317,7 @@ export class Editor {
     var thumb = this.designer.generateImageFromNode(dNode);
     node.setThumbnail(thumb);
 
-    var pos = this.graph.canvasToScene(screenX, screenY);
+    var pos = this.graph.view.canvasToSceneXY(screenX, screenY);
     node.setCenter(pos.x, pos.y);
 
     return node;
