@@ -56,7 +56,8 @@ export class NodeGraphicsItem extends GraphicsItem {
     ctx.fill();
 
     ctx.beginPath();
-    ctx.font = "14px monospace";
+    //ctx.font = "14px monospace";
+    ctx.font = "9px 'Segoe UI'";
     ctx.fillStyle = "rgb(255,255,255)";
     let size = ctx.measureText(this.title);
     let textX = this.centerX() - size.width / 2;
