@@ -214,7 +214,43 @@ export class SceneView {
     );
   }
 
-  drawGrid() {}
+  drawGrid(
+    ctx: CanvasRenderingContext2D,
+    GRID_SIZE: number,
+    strokeStyle: string,
+    lineWidth: number
+  ) {
+    // todo: convert line points to canvas space, reset context and draw them there to preserve line width
+
+    //const GRID_SIZE = 100;
+    let tl = this.canvasToSceneXY(0, 0);
+    let br = this.canvasToSceneXY(this.canvas.width, this.canvas.height);
+
+    //ctx.strokeStyle = "#4A5050";
+    //ctx.strokeStyle = "#464C4C";
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = lineWidth;
+
+    // vertical
+    const vCount = (br.x - tl.x) / GRID_SIZE;
+    const xStart = tl.x - (tl.x % GRID_SIZE);
+    for (let i = 0; i < vCount; i++) {
+      ctx.beginPath();
+      ctx.moveTo(xStart + i * GRID_SIZE, tl.y);
+      ctx.lineTo(xStart + i * GRID_SIZE, br.y);
+      ctx.stroke();
+    }
+
+    // horizontal
+    const hCount = (br.y - tl.y) / GRID_SIZE;
+    const yStart = tl.y - (tl.y % GRID_SIZE);
+    for (let i = 0; i < hCount; i++) {
+      ctx.beginPath();
+      ctx.moveTo(tl.x, yStart + i * GRID_SIZE);
+      ctx.lineTo(br.x, yStart + i * GRID_SIZE);
+      ctx.stroke();
+    }
+  }
 
   canvasToScene(pos: Vector2): Vector2 {
     return new Vector2(

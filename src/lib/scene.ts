@@ -156,8 +156,10 @@ export class NodeScene {
 
     // todo: draw grid
 
-    this.view.clear(this.context, "rgb(120, 120, 120)");
+    this.view.clear(this.context, "#4A5050");
     this.view.setViewMatrix(this.context);
+    this.view.drawGrid(this.context, 33.33333, "#4E5454", 1);
+    this.view.drawGrid(this.context, 100, "#464C4C", 3);
   }
 
   draw() {
