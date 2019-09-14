@@ -77,9 +77,70 @@ export class Editor {
   onnodeselected?: (item: DesignerNode) => void;
   onpreviewnode?: (item: DesignerNode, image: HTMLCanvasElement) => void;
 
+  textureChannels = {};
+  ontexturechannelcleared?: (node: DesignerNode, channelName: string) => void;
+  ontexturechannelassigned?: (node: DesignerNode, channelName: string) => void;
+
   constructor() {
     this.displayNodes = new DisplayNodes();
     this.selectedDesignerNode = null;
+  }
+
+  assignNodeToTextureChannel(nodeId: string, channelName: string) {
+    // only one node can be assigned to a channel
+    if (this.textureChannels.hasOwnProperty(channelName)) {
+      // remove label from node view
+      let oldNode = this.textureChannels[channelName] as DesignerNode;
+      let nodeView = this.graph.getNodeById(oldNode.id);
+      nodeView.clearTextureChannel();
+      this.textureChannels[channelName] = null;
+
+      if (this.ontexturechannelcleared) {
+        this.ontexturechannelcleared(oldNode, channelName);
+      }
+    }
+
+    let nodeView = this.graph.getNodeById(nodeId);
+    nodeView.setTextureChannel(channelName);
+
+    let newNode = this.designer.getNodeById(nodeId);
+    this.textureChannels[channelName] = newNode;
+
+    // notify 3d view
+    if (this.ontexturechannelcleared) {
+      this.ontexturechannelassigned(newNode, channelName);
+    }
+  }
+
+  clearTextureChannel(nodeId: string) {
+    // eval which channel has this node assigned
+    for (let channelName in this.textureChannels) {
+      let node = this.textureChannels[channelName];
+
+      if (node.id == nodeId) {
+        let oldNode = this.textureChannels[channelName] as DesignerNode;
+        let nodeView = this.graph.getNodeById(oldNode.id);
+        nodeView.clearTextureChannel();
+        this.textureChannels[channelName] = null;
+
+        if (this.ontexturechannelcleared) {
+          this.ontexturechannelcleared(oldNode, channelName);
+        }
+      }
+    }
+
+    // only one node can be assigned to a channel
+    // if (this.textureChannels.hasOwnProperty(channelName)) {
+    //   // remove label from node view
+    //   let oldNode = this.textureChannels[channelName] as DesignerNode;
+    //   let nodeView = this.graph.getNodeById(oldNode.id);
+    //   nodeView.clearTextureChannel();
+    //   this.textureChannels[channelName] = null;
+
+    //   if (this.ontexturechannelcleared) {
+    //     this.ontexturechannelcleared(oldNode, channelName);
+    //   }
+    // }
   }
   /*
     constructor(canvas:HTMLCanvasElement, preview2D:HTMLCanvasElement, propHolder : HTMLElement, varHolder : HTMLElement, scene3D:any)
@@ -124,18 +185,6 @@ export class Editor {
     this.canvas.width = width;
     this.canvas.height = height;
   }
-
-  // setPropertyHolder(propHolder : HTMLElement)
-  // {
-  //     this.propGen = new PropertyGenerator(this, propHolder);
-  // }
-
-  // setVariableHolder(varHolder : HTMLElement)
-  // {
-  //     this.varGen = new VariableGenerator(this, varHolder);
-  //     if (this.designer)
-  //         this.varGen.setDesigner(this.designer);
-  // }
 
   set3DScene(scene3D: any) {
     this.scene3D = scene3D;
@@ -231,39 +280,35 @@ export class Editor {
     };
 
     this.graph.onnodeselected = function(node: NodeGraphicsItem) {
-      var dnode = self.designer.getNodeById(node.id);
-      self.selectedDesignerNode = dnode;
-      //console.log(dnode);
+      if (node != null) {
+        var dnode = self.designer.getNodeById(node.id);
+        self.selectedDesignerNode = dnode;
+        //console.log(dnode);
 
-      if (true) {
-        if (self.preview2DCtx) {
-          self.preview2DCtx.drawImage(
-            node.imageCanvas.canvas,
-            0,
-            0,
-            self.preview2D.width,
-            self.preview2D.height
-          );
-        }
+        if (true) {
+          if (self.preview2DCtx) {
+            self.preview2DCtx.drawImage(
+              node.imageCanvas.canvas,
+              0,
+              0,
+              self.preview2D.width,
+              self.preview2D.height
+            );
+          }
 
-        // todo: move to double click
-        if (self.onpreviewnode) {
-          self.onpreviewnode(dnode, node.imageCanvas.canvas);
-        }
+          // todo: move to double click
+          if (self.onpreviewnode) {
+            self.onpreviewnode(dnode, node.imageCanvas.canvas);
+          }
 
-        //console.log(this.scene3D);
-        if (self.scene3D) {
-          //console.log("setting height texture");
-          //self.scene3D.setHeightTexture(node.thumbnail);
-          self.updateDisplayNode(node);
+          //console.log(this.scene3D);
+          if (self.scene3D) {
+            //console.log("setting height texture");
+            //self.scene3D.setHeightTexture(node.thumbnail);
+            self.updateDisplayNode(node);
+          }
         }
       }
-
-      //var thumb = self.designer.generateImageFromNode(dnode);
-      // thumbnail will be generated eventually
-
-      // display node properties
-      // if (self.propGen) self.propGen.setNode(dnode);
 
       if (self.onnodeselected) self.onnodeselected(dnode);
     };

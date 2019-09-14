@@ -21,6 +21,7 @@ export class NodeScene {
   // callbacks
   onconnectioncreated?: (item: ConnectionGraphicsItem) => void;
   onconnectiondestroyed?: (item: ConnectionGraphicsItem) => void;
+  // passes null if no node is selected
   onnodeselected?: (item: NodeGraphicsItem) => void;
 
   view: SceneView;
@@ -200,7 +201,10 @@ export class NodeScene {
         // if there isnt a hit socket then check for a hit node
         let hitNode: NodeGraphicsItem = this.getHitNode(mouseX, mouseY);
         this.draggedNode = hitNode;
-        if (hitNode && this.onnodeselected) this.onnodeselected(hitNode);
+        if (this.onnodeselected) {
+          if (hitNode) this.onnodeselected(hitNode);
+          else this.onnodeselected(hitNode);
+        }
       }
     }
   }

@@ -1,6 +1,8 @@
 <template>
-  <form class="properties" @submit.prevent="cancelSubmit">
-    <accordion header="Base Properties"></accordion>
+  <form class="properties" @submit.prevent="cancelSubmit" :key="node.id" v-if="node != null">
+    <accordion header="Base Properties">
+      <texture-channel :node="node" :editor="editor" />
+    </accordion>
     <accordion header="Properties">
       <component
         v-for="(p, index) in this.properties"
@@ -21,6 +23,7 @@ import FloatPropertyView from "@/components/properties/FloatProp.vue";
 import BoolPropertyView from "@/components/properties/BoolProp.vue";
 import EnumPropertyView from "@/components/properties/EnumProp.vue";
 import ColorPropertyView from "@/components/properties/ColorProp.vue";
+import TextureChannelPropertyView from "@/components/properties/TextureChannelProp.vue";
 import Accordion from "@/components/Accordion.vue";
 import { Editor } from "@/lib/editortest";
 import { DesignerNode } from "@/lib/designer/designernode";
@@ -38,6 +41,8 @@ class PropHolder {
     bool: BoolPropertyView,
     enum: EnumPropertyView,
     color: ColorPropertyView,
+
+    textureChannel: TextureChannelPropertyView,
     Accordion
   }
 })

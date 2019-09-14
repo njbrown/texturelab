@@ -9,12 +9,23 @@ export class NodeGraphicsItem extends GraphicsItem {
   thumbnail!: HTMLImageElement;
   imageCanvas: ImageCanvas;
 
+  // albedo, norma, height, etc...
+  textureChannel: string;
+
   constructor(title: string) {
     super();
     this.width = 100;
     this.height = 100;
     this.title = title;
     this.imageCanvas = new ImageCanvas();
+  }
+
+  public setTextureChannel(name: string) {
+    this.textureChannel = name;
+  }
+
+  public clearTextureChannel() {
+    this.textureChannel = null;
   }
 
   public setThumbnail(thumbnail: HTMLImageElement) {
@@ -68,11 +79,24 @@ export class NodeGraphicsItem extends GraphicsItem {
     ctx.beginPath();
     ctx.lineWidth = 4;
     ctx.strokeStyle = "rgb(0, 0, 0)";
-    ctx.rect(this.x, this.y, this.width, this.height);
+    //ctx.rect(this.x, this.y, this.width, this.height);
+    this.roundRect(ctx, this.x, this.y, this.width, this.height, 2);
     ctx.stroke();
 
     for (let sock of this.sockets) {
       sock.draw(ctx);
+    }
+
+    // texture channel
+    if (this.textureChannel) {
+      ctx.beginPath();
+      //ctx.font = "14px monospace";
+      ctx.font = "12px 'Segoe UI'";
+      ctx.fillStyle = "rgb(200, 255, 200)";
+      let size = ctx.measureText(this.textureChannel.toUpperCase());
+      let textX = this.centerX() - size.width / 2;
+      let textY = this.y + this.height + 14;
+      ctx.fillText(this.textureChannel.toUpperCase(), textX, textY);
     }
   }
 
@@ -172,5 +196,20 @@ export class NodeGraphicsItem extends GraphicsItem {
     this.sockets.push(sock);
 
     this.sortSockets();
+  }
+
+  // UTILITIES
+  // https://stackoverflow.com/questions/1255512/how-to-draw-a-rounded-rectangle-on-html-canvas
+  roundRect(ctx: CanvasRenderingContext2D, x, y, w, h, r) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+    //ctx.stroke();
   }
 }

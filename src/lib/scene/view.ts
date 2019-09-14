@@ -232,7 +232,7 @@ export class SceneView {
     ctx.lineWidth = lineWidth;
 
     // vertical
-    const vCount = (br.x - tl.x) / GRID_SIZE;
+    const vCount = (br.x - tl.x) / GRID_SIZE + 1.0;
     const xStart = tl.x - (tl.x % GRID_SIZE);
     for (let i = 0; i < vCount; i++) {
       ctx.beginPath();
@@ -242,7 +242,7 @@ export class SceneView {
     }
 
     // horizontal
-    const hCount = (br.y - tl.y) / GRID_SIZE;
+    const hCount = (br.y - tl.y) / GRID_SIZE + 1.0;
     const yStart = tl.y - (tl.y % GRID_SIZE);
     for (let i = 0; i < hCount; i++) {
       ctx.beginPath();
