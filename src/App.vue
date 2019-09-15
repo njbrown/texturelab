@@ -20,12 +20,12 @@
         </gl-col>
 
         <gl-col width="55" ref="canvas">
-          <gl-component title="Editor" class="test-component" height="70" :closable="false">
+          <gl-component title="Editor" class="test-component" :closable="false">
             <canvas width="400" height="400" id="editor" ondragover="event.preventDefault()" />
           </gl-component>
-          <gl-component title="Library" height="30" :closable="false">
+          <!-- <gl-component title="Library" height="30" :closable="false">
             <library-view :editor="this.editor" :library="this.library" />
-          </gl-component>
+          </gl-component>-->
         </gl-col>
 
         <gl-col width="20">
@@ -36,7 +36,10 @@
               :node="this.selectedNode"
             />
           </gl-component>
-          <gl-component title="Texture Properties" class="test-component" :closable="false"></gl-component>
+          <gl-component title="Library" :closable="false">
+            <library-view :editor="this.editor" :library="this.library" />
+          </gl-component>
+          <!-- <gl-component title="Texture Properties" class="test-component" :closable="false"></gl-component> -->
         </gl-col>
       </gl-row>
     </golden-layout>
