@@ -175,7 +175,12 @@ export class NodeScene {
     }
 
     // draw nodes
+    let nodeState = {
+      hovered: false, // mouse over
+      selected: false // selected node
+    };
     for (let item of this.nodes) {
+      // calc states
       item.draw(this.context);
     }
   }

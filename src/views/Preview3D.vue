@@ -12,6 +12,7 @@
 
 <script>
 import { View3D } from "@/lib/view3d";
+import { DesignerNode } from "@/lib/designer/designernode";
 
 export default {
   // props: {
@@ -38,6 +39,18 @@ export default {
 
       //   this.paint();
       // };
+
+      editor.ontexturechannelcleared = (imageCanvas, channelName) => {
+        this.view3d.clearTexture(channelName);
+      };
+
+      editor.ontexturechannelassigned = (imageCanvas, channelName) => {
+        this.view3d.setTexture(imageCanvas, channelName);
+      };
+
+      editor.ontexturechannelupdated = (imageCanvas, channelName) => {
+        this.view3d.updateTexture(channelName);
+      };
     },
     resize(width, height) {
       fitCanvasToContainer(this.$refs.canvas);

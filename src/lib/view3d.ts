@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three-orbitcontrols-ts";
+import { DesignerNode } from "./designer/designernode";
+import { ImageCanvas } from "./designer/imagecanvas";
 
 // https://www.bostonbiomotion.com/
 // https://blog.subvertallmedia.com/2018/06/25/three-js-imports.html
@@ -23,6 +25,8 @@ export class View3D {
 
   private model: THREE.Object3D;
   private controls: OrbitControls;
+  // texture repeat
+  private repeat: number = 4;
 
   setCanvas(el: HTMLCanvasElement) {
     this.setupRenderer(el);
@@ -32,7 +36,7 @@ export class View3D {
       0.1,
       1000
     );
-    this.camera.position.z = 3.1;
+    this.camera.position.z = 2.6;
     this.camera.position.y = 1;
     this.camera.position.x = 1;
 
@@ -43,7 +47,6 @@ export class View3D {
     this.model = new THREE.Mesh(geometry, this.material);
 
     this.scene.add(this.model);
-    this.camera.position.z = 5;
 
     const animate = () => {
       requestAnimationFrame(animate);
@@ -125,4 +128,113 @@ export class View3D {
     this.renderer.setSize(width, height);
   }
   private _init() {}
+
+  setTexture(imageCanvas: ImageCanvas, channelName: string) {
+    if (channelName == "albedo")
+      this.setAlbedoTexture(imageCanvas, channelName);
+    if (channelName == "normal")
+      this.setNormalTexture(imageCanvas, channelName);
+    if (channelName == "metalness")
+      this.setMetalnessTexture(imageCanvas, channelName);
+    if (channelName == "roughness")
+      this.setRoughnessTexture(imageCanvas, channelName);
+    if (channelName == "height")
+      this.setHeightTexture(imageCanvas, channelName);
+  }
+
+  clearTexture(channelName: string) {
+    if (channelName == "albedo") {
+      this.material.map = null;
+    }
+    if (channelName == "normal") {
+      this.material.normalMap = null;
+    }
+    if (channelName == "metalness") {
+      this.material.metalnessMap = null;
+    }
+    if (channelName == "roughness") {
+      this.material.roughnessMap = null;
+    }
+    if (channelName == "height") {
+      this.material.displacementMap = null;
+    }
+    this.material.needsUpdate = true;
+  }
+
+  updateTexture(channelName: string) {
+    if (channelName == "albedo" && this.material.map != null) {
+      this.material.map.needsUpdate = true;
+    }
+    if (channelName == "normal" && this.material.normalMap != null) {
+      this.material.normalMap.needsUpdate = true;
+    }
+    if (channelName == "metalness" && this.material.metalnessMap != null) {
+      this.material.metalnessMap.needsUpdate = true;
+    }
+    if (channelName == "roughness" && this.material.roughnessMap != null) {
+      this.material.roughnessMap.needsUpdate = true;
+    }
+    if (channelName == "height" && this.material.displacementMap != null) {
+      this.material.displacementMap.needsUpdate = true;
+    }
+    this.material.needsUpdate = true;
+  }
+
+  setAlbedoTexture(imageCanvas: ImageCanvas, channelName: string) {
+    var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(this.repeat, this.repeat);
+    tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+
+    tex.needsUpdate = true;
+    this.material.map = tex;
+    this.material.needsUpdate = true;
+  }
+
+  setNormalTexture(imageCanvas: ImageCanvas, channelName: string) {
+    var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(this.repeat, this.repeat);
+    tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+
+    tex.needsUpdate = true;
+    this.material.normalMap = tex;
+    this.material.needsUpdate = true;
+  }
+
+  setMetalnessTexture(imageCanvas: ImageCanvas, channelName: string) {
+    var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(this.repeat, this.repeat);
+    tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+
+    tex.needsUpdate = true;
+    this.material.metalnessMap = tex;
+    this.material.metalness = 1.0;
+    this.material.needsUpdate = true;
+  }
+
+  setRoughnessTexture(imageCanvas: ImageCanvas, channelName: string) {
+    var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(this.repeat, this.repeat);
+    tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+
+    tex.needsUpdate = true;
+    this.material.roughnessMap = tex;
+    this.material.roughness = 1.0;
+    this.material.needsUpdate = true;
+  }
+
+  setHeightTexture(imageCanvas: ImageCanvas, channelName: string) {
+    var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(this.repeat, this.repeat);
+    tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+
+    tex.needsUpdate = true;
+    this.material.displacementMap = tex;
+    this.material.displacementScale = 0.5;
+    this.material.needsUpdate = true;
+  }
 }

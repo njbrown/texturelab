@@ -9,6 +9,7 @@ import { NodeScene } from "./scene";
 import { ConnectionGraphicsItem } from "./scene/connectiongraphicsitem";
 import { NodeGraphicsItem } from "./scene/nodegraphicsitem";
 import { SocketType } from "./scene/socketgraphicsitem";
+import { ImageCanvas } from "./designer/imagecanvas";
 
 function hexToRgb(hex) {
   var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -78,8 +79,18 @@ export class Editor {
   onpreviewnode?: (item: DesignerNode, image: HTMLCanvasElement) => void;
 
   textureChannels = {};
-  ontexturechannelcleared?: (node: DesignerNode, channelName: string) => void;
-  ontexturechannelassigned?: (node: DesignerNode, channelName: string) => void;
+  ontexturechannelcleared?: (
+    imageCanvas: ImageCanvas,
+    channelName: string
+  ) => void;
+  ontexturechannelassigned?: (
+    imageCanvas: ImageCanvas,
+    channelName: string
+  ) => void;
+  ontexturechannelupdated?: (
+    imageCanvas: ImageCanvas,
+    channelName: string
+  ) => void;
 
   constructor() {
     this.displayNodes = new DisplayNodes();
@@ -88,7 +99,10 @@ export class Editor {
 
   assignNodeToTextureChannel(nodeId: string, channelName: string) {
     // only one node can be assigned to a channel
-    if (this.textureChannels.hasOwnProperty(channelName)) {
+    if (
+      this.textureChannels.hasOwnProperty(channelName) &&
+      this.textureChannels[channelName]
+    ) {
       // remove label from node view
       let oldNode = this.textureChannels[channelName] as DesignerNode;
       let nodeView = this.graph.getNodeById(oldNode.id);
@@ -96,7 +110,7 @@ export class Editor {
       this.textureChannels[channelName] = null;
 
       if (this.ontexturechannelcleared) {
-        this.ontexturechannelcleared(oldNode, channelName);
+        this.ontexturechannelcleared(null, channelName);
       }
     }
 
@@ -108,7 +122,7 @@ export class Editor {
 
     // notify 3d view
     if (this.ontexturechannelcleared) {
-      this.ontexturechannelassigned(newNode, channelName);
+      this.ontexturechannelassigned(nodeView.imageCanvas, channelName);
     }
   }
 
@@ -124,7 +138,7 @@ export class Editor {
         this.textureChannels[channelName] = null;
 
         if (this.ontexturechannelcleared) {
-          this.ontexturechannelcleared(oldNode, channelName);
+          this.ontexturechannelcleared(null, channelName);
         }
       }
     }
@@ -201,6 +215,13 @@ export class Editor {
       if (self.onpreviewnode) {
         if (dnode == self.selectedDesignerNode)
           self.onpreviewnode(dnode, graphNode.imageCanvas.canvas);
+      }
+
+      if (self.ontexturechannelupdated && graphNode.textureChannel) {
+        self.ontexturechannelupdated(
+          graphNode.imageCanvas,
+          graphNode.textureChannel
+        );
       }
       // if(node == self.selectedDesignerNode) {
       //     requestAnimationFrame(function(){

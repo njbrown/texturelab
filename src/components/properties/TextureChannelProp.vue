@@ -26,8 +26,8 @@ export default class TextureChannelPropertyView extends Vue {
     "none",
     "albedo",
     "normal",
-    "metallic",
-    "shininess",
+    "metalness",
+    "roughness",
     "height"
   ];
   channelIndex: number = 0;
