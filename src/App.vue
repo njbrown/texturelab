@@ -1,9 +1,12 @@
 <template>
   <div class="container">
     <div class="topbar">
-      <a class="button" href="#">Save</a>
-      <a class="button" href="#">Unity Export</a>
-      <a class="button" href="#">Zip Export</a>
+      <a class="button" href="#" @click="saveProject()">Save</a>
+      <a class="button" href="#">Save As</a>
+      <a class="button" href="#" @click="loadProject()">Load</a>
+
+      <a class="right button" href="#">Unity Export</a>
+      <a class="right button" href="#">Zip Export</a>
     </div>
     <golden-layout class="hscreen" @itemCreated="itemCreated" :headerHeight="30">
       <gl-row>
@@ -69,6 +72,7 @@ body {
   flex-grow: 0;
   /* flex-basis: 100px; */
   padding: 0.5em;
+  overflow: hidden;
 }
 
 .button {
@@ -88,6 +92,10 @@ body {
 
 .button:active {
   background: #555;
+}
+
+.right {
+  float: right;
 }
 
 .hscreen {
@@ -121,13 +129,17 @@ import EditorView from "@/views/Editor.vue";
 import LibraryView from "@/views/Library.vue";
 import { Editor } from "@/lib/editortest";
 import { View3D } from "@/lib/view3d";
-import { createLibrary } from "@/lib/library/libraryv1";
+import { createLibrary as createV1Library } from "@/lib/library/libraryv1";
 import NodePropertiesView from "./views/NodeProperties.vue";
 import Preview2D from "./views/Preview2D.vue";
 import Preview3D from "./views/Preview3D.vue";
 import { DesignerLibrary } from "./lib/designer/library";
 import { DesignerNode } from "./lib/designer/designernode";
 import { Designer } from "./lib/designer";
+import { Project, ProjectManager } from "./lib/project";
+//import libv1 from "./lib/library/libraryv1";
+const remote = require("electron").remote;
+const { dialog } = remote;
 
 @Component({
   components: {
@@ -147,11 +159,15 @@ export default class App extends Vue {
 
   designer!: Designer;
 
+  project: Project;
+
   constructor() {
     super();
 
     this.editor = new Editor();
-    this.library = createLibrary();
+    this.library = createV1Library();
+
+    this.project = new Project();
   }
 
   created() {}
@@ -240,5 +256,44 @@ export default class App extends Vue {
   resizeCanvas() {
     console.log("resize!");
   }
+
+  saveProject() {
+    var data = this.editor.save();
+    console.log(data);
+    this.project.data = data;
+
+    // if project has no name then it hasnt been saved yet
+    if (this.project.name == null) {
+      dialog.showSaveDialog(remote.getCurrentWindow(), {}, path => {
+        //console.log(path);
+
+        this.project.name = path.replace(/^.*[\\\/]/, "");
+        this.project.path = path;
+
+        ProjectManager.save(path, this.project);
+        remote.getCurrentWindow().setTitle(this.project.name);
+      });
+    } else {
+      ProjectManager.save(this.project.path, this.project);
+    }
+  }
+
+  loadProject() {
+    // ask if current project should be saved
+    dialog.showOpenDialog(remote.getCurrentWindow(), {}, (paths, bookmarks) => {
+      let path = paths[0];
+
+      let project = ProjectManager.load(path);
+      console.log(project);
+      remote.getCurrentWindow().setTitle(project.name);
+      this.editor.load(project.data, this.library);
+
+      this.project = project;
+    });
+  }
+
+  exportUnity() {}
+
+  exportZip() {}
 }
 </script>

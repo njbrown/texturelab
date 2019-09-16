@@ -621,6 +621,7 @@ export class Designer
 
     static load(data:any, lib:DesignerLibrary) : Designer
     {
+        console.log(data);
         var d = new Designer();
         var nodes = data["nodes"];
         for(let node of nodes) {
