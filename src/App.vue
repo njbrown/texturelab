@@ -1,13 +1,13 @@
 <template>
   <div class="container">
-    <div class="topbar">
+    <!-- <div class="topbar">
       <a class="button" href="#" @click="saveProject()">Save</a>
       <a class="button" href="#">Save As</a>
       <a class="button" href="#" @click="loadProject()">Load</a>
 
       <a class="right button" href="#">Unity Export</a>
       <a class="right button" href="#">Zip Export</a>
-    </div>
+    </div>-->
     <golden-layout class="hscreen" @itemCreated="itemCreated" :headerHeight="30">
       <gl-row>
         <gl-col width="25">
@@ -109,7 +109,7 @@ body {
 
 .container {
   display: flex;
-  height: 100vh;
+  height: calc(100vh - 30px);
   flex-direction: column;
 }
 
@@ -137,6 +137,7 @@ import { DesignerLibrary } from "./lib/designer/library";
 import { DesignerNode } from "./lib/designer/designernode";
 import { Designer } from "./lib/designer";
 import { Project, ProjectManager } from "./lib/project";
+import { Titlebar, Color } from "custom-electron-titlebar";
 //import libv1 from "./lib/library/libraryv1";
 const remote = require("electron").remote;
 const { dialog } = remote;
@@ -161,6 +162,8 @@ export default class App extends Vue {
 
   project: Project;
 
+  isMenuSetup: boolean = false;
+
   constructor() {
     super();
 
@@ -173,6 +176,7 @@ export default class App extends Vue {
   created() {}
 
   mounted() {
+    this.setupMenu();
     const canv = <HTMLCanvasElement>document.getElementById("editor");
     canv.ondrop = evt => {
       evt.preventDefault();
@@ -215,6 +219,17 @@ export default class App extends Vue {
       requestAnimationFrame(draw);
     };
     requestAnimationFrame(draw);
+  }
+
+  setupMenu() {
+    if (this.isMenuSetup) return;
+    let titleBar = new Titlebar({
+      backgroundColor: Color.fromHex("#333333"),
+      icon: "./favicon.svg",
+      shadow: true
+    });
+
+    this.isMenuSetup = true;
   }
 
   itemCreated(item: any) {
