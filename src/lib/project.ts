@@ -1,10 +1,10 @@
 import fs from "fs";
 
 export class Project {
-  name: string;
-  path: string;
+  name: string = null;
+  path: string = null;
 
-  data: object;
+  data: object = null;
 }
 
 export class ProjectManager {

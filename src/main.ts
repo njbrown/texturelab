@@ -16,8 +16,15 @@ import store from "./store";
 Vue.config.productionTip = false;
 Vue.use(vgl);
 
+import { Titlebar, Color } from "custom-electron-titlebar";
+let titleBar = new Titlebar({
+  backgroundColor: Color.fromHex("#333333"),
+  icon: "./favicon.svg",
+  shadow: true
+});
+
 new Vue({
-	router,
-	store,
-	render: h => h(App)
+  router,
+  store,
+  render: h => h(App)
 }).$mount("#app");

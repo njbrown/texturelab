@@ -138,9 +138,11 @@ import { DesignerNode } from "./lib/designer/designernode";
 import { Designer } from "./lib/designer";
 import { Project, ProjectManager } from "./lib/project";
 import { Titlebar, Color } from "custom-electron-titlebar";
+import { MenuCommands } from "./menu";
 //import libv1 from "./lib/library/libraryv1";
-const remote = require("electron").remote;
-const { dialog } = remote;
+const electron = require("electron");
+const remote = electron.remote;
+const { dialog, app, BrowserWindow, Menu } = remote;
 
 @Component({
   components: {
@@ -173,7 +175,37 @@ export default class App extends Vue {
     this.project = new Project();
   }
 
-  created() {}
+  created() {
+    electron.ipcRenderer.on(MenuCommands.FileNew, (evt, arg) => {
+      this.newProject();
+    });
+    electron.ipcRenderer.on(MenuCommands.FileOpen, (evt, arg) => {
+      this.openProject();
+    });
+    electron.ipcRenderer.on(MenuCommands.FileSave, (evt, arg) => {
+      this.saveProject();
+    });
+    electron.ipcRenderer.on(MenuCommands.FileSaveAs, (evt, arg) => {
+      this.saveProject(false);
+    });
+
+    electron.ipcRenderer.on(MenuCommands.ExportZip, (evt, arg) => {
+      this.exportZip();
+    });
+    electron.ipcRenderer.on(MenuCommands.ExportUnity, (evt, arg) => {
+      this.exportUnity();
+    });
+
+    electron.ipcRenderer.on(MenuCommands.HelpTutorials, (evt, arg) => {
+      this.showTutorials();
+    });
+    electron.ipcRenderer.on(MenuCommands.HelpAbout, (evt, arg) => {
+      this.showAboutDialog();
+    });
+    electron.ipcRenderer.on(MenuCommands.HelpSubmitBug, (evt, arg) => {
+      this.submitBugs();
+    });
+  }
 
   mounted() {
     this.setupMenu();
@@ -223,11 +255,12 @@ export default class App extends Vue {
 
   setupMenu() {
     if (this.isMenuSetup) return;
-    let titleBar = new Titlebar({
-      backgroundColor: Color.fromHex("#333333"),
-      icon: "./favicon.svg",
-      shadow: true
-    });
+
+    // let titleBar = new Titlebar({
+    //   backgroundColor: Color.fromHex("#333333"),
+    //   icon: "./favicon.svg",
+    //   shadow: true
+    // });
 
     this.isMenuSetup = true;
   }
@@ -272,13 +305,18 @@ export default class App extends Vue {
     console.log("resize!");
   }
 
-  saveProject() {
+  newProject() {
+    // reset states of all components
+    // load default scene
+  }
+
+  saveProject(saveAs: boolean = false) {
     var data = this.editor.save();
     console.log(data);
     this.project.data = data;
 
     // if project has no name then it hasnt been saved yet
-    if (this.project.name == null) {
+    if (this.project.path == null || saveAs) {
       dialog.showSaveDialog(remote.getCurrentWindow(), {}, path => {
         //console.log(path);
 
@@ -293,7 +331,7 @@ export default class App extends Vue {
     }
   }
 
-  loadProject() {
+  openProject() {
     // ask if current project should be saved
     dialog.showOpenDialog(remote.getCurrentWindow(), {}, (paths, bookmarks) => {
       let path = paths[0];
@@ -307,8 +345,16 @@ export default class App extends Vue {
     });
   }
 
+  loadSample(name: string) {}
+
   exportUnity() {}
 
   exportZip() {}
+
+  showTutorials() {}
+
+  showAboutDialog() {}
+
+  submitBugs() {}
 }
 </script>
