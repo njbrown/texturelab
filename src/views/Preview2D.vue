@@ -1,9 +1,9 @@
 <template>
   <div style="height:100%">
     <div style="height:2em;">
-      <a class="btn" href="#" @click="saveTexture()">S</a>
-      <a class="btn" href="#" @click="toggleNineTexures()">9</a>
-      <a class="btn" href="#" @click="centerTexture()">C</a>
+      <a class="btn" href="#" @click="saveTexture()">Save</a>
+      <a :class="{'btn':true, 'toggled':isTiling}" href="#" @click="toggleNineTexures()">Tile</a>
+      <a class="btn" href="#" @click="centerTexture()">Center</a>
     </div>
     <canvas id="_2dpreview" ref="canvas" style="display:block;"></canvas>
   </div>
@@ -80,6 +80,12 @@ export default {
       // todo: center texture in canvas
       this.dragZoom.centerImage();
     }
+  },
+
+  computed: {
+    isTiling() {
+      return this.dragZoom && this.dragZoom.drawMode == DrawMode.Nine;
+    }
   }
 };
 
@@ -103,11 +109,12 @@ function fitCanvasToContainer(canvas) {
 .btn {
   text-align: center;
   height: 1.6em;
-  width: 1.6em;
+  /* width: 1.6em; */
+  border-radius: 2px;
   line-height: 1.6em;
   display: block;
   float: left;
-  padding: 0.1em;
+  padding: 0.1em 0.5em;
   margin: 0.1em;
   text-decoration: none;
   background: #666;
@@ -116,5 +123,9 @@ function fitCanvasToContainer(canvas) {
 
 .btn:hover {
   background: #999;
+}
+
+.toggled {
+  background: #444;
 }
 </style>
