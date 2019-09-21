@@ -163,9 +163,11 @@ export class View3D {
     }
     if (channelName == "metalness") {
       this.material.metalnessMap = null;
+      this.material.metalness = 0;
     }
     if (channelName == "roughness") {
       this.material.roughnessMap = null;
+      this.material.roughness = 0.5;
     }
     if (channelName == "height") {
       this.material.displacementMap = null;
