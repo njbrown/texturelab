@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 import { OrbitControls } from "three-orbitcontrols-ts";
 import { DesignerNode } from "./designer/designernode";
 import { ImageCanvas } from "./designer/imagecanvas";
@@ -9,6 +10,7 @@ import { ImageCanvas } from "./designer/imagecanvas";
 // https://github.com/nicolaspanel/three-orbitcontrols-ts/issues/1
 // https://github.com/nicolaspanel/three-orbitcontrols-ts/issues/7
 // "three-orbitcontrols-ts": "git+https://git@github.com/nicolaspanel/three-orbitcontrols-ts.git",
+// https://stackoverflow.com/questions/16334505/how-to-load-obj-model-with-three-js-in-typescript?rq=1
 
 export class View3D {
   private camera!: THREE.PerspectiveCamera;
@@ -19,7 +21,8 @@ export class View3D {
       //color: 0x3F51B5,
       color: 0xffffff,
       roughness: 0.5,
-      metalness: 0.0
+      metalness: 0.0,
+      side: THREE.DoubleSide
     }
   );
 
@@ -27,6 +30,12 @@ export class View3D {
   private controls: OrbitControls;
   // texture repeat
   private repeat: number = 4;
+
+  // geometry
+  private sphereGeom = new THREE.SphereGeometry(0.7, 64, 64);
+  private cubeGeom = new THREE.BoxGeometry();
+  private planeGeom = new THREE.PlaneGeometry(1, 1, 100, 100);
+  private cylinderGeom = new THREE.CylinderGeometry(0.5, 0.5, 1, 32, 32);
 
   setCanvas(el: HTMLCanvasElement) {
     this.setupRenderer(el);
@@ -43,8 +52,11 @@ export class View3D {
     this.setupOrbitControls(el);
     this.setupLighting();
 
-    const geometry = new THREE.SphereGeometry(1, 64, 64);
-    this.model = new THREE.Mesh(geometry, this.material);
+    //const geometry = new THREE.SphereGeometry(1, 64, 64);
+    this.model = new THREE.Mesh(this.sphereGeom, this.material);
+
+    // let loader = new THREE.ObjectLoader();
+    // loader.load("app://./")
 
     this.scene.add(this.model);
 
@@ -236,5 +248,49 @@ export class View3D {
     this.material.displacementMap = tex;
     this.material.displacementScale = 0.5;
     this.material.needsUpdate = true;
+  }
+
+  setRepeat(repeat: number) {
+    this.repeat = repeat;
+
+    const mat = this.material;
+    if (mat.map) {
+      mat.map.repeat.set(repeat, repeat);
+      mat.map.needsUpdate = true;
+    }
+
+    if (mat.normalMap) {
+      mat.normalMap.repeat.set(repeat, repeat);
+      mat.normalMap.needsUpdate = true;
+    }
+
+    if (mat.metalnessMap) {
+      mat.metalnessMap.repeat.set(repeat, repeat);
+      mat.metalnessMap.needsUpdate = true;
+    }
+
+    if (mat.roughnessMap) {
+      mat.roughnessMap.repeat.set(repeat, repeat);
+      mat.roughnessMap.needsUpdate = true;
+    }
+
+    if (mat.displacementMap) {
+      mat.displacementMap.repeat.set(repeat, repeat);
+      mat.displacementMap.needsUpdate = true;
+    }
+  }
+
+  setModel(modelName: string) {
+    if (this.model) this.scene.remove(this.model);
+
+    let geom: THREE.Geometry;
+    if (modelName == "sphere") geom = this.sphereGeom;
+    if (modelName == "cube") geom = this.cubeGeom;
+    if (modelName == "plane") geom = this.planeGeom;
+    if (modelName == "cylinder") geom = this.cylinderGeom;
+    // crash if none is valid
+
+    this.model = new THREE.Mesh(geom, this.material);
+    this.scene.add(this.model);
   }
 }

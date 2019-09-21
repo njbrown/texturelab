@@ -1,10 +1,23 @@
 <template>
   <div style="height:100%">
     <div style="height:2em;">
-      <a class="btn" href="#" @click="setShape('sphere')">S</a>
+      <!-- <a class="btn" href="#" @click="setShape('sphere')">S</a>
       <a class="btn" href="#" @click="setShape('cube')">C</a>
       <a class="btn" href="#" @click="setShape('plane')">P</a>
-      <a class="btn" href="#" @click="setShape('cylinder')">C</a>
+      <a class="btn" href="#" @click="setShape('cylinder')">C</a>-->
+      <select class="enum" @change="setShape">
+        <option value="sphere">Sphere</option>
+        <option value="cube">Cube</option>
+        <option value="plane">Plane</option>
+        <option value="cylinder">Cylinder</option>
+      </select>
+
+      <select class="enum right" @change="setTiling">
+        <option value="1">Tiling: 1x</option>
+        <option value="2">Tiling: 2x</option>
+        <option value="3">Tiling: 3x</option>
+        <option value="4">Tiling: 4x</option>
+      </select>
     </div>
     <canvas id="_3dpreview" ref="canvas" style="display:block;"></canvas>
   </div>
@@ -58,10 +71,17 @@ export default {
       // repaint
       if (this.view3d)
         this.view3d.resize(this.$refs.canvas.width, this.$refs.canvas.height);
+    },
+    setShape(evt) {
+      // todo: set 3d model
+      console.log("set model: ", evt.target.value);
+      this.view3d.setModel(evt.target.value);
+    },
+    setTiling(evt) {
+      // todo: set 3d model
+      console.log("set repeat: ", evt.target.value);
+      this.view3d.setRepeat(parseInt(evt.target.value));
     }
-  },
-  setShape(name) {
-    // todo: set 3d model
   }
 };
 
@@ -98,5 +118,18 @@ function fitCanvasToContainer(canvas) {
 
 .btn:hover {
   background: #999;
+}
+
+.enum {
+  margin-top: 0.4em;
+  border: solid white 1px;
+  border-radius: 2px;
+  color: white;
+  background: #222;
+  padding: 4px;
+}
+
+.right {
+  float: right;
 }
 </style>
