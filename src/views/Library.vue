@@ -1,19 +1,19 @@
 <template>
-  <div id="library-view" class="ui container" style="padding:1em;">
-    <div class style="padding-bottom:1em; display:flex;">
+  <div class="library-container">
+    <div class style="padding-bottom:1em; display:flex;margin:0.5em;">
       <div class="search-container">
-        <input type="text" placeholder="Filter Nodes.." v-model="filter" />
+        <input type="text" placeholder="Filter.." v-model="filter" />
       </div>
-      <div class="size-container">
+      <!-- <div class="size-container">
         <select>
           <option>Small Icons</option>
           <option>Medium Icons</option>
           <option>Large Icons</option>
           <option>Exra Large Icons</option>
         </select>
-      </div>
+      </div>-->
     </div>
-    <div class>
+    <div class="node-list">
       <span
         v-for="item in filteredList"
         v-on:click="addNode(item.name)"
@@ -108,17 +108,24 @@ export default class LibraryView extends Vue {
   text-decoration: none;
 }
 
+.node-list {
+  overflow-y: scroll;
+}
+
 .search-container {
   flex-grow: 1;
 }
 
 .search-container input {
-  width: calc(100% - 2em);
+  /* width: calc(100% - 2em); */
+  width: calc(100% - 1em);
+  padding: 1em;
   height: 1.5em;
   padding: 4px;
   margin: 0;
   border-radius: 3px;
-  border: solid black 1px;
+  /* border: solid #999 1px; */
+  border: 0;
   color: white;
   background: #999;
 }
@@ -136,5 +143,11 @@ export default class LibraryView extends Vue {
   color: white;
   background: #222;
   padding: 4px;
+}
+
+.library-container {
+  overflow: hidden;
+  height: 100%;
+  box-sizing: border-box;
 }
 </style>
