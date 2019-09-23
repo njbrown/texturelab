@@ -81,6 +81,11 @@ export default {
       // todo: set 3d model
       console.log("set repeat: ", evt.target.value);
       this.view3d.setRepeat(parseInt(evt.target.value));
+    },
+    reset() {
+      // clear all textures
+      // reset camera position
+      this.view3d.reset();
     }
   }
 };

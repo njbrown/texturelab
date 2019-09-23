@@ -309,6 +309,14 @@ export default class App extends Vue {
   newProject() {
     // reset states of all components
     // load default scene
+    (this.$refs.preview3d as any).reset();
+    (this.$refs.preview2d as any).reset();
+
+    this.editor.createNewTexture();
+    this.library = this.editor.library;
+
+    this.project.name = "New Texture";
+    this.project.path = null;
   }
 
   saveProject(saveAs: boolean = false) {

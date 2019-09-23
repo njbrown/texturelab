@@ -79,6 +79,10 @@ export default {
     centerTexture() {
       // todo: center texture in canvas
       this.dragZoom.centerImage();
+    },
+    reset() {
+      this.dragZoom.centerImage();
+      this.dragZoom.setImage(null);
     }
   },
 
