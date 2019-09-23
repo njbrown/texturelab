@@ -29,6 +29,7 @@ import { DesignerLibrary } from "../designer/library";
 
 export function createLibrary() {
   var lib = new DesignerLibrary();
+  lib.versionName = "v1";
   lib.addNode("brickgenerator", "Brick Generator", BrickGeneratorNode);
   lib.addNode("normalmap", "Normal Map", NormalMapNode);
   lib.addNode("cell", "Cell", CellNode);

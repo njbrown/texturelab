@@ -8,6 +8,7 @@ export class DesignerNodeFactory {
 
 // holds list of node factories
 export class DesignerLibrary {
+  versionName: string;
   nodes = new Array();
 
   // https://www.snip2code.com/Snippet/685188/Create-instance-of-generic-type-on-TypeS
@@ -25,6 +26,10 @@ export class DesignerLibrary {
 
     //this.nodes.push(factory);
     this.nodes[name] = factory;
+  }
+
+  getVersionName() {
+    return this.versionName;
   }
 
   public create(name: string): DesignerNode {

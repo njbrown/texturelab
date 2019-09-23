@@ -11,6 +11,8 @@ import { NodeGraphicsItem } from "./scene/nodegraphicsitem";
 import { SocketType } from "./scene/socketgraphicsitem";
 import { ImageCanvas } from "./designer/imagecanvas";
 
+import { createLibrary as createV1Library } from "@/lib/library/libraryv1";
+
 function hexToRgb(hex) {
   var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
@@ -62,6 +64,7 @@ export enum DisplayChannel {
 export class Editor {
   canvas: HTMLCanvasElement;
 
+  library: DesignerLibrary;
   graph: NodeScene;
   designer: Designer;
   selectedDesignerNode: DesignerNode;
@@ -181,6 +184,7 @@ export class Editor {
   // creates new texture
   // requires canvas to be already set
   createNewTexture() {
+    this.library = createV1Library();
     this.setDesigner(new Designer());
     this.setScene(new NodeScene(this.canvas));
   }
@@ -500,9 +504,16 @@ export class Editor {
     if (this.graph) this.graph.draw();
   }
 
-  load(data: any, lib: DesignerLibrary) {
+  load(data: any) {
+    let library;
+    if (!data["libraryVersion"]) {
+      library = createV1Library();
+    } else {
+      // library = this.createLibrary(data["libraryVersion"]);
+      library = createV1Library();
+    }
     // load scene
-    var d = Designer.load(data, lib);
+    var d = Designer.load(data, library);
 
     // load graph
     var g = NodeScene.load(d, data["scene"], this.canvas);
@@ -554,6 +565,9 @@ export class Editor {
       //displayNodes: this.displayNodes,
       textureChannels: textureChannels
     };
+
+    //data["libraryVersion"] = this.library.getVersionName();
+    data["libraryVersion"] = "v1";
 
     return data;
   }

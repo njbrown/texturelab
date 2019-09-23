@@ -40,7 +40,11 @@
             />
           </gl-component>
           <gl-component title="Library" :closable="false">
-            <library-view :editor="this.editor" :library="this.library" />
+            <library-view
+              :editor="this.editor"
+              :library="this.library"
+              v-if="this.library != null"
+            />
           </gl-component>
           <!-- <gl-component title="Texture Properties" class="test-component" :closable="false"></gl-component> -->
         </gl-col>
@@ -170,7 +174,7 @@ export default class App extends Vue {
     super();
 
     this.editor = new Editor();
-    this.library = createV1Library();
+    this.library = null;
 
     this.project = new Project();
   }
@@ -240,7 +244,8 @@ export default class App extends Vue {
     //this.editor.set3DScene(scene3D);
     (this.$refs.preview3d as any).setEditor(this.editor);
 
-    this.editor.createNewTexture();
+    //this.editor.createNewTexture();
+    this.newProject();
 
     // start animation
     const draw = () => {
@@ -348,9 +353,10 @@ export default class App extends Vue {
       let project = ProjectManager.load(path);
       console.log(project);
       remote.getCurrentWindow().setTitle(project.name);
-      this.editor.load(project.data, this.library);
+      this.editor.load(project.data);
 
       this.project = project;
+      this.library = this.editor.library;
     });
   }
 

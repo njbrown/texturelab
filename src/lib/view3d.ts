@@ -295,4 +295,18 @@ export class View3D {
     this.model = new THREE.Mesh(geom, this.material);
     this.scene.add(this.model);
   }
+
+  reset() {
+    // clear all textures
+    // reset camera position
+    this.material = new THREE.MeshStandardMaterial({
+      //color: 0x3F51B5,
+      color: 0xffffff,
+      roughness: 0.5,
+      metalness: 0.0,
+      side: THREE.DoubleSide
+    });
+
+    (this.model as THREE.Mesh).material = this.material;
+  }
 }

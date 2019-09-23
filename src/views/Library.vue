@@ -14,21 +14,23 @@
       </div>-->
     </div>
     <div class="node-list">
-      <span
-        v-for="item in filteredList"
-        v-on:click="addNode(item.name)"
-        v-on:dragstart="dragStart($event, item.name)"
-        :key="item.name"
-        class="libcard"
-        href="#"
-        draggable="true"
-      >
-        <div class="thumbnail">
-          <!-- <img v-bind:src="calcImagePath(item.name)" class="ui fluid image" /> -->
-          <!-- <span class="thumbnail"></span> -->
-        </div>
-        <div class="node-name">{{ item.displayName }}</div>
-      </span>
+      <div style="overflow:hidden;">
+        <span
+          v-for="item in filteredList"
+          v-on:click="addNode(item.name)"
+          v-on:dragstart="dragStart($event, item.name)"
+          :key="item.name"
+          class="libcard"
+          href="#"
+          draggable="true"
+        >
+          <div class="thumbnail">
+            <!-- <img v-bind:src="calcImagePath(item.name)" class="ui fluid image" /> -->
+            <!-- <span class="thumbnail"></span> -->
+          </div>
+          <div class="node-name">{{ item.displayName }}</div>
+        </span>
+      </div>
     </div>
   </div>
 </template>
@@ -110,6 +112,7 @@ export default class LibraryView extends Vue {
 
 .node-list {
   overflow-y: scroll;
+  flex: 1 1 auto;
 }
 
 .search-container {
@@ -121,6 +124,7 @@ export default class LibraryView extends Vue {
   width: calc(100% - 1em);
   padding: 1em;
   height: 1.5em;
+  flex: 0 1 auto;
   padding: 4px;
   margin: 0;
   border-radius: 3px;
@@ -149,5 +153,7 @@ export default class LibraryView extends Vue {
   overflow: hidden;
   height: 100%;
   box-sizing: border-box;
+  display: flex;
+  flex-flow: column;
 }
 </style>
