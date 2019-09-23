@@ -16,7 +16,7 @@
         <option value="1">Tiling: 1x</option>
         <option value="2">Tiling: 2x</option>
         <option value="3">Tiling: 3x</option>
-        <option value="4">Tiling: 4x</option>
+        <option value="4" selected>Tiling: 4x</option>
       </select>
     </div>
     <canvas id="_3dpreview" ref="canvas" style="display:block;"></canvas>
