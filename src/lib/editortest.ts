@@ -100,6 +100,14 @@ export class Editor {
     this.selectedDesignerNode = null;
   }
 
+  getImageWidth() {
+    return this.designer.width
+  }
+
+  getImageHeight() {
+    return this.designer.height
+  }
+
   assignNodeToTextureChannel(nodeId: string, channelName: string) {
     // only one node can be assigned to a channel
     if (
@@ -159,6 +167,21 @@ export class Editor {
     //   }
     // }
   }
+
+  hasTextureChannel(channelName: string) {
+    return this.textureChannels.hasOwnProperty(channelName);
+  }
+
+  getChannelCanvasImage(channelName: string) {
+    if (this.hasTextureChannel(channelName)) {
+      console.log(this.textureChannels[channelName]);
+      let dnode = this.textureChannels[channelName];
+      return this.graph.getNodeById(dnode.id).imageCanvas;
+    }
+
+    return null;
+  }
+
   /*
     constructor(canvas:HTMLCanvasElement, preview2D:HTMLCanvasElement, propHolder : HTMLElement, varHolder : HTMLElement, scene3D:any)
     {

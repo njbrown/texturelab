@@ -143,7 +143,9 @@ import { Designer } from "./lib/designer";
 import { Project, ProjectManager } from "./lib/project";
 import { Titlebar, Color } from "custom-electron-titlebar";
 import { MenuCommands } from "./menu";
+import { unityExport } from "@/lib/export/unityexporter.js";
 //import libv1 from "./lib/library/libraryv1";
+import fs from "fs";
 const electron = require("electron");
 const remote = electron.remote;
 const { dialog, app, BrowserWindow, Menu } = remote;
@@ -193,11 +195,11 @@ export default class App extends Vue {
       this.saveProject(false);
     });
 
-    electron.ipcRenderer.on(MenuCommands.ExportZip, (evt, arg) => {
-      this.exportZip();
+    electron.ipcRenderer.on(MenuCommands.ExportZip, async (evt, arg) => {
+      await this.exportZip();
     });
-    electron.ipcRenderer.on(MenuCommands.ExportUnity, (evt, arg) => {
-      this.exportUnity();
+    electron.ipcRenderer.on(MenuCommands.ExportUnity, async (evt, arg) => {
+      await this.exportUnity();
     });
 
     electron.ipcRenderer.on(MenuCommands.HelpTutorials, (evt, arg) => {
@@ -322,6 +324,8 @@ export default class App extends Vue {
 
     this.project.name = "New Texture";
     this.project.path = null;
+
+    // todo: set title
   }
 
   saveProject(saveAs: boolean = false) {
@@ -362,7 +366,18 @@ export default class App extends Vue {
 
   loadSample(name: string) {}
 
-  exportUnity() {}
+  async exportUnity() {
+    let buffer = await unityExport(this.editor, this.project.name);
+    console.log(buffer);
+    dialog.showSaveDialog(remote.getCurrentWindow(), {}, path => {
+      if (!path) return;
+
+      fs.writeFile(path, buffer, function(err) {
+        //console.log(err);
+        if (err) alert("Error exporting texture: " + err);
+      });
+    });
+  }
 
   exportZip() {}
 
