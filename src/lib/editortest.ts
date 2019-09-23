@@ -507,32 +507,52 @@ export class Editor {
     // load graph
     var g = NodeScene.load(d, data["scene"], this.canvas);
 
-    // load editor data
-    if (data["editor"] != null) {
-      var e = data["editor"];
-      console.log("loading editor data");
-      console.log(e.displayNodes);
-
-      this.displayNodes.albedoNode = e.displayNodes.albedoNode;
-      this.displayNodes.metallicNode = e.displayNodes.metallicNode;
-      this.displayNodes.normalNode = e.displayNodes.normalNode;
-      this.displayNodes.roughnessNode = e.displayNodes.roughnessNode;
-      this.displayNodes.heightNode = e.displayNodes.heightNode;
-    }
-
     //todo: properly destroy existing graph
 
     //this.designer = d;
     //this.graph = g;
     this.setDesigner(d);
     this.setScene(g);
+
+    // assign each node to it's texture channel
+    // it's expected at this point that the 3d preview should already
+    // have the texturechannel callbacks assigned
+
+    // load editor data
+    if (data["editor"] != null) {
+      var e = data["editor"];
+      // console.log("loading editor data");
+      // console.log(e.displayNodes);
+
+      // this.displayNodes.albedoNode = e.displayNodes.albedoNode;
+      // this.displayNodes.metallicNode = e.displayNodes.metallicNode;
+      // this.displayNodes.normalNode = e.displayNodes.normalNode;
+      // this.displayNodes.roughnessNode = e.displayNodes.roughnessNode;
+      // this.displayNodes.heightNode = e.displayNodes.heightNode;
+
+      for (let channelName in e.textureChannels) {
+        if (!e.textureChannels.hasOwnProperty(channelName)) continue;
+        console.log(e);
+        let node = this.graph.getNodeById(e.textureChannels[channelName]);
+        if (node) this.assignNodeToTextureChannel(node.id, channelName);
+      }
+
+      this.textureChannels = e.textureChannels || {};
+    }
   }
 
   save(): any {
     var data = this.designer.save();
     data["scene"] = this.graph.save();
+
+    let textureChannels = {};
+    for (let channelName in this.textureChannels) {
+      textureChannels[channelName] = this.textureChannels[channelName].id;
+    }
+
     data["editor"] = {
-      displayNodes: this.displayNodes
+      //displayNodes: this.displayNodes,
+      textureChannels: textureChannels
     };
 
     return data;

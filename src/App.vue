@@ -224,7 +224,6 @@ export default class App extends Vue {
       console.log("drop");
     };
     this.editor.setSceneCanvas(canv);
-    this.editor.createNewTexture();
 
     this.designer = this.editor.designer;
     this.editor.onnodeselected = node => {
@@ -240,6 +239,8 @@ export default class App extends Vue {
     // this.view3d.setCanvas(_3dview);
     //this.editor.set3DScene(scene3D);
     (this.$refs.preview3d as any).setEditor(this.editor);
+
+    this.editor.createNewTexture();
 
     // start animation
     const draw = () => {
