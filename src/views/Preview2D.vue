@@ -1,7 +1,7 @@
 <template>
   <div style="height:100%">
     <div style="height:2em;">
-      <a class="btn" href="#" @click="saveTexture()">Save</a>
+      <a :class="{'btn':true, 'toggled':!hasImage}" href="#" @click="saveTexture()">Save</a>
       <a :class="{'btn':true, 'toggled':isTiling}" href="#" @click="toggleNineTexures()">Tile</a>
       <a class="btn" href="#" @click="centerTexture()">Center</a>
     </div>
@@ -11,6 +11,11 @@
 
 <script>
 import { DragZoom, DrawMode } from "./preview2d/previewcanvas2d";
+const electron = require("electron");
+const remote = electron.remote;
+const { dialog, app, BrowserWindow, Menu } = remote;
+import fs from "fs";
+var nativeImage = electron.nativeImage;
 
 export default {
   // props: {
@@ -69,6 +74,30 @@ export default {
     },
     saveTexture() {
       // todo: save image as png
+      //console.log(this.hasImage);
+      if (!this.hasImage) return;
+
+      dialog.showSaveDialog(remote.getCurrentWindow(), {}, path => {
+        if (!path) return;
+
+        let img = this.dragZoom.image;
+        let canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        let ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+
+        // Get the DataUrl from the Canvas
+        // https://github.com/mattdesl/electron-canvas-to-buffer/blob/master/index.js
+        const url = canvas.toDataURL("image/png", 1);
+        const nativeImage = electron.nativeImage.createFromDataURL(url);
+        const buffer = nativeImage.toPNG();
+
+        fs.writeFile(path, buffer, function(err) {
+          //console.log(err);
+          if (err) alert("Error saving image: " + err);
+        });
+      });
     },
     toggleNineTexures() {
       // todo: display nine textures instead of one to show tiling
@@ -89,6 +118,9 @@ export default {
   computed: {
     isTiling() {
       return this.dragZoom && this.dragZoom.drawMode == DrawMode.Nine;
+    },
+    hasImage() {
+      return this.dragZoom && this.dragZoom.image != null;
     }
   }
 };

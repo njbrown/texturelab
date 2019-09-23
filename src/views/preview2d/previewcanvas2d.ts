@@ -112,6 +112,7 @@ export class DragZoom {
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.context = this.canvas.getContext("2d");
+    this.image = null;
 
     var self = this;
     canvas.addEventListener("mousemove", function(evt: MouseEvent) {
