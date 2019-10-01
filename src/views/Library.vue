@@ -90,14 +90,20 @@ export default class LibraryView extends Vue {
   width: 100px;
   display: block;
   float: left;
-  margin: 5px;
+  padding: 8px;
   cursor: pointer;
+  border-radius: 4px;
+}
+
+.libcard:hover {
+  background: rgb(0, 0, 0, 0.3);
 }
 
 .thumbnail {
   width: 100px;
   height: 100px;
   background: #ccc;
+  border-radius: 4px;
 }
 
 .node-name {
