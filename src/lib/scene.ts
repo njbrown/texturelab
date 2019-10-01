@@ -1,6 +1,9 @@
 import { ImageCanvas } from "./designer/imagecanvas";
 import { Designer } from "./designer";
-import { NodeGraphicsItem } from "./scene/nodegraphicsitem";
+import {
+	NodeGraphicsItem,
+	NodeGraphicsItemRenderState
+} from "./scene/nodegraphicsitem";
 import { ConnectionGraphicsItem } from "./scene/connectiongraphicsitem";
 import { SocketGraphicsItem, SocketType } from "./scene/socketgraphicsitem";
 import { GraphicsItem } from "./scene/graphicsitem";
@@ -15,6 +18,7 @@ export class NodeScene {
 	conns: ConnectionGraphicsItem[];
 
 	draggedNode?: NodeGraphicsItem;
+	selectedNode: NodeGraphicsItem;
 	hitSocket?: SocketGraphicsItem;
 	hitConnection?: ConnectionGraphicsItem;
 
@@ -175,13 +179,24 @@ export class NodeScene {
 		}
 
 		// draw nodes
-		let nodeState = {
+		let mouse = this.view.getMouseSceneSpace();
+		let mouseX = mouse.x;
+		let mouseY = mouse.y;
+		let nodeState: NodeGraphicsItemRenderState = {
 			hovered: false, // mouse over
 			selected: false // selected node
 		};
 		for (let item of this.nodes) {
-			// calc states
-			item.draw(this.context);
+			// check for selection ( only do this when not dragging anything )
+			if (item == this.selectedNode) nodeState.selected = true;
+			else nodeState.selected = false;
+
+			// check for hover
+			if (item.isPointInside(mouseX, mouseY) && this.hitSocket == null)
+				nodeState.hovered = true;
+			else nodeState.hovered = false;
+
+			item.draw(this.context, nodeState);
 		}
 	}
 
@@ -206,8 +221,15 @@ export class NodeScene {
 				// if there isnt a hit socket then check for a hit node
 				let hitNode: NodeGraphicsItem = this.getHitNode(mouseX, mouseY);
 
-				//move node to stop of stack
-				if (hitNode) this.moveNodeToTop(hitNode);
+				if (hitNode) {
+					//move node to stop of stack
+					this.moveNodeToTop(hitNode);
+
+					// todo: do this properly on mouse release
+					this.selectedNode = hitNode;
+				} else {
+					this.selectedNode = null;
+				}
 
 				this.draggedNode = hitNode;
 				if (this.onnodeselected) {
@@ -313,6 +335,7 @@ export class NodeScene {
 	}
 
 	// hit detection
+	// x and y are scene space
 	getHitNode(x: number, y: number): NodeGraphicsItem {
 		// for (let node of this.nodes) {
 		for (var index = this.nodes.length - 1; index >= 0; index--) {
