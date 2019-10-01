@@ -86,7 +86,7 @@ export class NodeGraphicsItem extends GraphicsItem {
 
 			ctx.beginPath();
 			//ctx.font = "14px monospace";
-			ctx.font = "9px 'Segoe UI'";
+			ctx.font = "bold 9px 'Open Sans'";
 			ctx.fillStyle = "rgb(255,255,255)";
 			let size = ctx.measureText(this.title);
 			let textX = this.centerX() - size.width / 2;
@@ -111,7 +111,7 @@ export class NodeGraphicsItem extends GraphicsItem {
 		if (this.textureChannel) {
 			ctx.beginPath();
 			//ctx.font = "14px monospace";
-			ctx.font = "12px 'Segoe UI'";
+			ctx.font = "12px 'Open Sans'";
 			ctx.fillStyle = "rgb(200, 255, 200)";
 			let size = ctx.measureText(this.textureChannel.toUpperCase());
 			let textX = this.centerX() - size.width / 2;

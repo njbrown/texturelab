@@ -89,8 +89,8 @@ export class SocketGraphicsItem extends GraphicsItem {
 
 		// draw text
 		if (renderState.hovered) {
-			ctx.fillStyle = "rgb(200,200,200)";
-			ctx.font = "9px 'Segoe UI'";
+			ctx.fillStyle = "rgb(150,150,150)";
+			ctx.font = "9px 'Open Sans'";
 			if (this.socketType == SocketType.Out) {
 				let w = ctx.measureText(this.title).width;
 				ctx.fillText(this.title, this.x + this.width + 4, this.y + 12);
