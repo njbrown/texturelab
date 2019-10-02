@@ -13,6 +13,7 @@ export class NodeScene {
 	canvas: HTMLCanvasElement;
 	context!: CanvasRenderingContext2D;
 	contextExtra: any;
+	hasFocus: boolean;
 
 	nodes: NodeGraphicsItem[];
 	conns: ConnectionGraphicsItem[];
@@ -27,6 +28,7 @@ export class NodeScene {
 	onconnectiondestroyed?: (item: ConnectionGraphicsItem) => void;
 	// passes null if no node is selected
 	onnodeselected?: (item: NodeGraphicsItem) => void;
+	onnodedeleted?: (item: NodeGraphicsItem) => void;
 
 	view: SceneView;
 
@@ -34,6 +36,7 @@ export class NodeScene {
 		this.canvas = canvas;
 		this.context = this.canvas.getContext("2d");
 		this.view = new SceneView(canvas);
+		this.hasFocus = false;
 		this.contextExtra = this.context;
 		this.nodes = new Array();
 		this.conns = new Array();
@@ -49,6 +52,25 @@ export class NodeScene {
 		canvas.addEventListener("mouseup", function(evt: MouseEvent) {
 			self.onMouseUp(evt);
 		});
+
+		window.addEventListener("click", function(evt: MouseEvent) {
+			//console.log(evt.target == canvas);
+			if (evt.target == canvas) {
+				self.hasFocus = true;
+			} else {
+				self.hasFocus = false;
+			}
+		});
+
+		window.addEventListener(
+			"keydown",
+			function(evt: KeyboardEvent) {
+				if (evt.key == "Delete" && self.hasFocus && self.selectedNode) {
+					self.deleteNode(self.selectedNode);
+				}
+			},
+			true
+		);
 		// canvas.addEventListener("mousewheel", function(evt: WheelEvent) {
 		//   self.onMouseScroll(evt);
 		// });
@@ -63,6 +85,32 @@ export class NodeScene {
 
 	addNode(item: NodeGraphicsItem) {
 		this.nodes.push(item);
+	}
+
+	deleteNode(item: NodeGraphicsItem) {
+		// delete connections
+		let conns = this.conns;
+		for (let i = this.conns.length - 1; i >= 0; i--) {
+			let con = this.conns[i];
+			if (
+				(con.socketA && con.socketA.node.id == item.id) ||
+				(con.socketB && con.socketB.node.id == item.id)
+			) {
+				this.removeConnection(con);
+			}
+		}
+
+		// remove node from list
+		this.nodes.splice(this.nodes.indexOf(item), 1);
+
+		// if node is selected (which it most likely is), clear it from selection
+		this.selectedNode = null;
+
+		// emit deselection
+		if (this.onnodeselected) this.onnodeselected(null);
+
+		// emit remove event
+		if (this.onnodedeleted) this.onnodedeleted(item);
 	}
 
 	getNodeById(id: string): NodeGraphicsItem {

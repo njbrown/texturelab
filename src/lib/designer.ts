@@ -284,6 +284,22 @@ export class Designer
         return null;
     }
 
+    // todo: double check connections just in case
+    removeNode(nodeId:string):DesignerNode {
+        let node = this.getNodeById(nodeId)
+        if (!node) {
+            return null;
+        }
+
+        this.nodes.splice(this.nodes.indexOf(node), 1);
+
+        // it's safe here to pluck this node right out of the update queue
+        // the connections would have been already removed, triggering
+        // updates for the previously neighbor nodes already
+        while(this.updateList.indexOf(node) !== -1)
+            this.updateList.splice(this.updateList.indexOf(node), 1);
+    }
+
     generateImage(name:string) : HTMLImageElement
     {
         var node:DesignerNode = this.getNodeByName(name);
