@@ -14,6 +14,7 @@ export enum MenuCommands {
 
   ExportZip = "export_zip",
   ExportUnity = "export_unity",
+  ExportUnityZip = "export_unity_zip",
 
   SamplesBrick = "samples_brick",
 
@@ -72,10 +73,16 @@ export function setupMenu() {
             focusedWindow.webContents.send(MenuCommands.ExportZip);
           }
         },
+        // {
+        //   label: "Unity Material",
+        //   click: (item, focusedWindow) => {
+        //     focusedWindow.webContents.send(MenuCommands.ExportUnity);
+        //   }
+        // },
         {
-          label: "Unity Material",
+          label: "Unity (Zip)",
           click: (item, focusedWindow) => {
-            focusedWindow.webContents.send(MenuCommands.ExportUnity);
+            focusedWindow.webContents.send(MenuCommands.ExportUnityZip);
           }
         }
       ]

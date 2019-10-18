@@ -144,6 +144,7 @@ import { Project, ProjectManager } from "./lib/project";
 import { Titlebar, Color } from "custom-electron-titlebar";
 import { MenuCommands } from "./menu";
 import { unityExport } from "@/lib/export/unityexporter.js";
+import { unityZipExport } from "@/lib/export/unityzipexporter.js";
 //import libv1 from "./lib/library/libraryv1";
 import fs from "fs";
 const electron = require("electron");
@@ -198,8 +199,11 @@ export default class App extends Vue {
     electron.ipcRenderer.on(MenuCommands.ExportZip, async (evt, arg) => {
       await this.exportZip();
     });
-    electron.ipcRenderer.on(MenuCommands.ExportUnity, async (evt, arg) => {
-      await this.exportUnity();
+    // electron.ipcRenderer.on(MenuCommands.ExportUnity, async (evt, arg) => {
+    //   await this.exportUnity();
+    // });
+    electron.ipcRenderer.on(MenuCommands.ExportUnityZip, async (evt, arg) => {
+      await this.exportUnityZip();
     });
 
     electron.ipcRenderer.on(MenuCommands.HelpTutorials, (evt, arg) => {
@@ -369,6 +373,19 @@ export default class App extends Vue {
   async exportUnity() {
     let buffer = await unityExport(this.editor, this.project.name);
     console.log(buffer);
+    dialog.showSaveDialog(remote.getCurrentWindow(), {}, path => {
+      if (!path) return;
+
+      fs.writeFile(path, buffer, function(err) {
+        //console.log(err);
+        if (err) alert("Error exporting texture: " + err);
+      });
+    });
+  }
+
+  async exportUnityZip() {
+    let buffer = await unityZipExport(this.editor, this.project.name);
+
     dialog.showSaveDialog(remote.getCurrentWindow(), {}, path => {
       if (!path) return;
 
