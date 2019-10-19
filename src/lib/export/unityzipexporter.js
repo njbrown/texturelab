@@ -2,7 +2,8 @@
 NOTES:
 Unity's mettalic and gloss maps are in one texture.
 */
-import JSZip from "jszip";
+import AdmZip from "adm-zip";
+import electron from "electron";
 
 var TextureType = {
   Default: 0,
@@ -20,25 +21,14 @@ var exporter = {
   normalProgram: null
 };
 
-export function unityZipExport(editor, materialName) {
-  var zip = new JSZip();
-
-  var matData = {
-    name: materialName,
-    keywords: "",
-    albedo_tex: matNullTexTemp,
-    metallicgloss_tex: matNullTexTemp,
-    normal_tex: matNullTexTemp,
-    height_tex: matNullTexTemp
-  };
+export async function unityZipExport(editor, materialName) {
+  let zip = new AdmZip();
 
   // write albedo first
   if (editor.hasTextureChannel("albedo")) {
-    var albedoGuid = newGuid();
-    zip.file(
+    zip.addFile(
       "albedo.png",
-      canvasToBase64(editor.getChannelCanvasImage("albedo").canvas),
-      { base64: true }
+      canvasToBuffer(editor.getChannelCanvasImage("albedo").canvas)
     );
   }
 
@@ -48,9 +38,8 @@ export function unityZipExport(editor, materialName) {
     exporter.canvas.height = normalCanvas.height();
 
     fixNormalMap(exporter, normalCanvas.createTexture(exporter.gl));
-    zip.file("normal.png", canvasToBase64(exporter.canvas), {
-      base64: true
-    });
+
+    zip.addFile("normal.png", canvasToBuffer(exporter.canvas));
   }
 
   if (
@@ -73,13 +62,80 @@ export function unityZipExport(editor, materialName) {
         .createTexture(exporter.gl);
 
     generateMetallicGloss(exporter, mTex, rTex);
-    zip.file("metallic_gloss.png", canvasToBase64(exporter.canvas), {
-      base64: true
-    });
+
+    zip.addFile("metallic_gloss.png", canvasToBuffer(exporter.canvas));
   }
 
-  return zip.generateAsync({ type: "nodebuffer" });
+  if (editor.hasTextureChannel("height")) {
+    zip.addFile(
+      "height.png",
+      canvasToBuffer(editor.getChannelCanvasImage("height").canvas)
+    );
+  }
+
+  return zip;
 }
+
+// merges metallic and inverted roughness map
+// uses a metallic of 0 if no metallic map is provided
+// sets glosiness to 0 by default
+function generateMetallicGloss(exporter, mTex, rTex) {
+  renderToImage(exporter, exporter.metalGlossProgram, [
+    { name: "u_metallicMap", tex: mTex },
+    { name: "u_roughnessMap", tex: rTex }
+  ]);
+}
+
+// inverts normal map
+function fixNormalMap(exporter, tex) {
+  renderToImage(exporter, exporter.normalProgram, [
+    { name: "u_normalMap", tex: tex }
+  ]);
+}
+
+const DEFAULT_VERT = `precision mediump float;
+    
+    attribute vec3 a_pos;
+    attribute vec2 a_texCoord;
+        
+    // the texCoords passed in from the vertex shader.
+    varying vec2 v_texCoord;
+        
+    void main() {
+        gl_Position = vec4(a_pos,1.0);
+        v_texCoord = a_texCoord;
+    }`;
+
+const NORMAl_FRAG = `precision mediump float;
+    varying vec2 v_texCoord;
+    uniform sampler2D u_normalMap;
+        
+    void main() {
+        vec4 norm = texture2D(u_normalMap,vec2(v_texCoord.x, 1.0 - v_texCoord.y));
+        norm.z = 1.0 - norm.z;
+        gl_FragColor = norm;
+    }`;
+
+const METALLICGLOSS_FRAG = `precision mediump float;
+    varying vec2 v_texCoord;
+    uniform sampler2D u_metallicMap;
+    uniform bool u_metallicMapEnabled;
+    uniform sampler2D u_roughnessMap;
+    uniform bool u_roughnessMapEnabled;
+        
+    void main() {
+        vec2 texCoord = vec2(v_texCoord.x, 1.0 - v_texCoord.y);
+        float metal = 0.0;
+        if (u_metallicMapEnabled)
+             metal = texture2D(u_metallicMap,texCoord).r;
+    
+        
+        float gloss = 0.0;
+        if (u_roughnessMapEnabled)
+            gloss = 1.0 - texture2D(u_roughnessMap,texCoord).r;
+    
+        gl_FragColor = vec4(vec3(metal), gloss);
+    }`;
 
 // creates canvas and context
 // creates shaders for converting the the textures
@@ -265,6 +321,15 @@ function canvasToBase64(canvas) {
   // https://code-examples.net/en/q/6f412f
   data = data.replace(/^data:image\/(png|jpg);base64,/, "");
   return data;
+}
+
+function canvasToBuffer(canvas) {
+  // https://github.com/mattdesl/electron-canvas-to-buffer/blob/master/index.js
+  const url = canvas.toDataURL("image/png", 1);
+  const nativeImage = electron.nativeImage.createFromDataURL(url);
+  const buffer = nativeImage.toPNG();
+
+  return buffer;
 }
 
 // todo: cleanup textures!!

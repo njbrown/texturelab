@@ -179,8 +179,11 @@ export class Editor {
 	getChannelCanvasImage(channelName: string) {
 		if (this.hasTextureChannel(channelName)) {
 			console.log(this.textureChannels[channelName]);
-			let dnode = this.textureChannels[channelName];
-			return this.graph.getNodeById(dnode.id).imageCanvas;
+			let dnodeId = this.textureChannels[channelName];
+			let nodeView = this.graph.getNodeById(dnodeId);
+			console.log(nodeView)
+			console.log(this.graph)
+			return nodeView.imageCanvas;
 		}
 
 		return null;

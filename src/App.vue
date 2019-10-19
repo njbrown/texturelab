@@ -145,6 +145,7 @@ import { Titlebar, Color } from "custom-electron-titlebar";
 import { MenuCommands } from "./menu";
 import { unityExport } from "@/lib/export/unityexporter.js";
 import { unityZipExport } from "@/lib/export/unityzipexporter.js";
+import { shell } from "electron";
 //import libv1 from "./lib/library/libraryv1";
 import fs from "fs";
 const electron = require("electron");
@@ -377,23 +378,36 @@ export default class App extends Vue {
       if (!path) return;
 
       fs.writeFile(path, buffer, function(err) {
-        //console.log(err);
         if (err) alert("Error exporting texture: " + err);
       });
     });
   }
 
-  async exportUnityZip() {
-    let buffer = await unityZipExport(this.editor, this.project.name);
+  exportUnityZip() {
+    dialog.showSaveDialog(
+      remote.getCurrentWindow(),
+      {
+        filters: [
+          {
+            name: "Zip File",
+            extensions: ["zip"]
+          }
+        ],
+        defaultPath: "material"
+      },
+      async path => {
+        if (!path) {
+          return;
+        }
 
-    dialog.showSaveDialog(remote.getCurrentWindow(), {}, path => {
-      if (!path) return;
+        console.log(path);
 
-      fs.writeFile(path, buffer, function(err) {
-        //console.log(err);
-        if (err) alert("Error exporting texture: " + err);
-      });
-    });
+        let zip = await unityZipExport(this.editor, this.project.name);
+
+        zip.writeZip(path);
+        remote.shell.showItemInFolder(path);
+      }
+    );
   }
 
   exportZip() {}
