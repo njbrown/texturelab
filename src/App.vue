@@ -1,56 +1,50 @@
 <template>
-  <div class="container">
-    <!-- <div class="topbar">
+  <!-- <div class="topbar">
       <a class="button" href="#" @click="saveProject()">Save</a>
       <a class="button" href="#">Save As</a>
       <a class="button" href="#" @click="loadProject()">Load</a>
 
       <a class="right button" href="#">Unity Export</a>
       <a class="right button" href="#">Zip Export</a>
-    </div>-->
-    <golden-layout class="hscreen" @itemCreated="itemCreated" :headerHeight="30">
-      <gl-row>
-        <gl-col width="25">
-          <gl-component title="2D View" class="test-component" :closable="false">
-            <!-- <canvas width="100" height="100" id="_2dview" /> -->
-            <preview2d ref="preview2d" />
-          </gl-component>
+  </div>-->
+  <golden-layout class="container" @itemCreated="itemCreated" :headerHeight="30" ref="GL">
+    <gl-row>
+      <gl-col width="25">
+        <gl-component title="2D View" class="test-component" :closable="false">
+          <!-- <canvas width="100" height="100" id="_2dview" /> -->
+          <preview2d ref="preview2d" />
+        </gl-component>
 
-          <gl-component title="3D View" class="test-component" :closable="false">
-            <!-- <canvas width="100" height="100" id="_3dview" /> -->
-            <preview3d ref="preview3d" />
-          </gl-component>
-        </gl-col>
+        <gl-component title="3D View" class="test-component" :closable="false">
+          <!-- <canvas width="100" height="100" id="_3dview" /> -->
+          <preview3d ref="preview3d" />
+        </gl-component>
+      </gl-col>
 
-        <gl-col width="55" ref="canvas">
-          <gl-component title="Editor" class="test-component" :closable="false">
-            <canvas width="400" height="400" id="editor" ondragover="event.preventDefault()" />
-          </gl-component>
-          <!-- <gl-component title="Library" height="30" :closable="false">
+      <gl-col width="55" ref="canvas">
+        <gl-component title="Editor" class="test-component" :closable="false">
+          <canvas width="400" height="400" id="editor" ondragover="event.preventDefault()" />
+        </gl-component>
+        <!-- <gl-component title="Library" height="30" :closable="false">
             <library-view :editor="this.editor" :library="this.library" />
-          </gl-component>-->
-        </gl-col>
+        </gl-component>-->
+      </gl-col>
 
-        <gl-col width="20">
-          <gl-component title="Properties" :closable="false">
-            <node-properties-view
-              v-if="this.selectedNode!=null"
-              :editor="this.editor"
-              :node="this.selectedNode"
-            />
-          </gl-component>
-          <gl-component title="Library" :closable="false">
-            <library-view
-              :editor="this.editor"
-              :library="this.library"
-              v-if="this.library != null"
-            />
-          </gl-component>
-          <!-- <gl-component title="Texture Properties" class="test-component" :closable="false"></gl-component> -->
-        </gl-col>
-      </gl-row>
-    </golden-layout>
-  </div>
+      <gl-col width="20">
+        <gl-component title="Properties" :closable="false">
+          <node-properties-view
+            v-if="this.selectedNode!=null"
+            :editor="this.editor"
+            :node="this.selectedNode"
+          />
+        </gl-component>
+        <gl-component title="Library" :closable="false">
+          <library-view :editor="this.editor" :library="this.library" v-if="this.library != null" />
+        </gl-component>
+        <!-- <gl-component title="Texture Properties" class="test-component" :closable="false"></gl-component> -->
+      </gl-col>
+    </gl-row>
+  </golden-layout>
 </template>
 
 <style>
@@ -108,13 +102,14 @@ body {
   /* height: 100%; */
   padding: 0;
   margin: 0;
-  flex-grow: 1;
+  /* flex-grow: 1; */
 }
 
 .container {
-  display: flex;
+  display: block;
+  width: 100vw;
   height: calc(100vh - 30px);
-  flex-direction: column;
+  /* flex-direction: column; */
 }
 
 .glComponent {
@@ -145,6 +140,7 @@ import { Titlebar, Color } from "custom-electron-titlebar";
 import { MenuCommands } from "./menu";
 import { unityExport } from "@/lib/export/unityexporter.js";
 import { unityZipExport } from "@/lib/export/unityzipexporter.js";
+import { zipExport } from "@/lib/export/zipexporter.js";
 import { shell } from "electron";
 //import libv1 from "./lib/library/libraryv1";
 import fs from "fs";
@@ -264,6 +260,11 @@ export default class App extends Vue {
       requestAnimationFrame(draw);
     };
     requestAnimationFrame(draw);
+
+    // properly resize GL
+    window.addEventListener("resize", () => {
+      console.log(this.$refs.GL);
+    });
   }
 
   setupMenu() {
@@ -340,15 +341,27 @@ export default class App extends Vue {
 
     // if project has no name then it hasnt been saved yet
     if (this.project.path == null || saveAs) {
-      dialog.showSaveDialog(remote.getCurrentWindow(), {}, path => {
-        //console.log(path);
+      dialog.showSaveDialog(
+        remote.getCurrentWindow(),
+        {
+          filters: [
+            {
+              name: "TextureLab Texture",
+              extensions: ["texture"]
+            }
+          ],
+          defaultPath: "material"
+        },
+        path => {
+          //console.log(path);
 
-        this.project.name = path.replace(/^.*[\\\/]/, "");
-        this.project.path = path;
+          this.project.name = path.replace(/^.*[\\\/]/, "");
+          this.project.path = path;
 
-        ProjectManager.save(path, this.project);
-        remote.getCurrentWindow().setTitle(this.project.name);
-      });
+          ProjectManager.save(path, this.project);
+          remote.getCurrentWindow().setTitle(this.project.name);
+        }
+      );
     } else {
       ProjectManager.save(this.project.path, this.project);
     }
@@ -356,17 +369,29 @@ export default class App extends Vue {
 
   openProject() {
     // ask if current project should be saved
-    dialog.showOpenDialog(remote.getCurrentWindow(), {}, (paths, bookmarks) => {
-      let path = paths[0];
+    dialog.showOpenDialog(
+      remote.getCurrentWindow(),
+      {
+        filters: [
+          {
+            name: "TextureLab Texture",
+            extensions: ["texture"]
+          }
+        ],
+        defaultPath: "material"
+      },
+      (paths, bookmarks) => {
+        let path = paths[0];
 
-      let project = ProjectManager.load(path);
-      console.log(project);
-      remote.getCurrentWindow().setTitle(project.name);
-      this.editor.load(project.data);
+        let project = ProjectManager.load(path);
+        console.log(project);
+        remote.getCurrentWindow().setTitle(project.name);
+        this.editor.load(project.data);
 
-      this.project = project;
-      this.library = this.editor.library;
-    });
+        this.project = project;
+        this.library = this.editor.library;
+      }
+    );
   }
 
   loadSample(name: string) {}
@@ -410,7 +435,32 @@ export default class App extends Vue {
     );
   }
 
-  exportZip() {}
+  exportZip() {
+    dialog.showSaveDialog(
+      remote.getCurrentWindow(),
+      {
+        filters: [
+          {
+            name: "Zip File",
+            extensions: ["zip"]
+          }
+        ],
+        defaultPath: "material"
+      },
+      async path => {
+        if (!path) {
+          return;
+        }
+
+        console.log(path);
+
+        let zip = await zipExport(this.editor, this.project.name);
+
+        zip.writeZip(path);
+        remote.shell.showItemInFolder(path);
+      }
+    );
+  }
 
   showTutorials() {}
 

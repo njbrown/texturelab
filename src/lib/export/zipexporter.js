@@ -1,7 +1,3 @@
-/*
-NOTES:
-Unity's mettalic and gloss maps are in one texture.
-*/
 import AdmZip from "adm-zip";
 import electron from "electron";
 
@@ -21,56 +17,24 @@ var exporter = {
   normalProgram: null
 };
 
-export async function unityZipExport(editor, materialName) {
+export async function zipExport(editor, materialName) {
   let zip = new AdmZip();
 
   // write albedo first
-  if (editor.hasTextureChannel("albedo")) {
-    zip.addFile(
-      "albedo.png",
-      canvasToBuffer(editor.getChannelCanvasImage("albedo").canvas)
-    );
-  }
+  // if (editor.hasTextureChannel("albedo")) {
+  //   zip.addFile(
+  //     "albedo.png",
+  //     canvasToBuffer(editor.getChannelCanvasImage("albedo").canvas)
+  //   );
+  // }
 
-  if (editor.hasTextureChannel("normal")) {
-    var normalCanvas = editor.getChannelCanvasImage("normal");
-    exporter.canvas.width = normalCanvas.width();
-    exporter.canvas.height = normalCanvas.height();
-
-    fixNormalMap(exporter, normalCanvas.createTexture(exporter.gl));
-
-    zip.addFile("normal.png", canvasToBuffer(exporter.canvas));
-  }
-
-  if (
-    editor.hasTextureChannel("metalness") ||
-    editor.hasTextureChannel("roughness")
-  ) {
-    exporter.canvas.width = editor.getImageWidth();
-    exporter.canvas.height = editor.getImageHeight();
-
-    var mTex = null;
-    if (editor.hasTextureChannel("metalness"))
-      mTex = editor
-        .getChannelCanvasImage("metalness")
-        .createTexture(exporter.gl);
-
-    var rTex = null;
-    if (editor.hasTextureChannel("roughness"))
-      rTex = editor
-        .getChannelCanvasImage("roughness")
-        .createTexture(exporter.gl);
-
-    generateMetallicGloss(exporter, mTex, rTex);
-
-    zip.addFile("metallic_gloss.png", canvasToBuffer(exporter.canvas));
-  }
-
-  if (editor.hasTextureChannel("height")) {
-    zip.addFile(
-      "height.png",
-      canvasToBuffer(editor.getChannelCanvasImage("height").canvas)
-    );
+  for (let channel in editor.textureChannels) {
+    if (editor.textureChannels.hasOwnProperty(channel)) {
+      zip.addFile(
+        channel + ".png",
+        canvasToBuffer(editor.getChannelCanvasImage(channel).canvas)
+      );
+    }
   }
 
   return zip;

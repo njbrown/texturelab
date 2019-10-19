@@ -68,7 +68,7 @@ export function setupMenu() {
       label: "Export",
       submenu: [
         {
-          label: "Zip File",
+          label: "Zip",
           click: (item, focusedWindow) => {
             focusedWindow.webContents.send(MenuCommands.ExportZip);
           }
