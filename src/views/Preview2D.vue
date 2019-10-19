@@ -77,27 +77,39 @@ export default {
       //console.log(this.hasImage);
       if (!this.hasImage) return;
 
-      dialog.showSaveDialog(remote.getCurrentWindow(), {}, path => {
-        if (!path) return;
+      dialog.showSaveDialog(
+        remote.getCurrentWindow(),
+        {
+          filters: [
+            {
+              name: "PNG",
+              extensions: ["png"]
+            }
+          ],
+          defaultPath: "image"
+        },
+        path => {
+          if (!path) return;
 
-        let img = this.dragZoom.image;
-        let canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        let ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0);
+          let img = this.dragZoom.image;
+          let canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          let ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
 
-        // Get the DataUrl from the Canvas
-        // https://github.com/mattdesl/electron-canvas-to-buffer/blob/master/index.js
-        const url = canvas.toDataURL("image/png", 1);
-        const nativeImage = electron.nativeImage.createFromDataURL(url);
-        const buffer = nativeImage.toPNG();
+          // Get the DataUrl from the Canvas
+          // https://github.com/mattdesl/electron-canvas-to-buffer/blob/master/index.js
+          const url = canvas.toDataURL("image/png", 1);
+          const nativeImage = electron.nativeImage.createFromDataURL(url);
+          const buffer = nativeImage.toPNG();
 
-        fs.writeFile(path, buffer, function(err) {
-          //console.log(err);
-          if (err) alert("Error saving image: " + err);
-        });
-      });
+          fs.writeFile(path, buffer, function(err) {
+            //console.log(err);
+            if (err) alert("Error saving image: " + err);
+          });
+        }
+      );
     },
     toggleNineTexures() {
       // todo: display nine textures instead of one to show tiling
