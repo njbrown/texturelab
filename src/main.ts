@@ -1,5 +1,6 @@
 import Vue from "vue";
-import vgl from "vue-golden-layout/src";
+import vgl from "vue-golden-layout";
+//import vgl from "vue-golden-layout/src";
 import "golden-layout/src/css/goldenlayout-dark-theme.css";
 import "../public/css/scrollbar.css";
 import "./utils/inspectelement";
