@@ -4,7 +4,7 @@ const MenuItem = remote.MenuItem;
 
 let rightClickPosition = null;
 
-const menu = new Menu();
+const menu = new remote.Menu();
 const menuItem = new MenuItem({
 	label: "Inspect Element",
 	click: () => {
@@ -20,7 +20,7 @@ window.addEventListener(
 	e => {
 		e.preventDefault();
 		rightClickPosition = { x: e.x, y: e.y };
-		menu.popup(remote.getCurrentWindow());
+		menu.popup();
 	},
 	false
 );
