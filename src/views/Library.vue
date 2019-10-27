@@ -83,11 +83,11 @@ export default class LibraryView extends Vue {
   }
 
   imageExists(node: string) {
-    return fs.existsSync(`./public/images/nodes/${node}.png`);
+    return fs.existsSync(`./public/assets/nodes/${node}.png`);
   }
 
   calcImagePath(node: string) {
-    return `./images/nodes/${node}.png`;
+    return `./assets/nodes/${node}.png`;
   }
 
   mounted() {}
