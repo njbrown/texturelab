@@ -115,36 +115,42 @@ export function setupMenu() {
 				}
 			]
 		},
-		{
-			label: "Dev",
-			submenu: [
-				{ role: "reload" },
-				{
-					role: "forcereload",
-					click: function(item, focusedWindow) {
-						if (focusedWindow) {
-							// After overloading, refresh and close all secondary forms
-							if (focusedWindow.id === 1) {
-								BrowserWindow.getAllWindows().forEach(function(win) {
-									if (win.id > 1) {
-										win.close();
+		...(process.env.NODE_ENV !== "production"
+			? [
+					{
+						label: "Dev",
+						submenu: [
+							{ role: "reload" },
+							{
+								role: "forcereload",
+								click: function(item, focusedWindow) {
+									if (focusedWindow) {
+										// After overloading, refresh and close all secondary forms
+										if (focusedWindow.id === 1) {
+											BrowserWindow.getAllWindows().forEach(function(win) {
+												if (win.id > 1) {
+													win.close();
+												}
+											});
+										}
+										focusedWindow.reload();
 									}
-								});
-							}
-							focusedWindow.reload();
-						}
+								}
+							},
+							{ role: "toggledevtools" },
+							{ type: "separator" },
+							{ role: "resetzoom" },
+							{ role: "zoomin" },
+							{ role: "zoomout" },
+							{ type: "separator" },
+							{ role: "togglefullscreen" }
+						]
 					}
-				},
-				{ role: "toggledevtools" },
-				{ type: "separator" },
-				{ role: "resetzoom" },
-				{ role: "zoomin" },
-				{ role: "zoomout" },
-				{ type: "separator" },
-				{ role: "togglefullscreen" }
-			]
-		}
+			  ]
+			: [])
 	];
+
+	console.log(template);
 
 	const menu = Menu.buildFromTemplate(template as any);
 	Menu.setApplicationMenu(menu);
