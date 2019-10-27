@@ -46,4 +46,4 @@ Got ideas, suggestions or feedback? Reach out to me on [twitter](https://twitter
 
 ## Licence
 
-LGPL
+[GPLv3](https://github.com/njbrown/texturelab/blob/master/LICENSE)
