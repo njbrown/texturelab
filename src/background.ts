@@ -24,7 +24,8 @@ function createWindow() {
 		height: 600,
 		frame: false,
 		webPreferences: {
-			nodeIntegration: true
+			nodeIntegration: true,
+			webSecurity: false
 		}
 	});
 	win.maximize();

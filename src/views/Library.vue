@@ -24,10 +24,15 @@
           href="#"
           draggable="true"
         >
-          <div class="thumbnail">
-            <!-- <img v-bind:src="calcImagePath(item.name)" class="ui fluid image" /> -->
-            <!-- <span class="thumbnail"></span> -->
-          </div>
+          <!-- <div class="thumbnail" /> -->
+          <img
+            v-if="imageExists(item.name)"
+            v-bind:src="calcImagePath(item.name)"
+            class="thumbnail"
+          />
+          <div v-else class="thumbnail" />
+          <!-- <span class="thumbnail"></span> -->
+
           <div class="node-name">{{ item.displayName }}</div>
         </span>
       </div>
@@ -39,6 +44,7 @@
 import { Component, Prop, Model, Vue } from "vue-property-decorator";
 import { Editor } from "@/lib/editortest";
 import { DesignerLibrary } from "@/lib/designer/library";
+import fs from "fs";
 
 @Component
 export default class LibraryView extends Vue {
@@ -76,8 +82,12 @@ export default class LibraryView extends Vue {
     evt.dataTransfer.setData("text/plain", name);
   }
 
+  imageExists(node: string) {
+    return fs.existsSync(`./public/assets/nodes/${node}.png`);
+  }
+
   calcImagePath(node: string) {
-    return "/images/nodeicons/" + name + ".png";
+    return `./assets/nodes/${node}.png`;
   }
 
   mounted() {}
@@ -100,10 +110,14 @@ export default class LibraryView extends Vue {
 }
 
 .thumbnail {
+  display: block;
   width: 100px;
   height: 100px;
   background: #ccc;
   border-radius: 4px;
+
+  margin-left: -4px;
+  border: solid rgba(0, 0, 0, 0.7) 4px;
 }
 
 .node-name {
