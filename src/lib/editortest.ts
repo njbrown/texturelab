@@ -176,6 +176,14 @@ export class Editor {
     return this.textureChannels.hasOwnProperty(channelName);
   }
 
+  clearTextureChannels() {
+    for (let channelName in this.textureChannels) {
+      let node = this.textureChannels[channelName];
+
+      this.clearTextureChannel(node.id);
+    }
+  }
+
   getChannelCanvasImage(channelName: string) {
     if (this.hasTextureChannel(channelName)) {
       //console.log(this.textureChannels[channelName]);
@@ -549,6 +557,9 @@ export class Editor {
   }
 
   load(data: any) {
+    // clear texture channels
+    this.clearTextureChannels();
+
     let library;
     if (!data["libraryVersion"]) {
       library = createV1Library();
@@ -592,7 +603,8 @@ export class Editor {
         if (node) this.assignNodeToTextureChannel(node.id, channelName);
       }
 
-      this.textureChannels = e.textureChannels || {};
+      //this.textureChannels = e.textureChannels || {};
+      //console.log(this.textureChannels)
     }
   }
 
