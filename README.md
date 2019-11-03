@@ -6,7 +6,7 @@
   Free, Cross-Platform, GPU-Accelerated Procedural Texture Generator.
 </p>
 
-![TextureLab](https://i.imgur.com/GnVsbKN.png)
+![TextureLab](https://i.imgur.com/ITMDBSf.png)
 
 ## Getting Started
 
