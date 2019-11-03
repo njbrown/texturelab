@@ -14,6 +14,13 @@ import { CylinderGeometry } from "./geometry/cylinder";
 // "three-orbitcontrols-ts": "git+https://git@github.com/nicolaspanel/three-orbitcontrols-ts.git",
 // https://stackoverflow.com/questions/16334505/how-to-load-obj-model-with-three-js-in-typescript?rq=1
 
+// PMREM Generation
+// https://github.com/mrdoob/three.js/pull/7902
+// https://discourse.threejs.org/t/are-there-any-guides-for-hdr-setups-for-novices/3932/2
+// examples:
+// https://threejs.org/examples/?q=hdr#webgl_materials_envmaps_hdr
+// https://github.com/mrdoob/three.js/blob/master/examples/webgl_materials_envmaps_hdr.html
+
 export class View3D {
   private camera!: THREE.PerspectiveCamera;
   private renderer!: THREE.WebGLRenderer;
