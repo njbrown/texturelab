@@ -15,300 +15,321 @@ import { CylinderGeometry } from "./geometry/cylinder";
 // https://stackoverflow.com/questions/16334505/how-to-load-obj-model-with-three-js-in-typescript?rq=1
 
 export class View3D {
-	private camera!: THREE.PerspectiveCamera;
-	private renderer!: THREE.WebGLRenderer;
-	private scene: THREE.Scene = new THREE.Scene();
-	private material: THREE.MeshStandardMaterial = new THREE.MeshStandardMaterial(
-		{
-			//color: 0x3F51B5,
-			color: 0xffffff,
-			roughness: 0.5,
-			metalness: 0.0,
-			side: THREE.DoubleSide
-		}
-	);
+  private camera!: THREE.PerspectiveCamera;
+  private renderer!: THREE.WebGLRenderer;
+  private scene: THREE.Scene = new THREE.Scene();
+  private material: THREE.MeshStandardMaterial = new THREE.MeshStandardMaterial(
+    {
+      //color: 0x3F51B5,
+      color: 0xffffff,
+      roughness: 0.5,
+      metalness: 0.0,
+      side: THREE.DoubleSide
+    }
+  );
+  private cubeMap: THREE.CubeTexture;
 
-	private model: THREE.Object3D;
-	private controls: OrbitControls;
-	// texture repeat
-	private repeat: number = 4;
+  private model: THREE.Object3D;
+  private controls: OrbitControls;
+  // texture repeat
+  private repeat: number = 4;
 
-	// geometry
-	private sphereGeom = new SphereGeometry(0.7, 64, 64);
-	private cubeGeom = new THREE.BoxGeometry();
-	private planeGeom = new THREE.PlaneGeometry(1, 1, 100, 100);
-	private cylinderGeom = new CylinderGeometry(0.5, 0.5, 1, 64, 64, true);
+  // geometry
+  private sphereGeom = new SphereGeometry(0.7, 64, 64);
+  private cubeGeom = new THREE.BoxGeometry();
+  private planeGeom = new THREE.PlaneGeometry(1, 1, 100, 100);
+  private cylinderGeom = new CylinderGeometry(0.5, 0.5, 1, 64, 64, true);
 
-	setCanvas(el: HTMLCanvasElement) {
-		this.setupRenderer(el);
-		this.camera = new THREE.PerspectiveCamera(
-			45,
-			el.width / el.height,
-			0.1,
-			1000
-		);
-		this.camera.position.z = 2.6;
-		this.camera.position.y = 1;
-		this.camera.position.x = 1;
+  setCanvas(el: HTMLCanvasElement) {
+    this.setupRenderer(el);
+    this.camera = new THREE.PerspectiveCamera(
+      45,
+      el.width / el.height,
+      0.1,
+      1000
+    );
+    this.camera.position.z = 2.6;
+    this.camera.position.y = 1;
+    this.camera.position.x = 1;
 
-		this.setupOrbitControls(el);
-		this.setupLighting();
+    this.setupOrbitControls(el);
+    this.setupLighting();
+    this.cubeMap = this.loadEnv();
+    this.material.envMap = this.cubeMap;
 
-		//const geometry = new THREE.SphereGeometry(1, 64, 64);
-		this.model = new THREE.Mesh(this.sphereGeom, this.material);
+    //const geometry = new THREE.SphereGeometry(1, 64, 64);
+    this.model = new THREE.Mesh(this.sphereGeom, this.material);
 
-		// let loader = new THREE.ObjectLoader();
-		// loader.load("app://./")
+    // let loader = new THREE.ObjectLoader();
+    // loader.load("app://./")
 
-		this.scene.add(this.model);
+    this.scene.add(this.model);
 
-		const animate = () => {
-			requestAnimationFrame(animate);
-			this.controls.update();
-			this.renderer.render(this.scene, this.camera);
-		};
+    const animate = () => {
+      requestAnimationFrame(animate);
+      this.controls.update();
+      this.renderer.render(this.scene, this.camera);
+    };
 
-		animate();
-	}
+    animate();
+  }
 
-	setupRenderer(el: HTMLCanvasElement) {
-		let renderer = new THREE.WebGLRenderer({
-			alpha: true,
-			canvas: el,
-			preserveDrawingBuffer: true,
-			antialias: true
-		});
-		renderer.setClearColor(0x000000, 0);
-		renderer.physicallyCorrectLights = true;
-		renderer.gammaInput = true;
-		renderer.gammaOutput = true;
-		renderer.shadowMap.enabled = true;
-		renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-		renderer.setSize(el.width, el.height);
+  setupRenderer(el: HTMLCanvasElement) {
+    let renderer = new THREE.WebGLRenderer({
+      alpha: true,
+      canvas: el,
+      preserveDrawingBuffer: true,
+      antialias: true
+    });
+    renderer.setClearColor(0x000000, 0);
+    renderer.physicallyCorrectLights = true;
+    renderer.gammaInput = false;
+    renderer.gammaOutput = true;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setSize(el.width, el.height);
 
-		this.renderer = renderer;
-	}
+    this.renderer = renderer;
+  }
 
-	setupLighting() {
-		var container = new THREE.Object3D();
+  setupLighting() {
+    var container = new THREE.Object3D();
 
-		var brightness = 2;
+    var brightness = 2;
 
-		var object3d = new THREE.DirectionalLight("white", 0.225 * brightness);
-		object3d.position.set(2.6, 1, 3);
-		object3d.name = "Back light";
-		container.add(object3d);
+    var object3d = new THREE.DirectionalLight("white", 0.225 * brightness);
+    object3d.position.set(2.6, 1, 3);
+    object3d.name = "Back light";
+    container.add(object3d);
 
-		var object3d = new THREE.DirectionalLight("white", 0.375 * brightness);
-		object3d.position.set(-2, -1, 0);
-		object3d.name = "Key light";
-		container.add(object3d);
+    var object3d = new THREE.DirectionalLight("white", 0.375 * brightness);
+    object3d.position.set(-2, -1, 0);
+    object3d.name = "Key light";
+    container.add(object3d);
 
-		var object3d = new THREE.DirectionalLight("white", 0.75 * brightness);
-		object3d.position.set(3, 3, 2);
-		object3d.name = "Fill light";
-		container.add(object3d);
+    var object3d = new THREE.DirectionalLight("white", 0.75 * brightness);
+    object3d.position.set(3, 3, 2);
+    object3d.name = "Fill light";
+    container.add(object3d);
 
-		this.scene.add(container);
-	}
+    this.scene.add(container);
+  }
 
-	setupOrbitControls(el: HTMLElement) {
-		const controls = new OrbitControls(this.camera, el);
+  setupOrbitControls(el: HTMLElement) {
+    const controls = new OrbitControls(this.camera, el);
 
-		controls.enableZoom = true;
-		controls.enableRotate = true;
+    controls.enableZoom = true;
+    controls.enableRotate = true;
 
-		//controls.autoRotate = true;
-		controls.enablePan = true;
-		controls.keyPanSpeed = 7.0;
-		controls.enableKeys = true;
-		controls.target = new THREE.Vector3(0, 0, 0);
-		controls.mouseButtons.PAN = null;
-		controls.keys = {
-			LEFT: 0,
-			UP: 0,
-			RIGHT: 0,
-			BOTTOM: 0
-		};
+    //controls.autoRotate = true;
+    controls.enablePan = true;
+    controls.keyPanSpeed = 7.0;
+    controls.enableKeys = true;
+    controls.target = new THREE.Vector3(0, 0, 0);
+    controls.mouseButtons.PAN = null;
+    controls.keys = {
+      LEFT: 0,
+      UP: 0,
+      RIGHT: 0,
+      BOTTOM: 0
+    };
 
-		this.controls = controls;
-	}
+    this.controls = controls;
+  }
 
-	loadEnvironment(basePath: string) {}
+  loadEnvironment(basePath: string) {}
 
-	resize(width: number, height: number) {
-		this.camera.aspect = width / height;
-		this.camera.updateProjectionMatrix();
-		this.renderer.setSize(width, height);
-	}
-	private _init() {}
+  resize(width: number, height: number) {
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(width, height);
+  }
+  private _init() {}
 
-	setTexture(imageCanvas: ImageCanvas, channelName: string) {
-		if (channelName == "albedo")
-			this.setAlbedoTexture(imageCanvas, channelName);
-		if (channelName == "normal")
-			this.setNormalTexture(imageCanvas, channelName);
-		if (channelName == "metalness")
-			this.setMetalnessTexture(imageCanvas, channelName);
-		if (channelName == "roughness")
-			this.setRoughnessTexture(imageCanvas, channelName);
-		if (channelName == "height")
-			this.setHeightTexture(imageCanvas, channelName);
-	}
+  setTexture(imageCanvas: ImageCanvas, channelName: string) {
+    if (channelName == "albedo")
+      this.setAlbedoTexture(imageCanvas, channelName);
+    if (channelName == "normal")
+      this.setNormalTexture(imageCanvas, channelName);
+    if (channelName == "metalness")
+      this.setMetalnessTexture(imageCanvas, channelName);
+    if (channelName == "roughness")
+      this.setRoughnessTexture(imageCanvas, channelName);
+    if (channelName == "height")
+      this.setHeightTexture(imageCanvas, channelName);
+  }
 
-	clearTexture(channelName: string) {
-		if (channelName == "albedo") {
-			this.material.map = null;
-		}
-		if (channelName == "normal") {
-			this.material.normalMap = null;
-		}
-		if (channelName == "metalness") {
-			this.material.metalnessMap = null;
-			this.material.metalness = 0;
-		}
-		if (channelName == "roughness") {
-			this.material.roughnessMap = null;
-			this.material.roughness = 0.5;
-		}
-		if (channelName == "height") {
-			this.material.displacementMap = null;
-		}
-		this.material.needsUpdate = true;
-	}
+  clearTexture(channelName: string) {
+    if (channelName == "albedo") {
+      this.material.map = null;
+    }
+    if (channelName == "normal") {
+      this.material.normalMap = null;
+    }
+    if (channelName == "metalness") {
+      this.material.metalnessMap = null;
+      this.material.metalness = 0;
+    }
+    if (channelName == "roughness") {
+      this.material.roughnessMap = null;
+      this.material.roughness = 0.5;
+    }
+    if (channelName == "height") {
+      this.material.displacementMap = null;
+    }
+    this.material.needsUpdate = true;
+  }
 
-	updateTexture(channelName: string) {
-		if (channelName == "albedo" && this.material.map != null) {
-			this.material.map.needsUpdate = true;
-		}
-		if (channelName == "normal" && this.material.normalMap != null) {
-			this.material.normalMap.needsUpdate = true;
-		}
-		if (channelName == "metalness" && this.material.metalnessMap != null) {
-			this.material.metalnessMap.needsUpdate = true;
-		}
-		if (channelName == "roughness" && this.material.roughnessMap != null) {
-			this.material.roughnessMap.needsUpdate = true;
-		}
-		if (channelName == "height" && this.material.displacementMap != null) {
-			this.material.displacementMap.needsUpdate = true;
-		}
-		this.material.needsUpdate = true;
-	}
+  updateTexture(channelName: string) {
+    if (channelName == "albedo" && this.material.map != null) {
+      this.material.map.needsUpdate = true;
+    }
+    if (channelName == "normal" && this.material.normalMap != null) {
+      this.material.normalMap.needsUpdate = true;
+    }
+    if (channelName == "metalness" && this.material.metalnessMap != null) {
+      this.material.metalnessMap.needsUpdate = true;
+    }
+    if (channelName == "roughness" && this.material.roughnessMap != null) {
+      this.material.roughnessMap.needsUpdate = true;
+    }
+    if (channelName == "height" && this.material.displacementMap != null) {
+      this.material.displacementMap.needsUpdate = true;
+    }
+    this.material.needsUpdate = true;
+  }
 
-	setAlbedoTexture(imageCanvas: ImageCanvas, channelName: string) {
-		var tex = new THREE.CanvasTexture(imageCanvas.canvas);
-		tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-		tex.repeat.set(this.repeat, this.repeat);
-		tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+  setAlbedoTexture(imageCanvas: ImageCanvas, channelName: string) {
+    var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(this.repeat, this.repeat);
+    tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
 
-		tex.needsUpdate = true;
-		this.material.map = tex;
-		this.material.needsUpdate = true;
-	}
+    tex.needsUpdate = true;
+    this.material.map = tex;
+    this.material.needsUpdate = true;
+  }
 
-	setNormalTexture(imageCanvas: ImageCanvas, channelName: string) {
-		var tex = new THREE.CanvasTexture(imageCanvas.canvas);
-		tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-		tex.repeat.set(this.repeat, this.repeat);
-		tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+  setNormalTexture(imageCanvas: ImageCanvas, channelName: string) {
+    var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(this.repeat, this.repeat);
+    tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
 
-		tex.needsUpdate = true;
-		this.material.normalMap = tex;
-		this.material.needsUpdate = true;
-	}
+    tex.needsUpdate = true;
+    this.material.normalMap = tex;
+    this.material.needsUpdate = true;
+  }
 
-	setMetalnessTexture(imageCanvas: ImageCanvas, channelName: string) {
-		var tex = new THREE.CanvasTexture(imageCanvas.canvas);
-		tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-		tex.repeat.set(this.repeat, this.repeat);
-		tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+  setMetalnessTexture(imageCanvas: ImageCanvas, channelName: string) {
+    var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(this.repeat, this.repeat);
+    tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
 
-		tex.needsUpdate = true;
-		this.material.metalnessMap = tex;
-		this.material.metalness = 1.0;
-		this.material.needsUpdate = true;
-	}
+    tex.needsUpdate = true;
+    this.material.metalnessMap = tex;
+    this.material.metalness = 1.0;
+    this.material.needsUpdate = true;
+  }
 
-	setRoughnessTexture(imageCanvas: ImageCanvas, channelName: string) {
-		var tex = new THREE.CanvasTexture(imageCanvas.canvas);
-		tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-		tex.repeat.set(this.repeat, this.repeat);
-		tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+  setRoughnessTexture(imageCanvas: ImageCanvas, channelName: string) {
+    var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(this.repeat, this.repeat);
+    tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
 
-		tex.needsUpdate = true;
-		this.material.roughnessMap = tex;
-		this.material.roughness = 1.0;
-		this.material.needsUpdate = true;
-	}
+    tex.needsUpdate = true;
+    this.material.roughnessMap = tex;
+    this.material.roughness = 1.0;
+    this.material.needsUpdate = true;
+  }
 
-	setHeightTexture(imageCanvas: ImageCanvas, channelName: string) {
-		var tex = new THREE.CanvasTexture(imageCanvas.canvas);
-		tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-		tex.repeat.set(this.repeat, this.repeat);
-		tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+  setHeightTexture(imageCanvas: ImageCanvas, channelName: string) {
+    var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(this.repeat, this.repeat);
+    tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
 
-		tex.needsUpdate = true;
-		this.material.displacementMap = tex;
-		this.material.displacementScale = 0.5;
-		this.material.needsUpdate = true;
-	}
+    tex.needsUpdate = true;
+    this.material.displacementMap = tex;
+    this.material.displacementScale = 0.5;
+    this.material.needsUpdate = true;
+  }
 
-	setRepeat(repeat: number) {
-		this.repeat = repeat;
+  setRepeat(repeat: number) {
+    this.repeat = repeat;
 
-		const mat = this.material;
-		if (mat.map) {
-			mat.map.repeat.set(repeat, repeat);
-			mat.map.needsUpdate = true;
-		}
+    const mat = this.material;
+    if (mat.map) {
+      mat.map.repeat.set(repeat, repeat);
+      mat.map.needsUpdate = true;
+    }
 
-		if (mat.normalMap) {
-			mat.normalMap.repeat.set(repeat, repeat);
-			mat.normalMap.needsUpdate = true;
-		}
+    if (mat.normalMap) {
+      mat.normalMap.repeat.set(repeat, repeat);
+      mat.normalMap.needsUpdate = true;
+    }
 
-		if (mat.metalnessMap) {
-			mat.metalnessMap.repeat.set(repeat, repeat);
-			mat.metalnessMap.needsUpdate = true;
-		}
+    if (mat.metalnessMap) {
+      mat.metalnessMap.repeat.set(repeat, repeat);
+      mat.metalnessMap.needsUpdate = true;
+    }
 
-		if (mat.roughnessMap) {
-			mat.roughnessMap.repeat.set(repeat, repeat);
-			mat.roughnessMap.needsUpdate = true;
-		}
+    if (mat.roughnessMap) {
+      mat.roughnessMap.repeat.set(repeat, repeat);
+      mat.roughnessMap.needsUpdate = true;
+    }
 
-		if (mat.displacementMap) {
-			mat.displacementMap.repeat.set(repeat, repeat);
-			mat.displacementMap.needsUpdate = true;
-		}
-	}
+    if (mat.displacementMap) {
+      mat.displacementMap.repeat.set(repeat, repeat);
+      mat.displacementMap.needsUpdate = true;
+    }
+  }
 
-	setModel(modelName: string) {
-		if (this.model) this.scene.remove(this.model);
+  setModel(modelName: string) {
+    if (this.model) this.scene.remove(this.model);
 
-		let geom: THREE.Geometry;
-		if (modelName == "sphere") geom = this.sphereGeom;
-		if (modelName == "cube") geom = this.cubeGeom;
-		if (modelName == "plane") geom = this.planeGeom;
-		if (modelName == "cylinder") geom = this.cylinderGeom;
-		// crash if none is valid
+    let geom: THREE.Geometry;
+    if (modelName == "sphere") geom = this.sphereGeom;
+    if (modelName == "cube") geom = this.cubeGeom;
+    if (modelName == "plane") geom = this.planeGeom;
+    if (modelName == "cylinder") geom = this.cylinderGeom;
+    // crash if none is valid
 
-		this.model = new THREE.Mesh(geom, this.material);
-		this.scene.add(this.model);
-	}
+    this.model = new THREE.Mesh(geom, this.material);
+    this.scene.add(this.model);
+  }
 
-	reset() {
-		// clear all textures
-		// reset camera position
-		this.material = new THREE.MeshStandardMaterial({
-			//color: 0x3F51B5,
-			color: 0xffffff,
-			roughness: 0.5,
-			metalness: 0.0,
-			side: THREE.DoubleSide
-		});
+  reset() {
+    // clear all textures
+    // reset camera position
+    this.material = new THREE.MeshStandardMaterial({
+      //color: 0x3F51B5,
+      color: 0xffffff,
+      roughness: 0.5,
+      metalness: 0.0,
+      side: THREE.DoubleSide
+    });
 
-		(this.model as THREE.Mesh).material = this.material;
-	}
+    this.material.envMap = this.cubeMap;
+
+    (this.model as THREE.Mesh).material = this.material;
+  }
+
+  loadEnv() {
+    //var path = '/images/cube/Bridge2/';
+    var path = "./assets/env/SwedishRoyalCastle/";
+    var format = ".jpg";
+    var envMap = new THREE.CubeTextureLoader().load([
+      path + "posx" + format,
+      path + "negx" + format,
+      path + "posy" + format,
+      path + "negy" + format,
+      path + "posz" + format,
+      path + "negz" + format
+    ]);
+
+    return envMap;
+  }
 }
