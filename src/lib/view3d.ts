@@ -32,7 +32,7 @@ export class View3D {
   private model: THREE.Object3D;
   private controls: OrbitControls;
   // texture repeat
-  private repeat: number = 4;
+  private repeat: number = 1;
 
   // geometry
   private sphereGeom = new SphereGeometry(0.7, 64, 64);
