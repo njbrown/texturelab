@@ -190,7 +190,7 @@ export default class App extends Vue {
       this.saveProject();
     });
     electron.ipcRenderer.on(MenuCommands.FileSaveAs, (evt, arg) => {
-      this.saveProject(false);
+      this.saveProject(true);
     });
 
     electron.ipcRenderer.on(MenuCommands.ExportZip, async (evt, arg) => {
