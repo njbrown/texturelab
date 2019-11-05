@@ -6,6 +6,8 @@ export class FractalNoiseNode extends DesignerNode {
     this.title = "Fractal Noise";
 
     this.addIntProperty("scale", "Scale", 1, 1, 10, 1);
+    this.addIntProperty("scaleX", "X Scale", 1, 1, 15, 1);
+    this.addIntProperty("scaleY", "Y Scale", 1, 1, 15, 1);
     this.addIntProperty("startBand", "Start Band", 4, 1, 10, 1);
     this.addIntProperty("endBand", "End Band", 8, 1, 10, 1);
     this.addFloatProperty("persistence", "Persistence", 0.6, 0.0, 1.0, 0.01);
@@ -99,13 +101,13 @@ export class FractalNoiseNode extends DesignerNode {
             float scale_value = prop_persistenceStart;
             float persistence = prop_persistence;
             float total = 0.0;
-            float scale = float(prop_scale);
+            vec2 scale = vec2(prop_scaleX, prop_scaleY) * float(prop_scale);
             
             //int startBand = 3;
             //int endBand = 12;
             for(int i = 1; i <=20; i++) {
                 if (i >= prop_startBand && i <= prop_endBand) {
-                total += (pnoise(uv*scale, vec2(scale))) * scale_value;
+                total += (pnoise(uv*scale, scale)) * scale_value;
                 scale_value *= persistence;
                 }
                 scale *= 2.0;
