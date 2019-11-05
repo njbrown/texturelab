@@ -45,6 +45,9 @@ import { Component, Prop, Model, Vue } from "vue-property-decorator";
 import { Editor } from "@/lib/editortest";
 import { DesignerLibrary } from "@/lib/designer/library";
 import fs from "fs";
+import path from "path";
+
+declare var __static: any;
 
 @Component
 export default class LibraryView extends Vue {
@@ -83,14 +86,19 @@ export default class LibraryView extends Vue {
   }
 
   imageExists(node: string) {
-    return fs.existsSync(`./public/assets/nodes/${node}.png`);
+    //return fs.existsSync(`./public/assets/nodes/${node}.png`);
+    return fs.existsSync(path.join(__static, `assets/nodes/${node}.png`));
   }
 
   calcImagePath(node: string) {
-    return `./assets/nodes/${node}.png`;
+    //return `./assets/nodes/${node}.png`;
+    return path.join(process.env.BASE_URL, `assets/nodes/${node}.png`);
   }
 
-  mounted() {}
+  mounted() {
+    console.log(__static);
+    console.log(process.env.BASE_URL);
+  }
 }
 </script>
 
