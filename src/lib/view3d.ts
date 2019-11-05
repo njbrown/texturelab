@@ -327,18 +327,18 @@ export class View3D {
 
   loadEnv() {
     //var path = '/images/cube/Bridge2/';
-    var path = path.join(
+    var basePath = path.join(
       process.env.BASE_URL,
       "assets/env/SwedishRoyalCastle/"
     );
     var format = ".jpg";
     var envMap = new THREE.CubeTextureLoader().load([
-      path + "posx" + format,
-      path + "negx" + format,
-      path + "posy" + format,
-      path + "negy" + format,
-      path + "posz" + format,
-      path + "negz" + format
+      basePath + "posx" + format,
+      basePath + "negx" + format,
+      basePath + "posy" + format,
+      basePath + "negy" + format,
+      basePath + "posz" + format,
+      basePath + "negz" + format
     ]);
 
     return envMap;
