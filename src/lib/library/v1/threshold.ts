@@ -10,7 +10,7 @@ export class ThresholdNode extends DesignerNode {
     this.addBoolProperty("invert", "Invert", true);
 
     var source = `
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             vec4 a =  texture2D(image, uv);
 

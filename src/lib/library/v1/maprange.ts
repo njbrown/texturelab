@@ -11,7 +11,7 @@ export class MapRangeNode extends DesignerNode {
     this.addFloatProperty("out_max", "Output Maximum", 1, 0, 1.0, 0.01);
 
     var source = `
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             vec4 col = texture2D(color,uv);
 

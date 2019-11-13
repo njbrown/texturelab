@@ -9,7 +9,7 @@ export class HeightShiftNode extends DesignerNode {
     this.addFloatProperty("shift", "Shift", 0.0, -1.0, 1.0, 0.01);
 
     var source = `
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             vec4 a =  texture2D(image, uv);
 

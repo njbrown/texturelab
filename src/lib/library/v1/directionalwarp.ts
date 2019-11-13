@@ -12,7 +12,7 @@ export class DirectionalWarpNode extends DesignerNode {
 
     // calculates normal, then warps uv by it
     var source = `
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             vec2 step = vec2(1.0,1.0)/_textureSize;
 

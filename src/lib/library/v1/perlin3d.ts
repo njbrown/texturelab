@@ -169,7 +169,7 @@ float pnoise(vec3 P, vec3 rep)
   return 2.2 * n_xyz;
 }
 
-vec4 sample(vec2 uv)
+vec4 process(vec2 uv)
 {
     float c = pnoise(vec3(uv * 10.0,10.0), vec3(10.0,10.0,10.0));
 

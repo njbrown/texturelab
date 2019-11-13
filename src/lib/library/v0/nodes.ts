@@ -6,7 +6,7 @@ export class TestGradientNode extends DesignerNode {
     console.log("goodbye from inside gradient node");
 
     var source = `
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             return vec4(uv.x, 0, uv.y, 1);
         }
@@ -23,7 +23,7 @@ export class TestInvertNode extends DesignerNode {
     this.addInput("color");
 
     var source = `
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             vec4 col = vec4(1.0) - texture2D(color,uv);
             col.a = 1.0;
@@ -43,7 +43,7 @@ export class TestMultiplyNode extends DesignerNode {
     this.addInput("colorB");
 
     var source = `
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             vec4 colA = texture2D(colorA,uv);
             vec4 colB = texture2D(colorB,uv);
@@ -64,7 +64,7 @@ export class TestShapeNode extends DesignerNode {
         #define PI 3.14159265359
         #define TWO_PI 6.28318530718
 
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             vec3 color = vec3(0.0);
             float d = 0.0;
@@ -159,7 +159,7 @@ export class TestWorleyNode extends DesignerNode {
               return sqrt(d1.xy);
           }
 
-          vec4 sample(vec2 uv)
+          vec4 process(vec2 uv)
           {
               float scale = 7.0;
               //vec2 cel = cellular(uv*vec2(scale));
@@ -182,7 +182,7 @@ export class TestNormalNode extends DesignerNode {
     this.addFloatProperty("strength", "Strength", 1, 0, 10, 0.01);
 
     var source = `
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             //vec2 size = textureSize(height);
             vec2 size = vec2(1024,1024); // quick hack for now
@@ -230,7 +230,7 @@ export class TestWarpNode extends DesignerNode {
 
     // calculates normal, then warps uv by it
     var source = `
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             //vec2 size = textureSize(height);
             vec2 size = vec2(1024,1024); // quick hack for now
@@ -326,7 +326,7 @@ export class TestSimplexNode extends DesignerNode {
             return fract(xyz);
         }
 
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             vec3 color = vec3(noise(uv * prop_scale));
 
@@ -349,7 +349,7 @@ export class TestBrickNode extends DesignerNode {
     this.addFloatProperty("holeY", "Hole Y", 2, 1, 10, 0.01);
 
     var source = `
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             float u = uv.x;
             float v = uv.y;

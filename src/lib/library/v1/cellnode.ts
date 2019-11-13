@@ -15,7 +15,7 @@ export class CellNode extends DesignerNode {
             return fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);
         }
 
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             uv *= float(prop_scale);
 

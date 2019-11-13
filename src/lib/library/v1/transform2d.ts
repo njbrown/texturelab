@@ -62,7 +62,7 @@ export class Transform2DNode extends DesignerNode {
             return mat3(vec3(cos(r), -sin(r),0.0), vec3(sin(r), cos(r),0.0), vec3(0.0, 0.0, 1.0));
         }
 
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             // transform by (-0.5, -0.5)
             // scale

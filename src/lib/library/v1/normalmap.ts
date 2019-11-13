@@ -10,7 +10,7 @@ export class NormalMapNode extends DesignerNode {
     this.addFloatProperty("strength", "Strength", 0.001, -0.02, 0.02, 0.00001);
 
     var source = `
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             //vec2 size = textureSize(height);
             //vec2 size = vec2(1024,1024); // quick hack for now

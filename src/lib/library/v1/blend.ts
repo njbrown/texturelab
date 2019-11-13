@@ -10,7 +10,7 @@ export class BlendNode extends DesignerNode {
     this.addEnumProperty("type", "Type", ["Multiply", "Add", "Subtract"]);
 
     var source = `
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             vec4 colA = texture2D(colorA,uv);
             vec4 colB = texture2D(colorB,uv);

@@ -37,7 +37,7 @@ export class HexagonNode extends DesignerNode {
 
         // https://www.redblobgames.com/grids/hexagons/
         const float ratio =3.0 * (1.0/sqrt(3.0)); 
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             // make it more tileable
             //uv += vec2(0.0, -0.5);

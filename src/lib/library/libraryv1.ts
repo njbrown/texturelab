@@ -25,6 +25,7 @@ import { MirrorNode } from "./v1/mirror";
 import { BrightnessContrastNode } from "./v1/brightnesscontrast";
 import { WaveNode } from "./v1/wave";
 import { CopyNode } from "./v1/copy";
+import { GradientNode } from "./v1/gradient";
 import { DesignerLibrary } from "../designer/library";
 
 export function createLibrary() {
@@ -63,6 +64,7 @@ export function createLibrary() {
   );
   lib.addNode("wave", "Wave", WaveNode);
   lib.addNode("copy", "Copy", CopyNode);
+  lib.addNode("gradient", "Gradient", GradientNode);
 
   return lib;
 }

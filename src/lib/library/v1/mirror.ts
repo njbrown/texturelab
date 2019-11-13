@@ -16,7 +16,7 @@ export class MirrorNode extends DesignerNode {
     this.addBoolProperty("clamp", "Clamp", true);
 
     var source = `
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             // left to right
             if (prop_mode == 0)

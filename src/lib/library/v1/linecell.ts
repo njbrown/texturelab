@@ -81,7 +81,7 @@ export class LineCellNode extends DesignerNode {
             return vec3(md, mr);
         }
 
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             uv *= float(prop_scale);
             vec3 c = voronoi(uv);

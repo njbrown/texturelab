@@ -11,7 +11,7 @@ export class WaveNode extends DesignerNode {
 
     // calculates normal, then warps uv by it
     var source = `
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             float fx = uv.x * 3.142 * 2.0 * float(prop_xfrequency);
             float fy = uv.y * 3.142 * 2.0 * float(prop_yfrequency);

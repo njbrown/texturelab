@@ -8,7 +8,7 @@ export class CopyNode extends DesignerNode {
     this.addStringProperty("name", "Name");
 
     var source = `
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             vec4 col = texture2D(image, uv);
             return col;

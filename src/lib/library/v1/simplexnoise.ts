@@ -58,7 +58,7 @@ export class SimplexNoiseNode extends DesignerNode {
             return fract(xyz);
         }
 
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             vec3 color = vec3(noise(uv * prop_scale));
 

@@ -94,7 +94,7 @@ export class FractalNoiseNode extends DesignerNode {
         return 2.3 * n_xy;
         }
 
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             float scale_value = prop_persistenceStart;
             float persistence = prop_persistence;

@@ -36,7 +36,7 @@ export class TileNode extends DesignerNode {
             return brick;
         }
 
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             vec2 pos = uv * tileSize;
             

@@ -22,7 +22,7 @@ export class PolygonNode extends DesignerNode {
             return (t-a)/(b-a);
         }
 
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             uv = uv *2.-1.;
 
@@ -54,7 +54,7 @@ export class CircleNode extends DesignerNode {
     ]);
 
     var source = `
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             float dist = distance(uv, vec2(0.5));
             if( dist <= prop_radius) {

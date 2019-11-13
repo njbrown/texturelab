@@ -14,7 +14,7 @@ export class MaskNode extends DesignerNode {
             return (col.r + col.g + col.b) / 3.0;
         }
 
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             vec4 a =  texture2D(textureA, uv);
             vec4 b =  texture2D(textureB, uv);

@@ -79,7 +79,7 @@ export class BrickGeneratorNode extends DesignerNode {
             return brick;
         }
 
-        vec4 sample(vec2 uv)
+        vec4 process(vec2 uv)
         {
             //vec2 pos = uv * vec2(5);
             vec2 pos = uv * tileSize;
