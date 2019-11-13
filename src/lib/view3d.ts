@@ -5,6 +5,7 @@ import { DesignerNode } from "./designer/designernode";
 import { ImageCanvas } from "./designer/imagecanvas";
 import { SphereGeometry } from "./geometry/sphere";
 import { CylinderGeometry } from "./geometry/cylinder";
+import path from "path";
 
 // https://www.bostonbiomotion.com/
 // https://blog.subvertallmedia.com/2018/06/25/three-js-imports.html
@@ -326,15 +327,18 @@ export class View3D {
 
   loadEnv() {
     //var path = '/images/cube/Bridge2/';
-    var path = "./assets/env/SwedishRoyalCastle/";
+    var basePath = path.join(
+      process.env.BASE_URL,
+      "assets/env/SwedishRoyalCastle/"
+    );
     var format = ".jpg";
     var envMap = new THREE.CubeTextureLoader().load([
-      path + "posx" + format,
-      path + "negx" + format,
-      path + "posy" + format,
-      path + "negy" + format,
-      path + "posz" + format,
-      path + "negz" + format
+      basePath + "posx" + format,
+      basePath + "negx" + format,
+      basePath + "posy" + format,
+      basePath + "negy" + format,
+      basePath + "posz" + format,
+      basePath + "negz" + format
     ]);
 
     return envMap;

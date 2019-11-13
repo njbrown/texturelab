@@ -5,9 +5,9 @@ export class PolygonNode extends DesignerNode {
   public init() {
     this.title = "Polygon";
 
-    this.addFloatProperty("radius", "Radius", 1, 0, 3, 0.01);
-    this.addFloatProperty("angle", "Angle", 0, 0, 3.142, 0.01);
-    this.addIntProperty("sides", "Sides", 3, 0, 20, 0.01);
+    this.addFloatProperty("radius", "Radius", 0.7, 0, 3, 0.01);
+    this.addFloatProperty("angle", "Angle", 0, 0.0, 360.0, 1);
+    this.addIntProperty("sides", "Sides", 5, 0, 20, 0.01);
     this.addFloatProperty("gradient", "Gradient", 0, 0, 1.0, 0.01);
 
     var source = `
@@ -27,7 +27,7 @@ export class PolygonNode extends DesignerNode {
             uv = uv *2.-1.;
 
             // Angle and radius from the current pixel
-            float a = atan(uv.x,uv.y)+prop_angle;
+            float a = atan(uv.x,uv.y)+radians(prop_angle);
             float r = TWO_PI/float(prop_sides);
 
             float d = cos(floor(.5+a/r)*r-a)*length(uv) / prop_radius;

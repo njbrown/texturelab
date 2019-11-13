@@ -101,20 +101,20 @@ export function setupMenu() {
     // 		}
     // 	]
     // },
-    {
-      label: "Help",
-      submenu: [
-        {
-          label: "Tutorials"
-        },
-        {
-          label: "About"
-        },
-        {
-          label: "Submit Bug"
-        }
-      ]
-    },
+    // {
+    //   label: "Help",
+    //   submenu: [
+    //     {
+    //       label: "Tutorials"
+    //     },
+    //     {
+    //       label: "About"
+    //     },
+    //     {
+    //       label: "Submit Bug"
+    //     }
+    //   ]
+    // },
     ...(process.env.NODE_ENV !== "production"
       ? [
           {
