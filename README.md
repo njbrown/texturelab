@@ -13,10 +13,11 @@
 ```
 git clone https://github.com/njbrown/texturelab.git
 
+cd texturelab
+
 # if you want to pull down assets (textures and node icons)
 git submodule update --init
 
-cd texturelab
 ```
 
 yarn:
@@ -39,10 +40,10 @@ Got ideas, suggestions or feedback? Reach out to me on [twitter](https://twitter
 
 ## Built Using
 
-- **[Vue.js](https://vuejs.org)**
-- **[THREE.js](https://vuejs.org)**
-- **[Golden Layout](https://golden-layout.com/)** via **[vue-golden-layout](https://github.com/emedware/vue-golden-layout)**
-- **[Electron](https://electronjs.org)**
+-   **[Vue.js](https://vuejs.org)**
+-   **[THREE.js](https://vuejs.org)**
+-   **[Golden Layout](https://golden-layout.com/)** via **[vue-golden-layout](https://github.com/emedware/vue-golden-layout)**
+-   **[Electron](https://electronjs.org)**
 
 ## Licence
 
