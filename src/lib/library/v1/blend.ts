@@ -12,8 +12,8 @@ export class BlendNode extends DesignerNode {
     var source = `
         vec4 process(vec2 uv)
         {
-            vec4 colA = texture2D(colorA,uv);
-            vec4 colB = texture2D(colorB,uv);
+            vec4 colA = texture(colorA,uv);
+            vec4 colB = texture(colorB,uv);
             vec4 col = vec4(1.0);
             if (prop_type==0)
                 col.rgb = colA.rgb * colB.rgb;

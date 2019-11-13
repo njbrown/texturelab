@@ -12,7 +12,7 @@ export class BrightnessContrastNode extends DesignerNode {
     var source = `
         vec4 process(vec2 uv)
         {
-            vec4 col = texture2D(image, uv);
+            vec4 col = texture(image, uv);
 
             col.rgb += prop_brightness;
             if (prop_contrast > 0.0)

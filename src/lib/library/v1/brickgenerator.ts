@@ -20,24 +20,25 @@ export class BrickGeneratorNode extends DesignerNode {
     this.addFloatProperty("columns", "Columns", 6, 1, 20, 1);
 
     var source = `
-        vec2 brickSize = vec2(prop_brickWidth, prop_brickHeight);
-        vec2 tileSize = vec2(prop_rows, prop_columns);
+        //vec2 brickSize = vec2(prop_brickWidth, prop_brickHeight);
+        //vec2 tileSize = vec2(prop_rows, prop_columns);
 
-        float shiftX = 0.5;
-        float shiftY = 0.0;
+        // float shiftX = 0.5;
+        // float shiftY = 0.0;
 
         // offset for alternating rows
-        float offset = prop_offset;
-
-        // height
-        float heightMin = prop_heightMin;
-        float heightMax = prop_heightMax;
-        float heightBalance= prop_heightBalance; // threshold that decides whether to use height variance or not
-        float heightVariance = prop_heightVariance; // multiplies the heightMax-heightMin range
+        //float offset = prop_offset;
 
         // HEIGHT FUNCTIONS
         float calculateHeight(vec2 brickId)
         {
+            // height
+            float heightMin = prop_heightMin;
+            float heightMax = prop_heightMax;
+            float heightBalance= prop_heightBalance; // threshold that decides whether to use height variance or not
+            float heightVariance = prop_heightVariance; // multiplies the heightMax-heightMin range
+
+
             // check whether or not there should be a height range in the first place
             float balRand = _rand(vec2(_seed) + brickId * vec2(0.01));
             
@@ -60,13 +61,15 @@ export class BrickGeneratorNode extends DesignerNode {
         }
 
         // slope
-        float slopeX;// slope x direction
-        float slopeY;// slope y direction
-        float slopeBalance;// threshold that determines whether or not to use slope
-        float slopeVariation;// decreases the range of the slope
+        // float slopeX;// slope x direction
+        // float slopeY;// slope y direction
+        // float slopeBalance;// threshold that determines whether or not to use slope
+        // float slopeVariation;// decreases the range of the slope
             
         vec2 is_brick(vec2 pos)
         {
+            vec2 brickSize = vec2(prop_brickWidth, prop_brickHeight);
+
             vec2 edgeSize = (vec2(1.0) - brickSize) * vec2(0.5);
             vec2 brick = vec2(0.0);
             
@@ -81,6 +84,9 @@ export class BrickGeneratorNode extends DesignerNode {
 
         vec4 process(vec2 uv)
         {
+            vec2 tileSize = vec2(prop_rows, prop_columns);
+            float offset = prop_offset;
+
             //vec2 pos = uv * vec2(5);
             vec2 pos = uv * tileSize;
             

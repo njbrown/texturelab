@@ -17,15 +17,15 @@ export class NormalMapNode extends DesignerNode {
             vec2 step = vec2(1.0,1.0)/_textureSize;
 
             // center point
-            float d0 = abs(texture2D(height, uv + vec2(0.0, 0.0)).r) * prop_strength / 2.0;
+            float d0 = abs(texture(height, uv + vec2(0.0, 0.0)).r) * prop_strength / 2.0;
 
             // sample horizontally
-            float d1 = abs(texture2D(height, uv + vec2(step.x, 0.0)).r) * prop_strength / 2.0;
-            float d2 = abs(texture2D(height, uv + vec2(-step.x, 0.0)).r) * prop_strength / 2.0;
+            float d1 = abs(texture(height, uv + vec2(step.x, 0.0)).r) * prop_strength / 2.0;
+            float d2 = abs(texture(height, uv + vec2(-step.x, 0.0)).r) * prop_strength / 2.0;
 
             // sample vertically
-            float d3 = abs(texture2D(height, uv + vec2(0.0, step.y)).r) * prop_strength / 2.0;
-            float d4 = abs(texture2D(height, uv + vec2(0.0, -step.y)).r) * prop_strength / 2.0;
+            float d3 = abs(texture(height, uv + vec2(0.0, step.y)).r) * prop_strength / 2.0;
+            float d4 = abs(texture(height, uv + vec2(0.0, -step.y)).r) * prop_strength / 2.0;
 
             // find diff horizontally and average
             float dx = ((d2 - d0) + (d0 - d1)) * 0.5;

@@ -12,7 +12,7 @@ export class ColorizeNode extends DesignerNode {
     var source = `
         vec4 process(vec2 uv)
         {
-            return texture2D(image,uv) * prop_color;
+            return texture(image,uv) * prop_color;
         }
         `;
 

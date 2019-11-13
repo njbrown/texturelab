@@ -19,9 +19,9 @@ export class DirectionalWarpNode extends DesignerNode {
             vec2 dir = normalize(vec2(cos(prop_angle), sin(prop_angle)));
 
             // center point
-            float dist = abs(texture2D(height, uv).r) - 0.5;
+            float dist = abs(texture(height, uv).r) - 0.5;
             
-            vec4 color = texture2D(inputImage, uv + dir * prop_intensity * dist);
+            vec4 color = texture(inputImage, uv + dir * prop_intensity * dist);
 
             return color;
         }

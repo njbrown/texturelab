@@ -25,7 +25,7 @@ export class TestInvertNode extends DesignerNode {
     var source = `
         vec4 process(vec2 uv)
         {
-            vec4 col = vec4(1.0) - texture2D(color,uv);
+            vec4 col = vec4(1.0) - texture(color,uv);
             col.a = 1.0;
             return col;
         }
@@ -45,8 +45,8 @@ export class TestMultiplyNode extends DesignerNode {
     var source = `
         vec4 process(vec2 uv)
         {
-            vec4 colA = texture2D(colorA,uv);
-            vec4 colB = texture2D(colorB,uv);
+            vec4 colA = texture(colorA,uv);
+            vec4 colB = texture(colorB,uv);
             return colA * colB;
         }
         `;
@@ -189,15 +189,15 @@ export class TestNormalNode extends DesignerNode {
             vec2 step = vec2(1.0,1.0)/size;
 
             // center point
-            float d0 = abs(texture2D(height, uv + vec2(0.0, 0.0)).r);
+            float d0 = abs(texture(height, uv + vec2(0.0, 0.0)).r);
 
             // sample horizontally
-            float d1 = abs(texture2D(height, uv + vec2(step.x, 0.0)).r);
-            float d2 = abs(texture2D(height, uv + vec2(-step.x, 0.0)).r);
+            float d1 = abs(texture(height, uv + vec2(step.x, 0.0)).r);
+            float d2 = abs(texture(height, uv + vec2(-step.x, 0.0)).r);
 
             // sample vertically
-            float d3 = abs(texture2D(height, uv + vec2(0.0, step.y)).r);
-            float d4 = abs(texture2D(height, uv + vec2(0.0, -step.y)).r);
+            float d3 = abs(texture(height, uv + vec2(0.0, step.y)).r);
+            float d4 = abs(texture(height, uv + vec2(0.0, -step.y)).r);
 
             // find diff horizontally and average
             float dx = ((d2 - d0) + (d0 - d1)) * 0.5;
@@ -237,15 +237,15 @@ export class TestWarpNode extends DesignerNode {
             vec2 step = vec2(1.0,1.0)/size;
 
             // center point
-            float d0 = abs(texture2D(height, uv + vec2(0.0, 0.0)).r);
+            float d0 = abs(texture(height, uv + vec2(0.0, 0.0)).r);
 
             // sample horizontally
-            float d1 = abs(texture2D(height, uv + vec2(step.x, 0.0)).r);
-            float d2 = abs(texture2D(height, uv + vec2(-step.x, 0.0)).r);
+            float d1 = abs(texture(height, uv + vec2(step.x, 0.0)).r);
+            float d2 = abs(texture(height, uv + vec2(-step.x, 0.0)).r);
 
             // sample vertically
-            float d3 = abs(texture2D(height, uv + vec2(0.0, step.y)).r);
-            float d4 = abs(texture2D(height, uv + vec2(0.0, -step.y)).r);
+            float d3 = abs(texture(height, uv + vec2(0.0, step.y)).r);
+            float d4 = abs(texture(height, uv + vec2(0.0, -step.y)).r);
 
             // find diff horizontally and average
             float dx = ((d2 - d0) + (d0 - d1)) * 0.5;
@@ -258,7 +258,7 @@ export class TestWarpNode extends DesignerNode {
             //float strength = (10.0-prop_strength) * 0.01;
             vec2 offset = vec2(dx, dy);
             
-            vec4 color = texture2D(inputImage, uv + offset * prop_strength);
+            vec4 color = texture(inputImage, uv + offset * prop_strength);
 
             return color;
         }

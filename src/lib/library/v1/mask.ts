@@ -16,9 +16,9 @@ export class MaskNode extends DesignerNode {
 
         vec4 process(vec2 uv)
         {
-            vec4 a =  texture2D(textureA, uv);
-            vec4 b =  texture2D(textureB, uv);
-            vec4 m =  texture2D(mask, uv);
+            vec4 a =  texture(textureA, uv);
+            vec4 b =  texture(textureB, uv);
+            vec4 m =  texture(mask, uv);
             float t = lum(m);
 
             // lerp

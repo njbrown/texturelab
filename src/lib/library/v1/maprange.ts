@@ -13,7 +13,7 @@ export class MapRangeNode extends DesignerNode {
     var source = `
         vec4 process(vec2 uv)
         {
-            vec4 col = texture2D(color,uv);
+            vec4 col = texture(color,uv);
 
             // color range coming in
             float inDiff = prop_in_max - prop_in_min;

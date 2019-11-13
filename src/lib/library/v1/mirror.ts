@@ -41,7 +41,7 @@ export class MirrorNode extends DesignerNode {
 
             if (prop_clamp)
                 uv = clamp(uv, vec2(0.0), vec2(1.0));
-            vec4 col = texture2D(image, uv);
+            vec4 col = texture(image, uv);
             return col;
         }
         `;

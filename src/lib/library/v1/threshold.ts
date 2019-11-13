@@ -12,7 +12,7 @@ export class ThresholdNode extends DesignerNode {
     var source = `
         vec4 process(vec2 uv)
         {
-            vec4 a =  texture2D(image, uv);
+            vec4 a =  texture(image, uv);
 
             if (prop_invert)
                 a.rgb = step(1.0 - prop_threshold, a.rgb);

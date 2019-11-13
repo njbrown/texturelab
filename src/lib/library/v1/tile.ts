@@ -16,14 +16,12 @@ export class TileNode extends DesignerNode {
     this.addFloatProperty("columns", "Columns", 6, 1, 20, 1);
 
     var source = `
-        vec2 brickSize = vec2(prop_brickWidth, prop_brickHeight);
-        vec2 tileSize = vec2(prop_rows, prop_columns);
-
         // offset for alternating rows
-        float offset = prop_offset;
             
         vec2 is_brick(vec2 pos)
         {
+            vec2 brickSize = vec2(prop_brickWidth, prop_brickHeight);
+
             vec2 edgeSize = (vec2(1.0) - brickSize) * vec2(0.5);
             vec2 brick = vec2(0.0);
             
@@ -38,6 +36,8 @@ export class TileNode extends DesignerNode {
 
         vec4 process(vec2 uv)
         {
+            float offset = prop_offset;
+            vec2 tileSize = vec2(prop_rows, prop_columns);
             vec2 pos = uv * tileSize;
             
             float xOffset = 0.0;
@@ -60,7 +60,7 @@ export class TileNode extends DesignerNode {
             pos = fract(pos);
             
             vec2 isBrick =is_brick(pos);
-            vec4 col = texture2D(image, pos);
+            vec4 col = texture(image, pos);
             
             return vec4(col.rgb, isBrick.x * isBrick.y * col.a);
         }
