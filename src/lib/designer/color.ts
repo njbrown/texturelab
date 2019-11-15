@@ -5,7 +5,17 @@ export class Color {
   public b: number = 0.0;
   public a: number = 1.0;
 
-  public constructor() {}
+  public constructor(
+    r: number = 0.0,
+    g: number = 0.0,
+    b: number = 0.0,
+    a: number = 1.0
+  ) {
+    this.r = r;
+    this.g = g;
+    this.b = b;
+    this.a = a;
+  }
 
   public static parse(hex: string): Color {
     var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);

@@ -132,6 +132,20 @@ export class NodeScene {
     if (this.onconnectioncreated) this.onconnectioncreated(con);
   }
 
+  createConnection(leftId: string, rightId: string, rightIndex: number = 0) {
+    var con = new ConnectionGraphicsItem();
+
+    // get nodes
+    var leftNode = this.getNodeById(leftId);
+    var rightNode = this.getNodeById(rightId);
+
+    // get sockets
+    con.socketA = leftNode.sockets.find(x => x.socketType == SocketType.Out);
+    con.socketB = rightNode.sockets[rightIndex];
+
+    this.addConnection(con);
+  }
+
   removeConnection(con: ConnectionGraphicsItem) {
     console.log("removing connection in scene");
     console.log(con);

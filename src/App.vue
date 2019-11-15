@@ -7,7 +7,12 @@
       <a class="right button" href="#">Unity Export</a>
       <a class="right button" href="#">Zip Export</a>
   </div>-->
-  <golden-layout class="container" @itemCreated="itemCreated" :headerHeight="30" ref="GL">
+  <golden-layout
+    class="container"
+    @itemCreated="itemCreated"
+    :headerHeight="30"
+    ref="GL"
+  >
     <gl-row>
       <gl-col width="25">
         <gl-component title="2D View" class="test-component" :closable="false">
@@ -23,7 +28,12 @@
 
       <gl-col width="55" ref="canvas">
         <gl-component title="Editor" class="test-component" :closable="false">
-          <canvas width="400" height="400" id="editor" ondragover="event.preventDefault()" />
+          <canvas
+            width="400"
+            height="400"
+            id="editor"
+            ondragover="event.preventDefault()"
+          />
         </gl-component>
         <!-- <gl-component title="Library" height="30" :closable="false">
             <library-view :editor="this.editor" :library="this.library" />
@@ -33,13 +43,17 @@
       <gl-col width="20">
         <gl-component title="Properties" :closable="false">
           <node-properties-view
-            v-if="this.selectedNode!=null"
+            v-if="this.selectedNode != null"
             :editor="this.editor"
             :node="this.selectedNode"
           />
         </gl-component>
         <gl-component title="Library" :closable="false">
-          <library-view :editor="this.editor" :library="this.library" v-if="this.library != null" />
+          <library-view
+            :editor="this.editor"
+            :library="this.library"
+            v-if="this.library != null"
+          />
         </gl-component>
         <!-- <gl-component title="Texture Properties" class="test-component" :closable="false"></gl-component> -->
       </gl-col>

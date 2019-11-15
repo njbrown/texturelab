@@ -212,10 +212,11 @@ export class ColorProperty extends Property {
 
   public setValue(val: any) {
     // todo: validate
-    //console.log("got color: "+val);
+    console.log("got color: " + val);
     if (val instanceof Color) this.value = val;
     else if (typeof val == "string") this.value = Color.parse(val);
     else if (typeof val == "object") {
+      console.log("setting value", val);
       var value = new Color();
       value.r = val.r || 0;
       value.g = val.g || 0;

@@ -59,7 +59,6 @@ export class DesignerNode {
     gl.useProgram(this.shaderProgram);
 
     // clear all inputs
-    console.log(this.inputs);
     for (let input of this.inputs) {
       gl.activeTexture(gl.TEXTURE0 + texIndex);
       gl.bindTexture(gl.TEXTURE_2D, null);
@@ -74,7 +73,6 @@ export class DesignerNode {
 
     // pass inputs for rendering
     var texIndex = 0;
-    console.log(inputs);
     for (let input of inputs) {
       gl.activeTexture(gl.TEXTURE0 + texIndex);
       gl.bindTexture(gl.TEXTURE_2D, input.node.tex);
@@ -131,6 +129,7 @@ export class DesignerNode {
       }
       if (prop instanceof ColorProperty) {
         var col = (prop as ColorProperty).value;
+        //console.log("color: ", col);
         gl.uniform4f(
           gl.getUniformLocation(this.shaderProgram, "prop_" + prop.name),
           col.r,
@@ -171,13 +170,31 @@ export class DesignerNode {
   }
 
   public setProperty(name: string, value: any) {
-    //console.log(this.properties);
-    for (let prop of this.properties) {
-      if (prop.name == name) {
-        prop.setValue(value);
-        this.requestUpdate();
-      }
+    console.log(this.properties);
+    console.log("prop name: ", name);
+    console.log(this.properties.length);
+
+    let prop = this.properties.find(x => {
+      console.log(x);
+      console.log(x.name);
+      return x.name == name;
+    });
+
+    console.log(prop);
+    if (prop) {
+      prop.setValue(value);
+      this.requestUpdate();
     }
+
+    // for (let prop of this.properties) {
+    //   console.log("prop iter");
+    //   console.log(prop);
+    //   console.log(prop.name == name);
+    //   if (prop.name == name) {
+    //     prop.setValue(value);
+    //     this.requestUpdate();
+    //   }
+    // }
   }
 
   public _init() {

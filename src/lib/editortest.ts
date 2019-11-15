@@ -12,6 +12,7 @@ import { SocketType } from "./scene/socketgraphicsitem";
 import { ImageCanvas } from "./designer/imagecanvas";
 
 import { createLibrary as createV1Library } from "@/lib/library/libraryv1";
+import { Color } from "./designer/color";
 
 function hexToRgb(hex) {
   var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -222,9 +223,67 @@ export class Editor {
   // creates new texture
   // requires canvas to be already set
   createNewTexture() {
+    this.clearTextureChannels();
+
     this.library = createV1Library();
     this.setDesigner(new Designer());
     this.setScene(new NodeScene(this.canvas));
+
+    this.setupDefaultScene();
+  }
+
+  setupDefaultScene() {
+    let offset = 100;
+    let spacing = 150;
+
+    // albedo
+    let node = this.library.create("output");
+    let nodeView = this.addNode(node, 0, 0);
+    // figure out why this doesnt work before adding addNode:
+    node.setProperty("color", new Color(1, 1, 1, 1));
+    nodeView.setCenter(800, offset + spacing * 0);
+    console.log(nodeView);
+    this.assignNodeToTextureChannel(nodeView.id, "albedo");
+
+    // normal
+    node = this.library.create("output");
+    nodeView = this.addNode(node, 0, 0);
+    node.setProperty("color", new Color(0.5, 0.5, 1, 1));
+    nodeView.setCenter(800, offset + spacing * 1);
+    this.assignNodeToTextureChannel(nodeView.id, "normal");
+    let normalId = node.id;
+
+    // normal map
+    node = this.library.create("normalmap");
+    nodeView = this.addNode(node, 0, 0);
+    nodeView.setCenter(600, offset + spacing * 1);
+
+    this.graph.createConnection(node.id, normalId, 0);
+
+    // roughness
+    node = this.library.create("output");
+    nodeView = this.addNode(node, 0, 0);
+    node.setProperty("color", new Color(0.5, 0.5, 0.5, 1));
+    nodeView.setCenter(800, offset + spacing * 2);
+    this.assignNodeToTextureChannel(nodeView.id, "roughness");
+
+    // metalness
+    node = this.library.create("output");
+    nodeView = this.addNode(node, 0, 0);
+    node.setProperty("color", new Color(0, 0, 0, 1));
+    nodeView.setCenter(800, offset + spacing * 3);
+    this.assignNodeToTextureChannel(nodeView.id, "metalness");
+
+    // height
+    node = this.library.create("output");
+    nodeView = this.addNode(node, 0, 0);
+    node.setProperty("color", new Color(0, 0, 0, 1));
+    nodeView.setCenter(800, offset + spacing * 4);
+    this.assignNodeToTextureChannel(nodeView.id, "height");
+
+    // refresh everything
+    this.designer.invalidateAllNodes();
+    console.log("default scene setup");
   }
 
   set2DPreview(preview2D: HTMLCanvasElement) {
