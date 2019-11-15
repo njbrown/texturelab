@@ -219,8 +219,7 @@ export class NodeScene {
     this.clearAndDrawGrid();
     // draw connections
     for (let con of this.conns) {
-      if (con.socketA == this.hitSocket || con.socketB == this.hitSocket)
-        continue;
+      if (con == this.hitConnection) continue;
       con.draw(this.context);
     }
 
@@ -307,6 +306,10 @@ export class NodeScene {
 
     if (evt.button == 0) {
       if (this.hitSocket) {
+        // remove previous connection
+        // this block creates a new connection regardless of the outcome
+        if (this.hitConnection) this.removeConnection(this.hitConnection);
+
         let closeSock: SocketGraphicsItem = this.getHitSocket(mouseX, mouseY);
 
         if (
