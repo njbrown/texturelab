@@ -28,6 +28,21 @@
 
       <gl-col width="55" ref="canvas">
         <gl-component title="Editor" class="test-component" :closable="false">
+          <div class="editor-menu" style="height:2em;">
+            <!-- <a class="btn" href="#" @click="setShape('sphere')">S</a>
+      <a class="btn" href="#" @click="setShape('cube')">C</a>
+      <a class="btn" href="#" @click="setShape('plane')">P</a>
+            <a class="btn" href="#" @click="setShape('cylinder')">C</a>-->
+            <select class="enum" :value="resolution" @change="setResolution">
+              <option value="256">Resolution: 256x256</option>
+              <option value="512">Resolution: 512x512</option>
+              <option value="1024">Resolution: 1024x1024</option>
+              <option value="2048">Resolution: 2048x2048</option>
+              <option value="4096">Resolution: 4096x4096</option>
+            </select>
+            <span>RandomSeed:</span>
+            <input type="number" :value="randomSeed" @change="setRandomSeed" />
+          </div>
           <canvas
             width="400"
             height="400"
@@ -133,6 +148,29 @@ body {
   overflow: hidden;
   background: #333;
 }
+
+.editor-menu .enum {
+  margin-top: 0.1em;
+  border: solid white 1px;
+  border-radius: 2px;
+  color: white;
+  background: #222;
+  padding: 4px;
+  margin-right: 5px;
+}
+
+.editor-menu span {
+  color: white;
+}
+
+.editor-menu input[type="number"] {
+  /* //color: white; */
+  margin: 5px;
+  border: solid white 1px;
+  border-radius: 2px;
+  line-height: 1.5em;
+  width: 3em;
+}
 </style>
 
 <script lang="ts">
@@ -178,11 +216,14 @@ export default class App extends Vue {
 
   selectedNode: DesignerNode = null;
 
-  designer!: Designer;
+  //designer!: Designer;
 
   project: Project;
 
   isMenuSetup: boolean = false;
+
+  resolution: number = 1024;
+  randomSeed: number = 32;
 
   constructor() {
     super();
@@ -246,7 +287,7 @@ export default class App extends Vue {
     };
     this.editor.setSceneCanvas(canv);
 
-    this.designer = this.editor.designer;
+    //this.designer = this.editor.designer;
     this.editor.onnodeselected = node => {
       this.selectedNode = node;
     };
@@ -300,7 +341,7 @@ export default class App extends Vue {
       item.container.on("resize", function() {
         const canvas = <HTMLCanvasElement>document.getElementById("editor");
         canvas.width = container.width;
-        canvas.height = container.height;
+        canvas.height = container.height - 32;
       });
     }
 
@@ -344,6 +385,9 @@ export default class App extends Vue {
 
     this.project.name = "New Texture";
     this.project.path = null;
+
+    this.resolution = 1024;
+    this.randomSeed = 32;
 
     // todo: set title
   }
@@ -401,6 +445,8 @@ export default class App extends Vue {
         console.log(project);
         remote.getCurrentWindow().setTitle(project.name);
         this.editor.load(project.data);
+        this.resolution = 1024;
+        this.randomSeed = 32;
 
         this.project = project;
         this.library = this.editor.library;
@@ -481,5 +527,18 @@ export default class App extends Vue {
   showAboutDialog() {}
 
   submitBugs() {}
+
+  setResolution(evt) {
+    let value = parseInt(evt.target.value);
+    //console.log(value);
+    this.resolution = value;
+    this.editor.designer.setTextureSize(value, value);
+  }
+
+  setRandomSeed(evt) {
+    let seed = evt.target.value;
+    this.randomSeed = seed;
+    this.editor.designer.setRandomSeed(seed);
+  }
 }
 </script>

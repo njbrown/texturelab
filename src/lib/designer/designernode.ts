@@ -84,7 +84,7 @@ export class DesignerNode {
         gl.getUniformLocation(this.shaderProgram, input.name + "_connected"),
         1
       );
-      console.log("bound texture " + texIndex);
+      //console.log("bound texture " + texIndex);
       texIndex++;
     }
 
@@ -170,17 +170,10 @@ export class DesignerNode {
   }
 
   public setProperty(name: string, value: any) {
-    console.log(this.properties);
-    console.log("prop name: ", name);
-    console.log(this.properties.length);
-
     let prop = this.properties.find(x => {
-      console.log(x);
-      console.log(x.name);
       return x.name == name;
     });
 
-    console.log(prop);
     if (prop) {
       prop.setValue(value);
       this.requestUpdate();
