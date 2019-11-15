@@ -308,7 +308,10 @@ export class NodeScene {
       if (this.hitSocket) {
         // remove previous connection
         // this block creates a new connection regardless of the outcome
-        if (this.hitConnection) this.removeConnection(this.hitConnection);
+        if (this.hitConnection) {
+          this.removeConnection(this.hitConnection);
+          this.hitConnection = null;
+        }
 
         let closeSock: SocketGraphicsItem = this.getHitSocket(mouseX, mouseY);
 
