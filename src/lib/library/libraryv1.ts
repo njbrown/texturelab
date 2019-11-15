@@ -27,6 +27,7 @@ import { WaveNode } from "./v1/wave";
 import { CopyNode } from "./v1/copy";
 import { GradientNode, TriGradientNode } from "./v1/gradient";
 import { DesignerLibrary } from "../designer/library";
+import { OutputNode } from "./v1/output";
 
 export function createLibrary() {
   var lib = new DesignerLibrary();
@@ -66,6 +67,7 @@ export function createLibrary() {
   lib.addNode("copy", "Copy", CopyNode);
   lib.addNode("gradient", "Gradient", GradientNode);
   lib.addNode("trigradient", "TriGradient", TriGradientNode);
+  lib.addNode("output", "Output", OutputNode);
   // lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
   return lib;

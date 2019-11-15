@@ -58,8 +58,23 @@ export class DesignerNode {
     // bind shader
     gl.useProgram(this.shaderProgram);
 
-    // pass textures
+    // clear all inputs
+    console.log(this.inputs);
+    for (let input of this.inputs) {
+      gl.activeTexture(gl.TEXTURE0 + texIndex);
+      gl.bindTexture(gl.TEXTURE_2D, null);
+
+      gl.uniform1i(gl.getUniformLocation(this.shaderProgram, input), 0);
+
+      gl.uniform1i(
+        gl.getUniformLocation(this.shaderProgram, input + "_connected"),
+        0
+      );
+    }
+
+    // pass inputs for rendering
     var texIndex = 0;
+    console.log(inputs);
     for (let input of inputs) {
       gl.activeTexture(gl.TEXTURE0 + texIndex);
       gl.bindTexture(gl.TEXTURE_2D, input.node.tex);
@@ -67,6 +82,11 @@ export class DesignerNode {
         gl.getUniformLocation(this.shaderProgram, input.name),
         texIndex
       );
+      gl.uniform1i(
+        gl.getUniformLocation(this.shaderProgram, input.name + "_connected"),
+        1
+      );
+      console.log("bound texture " + texIndex);
       texIndex++;
     }
 
@@ -426,6 +446,7 @@ export class DesignerNode {
 
     for (let input of this.inputs) {
       code += "uniform sampler2D " + input + ";\n";
+      code += "uniform int " + input + "_connected;\n";
     }
 
     return code;
