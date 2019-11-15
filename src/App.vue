@@ -170,6 +170,7 @@ body {
   border-radius: 2px;
   line-height: 1.5em;
   width: 3em;
+  padding: 0 5px;
 }
 </style>
 
