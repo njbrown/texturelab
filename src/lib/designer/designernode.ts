@@ -456,7 +456,7 @@ export class DesignerNode {
 
     for (let input of this.inputs) {
       code += "uniform sampler2D " + input + ";\n";
-      code += "uniform int " + input + "_connected;\n";
+      code += "uniform bool " + input + "_connected;\n";
     }
 
     return code;

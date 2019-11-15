@@ -31,7 +31,7 @@ export class BlendNode extends DesignerNode {
         vec4 process(vec2 uv)
         {
             float finalOpacity = prop_opacity;
-            if (opacity_connected==1)
+            if (opacity_connected)
                 finalOpacity *= texture(opacity, uv).r;
 
             vec4 colA = texture(colorA,uv);

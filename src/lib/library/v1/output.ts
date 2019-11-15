@@ -12,7 +12,7 @@ export class OutputNode extends DesignerNode {
         vec4 process(vec2 uv)
         {
             vec4 col;
-            if (image_connected == 1) {
+            if (image_connected) {
               col = vec4(0,1,0,1);
               col = texture(image, uv);
               return texture(image, uv);
