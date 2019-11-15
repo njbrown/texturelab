@@ -7,7 +7,7 @@ export class NormalMapNode extends DesignerNode {
     //this.exportName = "result";
     this.addInput("height");
 
-    this.addFloatProperty("strength", "Strength", 0.001, -0.02, 0.02, 0.00001);
+    this.addFloatProperty("strength", "Strength", 0.02, -0.02, 0.02, 0.00001);
 
     var source = `
         vec4 process(vec2 uv)
