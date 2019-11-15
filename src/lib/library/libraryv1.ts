@@ -1,5 +1,5 @@
 import { BrickGeneratorNode } from "./v1/brickgenerator";
-import { NormalMapNode } from "./v1/normalmap";
+import { NormalMapNode, BetterWarpNode } from "./v1/normalmap";
 import { CellNode } from "./v1/cellnode";
 import { SolidCellNode } from "./v1/solidcell";
 import { LineCellNode } from "./v1/linecell";
@@ -66,6 +66,7 @@ export function createLibrary() {
   lib.addNode("copy", "Copy", CopyNode);
   lib.addNode("gradient", "Gradient", GradientNode);
   lib.addNode("trigradient", "TriGradient", TriGradientNode);
+  // lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
   return lib;
 }
