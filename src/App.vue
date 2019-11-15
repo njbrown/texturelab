@@ -7,12 +7,7 @@
       <a class="right button" href="#">Unity Export</a>
       <a class="right button" href="#">Zip Export</a>
   </div>-->
-  <golden-layout
-    class="container"
-    @itemCreated="itemCreated"
-    :headerHeight="30"
-    ref="GL"
-  >
+  <golden-layout class="container" @itemCreated="itemCreated" :headerHeight="30" ref="GL">
     <gl-row>
       <gl-col width="25">
         <gl-component title="2D View" class="test-component" :closable="false">
@@ -43,12 +38,7 @@
             <span>RandomSeed:</span>
             <input type="number" :value="randomSeed" @change="setRandomSeed" />
           </div>
-          <canvas
-            width="400"
-            height="400"
-            id="editor"
-            ondragover="event.preventDefault()"
-          />
+          <canvas width="400" height="400" id="editor" ondragover="event.preventDefault()" />
         </gl-component>
         <!-- <gl-component title="Library" height="30" :closable="false">
             <library-view :editor="this.editor" :library="this.library" />
@@ -64,11 +54,7 @@
           />
         </gl-component>
         <gl-component title="Library" :closable="false">
-          <library-view
-            :editor="this.editor"
-            :library="this.library"
-            v-if="this.library != null"
-          />
+          <library-view :editor="this.editor" :library="this.library" v-if="this.library != null" />
         </gl-component>
         <!-- <gl-component title="Texture Properties" class="test-component" :closable="false"></gl-component> -->
       </gl-col>
@@ -409,7 +395,7 @@ export default class App extends Vue {
               extensions: ["texture"]
             }
           ],
-          defaultPath: "material"
+          defaultPath: "material.texture"
         },
         path => {
           //console.log(path);
@@ -479,7 +465,7 @@ export default class App extends Vue {
             extensions: ["zip"]
           }
         ],
-        defaultPath: "material"
+        defaultPath: "material.zip"
       },
       async path => {
         if (!path) {
@@ -506,7 +492,7 @@ export default class App extends Vue {
             extensions: ["zip"]
           }
         ],
-        defaultPath: "material"
+        defaultPath: "material.zip"
       },
       async path => {
         if (!path) {
