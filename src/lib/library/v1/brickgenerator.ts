@@ -14,7 +14,7 @@ export class BrickGeneratorNode extends DesignerNode {
     this.addFloatProperty("heightMin", "Height Min", 0.0, 0, 1, 0.05);
     this.addFloatProperty("heightMax", "Height Max", 1.0, 0, 1, 0.05);
     this.addFloatProperty("heightBalance", "Height Balance", 1.0, 0, 1, 0.05);
-    this.addFloatProperty("heightVariance", "Height Variance", 0.9, 0, 1, 0.05);
+    this.addFloatProperty("heightVariance", "Height Variance", 0, 0, 1, 0.05);
 
     this.addFloatProperty("rows", "Rows", 6, 1, 20, 1);
     this.addFloatProperty("columns", "Columns", 6, 1, 20, 1);
