@@ -16,7 +16,10 @@ export enum MenuCommands {
   ExportUnity = "export_unity",
   ExportUnityZip = "export_unity_zip",
 
-  SamplesBrick = "samples_brick",
+  ExamplesGoldLinesMarbleTiles = "samples_1",
+  ExamplesGrenade = "samples_2",
+  ExamplesScrews = "samples_3",
+  ExamplesWoodenPlanks = "samples_4",
 
   HelpTutorials = "help_tutorials",
   HelpAbout = "help_about",
@@ -87,20 +90,37 @@ export function setupMenu() {
         }
       ]
     },
-    // {
-    // 	label: "Samples",
-    // 	submenu: [
-    // 		{
-    // 			label: "Lava"
-    // 		},
-    // 		{
-    // 			label: "Water"
-    // 		},
-    // 		{
-    // 			label: "Wood"
-    // 		}
-    // 	]
-    // },
+    {
+      label: "Examples",
+      submenu: [
+        {
+          label: "GoldLinedMarbleTiles",
+          click: (item, focusedWindow) => {
+            focusedWindow.webContents.send(
+              MenuCommands.ExamplesGoldLinesMarbleTiles
+            );
+          }
+        },
+        {
+          label: "Grenade",
+          click: (item, focusedWindow) => {
+            focusedWindow.webContents.send(MenuCommands.ExamplesGrenade);
+          }
+        },
+        {
+          label: "Screws",
+          click: (item, focusedWindow) => {
+            focusedWindow.webContents.send(MenuCommands.ExamplesScrews);
+          }
+        },
+        {
+          label: "WoodenPlanks",
+          click: (item, focusedWindow) => {
+            focusedWindow.webContents.send(MenuCommands.ExamplesWoodenPlanks);
+          }
+        }
+      ]
+    },
     // {
     //   label: "Help",
     //   submenu: [

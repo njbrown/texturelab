@@ -197,9 +197,12 @@ import { zipExport } from "@/lib/export/zipexporter.js";
 import { shell } from "electron";
 //import libv1 from "./lib/library/libraryv1";
 import fs from "fs";
+import path from "path";
 const electron = require("electron");
 const remote = electron.remote;
 const { dialog, app, BrowserWindow, Menu } = remote;
+
+declare var __static: any;
 
 @Component({
   components: {
@@ -260,6 +263,29 @@ export default class App extends Vue {
     electron.ipcRenderer.on(MenuCommands.ExportUnityZip, async (evt, arg) => {
       await this.exportUnityZip();
     });
+
+    // samples
+    electron.ipcRenderer.on(
+      MenuCommands.ExamplesGoldLinesMarbleTiles,
+      async (evt, arg) => {
+        this.openExample("GoldLinedMarbleTiles.texture");
+      }
+    );
+
+    electron.ipcRenderer.on(MenuCommands.ExamplesGrenade, async (evt, arg) => {
+      this.openExample("Grenade.texture");
+    });
+
+    electron.ipcRenderer.on(MenuCommands.ExamplesScrews, async (evt, arg) => {
+      this.openExample("Screws.texture");
+    });
+
+    electron.ipcRenderer.on(
+      MenuCommands.ExamplesWoodenPlanks,
+      async (evt, arg) => {
+        this.openExample("WoodenPlanks.texture");
+      }
+    );
 
     electron.ipcRenderer.on(MenuCommands.HelpTutorials, (evt, arg) => {
       this.showTutorials();
@@ -542,6 +568,39 @@ export default class App extends Vue {
   showAboutDialog() {}
 
   submitBugs() {}
+
+  openExample(fileName: string) {
+    let basePath =
+      (process.env.NODE_ENV == "production" ? "file://" : "") +
+      path.join(__static, "assets/examples/");
+
+    let fullPath = path.join(basePath, fileName);
+    this._openSample(fullPath);
+  }
+
+  _openSample(path: string) {
+    let project = ProjectManager.load(path);
+    console.log(project);
+
+    // ensure library exists
+    let libName = project.data["libraryVersion"];
+    let libraries = ["v0", "v1"];
+    if (libraries.indexOf(libName) == -1) {
+      alert(
+        `Project contains unknown library version '${libName}'. It must have been created with a new version of TextureLab`
+      );
+      return;
+    }
+
+    remote.getCurrentWindow().setTitle(project.name);
+    this.editor.load(project.data);
+    this.resolution = 1024;
+    this.randomSeed = 32;
+
+    project.path = null; // this ensures saving pops SaveAs dialog
+    this.project = project;
+    this.library = this.editor.library;
+  }
 
   setResolution(evt) {
     let value = parseInt(evt.target.value);
