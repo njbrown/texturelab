@@ -1,205 +1,262 @@
 import { Guid } from "../utils";
 import { Designer } from "../designer";
 import {
-  Property,
-  FloatProperty,
-  IntProperty,
-  BoolProperty,
-  EnumProperty,
-  ColorProperty,
-  StringProperty
+	Property,
+	FloatProperty,
+	IntProperty,
+	BoolProperty,
+	EnumProperty,
+	ColorProperty,
+	StringProperty,
+	GradientProperty
 } from "./properties";
 import { buildShaderProgram } from "./gl";
 import { Color } from "./color";
+import { Gradient } from "./gradient";
 
 export class NodeInput {
-  public node: DesignerNode;
-  public name: string;
+	public node: DesignerNode;
+	public name: string;
 }
 
 export class DesignerNode {
-  public id: string = Guid.newGuid();
-  public title: string;
-  public typeName: string; // added when node is created from library
+	public id: string = Guid.newGuid();
+	public title: string;
+	public typeName: string; // added when node is created from library
 
-  public gl: WebGLRenderingContext;
-  public designer: Designer;
-  tex: WebGLTexture;
-  //program:WebGLShader;
-  source: string; // shader code
-  shaderProgram: WebGLProgram;
-  exportName: string;
+	public gl: WebGLRenderingContext;
+	public designer: Designer;
+	tex: WebGLTexture;
+	//program:WebGLShader;
+	source: string; // shader code
+	shaderProgram: WebGLProgram;
+	exportName: string;
 
-  inputs: string[] = new Array();
-  properties: Property[] = new Array();
+	inputs: string[] = new Array();
+	properties: Property[] = new Array();
 
-  // tells scene to update the texture next frame
-  needsUpdate: boolean = true;
+	// tells scene to update the texture next frame
+	needsUpdate: boolean = true;
 
-  // callbacks
-  onthumbnailgenerated: (DesignerNode, HTMLImageElement) => void;
+	// callbacks
+	onthumbnailgenerated: (DesignerNode, HTMLImageElement) => void;
 
-  // an update is requested when:
-  // a property is changed
-  // a new connection is made
-  // a connection is removed
-  //
-  // all output connected nodes are invalidated as well
-  private requestUpdate() {
-    this.designer.requestUpdate(this);
-  }
+	// an update is requested when:
+	// a property is changed
+	// a new connection is made
+	// a connection is removed
+	//
+	// all output connected nodes are invalidated as well
+	private requestUpdate() {
+		this.designer.requestUpdate(this);
+	}
 
-  public render(inputs: NodeInput[]) {
-    var gl = this.gl;
-    // bind texture to fbo
-    //gl.clearColor(0,0,1,1);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	public render(inputs: NodeInput[]) {
+		var gl = this.gl;
+		// bind texture to fbo
+		//gl.clearColor(0,0,1,1);
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // bind shader
-    gl.useProgram(this.shaderProgram);
+		// bind shader
+		gl.useProgram(this.shaderProgram);
 
-    // clear all inputs
-    for (let input of this.inputs) {
-      gl.activeTexture(gl.TEXTURE0 + texIndex);
-      gl.bindTexture(gl.TEXTURE_2D, null);
+		// clear all inputs
+		for (let input of this.inputs) {
+			gl.activeTexture(gl.TEXTURE0 + texIndex);
+			gl.bindTexture(gl.TEXTURE_2D, null);
 
-      gl.uniform1i(gl.getUniformLocation(this.shaderProgram, input), 0);
+			gl.uniform1i(gl.getUniformLocation(this.shaderProgram, input), 0);
 
-      gl.uniform1i(
-        gl.getUniformLocation(this.shaderProgram, input + "_connected"),
-        0
-      );
-    }
+			gl.uniform1i(
+				gl.getUniformLocation(this.shaderProgram, input + "_connected"),
+				0
+			);
+		}
 
-    // pass inputs for rendering
-    var texIndex = 0;
-    for (let input of inputs) {
-      gl.activeTexture(gl.TEXTURE0 + texIndex);
-      gl.bindTexture(gl.TEXTURE_2D, input.node.tex);
-      gl.uniform1i(
-        gl.getUniformLocation(this.shaderProgram, input.name),
-        texIndex
-      );
-      gl.uniform1i(
-        gl.getUniformLocation(this.shaderProgram, input.name + "_connected"),
-        1
-      );
-      //console.log("bound texture " + texIndex);
-      texIndex++;
-    }
+		// pass inputs for rendering
+		var texIndex = 0;
+		for (let input of inputs) {
+			gl.activeTexture(gl.TEXTURE0 + texIndex);
+			gl.bindTexture(gl.TEXTURE_2D, input.node.tex);
+			gl.uniform1i(
+				gl.getUniformLocation(this.shaderProgram, input.name),
+				texIndex
+			);
+			gl.uniform1i(
+				gl.getUniformLocation(
+					this.shaderProgram,
+					input.name + "_connected"
+				),
+				1
+			);
+			//console.log("bound texture " + texIndex);
+			texIndex++;
+		}
 
-    // pass seed
-    gl.uniform1f(
-      gl.getUniformLocation(this.shaderProgram, "_seed"),
-      this.designer.getRandomSeed()
-    );
+		// pass seed
+		gl.uniform1f(
+			gl.getUniformLocation(this.shaderProgram, "_seed"),
+			this.designer.getRandomSeed()
+		);
 
-    // texture size
-    gl.uniform2f(
-      gl.getUniformLocation(this.shaderProgram, "_textureSize"),
-      this.designer.width,
-      this.designer.height
-    );
+		// texture size
+		gl.uniform2f(
+			gl.getUniformLocation(this.shaderProgram, "_textureSize"),
+			this.designer.width,
+			this.designer.height
+		);
 
-    // pass properties
-    for (let prop of this.properties) {
-      if (prop instanceof FloatProperty) {
-        gl.uniform1f(
-          gl.getUniformLocation(this.shaderProgram, "prop_" + prop.name),
-          (prop as FloatProperty).value
-        );
-      }
-      if (prop instanceof IntProperty) {
-        gl.uniform1i(
-          gl.getUniformLocation(this.shaderProgram, "prop_" + prop.name),
-          (prop as IntProperty).value
-        );
-      }
-      if (prop instanceof BoolProperty) {
-        gl.uniform1i(
-          gl.getUniformLocation(this.shaderProgram, "prop_" + prop.name),
-          (prop as BoolProperty).value == false ? 0 : 1
-        );
-      }
-      if (prop instanceof EnumProperty) {
-        gl.uniform1i(
-          gl.getUniformLocation(this.shaderProgram, "prop_" + prop.name),
-          (prop as EnumProperty).index
-        );
-      }
-      if (prop instanceof ColorProperty) {
-        var col = (prop as ColorProperty).value;
-        //console.log("color: ", col);
-        gl.uniform4f(
-          gl.getUniformLocation(this.shaderProgram, "prop_" + prop.name),
-          col.r,
-          col.g,
-          col.b,
-          col.a
-        );
-      }
-    }
+		// pass properties
+		for (let prop of this.properties) {
+			if (prop instanceof FloatProperty) {
+				gl.uniform1f(
+					gl.getUniformLocation(
+						this.shaderProgram,
+						"prop_" + prop.name
+					),
+					(prop as FloatProperty).value
+				);
+			}
+			if (prop instanceof IntProperty) {
+				gl.uniform1i(
+					gl.getUniformLocation(
+						this.shaderProgram,
+						"prop_" + prop.name
+					),
+					(prop as IntProperty).value
+				);
+			}
+			if (prop instanceof BoolProperty) {
+				gl.uniform1i(
+					gl.getUniformLocation(
+						this.shaderProgram,
+						"prop_" + prop.name
+					),
+					(prop as BoolProperty).value == false ? 0 : 1
+				);
+			}
+			if (prop instanceof EnumProperty) {
+				gl.uniform1i(
+					gl.getUniformLocation(
+						this.shaderProgram,
+						"prop_" + prop.name
+					),
+					(prop as EnumProperty).index
+				);
+			}
+			if (prop instanceof ColorProperty) {
+				var col = (prop as ColorProperty).value;
+				//console.log("color: ", col);
+				gl.uniform4f(
+					gl.getUniformLocation(
+						this.shaderProgram,
+						"prop_" + prop.name
+					),
+					col.r,
+					col.g,
+					col.b,
+					col.a
+				);
+			}
+			if (prop instanceof GradientProperty) {
+				let gradient = (prop as GradientProperty).value;
 
-    // bind mesh
-    var posLoc = gl.getAttribLocation(this.shaderProgram, "a_pos");
-    var texCoordLoc = gl.getAttribLocation(this.shaderProgram, "a_texCoord");
+				gl.uniform1i(
+					gl.getUniformLocation(
+						this.shaderProgram,
+						"prop_" + prop.name + ".numPoints"
+					),
+					gradient.points.length
+				);
 
-    // provide texture coordinates for the rectangle.
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.designer.posBuffer);
-    gl.enableVertexAttribArray(posLoc);
-    gl.vertexAttribPointer(posLoc, 3, gl.FLOAT, false, 0, 0);
+				for (let i = 0; i < gradient.points.length; i++) {
+					let point = gradient.points[i];
+					let col = point.color;
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.designer.texCoordBuffer);
-    gl.enableVertexAttribArray(texCoordLoc);
-    gl.vertexAttribPointer(texCoordLoc, 2, gl.FLOAT, false, 0, 0);
+					gl.uniform3f(
+						gl.getUniformLocation(
+							this.shaderProgram,
+							"prop_" + prop.name + ".colors[" + i + "]"
+						),
+						col.r,
+						col.g,
+						col.b
+					);
 
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
+					gl.uniform1f(
+						gl.getUniformLocation(
+							this.shaderProgram,
+							"prop_" + prop.name + ".positions[" + i + "]"
+						),
+						point.t
+					);
+				}
+			}
+		}
 
-    gl.disableVertexAttribArray(posLoc);
-    gl.disableVertexAttribArray(texCoordLoc);
+		// bind mesh
+		var posLoc = gl.getAttribLocation(this.shaderProgram, "a_pos");
+		var texCoordLoc = gl.getAttribLocation(
+			this.shaderProgram,
+			"a_texCoord"
+		);
 
-    // render
-  }
+		// provide texture coordinates for the rectangle.
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.designer.posBuffer);
+		gl.enableVertexAttribArray(posLoc);
+		gl.vertexAttribPointer(posLoc, 3, gl.FLOAT, false, 0, 0);
 
-  public getInputs(): string[] {
-    return this.inputs;
-  }
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.designer.texCoordBuffer);
+		gl.enableVertexAttribArray(texCoordLoc);
+		gl.vertexAttribPointer(texCoordLoc, 2, gl.FLOAT, false, 0, 0);
 
-  protected addInput(name: string) {
-    this.inputs.push(name);
-  }
+		gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-  public setProperty(name: string, value: any) {
-    let prop = this.properties.find(x => {
-      return x.name == name;
-    });
+		gl.disableVertexAttribArray(posLoc);
+		gl.disableVertexAttribArray(texCoordLoc);
 
-    if (prop) {
-      prop.setValue(value);
-      this.requestUpdate();
-    }
+		// render
+	}
 
-    // for (let prop of this.properties) {
-    //   console.log("prop iter");
-    //   console.log(prop);
-    //   console.log(prop.name == name);
-    //   if (prop.name == name) {
-    //     prop.setValue(value);
-    //     this.requestUpdate();
-    //   }
-    // }
-  }
+	public getInputs(): string[] {
+		return this.inputs;
+	}
 
-  public _init() {
-    //this.inputs = new Array();
-    //this.properties = new Array();
-    this.createTexture();
+	protected addInput(name: string) {
+		this.inputs.push(name);
+	}
 
-    this.init();
-  }
+	public setProperty(name: string, value: any) {
+		let prop = this.properties.find(x => {
+			return x.name == name;
+		});
 
-  protected init() {
-    /*
+		if (prop) {
+			prop.setValue(value);
+			this.requestUpdate();
+		}
+
+		// for (let prop of this.properties) {
+		//   console.log("prop iter");
+		//   console.log(prop);
+		//   console.log(prop.name == name);
+		//   if (prop.name == name) {
+		//     prop.setValue(value);
+		//     this.requestUpdate();
+		//   }
+		// }
+	}
+
+	public _init() {
+		//this.inputs = new Array();
+		//this.properties = new Array();
+		this.createTexture();
+
+		this.init();
+	}
+
+	protected init() {
+		/*
         this.source = `
         vec4 process(vec2 uv)
         {
@@ -209,11 +266,11 @@ export class DesignerNode {
 
         this.buildShader(this.source);
         */
-  }
+	}
 
-  // #source gets appended to fragment shader
-  buildShader(source: string) {
-    var vertSource: string = `#version 300 es
+	// #source gets appended to fragment shader
+	buildShader(source: string) {
+		var vertSource: string = `#version 300 es
         precision highp float;
 
         in vec3 a_pos;
@@ -227,9 +284,11 @@ export class DesignerNode {
             v_texCoord = a_texCoord;
         }`;
 
-    var fragSource: string = `#version 300 es
+		var fragSource: string = `#version 300 es
         precision highp float;
         in vec2 v_texCoord;
+
+        #define GRADIENT_MAX_POINTS 32
 
         vec4 process(vec2 uv);
         void initRandom();
@@ -245,63 +304,68 @@ export class DesignerNode {
 
         `;
 
-    fragSource =
-      fragSource +
-      this.createRandomLib() +
-      this.createCodeForInputs() +
-      this.createCodeForProps() +
-      "#line 0\n" +
-      source;
+		fragSource =
+			fragSource +
+			this.createRandomLib() +
+			this.createGradientLib() +
+			this.createCodeForInputs() +
+			this.createCodeForProps() +
+			"#line 0\n" +
+			source;
 
-    this.shaderProgram = buildShaderProgram(this.gl, vertSource, fragSource);
-  }
+		this.shaderProgram = buildShaderProgram(
+			this.gl,
+			vertSource,
+			fragSource
+		);
+	}
 
-  // creates opengl texture for this node
-  // gets the height from the scene
-  // if the texture is already created, delete it and recreate it
-  createTexture() {
-    var gl = this.gl;
+	// creates opengl texture for this node
+	// gets the height from the scene
+	// if the texture is already created, delete it and recreate it
+	createTexture() {
+		var gl = this.gl;
 
-    if (this.tex) {
-      gl.deleteTexture(this.tex);
-      this.tex = null;
-    }
+		if (this.tex) {
+			gl.deleteTexture(this.tex);
+			this.tex = null;
+		}
 
-    var tex = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, tex);
+		var tex = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, tex);
 
-    const level = 0;
-    const internalFormat = gl.RGBA;
-    const border = 0;
-    const format = gl.RGBA;
-    const type = gl.UNSIGNED_BYTE;
-    const data = null;
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      level,
-      internalFormat,
-      this.designer.width,
-      this.designer.height,
-      border,
-      format,
-      type,
-      data
-    );
+		const level = 0;
+		const internalFormat = gl.RGBA;
+		const border = 0;
+		const format = gl.RGBA;
+		const type = gl.UNSIGNED_BYTE;
+		const data = null;
+		gl.texImage2D(
+			gl.TEXTURE_2D,
+			level,
+			internalFormat,
+			this.designer.width,
+			this.designer.height,
+			border,
+			format,
+			type,
+			data
+		);
 
-    // set the filtering so we don't need mips
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+		// set the filtering so we don't need mips
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 
-    gl.bindTexture(gl.TEXTURE_2D, null);
+		gl.bindTexture(gl.TEXTURE_2D, null);
 
-    this.tex = tex;
-  }
+		this.tex = tex;
+	}
 
-  createRandomLibOld(): string {
-    // float _seed = `+this.designer.getRandomSeed().toFixed(1)+`;
-    var code: string = `
+	createRandomLibOld(): string {
+		// float _seed = `+this.designer.getRandomSeed().toFixed(1)+`;
+		var code: string = `
         // this offsets the random start (should be a uniform)
         uniform float _seed;
         // this is the starting number for the rng
@@ -350,12 +414,12 @@ export class DesignerNode {
         }
         `;
 
-    return code;
-  }
+		return code;
+	}
 
-  createRandomLib(): string {
-    // float _seed = `+this.designer.getRandomSeed().toFixed(1)+`;
-    var code: string = `
+	createRandomLib(): string {
+		// float _seed = `+this.designer.getRandomSeed().toFixed(1)+`;
+		var code: string = `
         // this offsets the random start (should be a uniform)
         uniform float _seed;
         // this is the starting number for the rng
@@ -448,126 +512,201 @@ export class DesignerNode {
         }
         `;
 
-    return code;
-  }
+		return code;
+	}
 
-  createCodeForInputs() {
-    var code: string = "";
-
-    for (let input of this.inputs) {
-      code += "uniform sampler2D " + input + ";\n";
-      code += "uniform bool " + input + "_connected;\n";
+	createGradientLib(): string {
+		// float _seed = `+this.designer.getRandomSeed().toFixed(1)+`;
+		var code: string = `
+    struct Gradient {
+				vec3 colors[GRADIENT_MAX_POINTS];
+				float positions[GRADIENT_MAX_POINTS];
+				int numPoints;
+    };
+        
+    // assumes points are sorted
+    vec3 sampleGradient(vec3 colors[GRADIENT_MAX_POINTS], float positions[GRADIENT_MAX_POINTS], int numPoints, float t)
+    {
+        if (numPoints == 0)
+            return vec3(1,0,0);
+        
+        if (numPoints == 1)
+            return colors[0];
+        
+        // here at least two points are available
+        if (t <= positions[0])
+            return colors[0];
+        
+        int last = numPoints - 1;
+        if (t >= positions[last])
+            return colors[last];
+        
+        // find two points in-between and lerp
+        
+        for(int i = 0; i < numPoints-1;i++) {
+            if (positions[i+1] > t) {
+                vec3 colorA = colors[i];
+                vec3 colorB = colors[i+1];
+                
+                float t1 = positions[i];
+                float t2 = positions[i+1];
+                
+                float lerpPos = (t - t1)/(t2 - t1);
+                return mix(colorA, colorB, lerpPos);
+                
+            }
+            
+        }
+        
+        return vec3(0,0,0);
     }
 
-    return code;
-  }
-
-  createCodeForProps() {
-    var code: string = "";
-
-    //console.log(this.properties);
-    //console.log(typeof FloatProperty);
-
-    for (let prop of this.properties) {
-      //code += "uniform sampler2D " + input + ";\n";
-      if (prop instanceof FloatProperty) {
-        code += "uniform float prop_" + prop.name + ";\n";
-      }
-      if (prop instanceof IntProperty) {
-        code += "uniform int prop_" + prop.name + ";\n";
-      }
-      if (prop instanceof BoolProperty) {
-        code += "uniform bool prop_" + prop.name + ";\n";
-      }
-      if (prop instanceof EnumProperty) {
-        code += "uniform int prop_" + prop.name + ";\n";
-      }
-      if (prop instanceof ColorProperty) {
-        code += "uniform vec4 prop_" + prop.name + ";\n";
-      }
+    vec3 sampleGradient(Gradient gradient, float t)
+    {
+      return sampleGradient(gradient.colors, gradient.positions, gradient.numPoints, t);
     }
+    `;
 
-    code += "\n";
+		return code;
+	}
 
-    return code;
-  }
+	createCodeForInputs() {
+		var code: string = "";
 
-  // PROPERTY FUNCTIONS
-  addIntProperty(
-    id: string,
-    displayName: string,
-    defaultVal: number = 1,
-    minVal: number = 1,
-    maxVal: number = 100,
-    increment: number = 1
-  ): IntProperty {
-    var prop = new IntProperty(id, displayName, defaultVal);
-    prop.minValue = minVal;
-    prop.maxValue = maxVal;
-    prop.step = increment;
+		for (let input of this.inputs) {
+			code += "uniform sampler2D " + input + ";\n";
+			code += "uniform bool " + input + "_connected;\n";
+		}
 
-    this.properties.push(prop);
-    return prop;
-  }
+		return code;
+	}
 
-  addFloatProperty(
-    id: string,
-    displayName: string,
-    defaultVal: number = 1,
-    minVal: number = 1,
-    maxVal: number = 100,
-    increment: number = 1
-  ): FloatProperty {
-    var prop = new FloatProperty(id, displayName, defaultVal);
-    prop.minValue = minVal;
-    prop.maxValue = maxVal;
-    prop.step = increment;
+	createCodeForProps() {
+		var code: string = "";
 
-    this.properties.push(prop);
-    return prop;
-  }
+		//console.log(this.properties);
+		//console.log(typeof FloatProperty);
 
-  addBoolProperty(
-    id: string,
-    displayName: string,
-    defaultVal: boolean = false
-  ): BoolProperty {
-    var prop = new BoolProperty(id, displayName, defaultVal);
+		for (let prop of this.properties) {
+			//code += "uniform sampler2D " + input + ";\n";
+			if (prop instanceof FloatProperty) {
+				code += "uniform float prop_" + prop.name + ";\n";
+			}
+			if (prop instanceof IntProperty) {
+				code += "uniform int prop_" + prop.name + ";\n";
+			}
+			if (prop instanceof BoolProperty) {
+				code += "uniform bool prop_" + prop.name + ";\n";
+			}
+			if (prop instanceof EnumProperty) {
+				code += "uniform int prop_" + prop.name + ";\n";
+			}
+			if (prop instanceof ColorProperty) {
+				code += "uniform vec4 prop_" + prop.name + ";\n";
+			}
+			if (prop instanceof GradientProperty) {
+				// code += "uniform struct prop_" + prop.name + " {\n";
+				// code += "vec3 colors[GRADIENT_MAX_POINTS];\n";
+				// code += "vec3 positions[GRADIENT_MAX_POINTS];\n";
+				// code += "int numPoints;\n";
+				// code += "};";
 
-    this.properties.push(prop);
-    return prop;
-  }
+				code += "uniform Gradient prop_" + prop.name + ";\n";
+			}
+		}
 
-  addEnumProperty(
-    id: string,
-    displayName: string,
-    defaultVal: string[] = new Array()
-  ): EnumProperty {
-    var prop = new EnumProperty(id, displayName, defaultVal);
+		code += "\n";
 
-    this.properties.push(prop);
-    return prop;
-  }
+		return code;
+	}
 
-  addColorProperty(
-    id: string,
-    displayName: string,
-    defaultVal: Color
-  ): ColorProperty {
-    var prop = new ColorProperty(id, displayName, defaultVal);
+	// PROPERTY FUNCTIONS
+	addIntProperty(
+		id: string,
+		displayName: string,
+		defaultVal: number = 1,
+		minVal: number = 1,
+		maxVal: number = 100,
+		increment: number = 1
+	): IntProperty {
+		var prop = new IntProperty(id, displayName, defaultVal);
+		prop.minValue = minVal;
+		prop.maxValue = maxVal;
+		prop.step = increment;
 
-    this.properties.push(prop);
-    return prop;
-  }
+		this.properties.push(prop);
+		return prop;
+	}
 
-  addStringProperty(
-    id: string,
-    displayName: string,
-    defaultVal: string = ""
-  ): StringProperty {
-    var prop = new StringProperty(id, displayName, defaultVal);
+	addFloatProperty(
+		id: string,
+		displayName: string,
+		defaultVal: number = 1,
+		minVal: number = 1,
+		maxVal: number = 100,
+		increment: number = 1
+	): FloatProperty {
+		var prop = new FloatProperty(id, displayName, defaultVal);
+		prop.minValue = minVal;
+		prop.maxValue = maxVal;
+		prop.step = increment;
 
-    this.properties.push(prop);
-    return prop;
-  }
+		this.properties.push(prop);
+		return prop;
+	}
+
+	addBoolProperty(
+		id: string,
+		displayName: string,
+		defaultVal: boolean = false
+	): BoolProperty {
+		var prop = new BoolProperty(id, displayName, defaultVal);
+
+		this.properties.push(prop);
+		return prop;
+	}
+
+	addEnumProperty(
+		id: string,
+		displayName: string,
+		defaultVal: string[] = new Array()
+	): EnumProperty {
+		var prop = new EnumProperty(id, displayName, defaultVal);
+
+		this.properties.push(prop);
+		return prop;
+	}
+
+	addColorProperty(
+		id: string,
+		displayName: string,
+		defaultVal: Color
+	): ColorProperty {
+		var prop = new ColorProperty(id, displayName, defaultVal);
+
+		this.properties.push(prop);
+		return prop;
+	}
+
+	addStringProperty(
+		id: string,
+		displayName: string,
+		defaultVal: string = ""
+	): StringProperty {
+		var prop = new StringProperty(id, displayName, defaultVal);
+
+		this.properties.push(prop);
+		return prop;
+	}
+
+	addGradientProperty(
+		id: string,
+		displayName: string,
+		defaultVal: Gradient
+	): GradientProperty {
+		var prop = new GradientProperty(id, displayName, defaultVal);
+
+		this.properties.push(prop);
+		return prop;
+	}
 }
