@@ -3,7 +3,7 @@
 		<div>
 			<label>{{ prop.displayName }}</label>
 		</div>
-		<div class="input-holder" style="min-height:50px;">
+		<div class="input-holder" style="min-height:50px;" ref="inputHolder">
 			<canvas ref="canvas" />
 		</div>
 	</div>
@@ -15,6 +15,7 @@ import { Designer } from "@/lib/designer";
 import { DesignerNode } from "@/lib/designer/designernode";
 import { Gradient, GradientPoint } from "@/lib/designer/gradient";
 import { Color } from "@/lib/designer/color";
+import elementResizeDetectorMaker from "element-resize-detector";
 
 @Component
 export default class GradientPropertyView extends Vue {
@@ -31,17 +32,24 @@ export default class GradientPropertyView extends Vue {
 	node: DesignerNode;
 
 	mounted() {
-		console.log("mounted");
 		this.widget = new GradientWidget({
+			width: (<HTMLDivElement>this.$refs.inputHolder).offsetWidth,
 			canvas: this.$refs.canvas
 		});
 
 		this.widget.setGradient(this.prop.value);
 		this.widget.onvaluechanged = this.updateValue;
+
+		let erd = new elementResizeDetectorMaker();
+		erd.listenTo(this.$refs.inputHolder, element => {
+			var width = element.offsetWidth;
+			var height = element.offsetHeight;
+
+			this.widget.resize(width, height);
+		});
 	}
 
 	beforeDestroy() {
-		console.log("unmounted");
 		this.widget.dispose();
 	}
 
@@ -136,8 +144,8 @@ export class GradientWidget {
 	onvaluechanged: (gradient: Gradient) => void;
 
 	constructor(options: any) {
-		this.width = options.any || 300;
-		this.height = options.any || 50;
+		this.width = options.width || 300;
+		this.height = options.height || 50;
 		this.handleSize = options.handleSize || 16;
 
 		this.canvas = options.canvas || document.createElement("canvas");
@@ -152,6 +160,18 @@ export class GradientWidget {
 		//this.gradient = new Gradient();
 		this.setGradient(new Gradient());
 		this.bindEvents();
+		this.redrawCanvas();
+	}
+
+	resize(width: number, height: number) {
+		this.canvas.width = width;
+		this.width = width;
+
+		// recalc positions of all handles
+		for (let handle of this.handles) {
+			handle.colorBox.setCenterX(width * handle.gradientPoint.t);
+		}
+
 		this.redrawCanvas();
 	}
 
@@ -349,15 +369,25 @@ export class GradientWidget {
 			// background
 			ctx.beginPath();
 			ctx.fillStyle = handle.gradientPoint.color.toHex();
-			ctx.rect(colBox.x, colBox.y, colBox.width, colBox.height);
+			//ctx.rect(colBox.x, colBox.y, colBox.width, colBox.height);
+			roundRect(ctx, colBox.x, colBox.y, colBox.width, colBox.height, 1);
 			ctx.fill();
 
 			// border
 			ctx.beginPath();
 			ctx.lineWidth = 2;
 			ctx.strokeStyle = "rgb(0, 0, 0)";
-			ctx.rect(colBox.x, colBox.y, colBox.width, colBox.height);
+			//ctx.rect(colBox.x, colBox.y, colBox.width, colBox.height);
+			roundRect(ctx, colBox.x, colBox.y, colBox.width, colBox.height, 1);
 			ctx.stroke();
+
+			// triangle at top
+			ctx.fillStyle = "rgb(0, 0, 0)";
+			ctx.beginPath();
+			ctx.moveTo(colBox.centerX(), colBox.y - 5);
+			ctx.lineTo(colBox.x, colBox.y);
+			ctx.lineTo(colBox.x + colBox.width, colBox.y);
+			ctx.fill();
 		}
 	}
 
@@ -389,6 +419,20 @@ function fitCanvasToContainer(canvas) {
 
 	canvas.style.width = "auto";
 	canvas.style.height = "auto";
+}
+
+// https://stackoverflow.com/questions/1255512/how-to-draw-a-rounded-rectangle-on-html-canvas
+function roundRect(ctx: CanvasRenderingContext2D, x, y, w, h, r) {
+	if (w < 2 * r) r = w / 2;
+	if (h < 2 * r) r = h / 2;
+	ctx.beginPath();
+	ctx.moveTo(x + r, y);
+	ctx.arcTo(x + w, y, x + w, y + h, r);
+	ctx.arcTo(x + w, y + h, x, y + h, r);
+	ctx.arcTo(x, y + h, x, y, r);
+	ctx.arcTo(x, y, x + w, y, r);
+	ctx.closePath();
+	//ctx.stroke();
 }
 </script>
 

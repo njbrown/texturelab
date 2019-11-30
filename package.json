@@ -18,6 +18,7 @@
 		"core-js": "^2.6.5",
 		"custom-electron-titlebar": "^3.1.0",
 		"dedent-js": "^1.0.1",
+		"element-resize-detector": "^1.1.15",
 		"jquery": "^3.4.1",
 		"three": "^0.106.2",
 		"three-orbitcontrols-ts": "git+https://git@github.com/nicolaspanel/three-orbitcontrols-ts.git",
