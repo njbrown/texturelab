@@ -2,15 +2,15 @@ import { DesignerNode } from "../../designer/designernode";
 
 // https://thebookofshaders.com/07/
 export class PolygonNode extends DesignerNode {
-  public init() {
-    this.title = "Polygon";
+	public init() {
+		this.title = "Polygon";
 
-    this.addFloatProperty("radius", "Radius", 0.7, 0, 3, 0.01);
-    this.addFloatProperty("angle", "Angle", 0, 0.0, 360.0, 1);
-    this.addIntProperty("sides", "Sides", 5, 0, 20, 0.01);
-    this.addFloatProperty("gradient", "Gradient", 0, 0, 1.0, 0.01);
+		this.addFloatProperty("radius", "Radius", 0.7, 0, 3, 0.01);
+		this.addFloatProperty("angle", "Angle", 0, 0.0, 360.0, 1);
+		this.addIntProperty("sides", "Sides", 5, 0, 20, 1);
+		this.addFloatProperty("gradient", "Gradient", 0, 0, 1.0, 0.01);
 
-    var source = `
+		var source = `
         #define PI 3.14159265359
         #define TWO_PI 6.28318530718
 
@@ -38,22 +38,22 @@ export class PolygonNode extends DesignerNode {
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }
 
 export class CircleNode extends DesignerNode {
-  public init() {
-    this.title = "Circle";
+	public init() {
+		this.title = "Circle";
 
-    this.addFloatProperty("radius", "Radius", 0.5, 0, 1, 0.01);
-    this.addEnumProperty("color_gen", "Color Generation", [
-      "Flat",
-      "Linear",
-      "Exponent"
-    ]);
+		this.addFloatProperty("radius", "Radius", 0.5, 0, 1, 0.01);
+		this.addEnumProperty("color_gen", "Color Generation", [
+			"Flat",
+			"Linear",
+			"Exponent"
+		]);
 
-    var source = `
+		var source = `
         vec4 process(vec2 uv)
         {
             float dist = distance(uv, vec2(0.5));
@@ -74,6 +74,6 @@ export class CircleNode extends DesignerNode {
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }
