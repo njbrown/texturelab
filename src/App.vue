@@ -277,9 +277,9 @@ export default class App extends Vue {
 		electron.ipcRenderer.on(MenuCommands.ExportZip, async (evt, arg) => {
 			await this.exportZip();
 		});
-		// electron.ipcRenderer.on(MenuCommands.ExportUnity, async (evt, arg) => {
-		//   await this.exportUnity();
-		// });
+		electron.ipcRenderer.on(MenuCommands.ExportUnity, async (evt, arg) => {
+			await this.exportUnity();
+		});
 		electron.ipcRenderer.on(
 			MenuCommands.ExportUnityZip,
 			async (evt, arg) => {
@@ -535,15 +535,35 @@ export default class App extends Vue {
 	loadSample(name: string) {}
 
 	async exportUnity() {
-		let buffer = await unityExport(this.editor, this.project.name);
-		console.log(buffer);
-		dialog.showSaveDialog(remote.getCurrentWindow(), {}, path => {
-			if (!path) return;
+		let buffer = await unityExport(
+			this.editor,
+			this.project.name.replace(".texture", "")
+		);
+		//console.log(buffer);
+		dialog.showSaveDialog(
+			remote.getCurrentWindow(),
+			{
+				filters: [
+					{
+						name: "Unity Package",
+						extensions: ["unitypackage"]
+					}
+				],
+				defaultPath:
+					(this.project.name
+						? this.project.name.replace(".texture", "")
+						: "material") + ".unitypackage"
+			},
+			path => {
+				if (!path) return;
 
-			fs.writeFile(path, buffer, function(err) {
-				if (err) alert("Error exporting texture: " + err);
-			});
-		});
+				fs.writeFile(path, buffer, function(err) {
+					if (err) alert("Error exporting texture: " + err);
+				});
+
+				remote.shell.showItemInFolder(path);
+			}
+		);
 	}
 
 	exportUnityZip() {
@@ -556,7 +576,10 @@ export default class App extends Vue {
 						extensions: ["zip"]
 					}
 				],
-				defaultPath: "material.zip"
+				defaultPath:
+					(this.project.name
+						? this.project.name.replace(".texture", "")
+						: "material") + ".zip"
 			},
 			async path => {
 				if (!path) {
@@ -565,7 +588,10 @@ export default class App extends Vue {
 
 				console.log(path);
 
-				let zip = await unityZipExport(this.editor, this.project.name);
+				let zip = await unityZipExport(
+					this.editor,
+					this.project.name.replace(".texture", "")
+				);
 
 				zip.writeZip(path);
 				remote.shell.showItemInFolder(path);
@@ -583,7 +609,10 @@ export default class App extends Vue {
 						extensions: ["zip"]
 					}
 				],
-				defaultPath: "material.zip"
+				defaultPath:
+					(this.project.name
+						? this.project.name.replace(".texture", "")
+						: "material") + ".zip"
 			},
 			async path => {
 				if (!path) {
@@ -592,7 +621,10 @@ export default class App extends Vue {
 
 				console.log(path);
 
-				let zip = await zipExport(this.editor, this.project.name);
+				let zip = await zipExport(
+					this.editor,
+					this.project.name.replace(".texture", "")
+				);
 
 				zip.writeZip(path);
 				remote.shell.showItemInFolder(path);
