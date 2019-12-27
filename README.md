@@ -3,7 +3,8 @@
 </h1>
 
 <p align="center">
-  Free, Cross-Platform, GPU-Accelerated Procedural Texture Generator.
+  Free, Cross-Platform, GPU-Accelerated Procedural Texture Generator.<br/>
+  <a href="https://njbrown.itch.io/texturelab">ITCH.IO</a>
 </p>
 
 ![TextureLab](https://i.imgur.com/ITMDBSf.png)
@@ -40,10 +41,10 @@ Got ideas, suggestions or feedback? Reach out to me on [twitter](https://twitter
 
 ## Built Using
 
--   **[Vue.js](https://vuejs.org)**
--   **[THREE.js](https://vuejs.org)**
--   **[Golden Layout](https://golden-layout.com/)** via **[vue-golden-layout](https://github.com/emedware/vue-golden-layout)**
--   **[Electron](https://electronjs.org)**
+- **[Vue.js](https://vuejs.org)**
+- **[THREE.js](https://vuejs.org)**
+- **[Golden Layout](https://golden-layout.com/)** via **[vue-golden-layout](https://github.com/emedware/vue-golden-layout)**
+- **[Electron](https://electronjs.org)**
 
 ## Licence
 
