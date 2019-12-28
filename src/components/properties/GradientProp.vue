@@ -248,6 +248,7 @@ export class GradientWidget {
 			// show color picker
 			var input = document.createElement("input");
 			input.type = "color";
+			input.value = hitHandle.gradientPoint.color.toHex();
 			input.onchange = function(ev: Event) {
 				console.log("onchange");
 				console.log(ev);
