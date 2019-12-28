@@ -223,10 +223,14 @@ export class GradientWidget {
 			// make handle draggable
 			self.hitHandle = handle;
 			self.isNewHandle = true;
+
+			if (self.onvaluechanged) self.onvaluechanged(self.gradient);
 		} else if (self.hitHandle && evt.button == 2) {
 			// delete handle
 			self.removeHandle(self.hitHandle);
 			self.hitHandle = null;
+
+			if (self.onvaluechanged) self.onvaluechanged(self.gradient);
 		}
 
 		self.redrawCanvas();
