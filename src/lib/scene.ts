@@ -82,7 +82,7 @@ export class NodeScene {
 		// add sample frames
 		let frame = new FrameGraphicsItem(this.view);
 		frame.setSize(500, 300);
-		this.frames.push(frame);
+		//this.frames.push(frame);
 
 		// bind event listeners
 		var self = this;
