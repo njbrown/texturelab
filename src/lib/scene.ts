@@ -9,6 +9,7 @@ import { SocketGraphicsItem, SocketType } from "./scene/socketgraphicsitem";
 import { GraphicsItem } from "./scene/graphicsitem";
 import { SceneView } from "./scene/view";
 import { FrameGraphicsItem } from "./scene/framegraphicsitem";
+import { CommentGraphicsItem } from "./scene/commentgraphicsitem";
 
 enum DragMode {
 	None,
@@ -48,6 +49,7 @@ export class NodeScene {
 	hasFocus: boolean;
 
 	frames: FrameGraphicsItem[];
+	comments: CommentGraphicsItem[];
 	nodes: NodeGraphicsItem[];
 	conns: ConnectionGraphicsItem[];
 
@@ -74,6 +76,7 @@ export class NodeScene {
 		this.hasFocus = false;
 		this.contextExtra = this.context;
 		this.frames = new Array();
+		this.comments = new Array();
 		this.nodes = new Array();
 		this.conns = new Array();
 		this.dragMode = null;
@@ -83,6 +86,12 @@ export class NodeScene {
 		let frame = new FrameGraphicsItem(this.view);
 		frame.setSize(500, 300);
 		this.frames.push(frame);
+
+		let comment = new CommentGraphicsItem(this.view);
+		//comment.setText("Hello World");
+		comment.setText("This\nis\na\nmultiline\nmessage");
+		comment.setCenter(200, 500);
+		this.comments.push(comment);
 
 		// bind event listeners
 		var self = this;
@@ -277,8 +286,11 @@ export class NodeScene {
 	draw() {
 		this.clearAndDrawGrid();
 
-		// draw frame
+		// draw frames
 		for (let frame of this.frames) frame.draw(this.context);
+
+		// draw comments
+		for (let comment of this.comments) comment.draw(this.context);
 
 		// draw connections
 		for (let con of this.conns) {
