@@ -1,5 +1,34 @@
 import { NodeScene } from "../scene";
 
+export class MouseEvent {
+	// scene space
+	globalX: number;
+	globalY: number;
+
+	localX: number;
+	localY: number;
+
+	mouseButton: number;
+
+	// default is accepted
+	private accepted: boolean = true;
+	public accept() {
+		this.accepted = true;
+	}
+
+	public reject() {
+		this.accepted = false;
+	}
+}
+
+export class MouseDownEvent extends MouseEvent {}
+export class MouseMoveEvent extends MouseEvent {
+	deltaX: number;
+	deltaY: number;
+}
+export class MouseUpEvent extends MouseEvent {}
+export class MouseOverEvent extends MouseEvent {}
+
 export class GraphicsItem {
 	protected scene!: NodeScene;
 	protected visible: boolean = true;
@@ -62,4 +91,14 @@ export class GraphicsItem {
 
 	// to be overriden
 	public draw(ctx: CanvasRenderingContext2D, renderData: any = null) {}
+
+	// MOUSE EVENTS
+
+	// STANDARD MOUSE EVENTS
+	public mouseDown(evt: MouseDownEvent) {}
+	public mouseMove(evt: MouseDownEvent) {}
+	public mouseUp(evt: MouseDownEvent) {}
+
+	// called every frame the mouse is over this object
+	public mouseOver(evt: MouseOverEvent) {}
 }
