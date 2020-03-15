@@ -1,7 +1,24 @@
 import { SocketGraphicsItem } from "./socketgraphicsitem";
-import { GraphicsItem } from "./graphicsitem";
+import {
+	GraphicsItem,
+	MouseDownEvent,
+	MouseMoveEvent,
+	MouseUpEvent
+} from "./graphicsitem";
 import { SceneView } from "./view";
 import { Color } from "../designer/color";
+
+enum XResizeDir {
+	None,
+	Left,
+	Right
+}
+
+enum YResizeDir {
+	None,
+	Top,
+	Bottom
+}
 
 export class FrameGraphicsItem extends GraphicsItem {
 	title: string;
@@ -9,6 +26,16 @@ export class FrameGraphicsItem extends GraphicsItem {
 	showTitle: boolean;
 	view: SceneView;
 	color: Color;
+	hit: boolean;
+
+	xResize: XResizeDir;
+	yResize: YResizeDir;
+
+	// display properties
+	handleSize: number;
+
+	// the radius of the resize handle
+	resizeHandleSize: number;
 
 	public constructor(view: SceneView) {
 		super();
@@ -17,6 +44,13 @@ export class FrameGraphicsItem extends GraphicsItem {
 		this.showTitle = true;
 		this.view = view;
 		this.color = new Color(0.1, 0, 0.2);
+		this.hit = false;
+
+		this.xResize = XResizeDir.None;
+		this.yResize = YResizeDir.None;
+
+		this.handleSize = 20;
+		this.resizeHandleSize = 10;
 	}
 
 	setSize(w: number, h: number) {
@@ -49,7 +83,7 @@ export class FrameGraphicsItem extends GraphicsItem {
 		ctx.stroke();
 
 		// handle
-		let handleSize = 20;
+		let handleSize = this.handleSize;
 		ctx.beginPath();
 		ctx.lineWidth = 1;
 		//ctx.fillStyle = "rgba(100, 0, 0, 0.5)";
@@ -102,9 +136,48 @@ export class FrameGraphicsItem extends GraphicsItem {
 			//let size = ctx.measureText(this.textureChannel.toUpperCase());
 			let textX = this.x;
 			let textY = this.y;
-			ctx.fillText("Hello World", textX, textY - 5);
+			//ctx.fillText("Hello World", textX, textY - 5);
+			ctx.fillText(
+				"Hello World",
+				textX * this.view.zoomFactor,
+				(textY - 5) * this.view.zoomFactor
+			);
 
 			ctx.restore();
 		}
+	}
+
+	public isPointInside(px: number, py: number): boolean {
+		// check resize borders first
+
+		// corners
+
+		// sizes
+
+		// top handle
+		if (
+			px >= this.x &&
+			px <= this.x + this.width &&
+			py >= this.y &&
+			py <= this.y + this.handleSize
+		)
+			return true;
+		return false;
+	}
+
+	// MOUSE EVENTS
+	public mouseDown(evt: MouseDownEvent) {
+		this.hit = true;
+	}
+
+	public mouseMove(evt: MouseMoveEvent) {
+		if (this.hit) {
+			// movement
+			this.move(evt.deltaX, evt.deltaY);
+		}
+	}
+
+	public mouseUp(evt: MouseUpEvent) {
+		this.hit = false;
 	}
 }

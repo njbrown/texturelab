@@ -20,6 +20,14 @@ export class MouseEvent {
 	public reject() {
 		this.accepted = false;
 	}
+
+	public get isAccepted() {
+		return this.accepted;
+	}
+
+	public get isRejected() {
+		return !this.accepted;
+	}
 }
 
 export class MouseDownEvent extends MouseEvent {}

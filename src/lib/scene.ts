@@ -345,17 +345,18 @@ export class NodeScene {
 				mouseEvent.localY = hitItem.top - pos.y;
 
 				hitItem.mouseDown(mouseEvent);
+				if (mouseEvent.isAccepted) {
+					this.hitItem = hitItem;
 
-				this.hitItem = hitItem;
+					if (hitItem instanceof NodeGraphicsItem) {
+						let hitNode = <NodeGraphicsItem>hitItem;
+						//move node to stop of stack
+						this.moveNodeToTop(hitNode);
 
-				if (hitItem instanceof NodeGraphicsItem) {
-					let hitNode = <NodeGraphicsItem>hitItem;
-					//move node to stop of stack
-					this.moveNodeToTop(hitNode);
-
-					if (this.onnodeselected) {
-						if (hitNode) this.onnodeselected(hitNode);
-						else this.onnodeselected(hitNode);
+						if (this.onnodeselected) {
+							if (hitNode) this.onnodeselected(hitNode);
+							else this.onnodeselected(hitNode);
+						}
 					}
 				}
 			}
