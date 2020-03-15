@@ -35,7 +35,7 @@ export class FrameGraphicsItem extends GraphicsItem {
 			"," +
 			alpha +
 			")";
-		console.log(col);
+		//console.log(col);
 		return col;
 	}
 

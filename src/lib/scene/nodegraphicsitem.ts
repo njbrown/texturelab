@@ -1,6 +1,11 @@
 import { SocketGraphicsItem, SocketType } from "./socketgraphicsitem";
 import { ImageCanvas } from "../designer/imagecanvas";
-import { GraphicsItem } from "./graphicsitem";
+import {
+	GraphicsItem,
+	MouseDownEvent,
+	MouseMoveEvent,
+	MouseUpEvent
+} from "./graphicsitem";
 
 export class NodeGraphicsItemRenderState {
 	hovered: boolean = false;
@@ -14,6 +19,8 @@ export class NodeGraphicsItem extends GraphicsItem {
 	thumbnail!: HTMLImageElement;
 	imageCanvas: ImageCanvas;
 
+	hit: boolean;
+
 	// albedo, norma, height, etc...
 	textureChannel: string;
 
@@ -23,6 +30,7 @@ export class NodeGraphicsItem extends GraphicsItem {
 		this.height = 100;
 		this.title = title;
 		this.imageCanvas = new ImageCanvas();
+		this.hit = false;
 	}
 
 	public setTextureChannel(name: string) {
@@ -216,5 +224,21 @@ export class NodeGraphicsItem extends GraphicsItem {
 		this.sockets.push(sock);
 
 		this.sortSockets();
+	}
+
+	// MOUSE EVENTS
+	public mouseDown(evt: MouseDownEvent) {
+		this.hit = true;
+	}
+
+	public mouseMove(evt: MouseMoveEvent) {
+		if (this.hit) {
+			// movement
+			this.move(evt.deltaX, evt.deltaY);
+		}
+	}
+
+	public mouseUp(evt: MouseUpEvent) {
+		this.hit = false;
 	}
 }

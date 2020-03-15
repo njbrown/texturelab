@@ -111,7 +111,7 @@ export class CommentGraphicsItem extends GraphicsItem {
 		ctx.textAlign = "left";
 		ctx.lineWidth = 1;
 
-		console.log(ctx.font);
+		//console.log(ctx.font);
 		for (var i = 0; i < lines.length; ++i) {
 			ctx.fillText(lines[i], textX, textY);
 			textY += lineHeight;

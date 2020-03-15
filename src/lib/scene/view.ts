@@ -24,7 +24,7 @@ class Vector2 {
 	}
 }
 
-class Rect {
+export class Rect {
 	protected visible: boolean = true;
 
 	protected x: number = 0;
@@ -74,6 +74,31 @@ class Rect {
 	public move(dx: number, dy: number) {
 		this.x += dx;
 		this.y += dy;
+	}
+
+	public get left() {
+		return this.x;
+	}
+
+	public get top() {
+		return this.y;
+	}
+
+	public get right() {
+		return this.x + this.width;
+	}
+
+	public get bottom() {
+		return this.y + this.height;
+	}
+
+	public intersects(other: Rect) {
+		if (this.left > other.right) return false;
+		if (this.right < other.left) return false;
+		if (this.bottom < other.top) return false;
+		if (this.top > other.bottom) return false;
+
+		return true;
 	}
 }
 

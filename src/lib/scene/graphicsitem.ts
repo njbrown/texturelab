@@ -1,4 +1,5 @@
 import { NodeScene } from "../scene";
+import { Rect } from "./view";
 
 export class MouseEvent {
 	// scene space
@@ -56,6 +57,40 @@ export class GraphicsItem {
 		return false;
 	}
 
+	public get left() {
+		return this.x;
+	}
+
+	public get top() {
+		return this.y;
+	}
+
+	public get right() {
+		return this.x + this.width;
+	}
+
+	public get bottom() {
+		return this.y + this.height;
+	}
+
+	public intersectsRect(other: Rect) {
+		if (this.left > other.right) return false;
+		if (this.right < other.left) return false;
+		if (this.bottom < other.top) return false;
+		if (this.top > other.bottom) return false;
+
+		return true;
+	}
+
+	public intersects(other: GraphicsItem) {
+		if (this.left > other.right) return false;
+		if (this.right < other.left) return false;
+		if (this.bottom < other.top) return false;
+		if (this.top > other.bottom) return false;
+
+		return true;
+	}
+
 	public setCenter(x: number, y: number) {
 		this.x = x - this.width / 2;
 		this.y = y - this.height / 2;
@@ -96,8 +131,8 @@ export class GraphicsItem {
 
 	// STANDARD MOUSE EVENTS
 	public mouseDown(evt: MouseDownEvent) {}
-	public mouseMove(evt: MouseDownEvent) {}
-	public mouseUp(evt: MouseDownEvent) {}
+	public mouseMove(evt: MouseMoveEvent) {}
+	public mouseUp(evt: MouseUpEvent) {}
 
 	// called every frame the mouse is over this object
 	public mouseOver(evt: MouseOverEvent) {}
