@@ -20,6 +20,12 @@ enum YResizeDir {
 	Bottom
 }
 
+enum DragMode {
+	None,
+	HandleTop,
+	Resize
+}
+
 export class FrameGraphicsItem extends GraphicsItem {
 	title: string;
 	description: string;
@@ -30,6 +36,7 @@ export class FrameGraphicsItem extends GraphicsItem {
 
 	xResize: XResizeDir;
 	yResize: YResizeDir;
+	dragMode: DragMode;
 
 	// display properties
 	handleSize: number;
@@ -48,6 +55,7 @@ export class FrameGraphicsItem extends GraphicsItem {
 
 		this.xResize = XResizeDir.None;
 		this.yResize = YResizeDir.None;
+		this.dragMode = DragMode.None;
 
 		this.handleSize = 20;
 		this.resizeHandleSize = 10;
@@ -150,11 +158,18 @@ export class FrameGraphicsItem extends GraphicsItem {
 	public isPointInside(px: number, py: number): boolean {
 		// check resize borders first
 
-		// corners
+		// 1) corners
+		if (
+			px >= this.x + this.width - this.resizeHandleSize &&
+			px <= this.x + this.width &&
+			py >= this.y + this.height - this.resizeHandleSize &&
+			py <= this.y + this.height
+		)
+			return true;
 
-		// sizes
+		// 2) sizes
 
-		// top handle
+		// 3) top handle
 		if (
 			px >= this.x &&
 			px <= this.x + this.width &&
@@ -168,16 +183,62 @@ export class FrameGraphicsItem extends GraphicsItem {
 	// MOUSE EVENTS
 	public mouseDown(evt: MouseDownEvent) {
 		this.hit = true;
+
+		let px = evt.globalX;
+		let py = evt.globalY;
+
+		// resize handle
+		if (
+			px >= this.x + this.width - this.resizeHandleSize &&
+			px <= this.x + this.width &&
+			py >= this.y + this.height - this.resizeHandleSize &&
+			py <= this.y + this.height
+		) {
+			this.dragMode = DragMode.Resize;
+			this.xResize = XResizeDir.Right;
+			this.yResize = YResizeDir.Bottom;
+		}
+
+		// topbar
+		if (
+			px >= this.x &&
+			px <= this.x + this.width &&
+			py >= this.y &&
+			py <= this.y + this.handleSize
+		) {
+			this.dragMode = DragMode.HandleTop;
+			this.xResize = XResizeDir.None;
+			this.yResize = YResizeDir.None;
+		}
 	}
 
 	public mouseMove(evt: MouseMoveEvent) {
 		if (this.hit) {
 			// movement
-			this.move(evt.deltaX, evt.deltaY);
+			if (this.dragMode == DragMode.HandleTop) {
+				this.move(evt.deltaX, evt.deltaY);
+			}
+			if (this.dragMode == DragMode.Resize) {
+				if (this.xResize == XResizeDir.Left) {
+					this.left += evt.deltaX;
+					this.width += evt.deltaX;
+				}
+				if (this.xResize == XResizeDir.Right) {
+					this.width += evt.deltaX;
+				}
+				if (this.yResize == YResizeDir.Top) {
+					this.top += evt.deltaY;
+					this.height += evt.deltaY;
+				}
+				if (this.yResize == YResizeDir.Bottom) {
+					this.height += evt.deltaY;
+				}
+			}
 		}
 	}
 
 	public mouseUp(evt: MouseUpEvent) {
 		this.hit = false;
+		this.dragMode = DragMode.None;
 	}
 }

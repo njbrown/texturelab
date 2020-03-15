@@ -69,8 +69,16 @@ export class GraphicsItem {
 		return this.x;
 	}
 
+	public set left(value) {
+		this.x = value;
+	}
+
 	public get top() {
 		return this.y;
+	}
+
+	public set top(value) {
+		this.y = value;
 	}
 
 	public get right() {
