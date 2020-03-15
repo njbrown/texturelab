@@ -39,7 +39,7 @@ export class MouseUpEvent extends MouseEvent {}
 export class MouseOverEvent extends MouseEvent {}
 
 export class GraphicsItem {
-	protected scene!: NodeScene;
+	scene!: NodeScene;
 	protected visible: boolean = true;
 
 	protected x: number = 0;

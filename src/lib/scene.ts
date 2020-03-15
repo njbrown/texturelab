@@ -94,9 +94,11 @@ export class NodeScene {
 		// add sample frames
 		let frame = new FrameGraphicsItem(this.view);
 		frame.setSize(500, 300);
+		frame.scene = this;
 		this.frames.push(frame);
 
 		let comment = new CommentGraphicsItem(this.view);
+		comment.scene = this;
 		//comment.setText("Hello World");
 		comment.setText("This\nis\na\nmultiline\nmessage");
 		comment.setCenter(200, 500);

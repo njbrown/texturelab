@@ -7,6 +7,7 @@ import {
 } from "./graphicsitem";
 import { SceneView } from "./view";
 import { Color } from "../designer/color";
+import { NodeGraphicsItem } from "./nodegraphicsitem";
 
 enum XResizeDir {
 	None,
@@ -44,6 +45,8 @@ export class FrameGraphicsItem extends GraphicsItem {
 	// the radius of the resize handle
 	resizeHandleSize: number;
 
+	nodes: NodeGraphicsItem[];
+
 	public constructor(view: SceneView) {
 		super();
 		this.title = "Frame";
@@ -59,6 +62,8 @@ export class FrameGraphicsItem extends GraphicsItem {
 
 		this.handleSize = 20;
 		this.resizeHandleSize = 10;
+
+		this.nodes = [];
 	}
 
 	setSize(w: number, h: number) {
@@ -209,6 +214,23 @@ export class FrameGraphicsItem extends GraphicsItem {
 			this.dragMode = DragMode.HandleTop;
 			this.xResize = XResizeDir.None;
 			this.yResize = YResizeDir.None;
+
+			// capture nodes
+			this.captureNodes();
+		}
+	}
+
+	captureNodes() {
+		for (let node of this.scene.nodes) {
+			// node must be entirely inside frame
+			if (
+				node.left >= this.left &&
+				node.right <= this.right &&
+				node.top >= this.top &&
+				node.bottom <= this.bottom
+			) {
+				this.nodes.push(node);
+			}
 		}
 	}
 
@@ -217,6 +239,11 @@ export class FrameGraphicsItem extends GraphicsItem {
 			// movement
 			if (this.dragMode == DragMode.HandleTop) {
 				this.move(evt.deltaX, evt.deltaY);
+
+				// move nodes
+				for (let node of this.nodes) {
+					node.move(evt.deltaX, evt.deltaY);
+				}
 			}
 			if (this.dragMode == DragMode.Resize) {
 				if (this.xResize == XResizeDir.Left) {
@@ -240,5 +267,6 @@ export class FrameGraphicsItem extends GraphicsItem {
 	public mouseUp(evt: MouseUpEvent) {
 		this.hit = false;
 		this.dragMode = DragMode.None;
+		this.nodes = [];
 	}
 }
