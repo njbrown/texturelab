@@ -1,5 +1,10 @@
 import { SocketGraphicsItem } from "./socketgraphicsitem";
-import { GraphicsItem } from "./graphicsitem";
+import {
+	GraphicsItem,
+	MouseDownEvent,
+	MouseMoveEvent,
+	MouseUpEvent
+} from "./graphicsitem";
 import { SceneView } from "./view";
 import { Color } from "../designer/color";
 
@@ -12,11 +17,15 @@ export class CommentGraphicsItem extends GraphicsItem {
 	padding: number;
 	fontHeight: number;
 
+	hit: boolean;
+
 	constructor(view: SceneView) {
 		super();
 		this.text = "";
 		this.view = view;
 		this.color = new Color(0.9, 0.9, 0.9);
+
+		this.hit = false;
 
 		this.padding = 5;
 		this.fontHeight = 20;
@@ -118,5 +127,21 @@ export class CommentGraphicsItem extends GraphicsItem {
 			let size = ctx.measureText(lines[i]);
 			//console.log("RENDER WITH: " + size.width);
 		}
+	}
+
+	// MOUSE EVENTS
+	public mouseDown(evt: MouseDownEvent) {
+		this.hit = true;
+	}
+
+	public mouseMove(evt: MouseMoveEvent) {
+		if (this.hit) {
+			// movement
+			this.move(evt.deltaX, evt.deltaY);
+		}
+	}
+
+	public mouseUp(evt: MouseUpEvent) {
+		this.hit = false;
 	}
 }

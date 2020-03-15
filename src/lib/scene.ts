@@ -337,27 +337,28 @@ export class NodeScene {
 
 		if (evt.button == 0) {
 			let hitItem = this.getHitItem(mouseX, mouseY);
-
-			if (hitItem instanceof NodeGraphicsItem) {
-				let hitNode = <NodeGraphicsItem>hitItem;
-				//move node to stop of stack
-				this.moveNodeToTop(hitNode);
-
+			if (hitItem != null) {
 				let mouseEvent = new MouseDownEvent();
 				mouseEvent.globalX = pos.x;
 				mouseEvent.globalY = pos.y;
 				mouseEvent.localX = hitItem.left - pos.x;
 				mouseEvent.localY = hitItem.top - pos.y;
 
-				hitNode.mouseDown(mouseEvent);
+				hitItem.mouseDown(mouseEvent);
 
-				if (this.onnodeselected) {
-					if (hitNode) this.onnodeselected(hitNode);
-					else this.onnodeselected(hitNode);
+				this.hitItem = hitItem;
+
+				if (hitItem instanceof NodeGraphicsItem) {
+					let hitNode = <NodeGraphicsItem>hitItem;
+					//move node to stop of stack
+					this.moveNodeToTop(hitNode);
+
+					if (this.onnodeselected) {
+						if (hitNode) this.onnodeselected(hitNode);
+						else this.onnodeselected(hitNode);
+					}
 				}
 			}
-
-			this.hitItem = hitItem;
 
 			// check for a hit socket first
 			// let hitSock: SocketGraphicsItem = this.getHitSocket(mouseX, mouseY);
