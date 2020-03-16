@@ -13,7 +13,7 @@
 				v-for="(p, index) in this.properties"
 				:is="p.componentName"
 				:prop="p.prop"
-				:node="node"
+				:propHolder="node"
 				:editor="editor"
 				@propertyChanged="propertyChanged"
 				:key="index"

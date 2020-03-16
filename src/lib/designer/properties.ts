@@ -29,6 +29,10 @@ export class Property {
 	}
 }
 
+export interface IPropertyHolder {
+	setProperty(name: string, value: any);
+}
+
 export class FloatProperty extends Property {
 	value: number;
 	minValue: number = 0;
