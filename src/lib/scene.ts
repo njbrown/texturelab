@@ -74,6 +74,10 @@ export class NodeScene {
 	onconnectiondestroyed?: (item: ConnectionGraphicsItem) => void;
 	// passes null if no node is selected
 	onnodeselected?: (item: NodeGraphicsItem) => void;
+	oncommentselected?: (item: CommentGraphicsItem) => void;
+	onframeselected?: (item: FrameGraphicsItem) => void;
+	onnavigationselected?: (item: NavigationGraphicsItem) => void;
+
 	onnodedeleted?: (item: NodeGraphicsItem) => void;
 
 	view: SceneView;
@@ -368,6 +372,33 @@ export class NodeScene {
 						if (this.onnodeselected) {
 							if (hitNode) this.onnodeselected(hitNode);
 							else this.onnodeselected(hitNode);
+						}
+					}
+
+					if (hitItem instanceof CommentGraphicsItem) {
+						let hitComment = <CommentGraphicsItem>hitItem;
+
+						if (this.oncommentselected) {
+							if (hitComment) this.oncommentselected(hitComment);
+							else this.oncommentselected(hitComment);
+						}
+					}
+
+					if (hitItem instanceof FrameGraphicsItem) {
+						let hit = <FrameGraphicsItem>hitItem;
+
+						if (this.onframeselected) {
+							if (hit) this.onframeselected(hit);
+							else this.onframeselected(hit);
+						}
+					}
+
+					if (hitItem instanceof NavigationGraphicsItem) {
+						let hit = <NavigationGraphicsItem>hitItem;
+
+						if (this.onnavigationselected) {
+							if (hit) this.onnavigationselected(hit);
+							else this.onnavigationselected(hit);
 						}
 					}
 				}
