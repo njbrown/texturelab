@@ -245,6 +245,8 @@ export class FrameGraphicsItem extends GraphicsItem {
 					node.move(evt.deltaX, evt.deltaY);
 				}
 			}
+
+			//todo: clamp size
 			if (this.dragMode == DragMode.Resize) {
 				if (this.xResize == XResizeDir.Left) {
 					this.left += evt.deltaX;

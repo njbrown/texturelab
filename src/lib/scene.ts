@@ -15,6 +15,7 @@ import {
 import { SceneView } from "./scene/view";
 import { FrameGraphicsItem } from "./scene/framegraphicsitem";
 import { CommentGraphicsItem } from "./scene/commentgraphicsitem";
+import { NavigationGraphicsItem } from "./scene/navigationgraphicsitem";
 
 enum DragMode {
 	None,
@@ -55,6 +56,7 @@ export class NodeScene {
 
 	frames: FrameGraphicsItem[];
 	comments: CommentGraphicsItem[];
+	navigations: NavigationGraphicsItem[];
 	nodes: NodeGraphicsItem[];
 	conns: ConnectionGraphicsItem[];
 
@@ -86,6 +88,7 @@ export class NodeScene {
 		this.comments = new Array();
 		this.nodes = new Array();
 		this.conns = new Array();
+		this.navigations = new Array();
 		this.dragMode = null;
 		this.selectionRect = new Rect();
 		this.selectedItem = null;
@@ -103,6 +106,11 @@ export class NodeScene {
 		comment.setText("This\nis\na\nmultiline\nmessage");
 		comment.setCenter(200, 500);
 		this.comments.push(comment);
+
+		let nav = new NavigationGraphicsItem();
+		nav.scene = this;
+		nav.setLabel("Test Navigation");
+		this.navigations.push(nav);
 
 		// bind event listeners
 		var self = this;
@@ -329,6 +337,8 @@ export class NodeScene {
 
 			item.draw(this.context, nodeState);
 		}
+
+		for (let nav of this.navigations) nav.draw(this.context);
 	}
 
 	// mouse events
@@ -563,6 +573,11 @@ export class NodeScene {
 	// obeys precedence
 	getHitItem(x: number, y: number): GraphicsItem {
 		// 1) navigation pins
+		for (var index = this.navigations.length - 1; index >= 0; index--) {
+			let nav = this.navigations[index];
+
+			if (nav.isPointInside(x, y)) return nav;
+		}
 
 		// 2) nodes and their sockets
 		for (var index = this.nodes.length - 1; index >= 0; index--) {
