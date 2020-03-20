@@ -6,11 +6,19 @@
 		<div class="input-holder">
 			<div style="width:95%; margin-right:10px">
 				<textarea
+					v-if="prop.isMultiline"
 					:value="prop.value"
 					@input="updateValue"
 					style="width:100%"
 					rows="5"
 				></textarea>
+				<input
+					v-if="!prop.isMultiline"
+					type="text"
+					:value="prop.value"
+					@input="updateValue"
+					style="width:100%"
+				/>
 			</div>
 		</div>
 	</div>

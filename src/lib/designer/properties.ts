@@ -247,12 +247,19 @@ export class ColorProperty extends Property {
 
 export class StringProperty extends Property {
 	value: string;
-	public constructor(name: string, displayName: string, value: string = "") {
+	isMultiline: boolean;
+	public constructor(
+		name: string,
+		displayName: string,
+		value: string = "",
+		isMultiline: boolean = false
+	) {
 		super();
 		this.name = name;
 		this.displayName = displayName;
 		this.value = value;
 		this.type = PropertyType.String;
+		this.isMultiline = isMultiline;
 	}
 
 	public getValue(): any {

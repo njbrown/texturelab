@@ -37,7 +37,12 @@ export class CommentGraphicsItem extends GraphicsItem
 		this.padding = 5;
 		this.fontHeight = 20;
 
-		this.textProp = new StringProperty("comment", "Comment", "Comment.");
+		this.textProp = new StringProperty(
+			"comment",
+			"Comment",
+			"Comment.",
+			true
+		);
 		this.properties.push(this.textProp);
 	}
 

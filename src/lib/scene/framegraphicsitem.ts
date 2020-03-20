@@ -77,7 +77,12 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 
 		this.titleProp = new StringProperty("title", "Title", "Frame");
 		this.showTitleProp = new BoolProperty("showtitle", "Show Title", true);
-		this.descrProp = new StringProperty("description", "Description", "");
+		this.descrProp = new StringProperty(
+			"description",
+			"Description",
+			"",
+			true
+		);
 		this.properties.push(this.titleProp);
 		this.properties.push(this.showTitleProp);
 		this.properties.push(this.descrProp);
