@@ -356,9 +356,9 @@ export default class App extends Vue {
 			this.propHolder = comment;
 			console.log("comment selected");
 		};
-		// this.editor.onframeselected = frame => {
-		//   this.propHolder = frame;
-		// };
+		this.editor.onframeselected = frame => {
+			this.propHolder = frame;
+		};
 		// this.editor.onnavigationselected = nav => {
 		//   this.propHolder = nav;
 		// };

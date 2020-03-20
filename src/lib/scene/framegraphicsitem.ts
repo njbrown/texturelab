@@ -8,6 +8,12 @@ import {
 import { SceneView } from "./view";
 import { Color } from "../designer/color";
 import { NodeGraphicsItem } from "./nodegraphicsitem";
+import {
+	IPropertyHolder,
+	Property,
+	StringProperty,
+	BoolProperty
+} from "../designer/properties";
 
 enum XResizeDir {
 	None,
@@ -27,7 +33,7 @@ enum DragMode {
 	Resize
 }
 
-export class FrameGraphicsItem extends GraphicsItem {
+export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 	title: string;
 	description: string;
 	showTitle: boolean;
@@ -47,6 +53,10 @@ export class FrameGraphicsItem extends GraphicsItem {
 
 	nodes: NodeGraphicsItem[];
 
+	titleProp: StringProperty;
+	showTitleProp: BoolProperty;
+	descrProp: StringProperty;
+
 	public constructor(view: SceneView) {
 		super();
 		this.title = "Frame";
@@ -64,11 +74,43 @@ export class FrameGraphicsItem extends GraphicsItem {
 		this.resizeHandleSize = 10;
 
 		this.nodes = [];
+
+		this.titleProp = new StringProperty("title", "Title", "Frame");
+		this.showTitleProp = new BoolProperty("showtitle", "Show Title", true);
+		this.descrProp = new StringProperty("description", "Description", "");
+		this.properties.push(this.titleProp);
+		this.properties.push(this.showTitleProp);
+		this.properties.push(this.descrProp);
+	}
+	properties: Property[] = new Array();
+	setProperty(name: string, value: any) {
+		if (name == "title") {
+			this.setTitle(value);
+		} else if (name == "showtitle") {
+			this.setShowTitle(value);
+		} else if (name == "description") {
+			this.setDescription(value);
+		}
 	}
 
 	setSize(w: number, h: number) {
 		this.width = w;
 		this.height = h;
+	}
+
+	setTitle(text: string) {
+		this.title = text;
+		this.titleProp.setValue(text);
+	}
+
+	setShowTitle(shouldShow: boolean) {
+		this.showTitle = shouldShow;
+		this.showTitleProp.setValue(shouldShow);
+	}
+
+	setDescription(text: string) {
+		this.description = text;
+		this.descrProp.setValue(text);
 	}
 
 	private buildColor(color: Color, alpha: number) {
@@ -127,7 +169,7 @@ export class FrameGraphicsItem extends GraphicsItem {
 		ctx.fill();
 
 		// title
-		if (true == true) {
+		if (this.showTitle == true) {
 			ctx.beginPath();
 
 			let fontSize = 18; // * this.view.zoomFactor;
@@ -151,7 +193,7 @@ export class FrameGraphicsItem extends GraphicsItem {
 			let textY = this.y;
 			//ctx.fillText("Hello World", textX, textY - 5);
 			ctx.fillText(
-				"Hello World",
+				this.title,
 				textX * this.view.zoomFactor,
 				(textY - 5) * this.view.zoomFactor
 			);
