@@ -5,8 +5,8 @@
 		:key="node.id"
 		v-if="node != null"
 	>
-		<accordion header="Base Properties">
-			<texture-channel :node="node" :editor="editor" />
+		<accordion header="Base Properties" v-if="isInstanceNode">
+			<texture-channel :node="getNode" :editor="editor" />
 		</accordion>
 		<accordion header="Properties">
 			<component
@@ -32,8 +32,9 @@ import TextureChannelPropertyView from "@/components/properties/TextureChannelPr
 import Accordion from "@/components/Accordion.vue";
 import { Editor } from "@/lib/editortest";
 import { DesignerNode } from "@/lib/designer/designernode";
-import { Property } from "@/lib/designer/properties";
+import { Property, IPropertyHolder } from "@/lib/designer/properties";
 import GradientPropertyView from "@/components/properties/GradientProp.vue";
+import StringPropertyView from "@/components/properties/StringProp.vue";
 
 class PropHolder {
 	prop: Property;
@@ -48,6 +49,7 @@ class PropHolder {
 		enum: EnumPropertyView,
 		color: ColorPropertyView,
 		gradient: GradientPropertyView,
+		string: StringPropertyView,
 
 		textureChannel: TextureChannelPropertyView,
 		Accordion
@@ -55,7 +57,7 @@ class PropHolder {
 })
 export default class NodePropertiesView extends Vue {
 	@Prop()
-	node: DesignerNode;
+	node: IPropertyHolder;
 
 	@Prop()
 	editor: Editor;
@@ -81,6 +83,14 @@ export default class NodePropertiesView extends Vue {
 
 		//console.log(props);
 		return props;
+	}
+
+	get isInstanceNode() {
+		return this.node instanceof DesignerNode;
+	}
+
+	get getNode(): DesignerNode {
+		return <DesignerNode>this.node;
 	}
 }
 </script>

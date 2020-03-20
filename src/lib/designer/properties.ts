@@ -30,6 +30,7 @@ export class Property {
 }
 
 export interface IPropertyHolder {
+	properties: Property[];
 	setProperty(name: string, value: any);
 }
 

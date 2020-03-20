@@ -82,6 +82,14 @@ export class NodeScene {
 
 	view: SceneView;
 
+	// listeners for cleanup
+	_mouseMove: (evt: MouseEvent) => void;
+	_mouseDown: (evt: MouseEvent) => void;
+	_mouseUp: (evt: MouseEvent) => void;
+	_mouseClick: (evt: MouseEvent) => void;
+	_keyDown: (evt: KeyboardEvent) => void;
+	_contextMenu: (evt: MouseEvent) => void;
+
 	constructor(canvas: HTMLCanvasElement) {
 		this.canvas = canvas;
 		this.context = this.canvas.getContext("2d");
@@ -118,40 +126,53 @@ export class NodeScene {
 
 		// bind event listeners
 		var self = this;
-		canvas.addEventListener("mousemove", function(evt: MouseEvent) {
+		this._mouseMove = function(evt: MouseEvent) {
 			self.onMouseMove(evt);
-		});
-		canvas.addEventListener("mousedown", function(evt: MouseEvent) {
-			self.onMouseDown(evt);
-		});
-		canvas.addEventListener("mouseup", function(evt: MouseEvent) {
-			self.onMouseUp(evt);
-		});
+		};
+		canvas.addEventListener("mousemove", this._mouseMove);
 
-		window.addEventListener("click", function(evt: MouseEvent) {
+		self._mouseDown = function(evt: MouseEvent) {
+			self.onMouseDown(evt);
+		};
+		canvas.addEventListener("mousedown", self._mouseDown);
+
+		self._mouseUp = function(evt: MouseEvent) {
+			self.onMouseUp(evt);
+		};
+		canvas.addEventListener("mouseup", self._mouseUp);
+
+		self._mouseClick = function(evt: MouseEvent) {
 			//console.log(evt.target == canvas);
 			if (evt.target == canvas) {
 				self.hasFocus = true;
 			} else {
 				self.hasFocus = false;
 			}
-		});
+		};
+		window.addEventListener("click", self._mouseClick);
 
-		window.addEventListener(
-			"keydown",
-			function(evt: KeyboardEvent) {
-				if (evt.key == "Delete" && self.hasFocus && self.selectedNode) {
-					self.deleteNode(self.selectedNode);
-				}
-			},
-			true
-		);
+		self._keyDown = function(evt: KeyboardEvent) {
+			if (evt.key == "Delete" && self.hasFocus && self.selectedNode) {
+				self.deleteNode(self.selectedNode);
+			}
+		};
+		window.addEventListener("keydown", self._keyDown, true);
 		// canvas.addEventListener("mousewheel", function(evt: WheelEvent) {
 		//   self.onMouseScroll(evt);
 		// });
-		canvas.addEventListener("contextmenu", function(evt: MouseEvent) {
+		self._contextMenu = function(evt: MouseEvent) {
 			evt.preventDefault();
-		});
+		};
+		canvas.addEventListener("contextmenu", self._contextMenu);
+	}
+
+	dispose() {
+		this.canvas.removeEventListener("mousemove", this._mouseMove);
+		this.canvas.removeEventListener("mouedown", this._mouseDown);
+		this.canvas.removeEventListener("mouseup", this._mouseUp);
+		window.removeEventListener("click", this._mouseClick);
+		window.removeEventListener("keydown", this._keyDown);
+		this.canvas.removeEventListener("contextmenu", this._contextMenu);
 	}
 
 	addNode(item: NodeGraphicsItem) {
@@ -347,6 +368,8 @@ export class NodeScene {
 
 	// mouse events
 	onMouseDown(evt: MouseEvent) {
+		//todo: look at double event calling
+		console.log("mouse Down");
 		var pos = this.getScenePos(evt);
 		let mouseX = pos.x;
 		let mouseY = pos.y;
@@ -364,6 +387,7 @@ export class NodeScene {
 				if (mouseEvent.isAccepted) {
 					this.hitItem = hitItem;
 
+					console.log(hitItem);
 					if (hitItem instanceof NodeGraphicsItem) {
 						let hitNode = <NodeGraphicsItem>hitItem;
 						//move node to stop of stack
@@ -375,6 +399,7 @@ export class NodeScene {
 						}
 					}
 
+					//todo: look at double event calling for comments
 					if (hitItem instanceof CommentGraphicsItem) {
 						let hitComment = <CommentGraphicsItem>hitItem;
 

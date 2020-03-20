@@ -7,10 +7,17 @@ import {
 } from "./graphicsitem";
 import { SceneView } from "./view";
 import { Color } from "../designer/color";
+import {
+	IPropertyHolder,
+	Property,
+	StringProperty
+} from "../designer/properties";
 
 // https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks
-export class CommentGraphicsItem extends GraphicsItem {
+export class CommentGraphicsItem extends GraphicsItem
+	implements IPropertyHolder {
 	text: string;
+	textProp: StringProperty;
 	view: SceneView;
 	color: Color;
 
@@ -29,10 +36,29 @@ export class CommentGraphicsItem extends GraphicsItem {
 
 		this.padding = 5;
 		this.fontHeight = 20;
+
+		this.textProp = new StringProperty("comment", "Comment", "Comment.");
+		this.properties.push(this.textProp);
+	}
+
+	properties: Property[] = new Array();
+	setProperty(name: string, value: any) {
+		let prop = this.properties.find(x => {
+			return x.name == name;
+		});
+
+		// if (prop) {
+		// 	prop.setValue(value);
+		// }
+
+		if (name == "comment") {
+			this.setText(value);
+		}
 	}
 
 	setText(text: string) {
 		this.text = text;
+		this.textProp.setValue(text);
 		let fontHeight = this.fontHeight;
 
 		let ctx = this.view.context;
@@ -81,6 +107,7 @@ export class CommentGraphicsItem extends GraphicsItem {
 
 		// recalc rect
 		let maxWidth = 0;
+		//console.log(this.text);
 		let lines = this.text.split("\n");
 		for (var i = 0; i < lines.length; ++i) {
 			let size = ctx.measureText(lines[i]);
@@ -132,6 +159,7 @@ export class CommentGraphicsItem extends GraphicsItem {
 	// MOUSE EVENTS
 	public mouseDown(evt: MouseDownEvent) {
 		this.hit = true;
+		console.log(this.text);
 	}
 
 	public mouseMove(evt: MouseMoveEvent) {
