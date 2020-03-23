@@ -33,6 +33,7 @@ enum DragMode {
 	Resize
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/CSS/cursor
 export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 	title: string;
 	description: string;

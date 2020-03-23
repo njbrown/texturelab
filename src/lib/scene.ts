@@ -177,6 +177,7 @@ export class NodeScene {
 
 	addNode(item: NodeGraphicsItem) {
 		this.nodes.push(item);
+		item.setScene(this);
 	}
 
 	deleteNode(item: NodeGraphicsItem) {

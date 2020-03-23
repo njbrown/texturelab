@@ -54,6 +54,10 @@ export class GraphicsItem {
 		this.height = 1;
 	}
 
+	public setScene(scene: NodeScene) {
+		this.scene = scene;
+	}
+
 	public isPointInside(px: number, py: number): boolean {
 		if (
 			px >= this.x &&

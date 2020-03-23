@@ -6,6 +6,7 @@ import {
 	MouseMoveEvent,
 	MouseUpEvent
 } from "./graphicsitem";
+import { NodeScene } from "../scene";
 
 export class NodeGraphicsItemRenderState {
 	hovered: boolean = false;
@@ -31,6 +32,12 @@ export class NodeGraphicsItem extends GraphicsItem {
 		this.title = title;
 		this.imageCanvas = new ImageCanvas();
 		this.hit = false;
+	}
+
+	public setScene(scene: NodeScene) {
+		this.scene = scene;
+
+		for (let sock of this.sockets) sock.setScene(scene);
 	}
 
 	public setTextureChannel(name: string) {
