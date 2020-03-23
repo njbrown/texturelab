@@ -186,14 +186,17 @@ export class NodeScene {
 	}
 
 	addComment(item: CommentGraphicsItem) {
+		item.setScene(this);
 		this.comments.push(item);
 	}
 
 	addFrame(item: FrameGraphicsItem) {
+		item.setScene(this);
 		this.frames.push(item);
 	}
 
 	addNavigation(nav: NavigationGraphicsItem) {
+		nav.setScene(this);
 		this.navigations.push(nav);
 	}
 
