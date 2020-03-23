@@ -16,6 +16,7 @@ import { SceneView } from "./scene/view";
 import { FrameGraphicsItem } from "./scene/framegraphicsitem";
 import { CommentGraphicsItem } from "./scene/commentgraphicsitem";
 import { NavigationGraphicsItem } from "./scene/navigationgraphicsitem";
+import { SelectionGraphicsItem } from "./scene/selectiongraphicsitem";
 
 enum DragMode {
 	None,
@@ -59,6 +60,7 @@ export class NodeScene {
 	navigations: NavigationGraphicsItem[];
 	nodes: NodeGraphicsItem[];
 	conns: ConnectionGraphicsItem[];
+	selection: SelectionGraphicsItem;
 
 	dragMode: DragMode;
 	selectionRect: Rect;
@@ -242,9 +244,6 @@ export class NodeScene {
 	}
 
 	removeConnection(con: ConnectionGraphicsItem) {
-		console.log("removing connection in scene");
-		console.log(con);
-
 		this.conns.splice(this.conns.indexOf(con), 1);
 		//con.socketA.con = null;
 		//con.socketB.con = null;
@@ -365,22 +364,24 @@ export class NodeScene {
 		}
 
 		for (let nav of this.navigations) nav.draw(this.context);
+
+		if (this.selection) this.selection.draw(this.context);
 	}
 
 	// mouse events
 	onMouseDown(evt: MouseEvent) {
 		//todo: look at double event calling
-		console.log("mouse Down");
 		var pos = this.getScenePos(evt);
 		let mouseX = pos.x;
 		let mouseY = pos.y;
 
 		if (evt.button == 0) {
 			let hitItem = this.getHitItem(mouseX, mouseY);
+			let mouseEvent = new MouseDownEvent();
+			mouseEvent.globalX = pos.x;
+			mouseEvent.globalY = pos.y;
+
 			if (hitItem != null) {
-				let mouseEvent = new MouseDownEvent();
-				mouseEvent.globalX = pos.x;
-				mouseEvent.globalY = pos.y;
 				mouseEvent.localX = hitItem.left - pos.x;
 				mouseEvent.localY = hitItem.top - pos.y;
 
@@ -428,6 +429,15 @@ export class NodeScene {
 						}
 					}
 				}
+			} else {
+				let hitItem = new SelectionGraphicsItem(this, this.view);
+				mouseEvent.localX = hitItem.left - pos.x;
+				mouseEvent.localY = hitItem.top - pos.y;
+				hitItem.mouseDown(mouseEvent);
+
+				this.selection = hitItem;
+				this.hitItem = hitItem;
+				console.log(hitItem);
 			}
 
 			// check for a hit socket first
@@ -629,6 +639,10 @@ export class NodeScene {
 	// gets item over mouse x and y
 	// obeys precedence
 	getHitItem(x: number, y: number): GraphicsItem {
+		if (this.selection != null) {
+			if (this.selection.isPointInside(x, y)) return this.selection;
+		}
+
 		// 1) navigation pins
 		for (var index = this.navigations.length - 1; index >= 0; index--) {
 			let nav = this.navigations[index];

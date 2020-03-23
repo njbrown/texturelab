@@ -124,6 +124,14 @@ export class GraphicsItem {
 		return this.y + this.height / 2;
 	}
 
+	public getWidth(): number {
+		return this.width;
+	}
+
+	public getHeight(): number {
+		return this.height;
+	}
+
 	public move(dx: number, dy: number) {
 		this.x += dx;
 		this.y += dy;

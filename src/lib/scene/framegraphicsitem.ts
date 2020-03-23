@@ -220,7 +220,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		)
 			return true;
 
-		// 2) sizes
+		// 2) sides
 
 		// 3) top handle
 		if (
