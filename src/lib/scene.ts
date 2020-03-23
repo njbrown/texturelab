@@ -692,6 +692,7 @@ export class NodeScene {
 	save(): any {
 		var data: any = {};
 
+		// NODES
 		var nodes = {};
 		for (let node of this.nodes) {
 			var n: any = {};
@@ -702,6 +703,49 @@ export class NodeScene {
 			nodes[node.id] = n;
 		}
 		data["nodes"] = nodes;
+
+		// FRAMES
+		var frames = [];
+		for (let frame of this.frames) {
+			var n: any = {};
+			n["x"] = frame.left;
+			n["y"] = frame.top;
+			n["width"] = frame.getWidth();
+			n["height"] = frame.getHeight();
+
+			n["title"] = frame.title;
+			n["showTitle"] = frame.showTitle;
+			n["description"] = frame.description;
+			n["color"] = frame.color.toHex();
+
+			frames.push(n);
+		}
+		data["frames"] = frames;
+
+		// COMMENTS
+		var comments = [];
+		for (let comment of this.comments) {
+			var n: any = {};
+			n["x"] = comment.left;
+			n["y"] = comment.top;
+
+			n["text"] = comment.text;
+			n["color"] = comment.color.toHex();
+
+			comments.push(n);
+		}
+		data["comments"] = comments;
+
+		// NAVIGATIONS
+		var navs = [];
+		for (let nav of this.navigations) {
+			var n: any = {};
+			n["x"] = nav.left;
+			n["y"] = nav.top;
+
+			navs.push(n);
+		}
+		data["navigations"] = navs;
 
 		return data;
 	}
