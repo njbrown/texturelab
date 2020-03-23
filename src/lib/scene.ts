@@ -17,6 +17,7 @@ import { FrameGraphicsItem } from "./scene/framegraphicsitem";
 import { CommentGraphicsItem } from "./scene/commentgraphicsitem";
 import { NavigationGraphicsItem } from "./scene/navigationgraphicsitem";
 import { SelectionGraphicsItem } from "./scene/selectiongraphicsitem";
+import { Color } from "./designer/color";
 
 enum DragMode {
 	None,
@@ -179,7 +180,21 @@ export class NodeScene {
 
 	addNode(item: NodeGraphicsItem) {
 		this.nodes.push(item);
+
+		// needed for sockets to get scene instance
 		item.setScene(this);
+	}
+
+	addComment(item: CommentGraphicsItem) {
+		this.comments.push(item);
+	}
+
+	addFrame(item: FrameGraphicsItem) {
+		this.frames.push(item);
+	}
+
+	addNavigation(nav: NavigationGraphicsItem) {
+		this.navigations.push(nav);
 	}
 
 	deleteNode(item: NodeGraphicsItem) {
@@ -788,6 +803,44 @@ export class NodeScene {
 			con.socketB = rightNode.getInSocketByName(dcon.rightNodeInput);
 
 			s.addConnection(con);
+		}
+
+		//todo: integrity checks
+		// FRAMES
+		if (data.frames) {
+			for (let d of data.frames) {
+				let frame = new FrameGraphicsItem(s.view);
+				frame.setPos(d.x, d.y);
+				frame.setSize(d.width, d.height);
+
+				frame.setTitle(d.title);
+				frame.setShowTitle(d.showTitle);
+				frame.setDescription(d.description);
+				frame.color = Color.parse(d.color);
+
+				s.addFrame(frame);
+			}
+		}
+
+		// COMMENTS
+		if (data.comments) {
+			for (let d of data.comments) {
+				let comment = new CommentGraphicsItem(s.view);
+				comment.setPos(d.x, d.y);
+				comment.setText(d.text);
+				comment.color = Color.parse(d.color);
+
+				s.addComment(comment);
+			}
+		}
+
+		// NAVIGATION
+		if (data.navigations) {
+			for (let d of data.navigations) {
+				let nav = new NavigationGraphicsItem();
+				nav.setPos(d.x, d.y);
+				s.addNavigation(nav);
+			}
 		}
 
 		return s;

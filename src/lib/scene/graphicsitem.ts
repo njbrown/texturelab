@@ -54,6 +54,17 @@ export class GraphicsItem {
 		this.height = 1;
 	}
 
+	// sets top-left
+	public setPos(x: number, y: number) {
+		this.x = x;
+		this.y = y;
+	}
+
+	public setSize(w: number, h: number) {
+		this.width = w;
+		this.height = h;
+	}
+
 	public setScene(scene: NodeScene) {
 		this.scene = scene;
 	}
