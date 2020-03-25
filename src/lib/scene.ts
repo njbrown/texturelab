@@ -92,6 +92,9 @@ export class NodeScene {
 	_mouseClick: (evt: MouseEvent) => void;
 	_keyDown: (evt: KeyboardEvent) => void;
 	_contextMenu: (evt: MouseEvent) => void;
+	_copyEvent: (evt: ClipboardEvent) => void;
+	_pasteEvent: (evt: ClipboardEvent) => void;
+	copyElement: HTMLInputElement;
 
 	constructor(canvas: HTMLCanvasElement) {
 		this.canvas = canvas;
@@ -141,16 +144,31 @@ export class NodeScene {
 
 		self._mouseUp = function(evt: MouseEvent) {
 			self.onMouseUp(evt);
+
+			if (evt.target == canvas) {
+				self.hasFocus = true;
+
+				// focus copy element
+				self.copyElement.focus();
+				self.copyElement.select();
+				console.log("focus");
+			} else {
+				self.hasFocus = false;
+			}
 		};
 		canvas.addEventListener("mouseup", self._mouseUp);
 
 		self._mouseClick = function(evt: MouseEvent) {
 			//console.log(evt.target == canvas);
-			if (evt.target == canvas) {
-				self.hasFocus = true;
-			} else {
-				self.hasFocus = false;
-			}
+			// if (evt.target == canvas) {
+			// 	self.hasFocus = true;
+			// 	// focus copy element
+			// 	self.copyElement.focus();
+			// 	self.copyElement.select();
+			// 	console.log("focus");
+			// } else {
+			// 	self.hasFocus = false;
+			// }
 		};
 		window.addEventListener("click", self._mouseClick);
 
@@ -167,15 +185,52 @@ export class NodeScene {
 			evt.preventDefault();
 		};
 		canvas.addEventListener("contextmenu", self._contextMenu);
+
+		this._copyEvent = evt => {
+			if (self.hasFocus && evt.target == self.copyElement) {
+				alert("copying selection");
+				console.log(evt.target);
+			}
+
+			self.onCopy(evt);
+		};
+		document.addEventListener("copy", this._copyEvent);
+
+		this._pasteEvent = evt => {
+			if (self.hasFocus && evt.target == self.copyElement) {
+				alert("pasting selection");
+				console.log(evt.target);
+				self.copyElement.value = " ";
+			}
+
+			self.onPaste(evt);
+		};
+		document.addEventListener("paste", this._pasteEvent);
+
+		this.copyElement = document.createElement("input");
+		self.copyElement.value = " ";
+		//self.copyElement.style.display = "none";
+		self.copyElement.style.opacity = "0";
+		self.copyElement.style.width = "1px";
+		self.copyElement.style.height = "1px";
+		document.body.appendChild(this.copyElement);
+		//this.copyElement.addEventListener("copy", this._copyEvent);
+		// note: console.log(this.copyElement) to see in DOM
+		// golden layout conveniently hides it
 	}
 
 	dispose() {
+		//alert("disposed!");
 		this.canvas.removeEventListener("mousemove", this._mouseMove);
 		this.canvas.removeEventListener("mouedown", this._mouseDown);
 		this.canvas.removeEventListener("mouseup", this._mouseUp);
 		window.removeEventListener("click", this._mouseClick);
 		window.removeEventListener("keydown", this._keyDown);
 		this.canvas.removeEventListener("contextmenu", this._contextMenu);
+		document.removeEventListener("copy", this._copyEvent);
+		document.removeEventListener("paste", this._pasteEvent);
+		// this.copyElement.removeEventListener("copy", this._copyEvent);
+		// this.copyElement.removeEventListener("paste", this._copyEvent);
 	}
 
 	addNode(item: NodeGraphicsItem) {
@@ -384,6 +439,14 @@ export class NodeScene {
 		for (let nav of this.navigations) nav.draw(this.context);
 
 		if (this.selection) this.selection.draw(this.context);
+	}
+
+	onCopy(evt: ClipboardEvent) {
+		// todo: copy selected items to clipboard
+	}
+
+	onPaste(evt: ClipboardEvent) {
+		// todo: paste items from clipboard
 	}
 
 	// mouse events
