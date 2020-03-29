@@ -128,6 +128,13 @@ export class SelectionGraphicsItem extends GraphicsItem {
 	}
 
 	// MOUSE EVENTS
+
+	// This graphics item has two phases
+	// the first phase is about selecting items
+	// the second phase is about dragging
+	// after the first phase, items will not be empty
+	// if there is a mouse event and items is not empty
+	// then its in drag mode
 	public mouseDown(evt: MouseDownEvent) {
 		this.hit = true;
 		if (this.items.length > 0) {
@@ -149,6 +156,9 @@ export class SelectionGraphicsItem extends GraphicsItem {
 
 	public mouseUp(evt: MouseUpEvent) {
 		this.hit = false;
-		if (this.items.length == 0) this.items = this.getHitItems();
+		if (this.items.length == 0) {
+			this.items = this.getHitItems();
+			this.scene.setSelectedItems(this.items);
+		}
 	}
 }

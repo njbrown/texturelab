@@ -18,6 +18,7 @@ import { CommentGraphicsItem } from "./scene/commentgraphicsitem";
 import { NavigationGraphicsItem } from "./scene/navigationgraphicsitem";
 import { SelectionGraphicsItem } from "./scene/selectiongraphicsitem";
 import { Color } from "./designer/color";
+import { ItemClipboard } from "./clipboard";
 
 enum DragMode {
 	None,
@@ -70,6 +71,7 @@ export class NodeScene {
 	hitSocket?: SocketGraphicsItem;
 	hitConnection?: ConnectionGraphicsItem;
 	selectedItem: GraphicsItem;
+	selectedItems: GraphicsItem[];
 	hitItem: GraphicsItem;
 
 	// callbacks
@@ -110,6 +112,7 @@ export class NodeScene {
 		this.dragMode = null;
 		this.selectionRect = new Rect();
 		this.selectedItem = null;
+		this.selectedItems = [];
 		this.hitItem = null;
 
 		// add sample frames
@@ -231,6 +234,10 @@ export class NodeScene {
 		document.removeEventListener("paste", this._pasteEvent);
 		// this.copyElement.removeEventListener("copy", this._copyEvent);
 		// this.copyElement.removeEventListener("paste", this._copyEvent);
+	}
+
+	setSelectedItems(items: GraphicsItem[]) {
+		this.selectedItems = items;
 	}
 
 	addNode(item: NodeGraphicsItem) {
@@ -443,10 +450,12 @@ export class NodeScene {
 
 	onCopy(evt: ClipboardEvent) {
 		// todo: copy selected items to clipboard
+		ItemClipboard.copyItems(this, evt.clipboardData);
 	}
 
 	onPaste(evt: ClipboardEvent) {
 		// todo: paste items from clipboard
+		ItemClipboard.pasteItems(this, evt.clipboardData);
 	}
 
 	// mouse events
