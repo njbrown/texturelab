@@ -16,6 +16,7 @@ import { Color } from "./designer/color";
 import { CommentGraphicsItem } from "./scene/commentgraphicsitem";
 import { FrameGraphicsItem } from "./scene/framegraphicsitem";
 import { NavigationGraphicsItem } from "./scene/navigationgraphicsitem";
+import { ItemClipboard } from "./clipboard";
 
 function hexToRgb(hex) {
 	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -483,6 +484,28 @@ export class Editor {
 			if (self.onpreviewnode) {
 				self.onpreviewnode(null, null);
 			}
+		};
+
+		this.graph.oncopy = function(evt: ClipboardEvent) {
+			ItemClipboard.copyItems(
+				self.designer,
+				self.library,
+				scene,
+				evt.clipboardData
+			);
+		};
+
+		this.graph.oncut = function(evt: ClipboardEvent) {
+			ItemClipboard.copyItems(
+				self.designer,
+				self.library,
+				scene,
+				evt.clipboardData
+			);
+		};
+
+		this.graph.onpaste = function(evt: ClipboardEvent) {
+			ItemClipboard.pasteItems(self.designer, scene, evt.clipboardData);
 		};
 
 		// property changes

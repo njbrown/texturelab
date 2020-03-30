@@ -85,6 +85,10 @@ export class NodeScene {
 
 	onnodedeleted?: (item: NodeGraphicsItem) => void;
 
+	oncopy?: (evt: ClipboardEvent) => void;
+	oncut?: (evt: ClipboardEvent) => void;
+	onpaste?: (evt: ClipboardEvent) => void;
+
 	view: SceneView;
 
 	// listeners for cleanup
@@ -450,12 +454,14 @@ export class NodeScene {
 
 	onCopy(evt: ClipboardEvent) {
 		// todo: copy selected items to clipboard
-		ItemClipboard.copyItems(this, evt.clipboardData);
+		//ItemClipboard.copyItems(this, evt.clipboardData);
+		if (this.oncopy) this.oncopy(evt);
 	}
 
 	onPaste(evt: ClipboardEvent) {
 		// todo: paste items from clipboard
-		ItemClipboard.pasteItems(this, evt.clipboardData);
+		//ItemClipboard.pasteItems(this, evt.clipboardData);
+		if (this.onpaste) this.onpaste(evt);
 	}
 
 	// mouse events
