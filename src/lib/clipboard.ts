@@ -113,6 +113,7 @@ export class ItemClipboard {
 	) {
 		//return; // not done!
 		let json = clipboard.getData("json/nodes");
+		console.log(json);
 		if (json == null || json == "") return;
 
 		let data = JSON.parse(json);
@@ -154,6 +155,8 @@ export class ItemClipboard {
 				scene.addNavigation(nav);
 			}
 		}
+
+		//NODES AND CONNECTIONS
 	}
 
 	// merge designer and scene node in one

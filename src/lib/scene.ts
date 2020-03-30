@@ -197,6 +197,7 @@ export class NodeScene {
 			if (self.hasFocus && evt.target == self.copyElement) {
 				alert("copying selection");
 				console.log(evt.target);
+				evt.preventDefault();
 			}
 
 			self.onCopy(evt);
@@ -207,6 +208,8 @@ export class NodeScene {
 			if (self.hasFocus && evt.target == self.copyElement) {
 				alert("pasting selection");
 				console.log(evt.target);
+				console.log(evt.clipboardData);
+				evt.preventDefault();
 				self.copyElement.value = " ";
 			}
 

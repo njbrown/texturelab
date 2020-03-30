@@ -505,7 +505,12 @@ export class Editor {
 		};
 
 		this.graph.onpaste = function(evt: ClipboardEvent) {
-			ItemClipboard.pasteItems(self.designer, scene, evt.clipboardData);
+			ItemClipboard.pasteItems(
+				self.designer,
+				self.library,
+				scene,
+				evt.clipboardData
+			);
 		};
 
 		// property changes
