@@ -2,7 +2,7 @@ import { ImageCanvas } from "./designer/imagecanvas";
 import { Designer } from "./designer";
 import {
 	NodeGraphicsItem,
-	NodeGraphicsItemRenderState
+	NodeGraphicsItemRenderState,
 } from "./scene/nodegraphicsitem";
 import { ConnectionGraphicsItem } from "./scene/connectiongraphicsitem";
 import { SocketGraphicsItem, SocketType } from "./scene/socketgraphicsitem";
@@ -10,7 +10,7 @@ import {
 	GraphicsItem,
 	MouseMoveEvent,
 	MouseDownEvent,
-	MouseUpEvent
+	MouseUpEvent,
 } from "./scene/graphicsitem";
 import { SceneView } from "./scene/view";
 import { FrameGraphicsItem } from "./scene/framegraphicsitem";
@@ -27,7 +27,7 @@ enum DragMode {
 	Socket,
 	Frame,
 	Pin,
-	Comment
+	Comment,
 }
 
 class Selection {
@@ -139,17 +139,17 @@ export class NodeScene {
 
 		// bind event listeners
 		var self = this;
-		this._mouseMove = function(evt: MouseEvent) {
+		this._mouseMove = function (evt: MouseEvent) {
 			self.onMouseMove(evt);
 		};
 		canvas.addEventListener("mousemove", this._mouseMove);
 
-		self._mouseDown = function(evt: MouseEvent) {
+		self._mouseDown = function (evt: MouseEvent) {
 			self.onMouseDown(evt);
 		};
 		canvas.addEventListener("mousedown", self._mouseDown);
 
-		self._mouseUp = function(evt: MouseEvent) {
+		self._mouseUp = function (evt: MouseEvent) {
 			self.onMouseUp(evt);
 
 			if (evt.target == canvas) {
@@ -165,7 +165,7 @@ export class NodeScene {
 		};
 		canvas.addEventListener("mouseup", self._mouseUp);
 
-		self._mouseClick = function(evt: MouseEvent) {
+		self._mouseClick = function (evt: MouseEvent) {
 			//console.log(evt.target == canvas);
 			// if (evt.target == canvas) {
 			// 	self.hasFocus = true;
@@ -179,7 +179,7 @@ export class NodeScene {
 		};
 		window.addEventListener("click", self._mouseClick);
 
-		self._keyDown = function(evt: KeyboardEvent) {
+		self._keyDown = function (evt: KeyboardEvent) {
 			if (evt.key == "Delete" && self.hasFocus && self.selectedNode) {
 				self.deleteNode(self.selectedNode);
 			}
@@ -188,12 +188,12 @@ export class NodeScene {
 		// canvas.addEventListener("mousewheel", function(evt: WheelEvent) {
 		//   self.onMouseScroll(evt);
 		// });
-		self._contextMenu = function(evt: MouseEvent) {
+		self._contextMenu = function (evt: MouseEvent) {
 			evt.preventDefault();
 		};
 		canvas.addEventListener("contextmenu", self._contextMenu);
 
-		this._copyEvent = evt => {
+		this._copyEvent = (evt) => {
 			if (self.hasFocus && evt.target == self.copyElement) {
 				alert("copying selection");
 				console.log(evt.target);
@@ -204,7 +204,7 @@ export class NodeScene {
 		};
 		document.addEventListener("copy", this._copyEvent);
 
-		this._pasteEvent = evt => {
+		this._pasteEvent = (evt) => {
 			if (self.hasFocus && evt.target == self.copyElement) {
 				alert("pasting selection");
 				console.log(evt.target);
@@ -323,7 +323,7 @@ export class NodeScene {
 
 		// get sockets
 		con.socketA = leftNode.sockets.find(
-			x => x.socketType == SocketType.Out
+			(x) => x.socketType == SocketType.Out
 		);
 		con.socketB = rightNode.sockets[rightIndex];
 
@@ -435,7 +435,7 @@ export class NodeScene {
 		let mouseY = mouse.y;
 		let nodeState: NodeGraphicsItemRenderState = {
 			hovered: false, // mouse over
-			selected: false // selected node
+			selected: false, // selected node
 		};
 		for (let item of this.nodes) {
 			// check for selection ( only do this when not dragging anything )
@@ -937,6 +937,6 @@ function _getMousePos(canvas, evt) {
 	var rect = canvas.getBoundingClientRect();
 	return {
 		x: evt.clientX - rect.left,
-		y: evt.clientY - rect.top
+		y: evt.clientY - rect.top,
 	};
 }

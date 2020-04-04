@@ -9,6 +9,9 @@ import { Designer } from "./designer";
 import { DesignerNode } from "./designer/designernode";
 import { NodeGraphicsItem } from "./scene/nodegraphicsitem";
 import { DesignerNodeConn } from "./designer/designerconnection";
+import { SocketType } from "./scene/socketgraphicsitem";
+import { ConnectionGraphicsItem } from "./scene/connectiongraphicsitem";
+import { Guid } from "./utils";
 
 export class ItemClipboard {
 	public static copyItems(
@@ -25,17 +28,17 @@ export class ItemClipboard {
 		}
 
 		let data = {
-			nodes: {},
-			connections: {},
+			nodes: [],
+			connections: [],
 			comments: [],
 			frames: [],
 			navigations: [],
-			libraryVersion: ""
+			libraryVersion: "",
 		};
 
 		// NODES AND CONNECTIONS
 		let nodeList: NodeGraphicsItem[] = [];
-		items.forEach(i => {
+		items.forEach((i) => {
 			// check if this works with obfuscated code
 			if (i instanceof NodeGraphicsItem)
 				nodeList.push(<NodeGraphicsItem>i);
@@ -157,13 +160,75 @@ export class ItemClipboard {
 		}
 
 		//NODES AND CONNECTIONS
+
+		// old : new
+		var nodeIdMap = {};
+		// add them to designer then add them to scene
+		for (let n of data.nodes) {
+			console.log(n.typeName);
+			let dNode = library.create(n.typeName);
+
+			// assign properties
+			for (let propName in n.properties) {
+				dNode.setProperty(propName, n.properties[propName]);
+			}
+
+			// add to designer
+			designer.addNode(dNode);
+			nodeIdMap[n.id] = dNode.id;
+
+			// create scene version
+			var node = new NodeGraphicsItem(dNode.title);
+			for (let input of dNode.getInputs()) {
+				node.addSocket(input, input, SocketType.In);
+			}
+			node.addSocket("output", "output", SocketType.Out);
+			node.id = dNode.id;
+			scene.addNode(node);
+
+			// generate thumbnail
+			var thumb = designer.generateImageFromNode(dNode);
+			node.setThumbnail(thumb);
+
+			node.setCenter(n.x, n.y);
+			node.setCenter(n.x, n.y);
+		}
+		console.log(nodeIdMap);
+
+		console.log(scene.nodes);
+
+		// add connections
+		for (let c of data.connections) {
+			console.log(c);
+			// map to ids of new nodes
+			let leftId = nodeIdMap[c.leftNodeId];
+			let rightId = nodeIdMap[c.rightNodeId];
+
+			// create connection
+			var con = new ConnectionGraphicsItem();
+			con.id = Guid.newGuid(); // brand new connection
+
+			// get nodes
+			var leftNode = scene.getNodeById(leftId);
+			var rightNode = scene.getNodeById(rightId);
+
+			// get sockets
+			con.socketA = leftNode.getOutSocketByName(c.leftNodeOutput);
+			con.socketB = rightNode.getInSocketByName(c.rightNodeInput);
+
+			// callback triggers the creation in designer
+			scene.addConnection(con);
+		}
 	}
 
 	// merge designer and scene node in one
 	// scene node only has x and y values
-	static getNodes(designer: Designer, items: NodeGraphicsItem[]): {} {
-		let dnodes = {};
-		items.forEach(i => {
+	static getNodes(
+		designer: Designer,
+		items: NodeGraphicsItem[]
+	): Array<object> {
+		let dnodes = [];
+		items.forEach((i) => {
 			let node = designer.getNodeById(i.id);
 
 			var n = {};
@@ -178,28 +243,28 @@ export class ItemClipboard {
 			}
 			n["properties"] = props;
 
-			n["x"] = i.left;
-			n["y"] = i.top;
+			n["x"] = i.centerX();
+			n["y"] = i.centerY();
 
-			dnodes[i.id] = n;
+			dnodes.push(n);
 		});
 
 		return dnodes;
 	}
 
 	static getConnections(
-		nodeList: {},
+		nodeList: Array<object>,
 		designer: Designer,
 		items: NodeGraphicsItem[]
-	): {} {
-		let conns = {};
+	): Array<object> {
+		let conns = [];
 
 		// we're searching for connections with both left and right socket
 		// in our selection pool
-		designer.conns.forEach(con => {
+		designer.conns.forEach((con) => {
 			if (
-				nodeList.hasOwnProperty(con.leftNode.id) &&
-				nodeList.hasOwnProperty(con.rightNode.id)
+				ItemClipboard.getNodeById(con.leftNode.id, nodeList) &&
+				ItemClipboard.getNodeById(con.rightNode.id, nodeList)
 			) {
 				var c = {};
 				c["id"] = con.id;
@@ -208,10 +273,16 @@ export class ItemClipboard {
 				c["rightNodeId"] = con.rightNode.id;
 				c["rightNodeInput"] = con.rightNodeInput;
 
-				conns[con.id] = c;
+				conns.push(c);
 			}
 		});
 
 		return conns;
+	}
+
+	static getNodeById(id: string, nodeList: Array<object>): object {
+		for (let node of nodeList) if (node["id"] == id) return node;
+
+		return null;
 	}
 }
