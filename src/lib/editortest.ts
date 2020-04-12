@@ -568,6 +568,36 @@ export class Editor {
 		return node;
 	}
 
+	createComment(): CommentGraphicsItem {
+		let comment = new CommentGraphicsItem(this.graph.view);
+		var pos = this.graph.view.sceneCenter;
+		comment.setCenter(pos.x, pos.y);
+
+		this.graph.addComment(comment);
+
+		return comment;
+	}
+
+	createFrame(): FrameGraphicsItem {
+		let frame = new FrameGraphicsItem(this.graph.view);
+		var pos = this.graph.view.sceneCenter;
+		frame.setCenter(pos.x, pos.y);
+
+		this.graph.addFrame(frame);
+
+		return frame;
+	}
+
+	createNavigation(): NavigationGraphicsItem {
+		let nav = new NavigationGraphicsItem();
+		var pos = this.graph.view.sceneCenter;
+		nav.setCenter(pos.x, pos.y);
+
+		this.graph.addNavigation(nav);
+
+		return nav;
+	}
+
 	// DISPLAY NODE FUNCTIONS
 
 	// updates appropriate image if set

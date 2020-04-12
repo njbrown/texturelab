@@ -44,6 +44,8 @@ export class CommentGraphicsItem extends GraphicsItem
 			true
 		);
 		this.properties.push(this.textProp);
+
+		this.setText("comment");
 	}
 
 	properties: Property[] = new Array();

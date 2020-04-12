@@ -217,6 +217,13 @@ export class SceneView {
 		this.panning = false;
 	}
 
+	get sceneCenter(): Vector2 {
+		return this.canvasToSceneXY(
+			this.canvas.width / 2,
+			this.canvas.height / 2
+		);
+	}
+
 	zoom(x: number, y: number, level: number) {}
 
 	clear(context: CanvasRenderingContext2D, style: string = "rgb(50,50,50)") {

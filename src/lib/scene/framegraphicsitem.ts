@@ -74,6 +74,8 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		this.handleSize = 20;
 		this.resizeHandleSize = 10;
 
+		this.setSize(500, 300);
+
 		this.nodes = [];
 
 		this.titleProp = new StringProperty("title", "Title", "Frame");

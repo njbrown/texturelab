@@ -54,7 +54,7 @@ enum LibraryItemType {
 	Node = "node",
 	Comment = "comment",
 	Frame = "frame",
-	Navigation = "navigation",
+	Navigation = "navigation"
 }
 
 class LibraryItem {
@@ -86,7 +86,7 @@ export default class LibraryView extends Vue {
 	created() {}
 
 	get items() {
-		let items = Object.values(this.library.nodes).map((n) => {
+		let items = Object.values(this.library.nodes).map(n => {
 			let item = new LibraryItem(LibraryItemType.Node);
 			item.name = n.name;
 			item.displayName = n.displayName;
@@ -120,21 +120,26 @@ export default class LibraryView extends Vue {
 	addItem(type: LibraryItemType, nodeName: string) {
 		if (type == LibraryItemType.Node) {
 			var dnode = this.library.create(nodeName);
-			var n = this.editor.addNode(dnode);
+			var canvas = this.editor.canvas;
+			var n = this.editor.addNode(
+				dnode,
+				canvas.width / 2,
+				canvas.height / 2
+			);
 			n.setCenter(200, 200);
 		}
-		// if (type == LibraryItemType.Comment) {
-		// 	var item = this.editor.createComment();
-		// 	item.setCenter(200, 200);
-		// }
-		// if (type == LibraryItemType.Frame) {
-		// 	var item = this.editor.createFrame();
-		// 	item.setCenter(200, 200);
-		// }
-		// if (type == LibraryItemType.Navigation) {
-		// 	var item = this.editor.createNavigation();
-		// 	item.setCenter(200, 200);
-		// }
+		if (type == LibraryItemType.Comment) {
+			let item = this.editor.createComment();
+			//item.setCenter(200, 200);
+		}
+		if (type == LibraryItemType.Frame) {
+			let item = this.editor.createFrame();
+			//item.setCenter(200, 200);
+		}
+		if (type == LibraryItemType.Navigation) {
+			let item = this.editor.createNavigation();
+			//item.setCenter(200, 200);
+		}
 
 		return false;
 	}
