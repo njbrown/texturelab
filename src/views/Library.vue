@@ -18,7 +18,7 @@
 				<span
 					v-for="item in filteredList"
 					v-on:click="addItem(item.type, item.name)"
-					v-on:dragstart="dragStart($event, item.name)"
+					v-on:dragstart="dragStart($event, item)"
 					:key="item.name"
 					class="libcard"
 					href="#"
@@ -144,8 +144,8 @@ export default class LibraryView extends Vue {
 		return false;
 	}
 
-	dragStart(evt: any, name: any) {
-		evt.dataTransfer.setData("text/plain", name);
+	dragStart(evt: any, item: any) {
+		evt.dataTransfer.setData("text/plain", JSON.stringify(item));
 	}
 
 	imageExists(node: string) {

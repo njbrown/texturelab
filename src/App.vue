@@ -335,14 +335,35 @@ export default class App extends Vue {
 		canv.ondrop = evt => {
 			evt.preventDefault();
 
-			var nodeName = evt.dataTransfer.getData("text/plain");
-			var dnode = this.library.create(nodeName);
-			var rect = canv.getBoundingClientRect();
-			var n = this.editor.addNode(
-				dnode,
+			var itemJson = evt.dataTransfer.getData("text/plain");
+			let item = JSON.parse(itemJson);
+			let rect = canv.getBoundingClientRect();
+			var pos = this.editor.graph.view.canvasToSceneXY(
 				evt.clientX - rect.left,
 				evt.clientY - rect.top
 			);
+
+			if (item.type == "node") {
+				let nodeName = item.name;
+
+				let dnode = this.library.create(nodeName);
+				// let n = this.editor.addNode(
+				// 	dnode,
+				// 	evt.clientX - rect.left,
+				// 	evt.clientY - rect.top
+				// );
+				let n = this.editor.addNode(dnode);
+				n.setCenter(pos.x, pos.y);
+			} else if (item.type == "comment") {
+				let d = this.editor.createComment();
+				d.setCenter(pos.x, pos.y);
+			} else if (item.type == "frame") {
+				let d = this.editor.createFrame();
+				d.setCenter(pos.x, pos.y);
+			} else if (item.type == "navigation") {
+				let d = this.editor.createNavigation();
+				d.setCenter(pos.x, pos.y);
+			}
 			console.log("drop");
 		};
 		this.editor.setSceneCanvas(canv);
