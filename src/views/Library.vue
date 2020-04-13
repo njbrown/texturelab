@@ -50,14 +50,14 @@ import path from "path";
 declare var __static: any;
 
 // this abstracts library nodes and other items such as comments
-enum LibraryItemType {
+export enum LibraryItemType {
 	Node = "node",
 	Comment = "comment",
 	Frame = "frame",
 	Navigation = "navigation"
 }
 
-class LibraryItem {
+export class LibraryItem {
 	type: LibraryItemType;
 	name: string;
 	displayName: string;

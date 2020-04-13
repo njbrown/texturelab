@@ -88,6 +88,7 @@ export class Editor {
 	onframeselected?: (item: FrameGraphicsItem) => void;
 	onnavigationselected?: (item: NavigationGraphicsItem) => void;
 	onpreviewnode?: (item: DesignerNode, image: HTMLCanvasElement) => void;
+	onlibrarymenu?: () => void;
 
 	textureChannels = {};
 	ontexturechannelcleared?: (
@@ -511,6 +512,13 @@ export class Editor {
 				scene,
 				evt.clipboardData
 			);
+		};
+
+		this.graph.onlibrarymenu = function() {
+			console.log(self.onlibrarymenu);
+			if (self.onlibrarymenu != null) {
+				self.onlibrarymenu();
+			}
 		};
 
 		// property changes

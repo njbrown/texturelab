@@ -40,6 +40,12 @@
 					class="test-component"
 					:closable="false"
 				>
+					<library-menu
+						:editor="this.editor"
+						:library="this.library"
+						v-if="this.library != null"
+						ref="libraryMenu"
+					/>
 					<div class="editor-menu" style="height:2em;">
 						<!-- <a class="btn" href="#" @click="setShape('sphere')">S</a>
       <a class="btn" href="#" @click="setShape('cube')">C</a>
@@ -68,6 +74,7 @@
 						height="400"
 						id="editor"
 						ondragover="event.preventDefault()"
+						@keydown="showLibraryMenu"
 					/>
 				</gl-component>
 				<!-- <gl-component title="Library" height="30" :closable="false">
@@ -199,6 +206,7 @@ body {
 import { Component, Prop, Vue, Watch, Model } from "vue-property-decorator";
 import EditorView from "@/views/Editor.vue";
 import LibraryView from "@/views/Library.vue";
+import LibraryMenu from "@/components/LibraryMenu.vue";
 import { Editor } from "@/lib/editortest";
 import { View3D } from "@/lib/view3d";
 import { createLibrary as createV1Library } from "@/lib/library/libraryv1";
@@ -230,6 +238,7 @@ declare var __static: any;
 		EditorView,
 		LibraryView,
 		NodePropertiesView,
+		LibraryMenu,
 		preview2d: Preview2D,
 		preview3d: Preview3D
 	}
@@ -383,6 +392,7 @@ export default class App extends Vue {
 		// this.editor.onnavigationselected = nav => {
 		//   this.propHolder = nav;
 		// };
+		this.editor.onlibrarymenu = this.showLibraryMenu;
 
 		// const _2dview = <HTMLCanvasElement>document.getElementById("_2dview");
 		// this.editor.set2DPreview(_2dview);
@@ -424,6 +434,12 @@ export default class App extends Vue {
 		// });
 
 		this.isMenuSetup = true;
+	}
+
+	showLibraryMenu() {
+		console.log("show modal");
+		let lib = <any>this.$refs.libraryMenu;
+		if (lib.show == false) lib.showModal();
 	}
 
 	itemCreated(item: any) {

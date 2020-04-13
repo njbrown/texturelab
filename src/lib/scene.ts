@@ -89,6 +89,8 @@ export class NodeScene {
 	oncut?: (evt: ClipboardEvent) => void;
 	onpaste?: (evt: ClipboardEvent) => void;
 
+	onlibrarymenu?: () => void;
+
 	view: SceneView;
 
 	// listeners for cleanup
@@ -183,6 +185,14 @@ export class NodeScene {
 			if (evt.key == "Delete" && self.hasFocus && self.selectedNode) {
 				self.deleteNode(self.selectedNode);
 			}
+
+			if (evt.key == " " && self.hasFocus) {
+				if (self.onlibrarymenu != null) {
+					self.onlibrarymenu();
+				}
+			}
+
+			console.log(evt.key.length);
 		};
 		window.addEventListener("keydown", self._keyDown, true);
 		// canvas.addEventListener("mousewheel", function(evt: WheelEvent) {
