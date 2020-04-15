@@ -42,7 +42,7 @@ Got ideas, suggestions or feedback? Reach out to me on [twitter](https://twitter
 ## Built Using
 
 - **[Vue.js](https://vuejs.org)**
-- **[THREE.js](https://vuejs.org)**
+- **[THREE.js](https://threejs.org/)**
 - **[Golden Layout](https://golden-layout.com/)** via **[vue-golden-layout](https://github.com/emedware/vue-golden-layout)**
 - **[Electron](https://electronjs.org)**
 
