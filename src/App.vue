@@ -74,7 +74,6 @@
 						height="400"
 						id="editor"
 						ondragover="event.preventDefault()"
-						@keydown="showLibraryMenu"
 					/>
 				</gl-component>
 				<!-- <gl-component title="Library" height="30" :closable="false">
@@ -260,6 +259,9 @@ export default class App extends Vue {
 	resolution: number = 1024;
 	randomSeed: number = 32;
 
+	mouseX: number = 0;
+	mouseY: number = 0;
+
 	version: string = "0.1.0";
 
 	constructor() {
@@ -340,6 +342,12 @@ export default class App extends Vue {
 
 	mounted() {
 		this.setupMenu();
+
+		document.addEventListener("mousemove", evt => {
+			this.mouseX = evt.pageX;
+			this.mouseY = evt.pageY;
+		});
+
 		const canv = <HTMLCanvasElement>document.getElementById("editor");
 		canv.ondrop = evt => {
 			evt.preventDefault();
@@ -437,9 +445,9 @@ export default class App extends Vue {
 	}
 
 	showLibraryMenu() {
-		console.log("show modal");
 		let lib = <any>this.$refs.libraryMenu;
-		if (lib.show == false) lib.showModal();
+		console.log("show menu");
+		if (lib.show == false) lib.showModal(this.mouseX, this.mouseY);
 	}
 
 	itemCreated(item: any) {
