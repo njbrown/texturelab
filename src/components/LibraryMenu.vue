@@ -4,7 +4,7 @@
 		:class="show ? 'show-modal' : ''"
 		@click.self="hideModal"
 	>
-		<div class="menu" @keydown="menuKeyDown">
+		<div class="menu" ref="menu" @keydown="menuKeyDown">
 			<input
 				class="search-input"
 				type="text"
@@ -55,11 +55,17 @@ export default class LibraryMenu extends Vue {
 	@Prop()
 	editor!: Editor;
 
+	mouseX: number = 0;
+
+	mouseY: number = 0;
+
 	filter: string = "";
 
-	show: boolean = true;
+	show: boolean = false;
 
 	selectedItem: LibraryItem = null;
+
+	mounted() {}
 
 	get items() {
 		let items = Object.values(this.library.nodes).map(n => {
@@ -97,10 +103,20 @@ export default class LibraryMenu extends Vue {
 		this.show = false;
 	}
 
-	showModal() {
+	showModal(x: number, y: number) {
 		this.filter = "";
 		this.show = true;
 		this.selectedItem = null;
+
+		let el = <HTMLElement>this.$refs.menu;
+		console.log(x + " " + y);
+
+		el.style.left = x + "px";
+		el.style.top = y + "px";
+
+		this.mouseX = x;
+		this.mouseY = y;
+
 		//
 		window.setTimeout(x => {
 			console.log(<HTMLInputElement>this.$refs["search"]);
@@ -256,8 +272,9 @@ export default class LibraryMenu extends Vue {
 
 /* Modal Content/Box */
 .menu {
+	position: fixed;
 	background-color: #fefefe;
-	margin: 15% auto; /* 15% from the top and centered */
+	/* margin: 15% auto; */
 	padding: 20px;
 	border: 1px solid #888;
 	width: 300px; /* Could be more or less, depending on screen size */
