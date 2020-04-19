@@ -3,34 +3,34 @@ import {
 	GraphicsItem,
 	MouseDownEvent,
 	MouseMoveEvent,
-	MouseUpEvent
+	MouseUpEvent,
 } from "./graphicsitem";
-import { SceneView } from "./view";
+import { SceneView, Vector2 } from "./view";
 import { Color } from "../designer/color";
 import { NodeGraphicsItem } from "./nodegraphicsitem";
 import {
 	IPropertyHolder,
 	Property,
 	StringProperty,
-	BoolProperty
+	BoolProperty,
 } from "../designer/properties";
 
 enum XResizeDir {
 	None,
 	Left,
-	Right
+	Right,
 }
 
 enum YResizeDir {
 	None,
 	Top,
-	Bottom
+	Bottom,
 }
 
 enum DragMode {
 	None,
 	HandleTop,
-	Resize
+	Resize,
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/CSS/cursor
@@ -134,6 +134,17 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 			")";
 		//console.log(col);
 		return col;
+	}
+
+	public setPos(x: number, y: number) {
+		// find diff
+		let diff = new Vector2(x - this.x, y - this.y);
+		super.setPos(x, y);
+
+		// do a move
+		for (let node of this.nodes) {
+			node.move(diff.x, diff.y);
+		}
 	}
 
 	draw(ctx: CanvasRenderingContext2D, renderData: any = null) {

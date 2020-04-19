@@ -3,16 +3,18 @@ import {
 	GraphicsItem,
 	MouseDownEvent,
 	MouseMoveEvent,
-	MouseUpEvent
+	MouseUpEvent,
 } from "./graphicsitem";
-import { SceneView } from "./view";
+import { SceneView, Vector2 } from "./view";
 import { Color } from "../designer/color";
 import {
 	IPropertyHolder,
 	Property,
-	StringProperty
+	StringProperty,
 } from "../designer/properties";
 import { NodeScene } from "../scene";
+import { MoveItemsAction } from "../actions/moveItemsaction";
+import { UndoStack } from "../undostack";
 
 // https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks
 export class SelectionGraphicsItem extends GraphicsItem {
@@ -23,7 +25,9 @@ export class SelectionGraphicsItem extends GraphicsItem {
 	fontHeight: number;
 
 	hit: boolean;
+	dragged: boolean;
 	items: GraphicsItem[];
+	itemsDragStartPos: Vector2[];
 
 	constructor(scene: NodeScene, view: SceneView) {
 		super();
@@ -31,8 +35,10 @@ export class SelectionGraphicsItem extends GraphicsItem {
 		this.view = view;
 		this.color = new Color(0.9, 0.9, 0.9);
 		this.items = new Array();
+		this.itemsDragStartPos = new Array();
 
 		this.hit = false;
+		this.dragged = false;
 
 		this.padding = 5;
 		this.fontHeight = 20;
@@ -137,7 +143,10 @@ export class SelectionGraphicsItem extends GraphicsItem {
 	// then its in drag mode
 	public mouseDown(evt: MouseDownEvent) {
 		this.hit = true;
+		this.dragged = false;
+
 		if (this.items.length > 0) {
+			this.captureDragStarts();
 		} else {
 			this.x = evt.globalX;
 			this.y = evt.globalY;
@@ -147,6 +156,7 @@ export class SelectionGraphicsItem extends GraphicsItem {
 	public mouseMove(evt: MouseMoveEvent) {
 		if (this.items.length > 0) {
 			for (let item of this.items) item.move(evt.deltaX, evt.deltaY);
+			this.dragged = true;
 		} else if (this.hit) {
 			// movement
 			this.width += evt.deltaX;
@@ -159,6 +169,38 @@ export class SelectionGraphicsItem extends GraphicsItem {
 		if (this.items.length == 0) {
 			this.items = this.getHitItems();
 			this.scene.setSelectedItems(this.items);
+		} else {
+			//todo: check for movement
+			if (this.dragged) this.createUndoAction();
 		}
+
+		this.dragged = false;
+	}
+
+	// UNDO-REDO
+	captureDragStarts() {
+		this.itemsDragStartPos = [];
+		for (let item of this.items) {
+			let pos = new Vector2(item.left, item.top);
+			this.itemsDragStartPos.push(pos);
+		}
+	}
+
+	createUndoAction() {
+		let newPosList = [];
+		for (let item of this.items) {
+			let pos = new Vector2(item.left, item.top);
+			newPosList.push(pos);
+		}
+
+		let action = new MoveItemsAction(
+			this.items,
+			this.itemsDragStartPos,
+			newPosList
+		);
+
+		console.log(action);
+
+		UndoStack.current.push(action);
 	}
 }
