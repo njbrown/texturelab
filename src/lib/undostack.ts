@@ -7,11 +7,14 @@ export class Action {
 //  https://gist.github.com/dsamarin/3050311
 // https://github.com/agrinko/js-undo-manager
 export class UndoStack {
+	static current: UndoStack;
+
 	stack: Action[];
 	pointer: number;
 
 	constructor() {
 		this.pointer = -1;
+		this.stack = [];
 	}
 
 	push(action: Action) {
@@ -31,7 +34,7 @@ export class UndoStack {
 	}
 
 	redo() {
-		if (this.pointer >= this.stack.length) return;
+		if (this.pointer >= this.stack.length - 1) return;
 
 		this.pointer += 1;
 
