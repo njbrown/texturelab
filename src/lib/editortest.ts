@@ -392,6 +392,7 @@ export class Editor {
 		if (this.graph) this.graph.dispose();
 
 		this.undoStack = new UndoStack();
+		UndoStack.current = this.undoStack;
 
 		this.graph = scene;
 

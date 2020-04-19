@@ -443,7 +443,7 @@ export default class App extends Vue {
 		this.editor.undo();
 	}
 
-	redoActon() {
+	redoAction() {
 		this.editor.redo();
 	}
 
