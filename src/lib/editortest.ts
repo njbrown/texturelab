@@ -17,6 +17,7 @@ import { CommentGraphicsItem } from "./scene/commentgraphicsitem";
 import { FrameGraphicsItem } from "./scene/framegraphicsitem";
 import { NavigationGraphicsItem } from "./scene/navigationgraphicsitem";
 import { ItemClipboard } from "./clipboard";
+import { UndoStack } from "./undostack";
 
 function hexToRgb(hex) {
 	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -24,7 +25,7 @@ function hexToRgb(hex) {
 		? {
 				r: parseInt(result[1], 16),
 				g: parseInt(result[2], 16),
-				b: parseInt(result[3], 16)
+				b: parseInt(result[3], 16),
 		  }
 		: null;
 }
@@ -63,7 +64,7 @@ export enum DisplayChannel {
 	Metallic,
 	Roughness,
 	Normal,
-	Height
+	Height,
 }
 
 export class Editor {
@@ -73,6 +74,8 @@ export class Editor {
 	graph: NodeScene;
 	designer: Designer;
 	selectedDesignerNode: DesignerNode;
+
+	undoStack: UndoStack;
 
 	preview2D: HTMLCanvasElement;
 	preview2DCtx: CanvasRenderingContext2D;
@@ -107,6 +110,7 @@ export class Editor {
 	constructor() {
 		this.displayNodes = new DisplayNodes();
 		this.selectedDesignerNode = null;
+		this.undoStack = new UndoStack();
 	}
 
 	getImageWidth() {
@@ -227,6 +231,14 @@ export class Editor {
         //this.setScene(new NodeScene(canvas));
     }
     */
+
+	undo() {
+		this.undoStack.undo();
+	}
+
+	redo() {
+		this.undoStack.redo();
+	}
 
 	// creates new texture
 	// requires canvas to be already set
@@ -378,6 +390,8 @@ export class Editor {
 	setScene(scene: NodeScene) {
 		// cleanup previous graph
 		if (this.graph) this.graph.dispose();
+
+		this.undoStack = new UndoStack();
 
 		this.graph = scene;
 
@@ -782,7 +796,7 @@ export class Editor {
 
 		data["editor"] = {
 			//displayNodes: this.displayNodes,
-			textureChannels: textureChannels
+			textureChannels: textureChannels,
 		};
 
 		//data["libraryVersion"] = this.library.getVersionName();
