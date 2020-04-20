@@ -3,8 +3,11 @@ import {
 	GraphicsItem,
 	MouseDownEvent,
 	MouseMoveEvent,
-	MouseUpEvent
+	MouseUpEvent,
 } from "./graphicsitem";
+import { Vector2 } from "./view";
+import { MoveItemsAction } from "../actions/moveItemsaction";
+import { UndoStack } from "../undostack";
 
 export class NavigationGraphicsItem extends GraphicsItem {
 	id!: string;
@@ -13,12 +16,15 @@ export class NavigationGraphicsItem extends GraphicsItem {
 
 	label: string;
 	hit: boolean;
+	dragged: boolean;
+	dragStartPos: Vector2;
 
 	constructor() {
 		super();
 		this.label = "";
 
 		this.hit = false;
+		this.dragged = false;
 
 		this.width = 10;
 		this.height = 10;
@@ -43,16 +49,34 @@ export class NavigationGraphicsItem extends GraphicsItem {
 	// MOUSE EVENTS
 	public mouseDown(evt: MouseDownEvent) {
 		this.hit = true;
+		this.dragged = false;
+		this.dragStartPos = new Vector2(this.x, this.y);
 	}
 
 	public mouseMove(evt: MouseMoveEvent) {
 		if (this.hit) {
 			// movement
 			this.move(evt.deltaX, evt.deltaY);
+			this.dragged = true;
 		}
 	}
 
 	public mouseUp(evt: MouseUpEvent) {
 		this.hit = false;
+
+		// add undo/redo
+		let newPos = new Vector2(this.x, this.y);
+
+		if (this.dragged) {
+			let action = new MoveItemsAction(
+				[this],
+				[this.dragStartPos.clone()],
+				[newPos]
+			);
+
+			UndoStack.current.push(action);
+		}
+
+		this.dragged = false;
 	}
 }
