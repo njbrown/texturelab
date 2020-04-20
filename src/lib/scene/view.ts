@@ -26,6 +26,10 @@ export class Vector2 {
 	clone(): Vector2 {
 		return new Vector2(this.x, this.y);
 	}
+
+	static add(a: Vector2, b: Vector2): Vector2 {
+		return new Vector2(a.x + b.x, a.y + b.y);
+	}
 }
 
 export class Rect {
