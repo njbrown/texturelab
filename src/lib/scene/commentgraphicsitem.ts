@@ -3,15 +3,17 @@ import {
 	GraphicsItem,
 	MouseDownEvent,
 	MouseMoveEvent,
-	MouseUpEvent
+	MouseUpEvent,
 } from "./graphicsitem";
-import { SceneView } from "./view";
+import { SceneView, Vector2 } from "./view";
 import { Color } from "../designer/color";
 import {
 	IPropertyHolder,
 	Property,
-	StringProperty
+	StringProperty,
 } from "../designer/properties";
+import { MoveItemsAction } from "../actions/moveItemsaction";
+import { UndoStack } from "../undostack";
 
 // https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks
 export class CommentGraphicsItem extends GraphicsItem
@@ -25,6 +27,8 @@ export class CommentGraphicsItem extends GraphicsItem
 	fontHeight: number;
 
 	hit: boolean;
+	dragged: boolean;
+	dragStartPos: Vector2;
 
 	constructor(view: SceneView) {
 		super();
@@ -33,6 +37,7 @@ export class CommentGraphicsItem extends GraphicsItem
 		this.color = new Color(0.9, 0.9, 0.9);
 
 		this.hit = false;
+		this.dragged = false;
 
 		this.padding = 5;
 		this.fontHeight = 20;
@@ -50,7 +55,7 @@ export class CommentGraphicsItem extends GraphicsItem
 
 	properties: Property[] = new Array();
 	setProperty(name: string, value: any) {
-		let prop = this.properties.find(x => {
+		let prop = this.properties.find((x) => {
 			return x.name == name;
 		});
 
@@ -166,17 +171,35 @@ export class CommentGraphicsItem extends GraphicsItem
 	// MOUSE EVENTS
 	public mouseDown(evt: MouseDownEvent) {
 		this.hit = true;
-		console.log(this.text);
+		this.dragged = false;
+		this.dragStartPos = new Vector2(this.x, this.y);
+		//console.log(this.text);
 	}
 
 	public mouseMove(evt: MouseMoveEvent) {
 		if (this.hit) {
 			// movement
 			this.move(evt.deltaX, evt.deltaY);
+			this.dragged = true;
 		}
 	}
 
 	public mouseUp(evt: MouseUpEvent) {
 		this.hit = false;
+
+		// add undo/redo
+		let newPos = new Vector2(this.x, this.y);
+
+		if (this.dragged) {
+			let action = new MoveItemsAction(
+				[this],
+				[this.dragStartPos.clone()],
+				[newPos]
+			);
+
+			UndoStack.current.push(action);
+		}
+
+		this.dragged = false;
 	}
 }
