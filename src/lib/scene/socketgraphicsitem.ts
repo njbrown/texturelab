@@ -2,17 +2,19 @@ import {
 	GraphicsItem,
 	MouseDownEvent,
 	MouseMoveEvent,
-	MouseUpEvent
+	MouseUpEvent,
 } from "./graphicsitem";
 import {
 	NodeGraphicsItem,
-	NodeGraphicsItemRenderState
+	NodeGraphicsItemRenderState,
 } from "./nodegraphicsitem";
 import { ConnectionGraphicsItem } from "./connectiongraphicsitem";
+import { AddConnectionAction } from "../actions/addconnectionaction";
+import { UndoStack } from "../undostack";
 
 export enum SocketType {
 	In,
-	Out
+	Out,
 }
 
 export class SocketGraphicsItem extends GraphicsItem {
@@ -233,6 +235,9 @@ export class SocketGraphicsItem extends GraphicsItem {
 				//con.socketB.con = con;
 
 				this.scene.addConnection(con);
+
+				let action = new AddConnectionAction(this.scene, con);
+				UndoStack.current.push(action);
 			} else if (!closeSock) {
 				// delete connection if hit node is an insock
 				// if we're here it means one of 2 things:
