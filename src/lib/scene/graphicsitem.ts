@@ -122,6 +122,16 @@ export class GraphicsItem {
 		return true;
 	}
 
+	public getRect(): Rect {
+		let rect = new Rect();
+		rect.x = this.x;
+		rect.y = this.y;
+		rect.width = this.width;
+		rect.height = this.height;
+
+		return rect;
+	}
+
 	public setCenter(x: number, y: number) {
 		this.x = x - this.width / 2;
 		this.y = y - this.height / 2;

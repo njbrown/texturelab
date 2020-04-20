@@ -33,12 +33,10 @@ export class Vector2 {
 }
 
 export class Rect {
-	protected visible: boolean = true;
-
-	protected x: number = 0;
-	protected y: number = 0;
-	protected width: number;
-	protected height: number;
+	public x: number = 0;
+	public y: number = 0;
+	public width: number;
+	public height: number;
 
 	color: string;
 
@@ -107,6 +105,16 @@ export class Rect {
 		if (this.top > other.bottom) return false;
 
 		return true;
+	}
+
+	clone(): Rect {
+		let rect = new Rect();
+		rect.x = this.x;
+		rect.y = this.y;
+		rect.width = this.width;
+		rect.height = this.height;
+
+		return rect;
 	}
 }
 

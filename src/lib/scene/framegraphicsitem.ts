@@ -5,7 +5,7 @@ import {
 	MouseMoveEvent,
 	MouseUpEvent,
 } from "./graphicsitem";
-import { SceneView, Vector2 } from "./view";
+import { SceneView, Vector2, Rect } from "./view";
 import { Color } from "../designer/color";
 import { NodeGraphicsItem } from "./nodegraphicsitem";
 import {
@@ -16,6 +16,7 @@ import {
 } from "../designer/properties";
 import { MoveItemsAction } from "../actions/moveItemsaction";
 import { UndoStack } from "../undostack";
+import { ResizeFrameAction } from "../actions/resizeframeaction";
 
 enum XResizeDir {
 	None,
@@ -45,6 +46,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 	hit: boolean;
 	dragged: boolean;
 	dragStartPos: Vector2;
+	dragStartRect: Rect;
 
 	xResize: XResizeDir;
 	yResize: YResizeDir;
@@ -150,6 +152,13 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		// for (let node of this.nodes) {
 		// 	node.move(diff.x, diff.y);
 		// }
+	}
+
+	public setFrameRect(rect: Rect) {
+		this.x = rect.x;
+		this.y = rect.y;
+		this.width = rect.width;
+		this.height = rect.height;
 	}
 
 	draw(ctx: CanvasRenderingContext2D, renderData: any = null) {
@@ -269,6 +278,8 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 			this.dragMode = DragMode.Resize;
 			this.xResize = XResizeDir.Right;
 			this.yResize = YResizeDir.Bottom;
+
+			this.dragStartRect = this.getRect();
 		}
 
 		// topbar
@@ -281,6 +292,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 			this.dragMode = DragMode.HandleTop;
 			this.xResize = XResizeDir.None;
 			this.yResize = YResizeDir.None;
+
 			this.dragStartPos = new Vector2(this.x, this.y);
 
 			// capture nodes
@@ -364,7 +376,13 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 				}
 
 				let action = new MoveItemsAction(items, oldPosList, newPosList);
-
+				UndoStack.current.push(action);
+			} else if (this.dragMode == DragMode.Resize) {
+				let action = new ResizeFrameAction(
+					this,
+					this.dragStartRect.clone(),
+					this.getRect().clone()
+				);
 				UndoStack.current.push(action);
 			}
 		}
