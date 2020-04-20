@@ -14,6 +14,8 @@ import {
 	StringProperty,
 	BoolProperty,
 } from "../designer/properties";
+import { MoveItemsAction } from "../actions/moveItemsaction";
+import { UndoStack } from "../undostack";
 
 enum XResizeDir {
 	None,
@@ -41,6 +43,8 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 	view: SceneView;
 	color: Color;
 	hit: boolean;
+	dragged: boolean;
+	dragStartPos: Vector2;
 
 	xResize: XResizeDir;
 	yResize: YResizeDir;
@@ -66,6 +70,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		this.view = view;
 		this.color = new Color(0.1, 0, 0.2);
 		this.hit = false;
+		this.dragged = true;
 
 		this.xResize = XResizeDir.None;
 		this.yResize = YResizeDir.None;
@@ -142,9 +147,9 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		super.setPos(x, y);
 
 		// do a move
-		for (let node of this.nodes) {
-			node.move(diff.x, diff.y);
-		}
+		// for (let node of this.nodes) {
+		// 	node.move(diff.x, diff.y);
+		// }
 	}
 
 	draw(ctx: CanvasRenderingContext2D, renderData: any = null) {
@@ -249,6 +254,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 	// MOUSE EVENTS
 	public mouseDown(evt: MouseDownEvent) {
 		this.hit = true;
+		this.dragged = false;
 
 		let px = evt.globalX;
 		let py = evt.globalY;
@@ -275,6 +281,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 			this.dragMode = DragMode.HandleTop;
 			this.xResize = XResizeDir.None;
 			this.yResize = YResizeDir.None;
+			this.dragStartPos = new Vector2(this.x, this.y);
 
 			// capture nodes
 			this.captureNodes();
@@ -324,10 +331,44 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 					this.height += evt.deltaY;
 				}
 			}
+
+			this.dragged = true;
 		}
 	}
 
 	public mouseUp(evt: MouseUpEvent) {
+		// add undo/redo action
+		if (this.dragged) {
+			if (this.dragMode == DragMode.HandleTop) {
+				let newPos = new Vector2(this.x, this.y);
+				let items: GraphicsItem[] = [this];
+				let oldPosList: Vector2[] = [this.dragStartPos.clone()];
+				let newPosList: Vector2[] = [newPos];
+
+				// reverse diff: new pos to old pos
+				let diff = new Vector2(
+					this.dragStartPos.x - newPos.x,
+					this.dragStartPos.y - newPos.y
+				);
+
+				// add all captured nodes
+				for (let node of this.nodes) {
+					items.push(node);
+					// new pos is the current pos
+					let itemNewPos = new Vector2(node.left, node.top);
+					// old pos is current pos plus reverse diff
+					let itemOldPos = Vector2.add(itemNewPos, diff);
+
+					newPosList.push(itemNewPos);
+					oldPosList.push(itemOldPos);
+				}
+
+				let action = new MoveItemsAction(items, oldPosList, newPosList);
+
+				UndoStack.current.push(action);
+			}
+		}
+
 		this.hit = false;
 		this.dragMode = DragMode.None;
 		this.nodes = [];

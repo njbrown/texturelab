@@ -29,7 +29,6 @@ export class MoveItemsAction extends Action {
 	redo() {
 		for (let i = 0; i < this.items.length; i++) {
 			let pos = this.newPosList[i];
-			console.log(pos);
 			this.items[i].setPos(pos.x, pos.y);
 		}
 	}
