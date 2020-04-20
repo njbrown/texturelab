@@ -22,6 +22,7 @@ export class UndoStack {
 		this.stack.splice(this.pointer);
 
 		this.stack.push(action);
+		console.log(action);
 	}
 
 	undo() {

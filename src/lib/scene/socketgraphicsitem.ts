@@ -11,6 +11,7 @@ import {
 import { ConnectionGraphicsItem } from "./connectiongraphicsitem";
 import { AddConnectionAction } from "../actions/addconnectionaction";
 import { UndoStack } from "../undostack";
+import { RemoveConnectionAction } from "../actions/removeconnectionaction";
 
 export enum SocketType {
 	In,
@@ -198,6 +199,13 @@ export class SocketGraphicsItem extends GraphicsItem {
 			// this block creates a new connection regardless of the outcome
 			if (this.hitConnection) {
 				this.scene.removeConnection(this.hitConnection);
+
+				let action = new RemoveConnectionAction(
+					this.scene,
+					this.hitConnection
+				);
+				UndoStack.current.push(action);
+
 				this.hitConnection = null;
 			}
 
@@ -222,8 +230,16 @@ export class SocketGraphicsItem extends GraphicsItem {
 
 					// close sock is an inSocket which means it should only have one connection
 					// remove current connection from inSocket
-					if (closeSock.hasConnections())
-						this.scene.removeConnection(closeSock.getConnection(0));
+					if (closeSock.hasConnections()) {
+						let removeCon = closeSock.getConnection(0);
+						this.scene.removeConnection(removeCon);
+
+						let action = new RemoveConnectionAction(
+							this.scene,
+							removeCon
+						);
+						UndoStack.current.push(action);
+					}
 				} else {
 					// in socket
 					con.socketA = closeSock;
@@ -254,8 +270,15 @@ export class SocketGraphicsItem extends GraphicsItem {
 			                }
 			                */
 
-					if (this.hitConnection)
+					if (this.hitConnection) {
 						this.scene.removeConnection(this.hitConnection);
+
+						let action = new RemoveConnectionAction(
+							this.scene,
+							this.hitConnection
+						);
+						UndoStack.current.push(action);
+					}
 				}
 			}
 		}
