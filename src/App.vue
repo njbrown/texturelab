@@ -233,6 +233,8 @@ import { shell } from "electron";
 import fs from "fs";
 import path from "path";
 import { IPropertyHolder } from "./lib/designer/properties";
+import { AddItemsAction } from "./lib/actions/additemsaction";
+import { UndoStack } from "./lib/undostack";
 const electron = require("electron");
 const remote = electron.remote;
 const { dialog, app, BrowserWindow, Menu } = remote;
@@ -367,6 +369,8 @@ export default class App extends Vue {
 				evt.clientY - rect.top
 			);
 
+			let action: AddItemsAction = null;
+
 			if (item.type == "node") {
 				let nodeName = item.name;
 
@@ -378,15 +382,63 @@ export default class App extends Vue {
 				// );
 				let n = this.editor.addNode(dnode);
 				n.setCenter(pos.x, pos.y);
+
+				action = new AddItemsAction(
+					this.editor.graph,
+					this.editor.designer,
+					[],
+					[],
+					[],
+					[],
+					[n],
+					[dnode]
+				);
 			} else if (item.type == "comment") {
 				let d = this.editor.createComment();
 				d.setCenter(pos.x, pos.y);
+
+				action = new AddItemsAction(
+					this.editor.graph,
+					this.editor.designer,
+					[],
+					[item],
+					[],
+					[],
+					[],
+					[]
+				);
 			} else if (item.type == "frame") {
 				let d = this.editor.createFrame();
 				d.setCenter(pos.x, pos.y);
+
+				action = new AddItemsAction(
+					this.editor.graph,
+					this.editor.designer,
+					[item],
+					[],
+					[],
+					[],
+					[],
+					[]
+				);
 			} else if (item.type == "navigation") {
 				let d = this.editor.createNavigation();
 				d.setCenter(pos.x, pos.y);
+
+				action = new AddItemsAction(
+					this.editor.graph,
+					this.editor.designer,
+					[],
+					[],
+					[item],
+					[],
+					[],
+					[]
+				);
+			}
+
+			if (action != null) {
+				UndoStack.current.push(action);
 			}
 			console.log("drop");
 		};

@@ -25,11 +25,7 @@
 					draggable="true"
 				>
 					<!-- <div class="thumbnail" /> -->
-					<img
-						v-if="imageExists(item.name)"
-						v-bind:src="calcImagePath(item.name)"
-						class="thumbnail"
-					/>
+					<img v-if="imageExists(item.name)" v-bind:src="calcImagePath(item.name)" class="thumbnail" />
 					<div v-else class="thumbnail" />
 					<!-- <span class="thumbnail"></span> -->
 
@@ -46,6 +42,8 @@ import { Editor } from "@/lib/editortest";
 import { DesignerLibrary } from "@/lib/designer/library";
 import fs from "fs";
 import path from "path";
+import { AddItemsAction } from "../lib/actions/additemsaction";
+import { UndoStack } from "../lib/undostack";
 
 declare var __static: any;
 
@@ -118,6 +116,8 @@ export default class LibraryView extends Vue {
 	}
 
 	addItem(type: LibraryItemType, nodeName: string) {
+		let action: AddItemsAction = null;
+
 		if (type == LibraryItemType.Node) {
 			var dnode = this.library.create(nodeName);
 			var canvas = this.editor.canvas;
@@ -127,18 +127,63 @@ export default class LibraryView extends Vue {
 				canvas.height / 2
 			);
 			n.setCenter(200, 200);
+
+			action = new AddItemsAction(
+				this.editor.graph,
+				this.editor.designer,
+				[],
+				[],
+				[],
+				[],
+				[n],
+				[dnode]
+			);
 		}
 		if (type == LibraryItemType.Comment) {
 			let item = this.editor.createComment();
 			//item.setCenter(200, 200);
+			action = new AddItemsAction(
+				this.editor.graph,
+				this.editor.designer,
+				[],
+				[item],
+				[],
+				[],
+				[],
+				[]
+			);
 		}
 		if (type == LibraryItemType.Frame) {
 			let item = this.editor.createFrame();
 			//item.setCenter(200, 200);
+			action = new AddItemsAction(
+				this.editor.graph,
+				this.editor.designer,
+				[item],
+				[],
+				[],
+				[],
+				[],
+				[]
+			);
 		}
 		if (type == LibraryItemType.Navigation) {
 			let item = this.editor.createNavigation();
 			//item.setCenter(200, 200);
+			action = new AddItemsAction(
+				this.editor.graph,
+				this.editor.designer,
+				[],
+				[],
+				[item],
+				[],
+				[],
+				[]
+			);
+		}
+
+		if (action != null) {
+			UndoStack.current.push(action);
 		}
 
 		return false;

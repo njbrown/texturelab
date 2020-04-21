@@ -492,7 +492,7 @@ export class Editor {
 
 		this.graph.onnodedeleted = function(node: NodeGraphicsItem) {
 			// remove node from channels
-			console.log(self);
+			//console.log(self);
 			self.clearTextureChannel(node.id);
 
 			self.designer.removeNode(node.id);

@@ -2,7 +2,7 @@ import { ImageCanvas } from "./designer/imagecanvas";
 import { Designer } from "./designer";
 import {
 	NodeGraphicsItem,
-	NodeGraphicsItemRenderState
+	NodeGraphicsItemRenderState,
 } from "./scene/nodegraphicsitem";
 import { ConnectionGraphicsItem } from "./scene/connectiongraphicsitem";
 import { SocketGraphicsItem, SocketType } from "./scene/socketgraphicsitem";
@@ -10,7 +10,7 @@ import {
 	GraphicsItem,
 	MouseMoveEvent,
 	MouseDownEvent,
-	MouseUpEvent
+	MouseUpEvent,
 } from "./scene/graphicsitem";
 import { SceneView } from "./scene/view";
 import { FrameGraphicsItem } from "./scene/framegraphicsitem";
@@ -27,7 +27,7 @@ enum DragMode {
 	Socket,
 	Frame,
 	Pin,
-	Comment
+	Comment,
 }
 
 class Selection {
@@ -203,7 +203,7 @@ export class NodeScene {
 		};
 		canvas.addEventListener("contextmenu", self._contextMenu);
 
-		this._copyEvent = evt => {
+		this._copyEvent = (evt) => {
 			if (self.hasFocus && evt.target == self.copyElement) {
 				alert("copying selection");
 				console.log(evt.target);
@@ -214,7 +214,7 @@ export class NodeScene {
 		};
 		document.addEventListener("copy", this._copyEvent);
 
-		this._pasteEvent = evt => {
+		this._pasteEvent = (evt) => {
 			if (self.hasFocus && evt.target == self.copyElement) {
 				alert("pasting selection");
 				console.log(evt.target);
@@ -257,6 +257,7 @@ export class NodeScene {
 		this.selectedItems = items;
 	}
 
+	// no callbacks are made here
 	addNode(item: NodeGraphicsItem) {
 		this.nodes.push(item);
 
@@ -269,14 +270,32 @@ export class NodeScene {
 		this.comments.push(item);
 	}
 
+	removeComment(item: CommentGraphicsItem) {
+		//todo: remove from selection
+		let i = this.comments.indexOf(item);
+		if (i !== -1) this.comments.splice(i, 1);
+	}
+
 	addFrame(item: FrameGraphicsItem) {
 		item.setScene(this);
 		this.frames.push(item);
 	}
 
+	removeFrame(item: FrameGraphicsItem) {
+		//todo: remove from selection
+		let i = this.frames.indexOf(item);
+		if (i !== -1) this.frames.splice(i, 1);
+	}
+
 	addNavigation(nav: NavigationGraphicsItem) {
 		nav.setScene(this);
 		this.navigations.push(nav);
+	}
+
+	removeNavigation(item: NavigationGraphicsItem) {
+		//todo: remove from selection
+		let i = this.navigations.indexOf(item);
+		if (i !== -1) this.navigations.splice(i, 1);
 	}
 
 	deleteNode(item: NodeGraphicsItem) {
@@ -333,7 +352,7 @@ export class NodeScene {
 
 		// get sockets
 		con.socketA = leftNode.sockets.find(
-			x => x.socketType == SocketType.Out
+			(x) => x.socketType == SocketType.Out
 		);
 		con.socketB = rightNode.sockets[rightIndex];
 
@@ -445,7 +464,7 @@ export class NodeScene {
 		let mouseY = mouse.y;
 		let nodeState: NodeGraphicsItemRenderState = {
 			hovered: false, // mouse over
-			selected: false // selected node
+			selected: false, // selected node
 		};
 		for (let item of this.nodes) {
 			// check for selection ( only do this when not dragging anything )
@@ -947,6 +966,6 @@ function _getMousePos(canvas, evt) {
 	var rect = canvas.getBoundingClientRect();
 	return {
 		x: evt.clientX - rect.left,
-		y: evt.clientY - rect.top
+		y: evt.clientY - rect.top,
 	};
 }
