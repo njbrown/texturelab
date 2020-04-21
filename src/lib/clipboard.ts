@@ -12,6 +12,8 @@ import { DesignerNodeConn } from "./designer/designerconnection";
 import { SocketType } from "./scene/socketgraphicsitem";
 import { ConnectionGraphicsItem } from "./scene/connectiongraphicsitem";
 import { Guid } from "./utils";
+import { AddItemsAction } from "./actions/additemsaction";
+import { UndoStack } from "./undostack";
 
 export class ItemClipboard {
 	public static copyItems(
@@ -114,13 +116,19 @@ export class ItemClipboard {
 		scene: NodeScene,
 		clipboard: DataTransfer
 	) {
-		//return; // not done!
 		let json = clipboard.getData("json/nodes");
 		console.log(json);
 		if (json == null || json == "") return;
 
 		let data = JSON.parse(json);
 		if (!data) return;
+
+		let frames: FrameGraphicsItem[] = [];
+		let comments: CommentGraphicsItem[] = [];
+		let navs: NavigationGraphicsItem[] = [];
+		let cons: ConnectionGraphicsItem[] = [];
+		let nodes: NodeGraphicsItem[] = [];
+		let dnodes: DesignerNode[] = [];
 
 		// FRAMES
 		if (data.frames) {
@@ -135,6 +143,7 @@ export class ItemClipboard {
 				frame.color = Color.parse(d.color);
 
 				scene.addFrame(frame);
+				frames.push(frame);
 			}
 		}
 
@@ -147,6 +156,7 @@ export class ItemClipboard {
 				comment.color = Color.parse(d.color);
 
 				scene.addComment(comment);
+				comments.push(comment);
 			}
 		}
 
@@ -156,6 +166,7 @@ export class ItemClipboard {
 				let nav = new NavigationGraphicsItem();
 				nav.setPos(d.x, d.y);
 				scene.addNavigation(nav);
+				navs.push(nav);
 			}
 		}
 
@@ -191,11 +202,13 @@ export class ItemClipboard {
 			node.setThumbnail(thumb);
 
 			node.setCenter(n.x, n.y);
-			node.setCenter(n.x, n.y);
-		}
-		console.log(nodeIdMap);
 
-		console.log(scene.nodes);
+			nodes.push(node);
+			dnodes.push(dNode);
+		}
+		// console.log(nodeIdMap);
+
+		// console.log(scene.nodes);
 
 		// add connections
 		for (let c of data.connections) {
@@ -218,6 +231,30 @@ export class ItemClipboard {
 
 			// callback triggers the creation in designer
 			scene.addConnection(con);
+
+			cons.push(con);
+		}
+
+		if (
+			frames.length != 0 ||
+			comments.length != 0 ||
+			navs.length != 0 ||
+			cons.length != 0 ||
+			nodes.length != 0 ||
+			dnodes.length != 0
+		) {
+			// add undo-redo
+			let action = new AddItemsAction(
+				scene,
+				designer,
+				frames,
+				comments,
+				navs,
+				cons,
+				nodes,
+				dnodes
+			);
+			UndoStack.current.push(action);
 		}
 	}
 
