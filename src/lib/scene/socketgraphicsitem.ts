@@ -12,6 +12,10 @@ import { ConnectionGraphicsItem } from "./connectiongraphicsitem";
 import { AddConnectionAction } from "../actions/addconnectionaction";
 import { UndoStack } from "../undostack";
 import { RemoveConnectionAction } from "../actions/removeconnectionaction";
+import {
+	ConnectionSwitchAction,
+	SwitchConnectionAction,
+} from "../actions/switchconnectionaction";
 
 export enum SocketType {
 	In,
@@ -194,17 +198,24 @@ export class SocketGraphicsItem extends GraphicsItem {
 		let mouseX = evt.globalX;
 		let mouseY = evt.globalY;
 
+		// for undo-redo
+		let movedCons: ConnectionGraphicsItem[] = [];
+		let actions: ConnectionSwitchAction[] = [];
+
 		if (this.hitSocket) {
 			// remove previous connection
 			// this block creates a new connection regardless of the outcome
 			if (this.hitConnection) {
 				this.scene.removeConnection(this.hitConnection);
 
-				let action = new RemoveConnectionAction(
-					this.scene,
-					this.hitConnection
-				);
-				UndoStack.current.push(action);
+				// let action = new RemoveConnectionAction(
+				// 	this.scene,
+				// 	this.hitConnection
+				// );
+				// UndoStack.current.push(action);
+
+				movedCons.push(this.hitConnection);
+				actions.push(ConnectionSwitchAction.Remove);
 
 				this.hitConnection = null;
 			}
@@ -233,12 +244,14 @@ export class SocketGraphicsItem extends GraphicsItem {
 					if (closeSock.hasConnections()) {
 						let removeCon = closeSock.getConnection(0);
 						this.scene.removeConnection(removeCon);
+						movedCons.push(removeCon);
+						actions.push(ConnectionSwitchAction.Remove);
 
-						let action = new RemoveConnectionAction(
-							this.scene,
-							removeCon
-						);
-						UndoStack.current.push(action);
+						// let action = new RemoveConnectionAction(
+						// 	this.scene,
+						// 	removeCon
+						// );
+						// UndoStack.current.push(action);
 					}
 				} else {
 					// in socket
@@ -251,9 +264,11 @@ export class SocketGraphicsItem extends GraphicsItem {
 				//con.socketB.con = con;
 
 				this.scene.addConnection(con);
+				movedCons.push(con);
+				actions.push(ConnectionSwitchAction.Add);
 
-				let action = new AddConnectionAction(this.scene, con);
-				UndoStack.current.push(action);
+				// let action = new AddConnectionAction(this.scene, con);
+				// UndoStack.current.push(action);
 			} else if (!closeSock) {
 				// delete connection if hit node is an insock
 				// if we're here it means one of 2 things:
@@ -273,11 +288,13 @@ export class SocketGraphicsItem extends GraphicsItem {
 					if (this.hitConnection) {
 						this.scene.removeConnection(this.hitConnection);
 
-						let action = new RemoveConnectionAction(
-							this.scene,
-							this.hitConnection
-						);
-						UndoStack.current.push(action);
+						movedCons.push(this.hitConnection);
+						actions.push(ConnectionSwitchAction.Remove);
+						// let action = new RemoveConnectionAction(
+						// 	this.scene,
+						// 	this.hitConnection
+						// );
+						// UndoStack.current.push(action);
 					}
 				}
 			}
@@ -286,5 +303,9 @@ export class SocketGraphicsItem extends GraphicsItem {
 		this.hit = false;
 		this.hitSocket = null;
 		this.hitConnection = null;
+
+		// undo-redo
+		let action = new SwitchConnectionAction(this.scene, movedCons, actions);
+		UndoStack.current.push(action);
 	}
 }
