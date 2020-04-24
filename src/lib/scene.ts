@@ -120,6 +120,7 @@ export class NodeScene {
 	_keyDown: (evt: KeyboardEvent) => void;
 	_contextMenu: (evt: MouseEvent) => void;
 	_copyEvent: (evt: ClipboardEvent) => void;
+	_cutEvent: (evt: ClipboardEvent) => void;
 	_pasteEvent: (evt: ClipboardEvent) => void;
 	copyElement: HTMLInputElement;
 
@@ -232,11 +233,23 @@ export class NodeScene {
 				alert("copying selection");
 				console.log(evt.target);
 				evt.preventDefault();
-			}
 
-			self.onCopy(evt);
+				self.onCopy(evt);
+			}
 		};
 		document.addEventListener("copy", this._copyEvent);
+
+		this._cutEvent = (evt) => {
+			if (self.hasFocus && evt.target == self.copyElement) {
+				alert("cutting selection");
+				console.log(evt.target);
+				evt.preventDefault();
+
+				self.onCut(evt);
+				self.deleteItems(this.selectedItems);
+			}
+		};
+		document.addEventListener("cut", this._cutEvent);
 
 		this._pasteEvent = (evt) => {
 			if (self.hasFocus && evt.target == self.copyElement) {
@@ -245,9 +258,9 @@ export class NodeScene {
 				console.log(evt.clipboardData);
 				evt.preventDefault();
 				self.copyElement.value = " ";
-			}
 
-			self.onPaste(evt);
+				self.onPaste(evt);
+			}
 		};
 		document.addEventListener("paste", this._pasteEvent);
 
@@ -575,6 +588,12 @@ export class NodeScene {
 		if (this.oncopy) this.oncopy(evt);
 	}
 
+	onCut(evt: ClipboardEvent) {
+		// todo: copy selected items to clipboard
+		//ItemClipboard.copyItems(this, evt.clipboardData);
+		if (this.oncut) this.oncut(evt);
+	}
+
 	onPaste(evt: ClipboardEvent) {
 		// todo: paste items from clipboard
 		//ItemClipboard.pasteItems(this, evt.clipboardData);
@@ -652,7 +671,7 @@ export class NodeScene {
 
 				this.selection = hitItem;
 				this.hitItem = hitItem;
-				console.log(hitItem);
+				//console.log(hitItem);
 			}
 
 			// check for a hit socket first
