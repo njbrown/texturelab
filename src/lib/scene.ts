@@ -142,22 +142,22 @@ export class NodeScene {
 		this.hitItem = null;
 
 		// add sample frames
-		let frame = new FrameGraphicsItem(this.view);
-		frame.setSize(500, 300);
-		frame.scene = this;
-		this.frames.push(frame);
+		// let frame = new FrameGraphicsItem(this.view);
+		// frame.setSize(500, 300);
+		// frame.scene = this;
+		// this.frames.push(frame);
 
-		let comment = new CommentGraphicsItem(this.view);
-		comment.scene = this;
-		//comment.setText("Hello World");
-		comment.setText("This\nis\na\nmultiline\nmessage");
-		comment.setCenter(200, 500);
-		this.comments.push(comment);
+		// let comment = new CommentGraphicsItem(this.view);
+		// comment.scene = this;
+		// //comment.setText("Hello World");
+		// comment.setText("This\nis\na\nmultiline\nmessage");
+		// comment.setCenter(200, 500);
+		// this.comments.push(comment);
 
-		let nav = new NavigationGraphicsItem();
-		nav.scene = this;
-		nav.setLabel("Test Navigation");
-		this.navigations.push(nav);
+		// let nav = new NavigationGraphicsItem();
+		// nav.scene = this;
+		// nav.setLabel("Test Navigation");
+		// this.navigations.push(nav);
 
 		// bind event listeners
 		var self = this;
