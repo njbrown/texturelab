@@ -132,7 +132,8 @@ export class Editor {
 			let oldNode = this.textureChannels[channelName] as DesignerNode;
 			let nodeView = this.graph.getNodeById(oldNode.id);
 			nodeView.clearTextureChannel();
-			this.textureChannels[channelName] = null;
+			//this.textureChannels[channelName] = null;
+			delete this.textureChannels[channelName];
 
 			if (this.ontexturechannelcleared) {
 				this.ontexturechannelcleared(null, channelName);
