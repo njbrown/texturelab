@@ -85,6 +85,25 @@ export class NodeScene {
 
 	onnodedeleted?: (item: NodeGraphicsItem) => void;
 
+	// called right before items get deleted
+	// ideal for undo/redo
+	onitemsdeleting?: (
+		frames: FrameGraphicsItem[],
+		comments: CommentGraphicsItem[],
+		navs: NavigationGraphicsItem[],
+		cons: ConnectionGraphicsItem[],
+		nodes: NodeGraphicsItem[]
+	) => void;
+
+	// called after items are deleted
+	onitemsdeleted?: (
+		frames: FrameGraphicsItem[],
+		comments: CommentGraphicsItem[],
+		navs: NavigationGraphicsItem[],
+		cons: ConnectionGraphicsItem[],
+		nodes: NodeGraphicsItem[]
+	) => void;
+
 	oncopy?: (evt: ClipboardEvent) => void;
 	oncut?: (evt: ClipboardEvent) => void;
 	onpaste?: (evt: ClipboardEvent) => void;
@@ -182,9 +201,14 @@ export class NodeScene {
 		window.addEventListener("click", self._mouseClick);
 
 		self._keyDown = function(evt: KeyboardEvent) {
-			// if (evt.key == "Delete" && self.hasFocus && self.selectedNode) {
-			// 	self.deleteNode(self.selectedNode);
-			// }
+			if (
+				evt.key == "Delete" &&
+				self.hasFocus &&
+				self.selectedItems.length != 0
+			) {
+				//self.deleteNode(self.selectedNode);
+				self.deleteItems(self.selectedItems);
+			}
 
 			if (evt.key == " " && self.hasFocus) {
 				if (self.onlibrarymenu != null) {
@@ -322,6 +346,67 @@ export class NodeScene {
 
 		// emit remove event
 		if (this.onnodedeleted) this.onnodedeleted(item);
+	}
+
+	// called by delete or cut event
+	deleteItems(items: GraphicsItem[]) {
+		// 1 - put items in buckets
+		let frames: FrameGraphicsItem[] = [];
+		let comments: CommentGraphicsItem[] = [];
+		let navs: NavigationGraphicsItem[] = [];
+		let cons: ConnectionGraphicsItem[] = [];
+		let nodes: NodeGraphicsItem[] = [];
+
+		for (let item of items) {
+			if (item instanceof FrameGraphicsItem) {
+				frames.push(<FrameGraphicsItem>item);
+			}
+			if (item instanceof CommentGraphicsItem) {
+				comments.push(<CommentGraphicsItem>item);
+			}
+			if (item instanceof NavigationGraphicsItem) {
+				navs.push(<NavigationGraphicsItem>item);
+			}
+			if (item instanceof NodeGraphicsItem) {
+				nodes.push(<NodeGraphicsItem>item);
+			}
+		}
+
+		// if nothing was deleted then return
+		if (
+			frames.length == 0 &&
+			comments.length == 0 &&
+			navs.length == 0 &&
+			nodes.length == 0
+		)
+			return;
+
+		// 2 - gather affected connections
+		let conDict = new Map<string, ConnectionGraphicsItem>();
+		for (let node of nodes) {
+			// add all connections to map
+			for (let sock of node.sockets) {
+				for (let con of sock.conns) {
+					conDict.set(con.id, con);
+				}
+			}
+		}
+		for (const [key, con] of conDict) cons.push(con);
+
+		// 3 - actual deletion
+		if (this.onitemsdeleting) {
+			this.onitemsdeleting(frames, comments, navs, cons, nodes);
+		}
+
+		for (let frame of frames) this.removeFrame(frame);
+		for (let comment of comments) this.removeComment(comment);
+		for (let nav of navs) this.removeNavigation(nav);
+		for (let node of nodes) this.deleteNode(node);
+
+		// 4 - callback
+		if (this.onitemsdeleted) {
+			this.onitemsdeleted(frames, comments, navs, cons, nodes);
+		}
 	}
 
 	getNodeById(id: string): NodeGraphicsItem {

@@ -18,6 +18,7 @@ import { FrameGraphicsItem } from "./scene/framegraphicsitem";
 import { NavigationGraphicsItem } from "./scene/navigationgraphicsitem";
 import { ItemClipboard } from "./clipboard";
 import { UndoStack } from "./undostack";
+import { RemoveItemsAction } from "./actions/removeitemsaction";
 
 function hexToRgb(hex) {
 	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -497,6 +498,50 @@ export class Editor {
 
 			self.designer.removeNode(node.id);
 
+			if (self.onpreviewnode) {
+				self.onpreviewnode(null, null);
+			}
+		};
+
+		this.graph.onitemsdeleting = function(
+			frames: FrameGraphicsItem[],
+			comments: CommentGraphicsItem[],
+			navs: NavigationGraphicsItem[],
+			cons: ConnectionGraphicsItem[],
+			nodes: NodeGraphicsItem[]
+		) {
+			let dnodes: DesignerNode[] = [];
+			for (let node of nodes) {
+				let dnode = self.designer.getNodeById(node.id);
+
+				// should never happen!
+				if (dnode == null)
+					throw "Node with id " + dnode.id + " doesnt exist!!";
+
+				dnodes.push(dnode);
+			}
+
+			let action = new RemoveItemsAction(
+				self,
+				self.graph,
+				self.designer,
+				frames,
+				comments,
+				navs,
+				cons,
+				nodes,
+				dnodes
+			);
+			UndoStack.current.push(action);
+		};
+
+		this.graph.onitemsdeleted = function(
+			frames: FrameGraphicsItem[],
+			comments: CommentGraphicsItem[],
+			navs: NavigationGraphicsItem[],
+			cons: ConnectionGraphicsItem[],
+			nodes: NodeGraphicsItem[]
+		) {
 			if (self.onpreviewnode) {
 				self.onpreviewnode(null, null);
 			}

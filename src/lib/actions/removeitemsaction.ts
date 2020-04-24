@@ -13,7 +13,7 @@ import { Editor } from "../editortest";
 
 // used when items are added to the scene
 // also used for paste events
-export class AddItemsAction extends Action {
+export class RemoveItemsAction extends Action {
 	editor: Editor;
 	scene: NodeScene;
 	designer: Designer;
@@ -23,7 +23,7 @@ export class AddItemsAction extends Action {
 	cons: ConnectionGraphicsItem[];
 	nodes: NodeGraphicsItem[];
 	dnodes: DesignerNode[];
-	textureChannels: Record<string, string>;
+	textureChannels: Map<string, string>;
 
 	constructor(
 		editor: Editor,
@@ -48,9 +48,11 @@ export class AddItemsAction extends Action {
 		this.nodes = nodes;
 		this.dnodes = dnodes;
 
+		this.textureChannels = new Map<string, string>();
+
 		for (let node of nodes) {
 			if (node.textureChannel != null) {
-				this.textureChannels[node.id] = node.textureChannel;
+				this.textureChannels.set(node.id, node.textureChannel);
 			}
 		}
 	}
@@ -77,11 +79,8 @@ export class AddItemsAction extends Action {
 		}
 
 		// assign texture channels
-		for (let nodeId in this.textureChannels) {
-			if (this.textureChannels.hasOwnProperty(nodeId)) {
-				let channel = this.textureChannels[nodeId];
-				this.editor.assignNodeToTextureChannel(nodeId, channel);
-			}
+		for (let [nodeId, channel] of this.textureChannels) {
+			this.editor.assignNodeToTextureChannel(nodeId, channel);
 		}
 
 		// relying on callbacks to add the connection
