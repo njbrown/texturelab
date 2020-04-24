@@ -67,10 +67,10 @@ export class NodeScene {
 	dragMode: DragMode;
 	selectionRect: Rect;
 	draggedNode?: NodeGraphicsItem;
-	selectedNode: NodeGraphicsItem;
+	//selectedNode: NodeGraphicsItem;
 	hitSocket?: SocketGraphicsItem;
 	hitConnection?: ConnectionGraphicsItem;
-	selectedItem: GraphicsItem;
+	//selectedItem: GraphicsItem;
 	selectedItems: GraphicsItem[];
 	hitItem: GraphicsItem;
 
@@ -117,7 +117,7 @@ export class NodeScene {
 		this.navigations = new Array();
 		this.dragMode = null;
 		this.selectionRect = new Rect();
-		this.selectedItem = null;
+		//this.selectedItem = null;
 		this.selectedItems = [];
 		this.hitItem = null;
 
@@ -182,9 +182,9 @@ export class NodeScene {
 		window.addEventListener("click", self._mouseClick);
 
 		self._keyDown = function(evt: KeyboardEvent) {
-			if (evt.key == "Delete" && self.hasFocus && self.selectedNode) {
-				self.deleteNode(self.selectedNode);
-			}
+			// if (evt.key == "Delete" && self.hasFocus && self.selectedNode) {
+			// 	self.deleteNode(self.selectedNode);
+			// }
 
 			if (evt.key == " " && self.hasFocus) {
 				if (self.onlibrarymenu != null) {
@@ -315,7 +315,7 @@ export class NodeScene {
 		this.nodes.splice(this.nodes.indexOf(item), 1);
 
 		// if node is selected (which it most likely is), clear it from selection
-		this.selectedNode = null;
+		// this.selectedNode = null;
 
 		// emit deselection
 		if (this.onnodeselected) this.onnodeselected(null);
@@ -468,8 +468,8 @@ export class NodeScene {
 		};
 		for (let item of this.nodes) {
 			// check for selection ( only do this when not dragging anything )
-			if (item == this.selectedNode) nodeState.selected = true;
-			else nodeState.selected = false;
+			//if (item == this.selectedNode) nodeState.selected = true;
+			//else nodeState.selected = false;
 
 			// check for hover
 			if (item.isPointInside(mouseX, mouseY) && this.hitSocket == null)
@@ -517,7 +517,7 @@ export class NodeScene {
 				if (mouseEvent.isAccepted) {
 					this.hitItem = hitItem;
 
-					console.log(hitItem);
+					//console.log(hitItem);
 					if (hitItem instanceof NodeGraphicsItem) {
 						let hitNode = <NodeGraphicsItem>hitItem;
 						//move node to stop of stack
@@ -556,6 +556,8 @@ export class NodeScene {
 							else this.onnavigationselected(hit);
 						}
 					}
+
+					this.selectedItems = [hitItem];
 				}
 			} else {
 				let hitItem = new SelectionGraphicsItem(this, this.view);
