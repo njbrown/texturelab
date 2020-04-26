@@ -82,14 +82,14 @@ export default class NodePropertiesView extends Vue implements IProperyUi {
 	propertyChangeCompleted(evt: PropertyChangeComplete) {
 		console.log("property change!");
 
-		let action = new PropertyChangeAction(
-			this,
-			evt.propName,
-			this.node,
-			evt.oldValue,
-			evt.newValue
-		);
-		UndoStack.current.push(action);
+		// let action = new PropertyChangeAction(
+		// 	this,
+		// 	evt.propName,
+		// 	this.node,
+		// 	evt.oldValue,
+		// 	evt.newValue
+		// );
+		// UndoStack.current.push(action);
 	}
 
 	cancelSubmit() {
