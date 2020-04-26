@@ -20,6 +20,8 @@ import { Vue, Prop, Component, Emit } from "vue-property-decorator";
 import { Designer } from "@/lib/designer";
 import { DesignerNode } from "@/lib/designer/designernode";
 import { IPropertyHolder } from "@/lib/designer/properties";
+import { PropertyChangeAction } from "@/lib/actions/propertychangeaction";
+import { UndoStack } from "@/lib/undostack";
 
 @Component
 export default class EnumPropertyView extends Vue {
@@ -39,8 +41,18 @@ export default class EnumPropertyView extends Vue {
 	}
 
 	updateValue(evt) {
-		this.propHolder.setProperty(this.prop.name, evt.target.value);
+		let oldVal = this.prop.getValue();
+		this.propHolder.setProperty(this.prop.name, parseInt(evt.target.value));
 		this.propertyChanged();
+
+		let action = new PropertyChangeAction(
+			null,
+			this.prop.name,
+			this.propHolder,
+			oldVal,
+			evt.target.value
+		);
+		UndoStack.current.push(action);
 	}
 }
 </script>
