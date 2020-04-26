@@ -253,7 +253,6 @@ declare var __static: any;
 	},
 })
 export default class App extends Vue {
-	public static instance: App;
 	editor!: Editor;
 	library!: DesignerLibrary;
 	view3d!: View3D;
@@ -277,8 +276,6 @@ export default class App extends Vue {
 
 	constructor() {
 		super();
-
-		this.instance = this;
 
 		this.editor = new Editor();
 		this.library = null;
