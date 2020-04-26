@@ -13,6 +13,8 @@ import { Designer } from "@/lib/designer";
 import { DesignerNode } from "@/lib/designer/designernode";
 import { IPropertyHolder } from "../../lib/designer/properties";
 import { PropertyChangeComplete } from "./ipropertyui";
+import { PropertyChangeAction } from "@/lib/actions/propertychangeaction";
+import { UndoStack } from "@/lib/undostack";
 
 @Component
 export default class BoolPropertyView extends Vue {
@@ -36,24 +38,32 @@ export default class BoolPropertyView extends Vue {
 		return evt;
 	}
 
-	value: boolean = true;
+	//value: boolean = true;
 	get valueText() {
-		return this.value ? "True" : "False";
+		return this.prop.value ? "True" : "False";
 	}
 	mounted() {
-		this.value = this.prop.value;
+		//this.value = this.prop.value;
 	}
 
 	toggleValue() {
 		let evt = { propName: this.prop.name, oldValue: null, newValue: null };
-		evt.oldValue = this.value;
-		evt.newValue = !this.value;
+		let oldValue = this.prop.value;
+		evt.newValue = !this.prop.value;
 
-		this.value = !this.value;
-		this.propHolder.setProperty(this.prop.name, this.value);
-		this.propertyChanged();
-		this.propertyChangeCompleted(evt);
-		console.log("emit property change!");
+		//this.value = !this.value;
+		this.propHolder.setProperty(this.prop.name, !this.prop.value);
+		//this.propertyChanged();
+		//this.propertyChangeCompleted(evt);
+
+		let action = new PropertyChangeAction(
+			null,
+			this.prop.name,
+			this.propHolder,
+			oldValue,
+			this.prop.value
+		);
+		UndoStack.current.push(action);
 	}
 }
 </script>
