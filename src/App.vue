@@ -90,6 +90,7 @@
 				<gl-col width="20">
 					<gl-component title="Properties" :closable="false">
 						<node-properties-view
+							ref="properties"
 							v-if="this.propHolder != null"
 							:editor="this.editor"
 							:node="this.propHolder"
@@ -252,6 +253,7 @@ declare var __static: any;
 	},
 })
 export default class App extends Vue {
+	public static instance: App;
 	editor!: Editor;
 	library!: DesignerLibrary;
 	view3d!: View3D;
@@ -275,6 +277,8 @@ export default class App extends Vue {
 
 	constructor() {
 		super();
+
+		this.instance = this;
 
 		this.editor = new Editor();
 		this.library = null;

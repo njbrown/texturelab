@@ -4,54 +4,26 @@ import { Vector2, Rect } from "../scene/view";
 import { FrameGraphicsItem } from "../scene/framegraphicsitem";
 import { Editor } from "../editortest";
 import { IPropertyHolder } from "../designer/properties";
+import { IProperyUi } from "@/components/properties/ipropertyui";
+import App from "@/App.vue";
 
-/*
-FROM
-
-node1 --> channel1
-
-ndoe2 --> channel2
-
-OR
-
-node1 --> channel1
-
-      --> channel2
-
-
-TO
-
-node1 \	  channel1
-       \
-node2   \-> channel2
-
-OR
-
-node1 \	  channel1
-       \
-        \-> channel2
-
-NOTE:
-node2 might be null
-if channel2 is null then we just remove the channel
-*/
 export class PropertyChangeAction extends Action {
-	editor: Editor;
+	ui: IProperyUi;
 	propHolder: IPropertyHolder;
 	propName: string;
-	oldValue: object;
-	newValue: object;
+	oldValue: any;
+	newValue: any;
 
 	constructor(
-		editor: Editor,
+		ui: IProperyUi,
 		propName: string,
 		propHolder: IPropertyHolder,
-		oldValue: object,
-		newValue: object
+		oldValue: any,
+		newValue: any
 	) {
 		super();
 
-		this.editor = editor;
+		this.ui = ui;
 		this.propName = propName;
 		this.propHolder = propHolder;
 		this.oldValue = oldValue;
@@ -60,9 +32,12 @@ export class PropertyChangeAction extends Action {
 
 	undo() {
 		this.propHolder.setProperty(this.propName, this.oldValue);
+		//App.instance.$refs.properties.$forceUpdate();
+		//this.ui.refresh();
 	}
 
 	redo() {
 		this.propHolder.setProperty(this.propName, this.newValue);
+		//this.ui.refresh();
 	}
 }

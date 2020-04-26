@@ -12,6 +12,7 @@ import { Vue, Prop, Component, Emit, Model } from "vue-property-decorator";
 import { Designer } from "@/lib/designer";
 import { DesignerNode } from "@/lib/designer/designernode";
 import { IPropertyHolder } from "../../lib/designer/properties";
+import { PropertyChangeComplete } from "./ipropertyui";
 
 @Component
 export default class BoolPropertyView extends Vue {
@@ -30,6 +31,11 @@ export default class BoolPropertyView extends Vue {
 		return this.prop.name;
 	}
 
+	@Emit()
+	propertyChangeCompleted(evt: PropertyChangeComplete) {
+		return evt;
+	}
+
 	value: boolean = true;
 	get valueText() {
 		return this.value ? "True" : "False";
@@ -39,9 +45,15 @@ export default class BoolPropertyView extends Vue {
 	}
 
 	toggleValue() {
+		let evt = { propName: this.prop.name, oldValue: null, newValue: null };
+		evt.oldValue = this.value;
+		evt.newValue = !this.value;
+
 		this.value = !this.value;
 		this.propHolder.setProperty(this.prop.name, this.value);
 		this.propertyChanged();
+		this.propertyChangeCompleted(evt);
+		console.log("emit property change!");
 	}
 }
 </script>
