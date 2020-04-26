@@ -13,6 +13,8 @@
 					:step="prop.step"
 					@input="updateValue"
 					class="slider"
+					@focus="focus"
+					@blur="blur"
 				/>
 			</div>
 			<div style="width:15%">
@@ -22,6 +24,8 @@
 					:step="prop.step"
 					@input="updateValue"
 					class="number"
+					@focus="focus"
+					@blur="blur"
 				/>
 			</div>
 		</div>
@@ -33,6 +37,9 @@ import { Vue, Prop, Component, Emit } from "vue-property-decorator";
 import { Designer } from "@/lib/designer";
 import { DesignerNode } from "@/lib/designer/designernode";
 import { IPropertyHolder } from "../../lib/designer/properties";
+import { PropertyChangeComplete } from "./ipropertyui";
+import { UndoStack } from "@/lib/undostack";
+import { PropertyChangeAction } from "@/lib/actions/propertychangeaction";
 
 @Component
 export default class FloatPropertyView extends Vue {
@@ -46,14 +53,44 @@ export default class FloatPropertyView extends Vue {
 	@Prop()
 	propHolder: IPropertyHolder;
 
+	oldValue: number;
+
 	@Emit()
 	propertyChanged() {
 		return this.prop.name;
 	}
 
+	@Emit()
+	propertyChangeCompleted(evt: PropertyChangeComplete) {
+		return evt;
+	}
+
 	updateValue(evt) {
 		this.propHolder.setProperty(this.prop.name, evt.target.value);
 		this.propertyChanged();
+	}
+
+	focus() {
+		//console.log("focus");
+		this.oldValue = this.prop.value;
+	}
+
+	blur() {
+		//console.log("blur");
+		// let evt = {
+		// 	propName: this.prop.name,
+		// 	oldValue: this.oldValue,
+		// 	newValue: this.prop.value,
+		// };
+		// this.propertyChangeCompleted(evt);
+		let action = new PropertyChangeAction(
+			null,
+			this.prop.name,
+			this.propHolder,
+			this.oldValue,
+			this.prop.value
+		);
+		UndoStack.current.push(action);
 	}
 }
 </script>
