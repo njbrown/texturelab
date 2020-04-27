@@ -11,6 +11,8 @@
 					@input="updateValue"
 					style="width:100%"
 					rows="5"
+					@focus="focus"
+					@blur="blur"
 				></textarea>
 				<input
 					v-if="!prop.isMultiline"
@@ -18,6 +20,8 @@
 					:value="prop.value"
 					@input="updateValue"
 					style="width:100%"
+					@focus="focus"
+					@blur="blur"
 				/>
 			</div>
 		</div>
@@ -29,6 +33,8 @@ import { Vue, Prop, Component, Emit } from "vue-property-decorator";
 import { Designer } from "@/lib/designer";
 import { DesignerNode } from "@/lib/designer/designernode";
 import { IPropertyHolder } from "../../lib/designer/properties";
+import { PropertyChangeAction } from "@/lib/actions/propertychangeaction";
+import { UndoStack } from "@/lib/undostack";
 
 @Component
 export default class StringPropertyView extends Vue {
@@ -42,6 +48,8 @@ export default class StringPropertyView extends Vue {
 	@Prop()
 	propHolder: IPropertyHolder;
 
+	oldValue: number;
+
 	@Emit()
 	propertyChanged() {
 		return this.prop.name;
@@ -50,6 +58,21 @@ export default class StringPropertyView extends Vue {
 	updateValue(evt) {
 		this.propHolder.setProperty(this.prop.name, evt.target.value);
 		this.propertyChanged();
+	}
+
+	focus() {
+		this.oldValue = this.prop.value;
+	}
+
+	blur() {
+		let action = new PropertyChangeAction(
+			null,
+			this.prop.name,
+			this.propHolder,
+			this.oldValue,
+			this.prop.value
+		);
+		UndoStack.current.push(action);
 	}
 }
 </script>
