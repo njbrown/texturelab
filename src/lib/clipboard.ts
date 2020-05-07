@@ -179,14 +179,14 @@ export class ItemClipboard {
 			console.log(n.typeName);
 			let dNode = library.create(n.typeName);
 
+			// add to designer
+			designer.addNode(dNode);
+			nodeIdMap[n.id] = dNode.id;
+
 			// assign properties
 			for (let propName in n.properties) {
 				dNode.setProperty(propName, n.properties[propName]);
 			}
-
-			// add to designer
-			designer.addNode(dNode);
-			nodeIdMap[n.id] = dNode.id;
 
 			// create scene version
 			var node = new NodeGraphicsItem(dNode.title);
