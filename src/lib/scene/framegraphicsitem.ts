@@ -496,6 +496,58 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 
 		// SIDES
 
+		// left
+		region = new FrameRegion();
+		rect = new Rect();
+		rect.x = frameRect.left;
+		rect.y = frameRect.top;
+		rect.width = this.resizeHandleSize;
+		rect.height = frameRect.height;
+		region.rect = rect;
+		region.dragMode = DragMode.Resize;
+		region.xResizeDir = XResizeDir.Left;
+		region.yResizeDir = YResizeDir.None;
+		regions.push(region);
+
+		// right
+		region = new FrameRegion();
+		rect = new Rect();
+		rect.x = frameRect.right - this.resizeHandleSize;
+		rect.y = frameRect.top;
+		rect.width = this.resizeHandleSize;
+		rect.height = frameRect.height;
+		region.rect = rect;
+		region.dragMode = DragMode.Resize;
+		region.xResizeDir = XResizeDir.Right;
+		region.yResizeDir = YResizeDir.None;
+		regions.push(region);
+
+		// top
+		region = new FrameRegion();
+		rect = new Rect();
+		rect.x = frameRect.left;
+		rect.y = frameRect.top;
+		rect.width = frameRect.width;
+		rect.height = this.resizeHandleSize * 0.5; // top is thinner
+		region.rect = rect;
+		region.dragMode = DragMode.Resize;
+		region.xResizeDir = XResizeDir.None;
+		region.yResizeDir = YResizeDir.Top;
+		regions.push(region);
+
+		// bottom
+		region = new FrameRegion();
+		rect = new Rect();
+		rect.x = frameRect.left;
+		rect.y = frameRect.bottom - this.resizeHandleSize;
+		rect.width = frameRect.width;
+		rect.height = this.resizeHandleSize;
+		region.rect = rect;
+		region.dragMode = DragMode.Resize;
+		region.xResizeDir = XResizeDir.None;
+		region.yResizeDir = YResizeDir.Bottom;
+		regions.push(region);
+
 		// this is handles separately
 		// TOPBAR
 		// region = new FrameRegion();
