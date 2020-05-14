@@ -184,7 +184,7 @@ export class SceneView {
 
 	isMouseOverCanvas() {
 		var rect = this.canvas.getBoundingClientRect();
-		console.log(rect);
+		//console.log(rect);
 		if (this.globalMousePos.x < rect.x) return false;
 		if (this.globalMousePos.y < rect.y) return false;
 		if (this.globalMousePos.x > rect.right) return false;
@@ -333,6 +333,11 @@ export class SceneView {
 			(x - this.offset.x) * (1.0 / this.zoomFactor),
 			(y - this.offset.y) * (1.0 / this.zoomFactor)
 		);
+	}
+
+	globalToCanvasXY(x: number, y: number): Vector2 {
+		let rect = this.canvas.getBoundingClientRect();
+		return new Vector2(x - rect.x, y - rect.y);
 	}
 
 	getMouseSceneSpace(): Vector2 {

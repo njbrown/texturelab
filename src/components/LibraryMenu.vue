@@ -1,5 +1,9 @@
 <template>
-	<div class="modal" :class="show ? 'show-modal' : ''" @click.self="hideModal">
+	<div
+		class="modal"
+		:class="show ? 'show-modal' : ''"
+		@click.self="hideModal"
+	>
 		<div class="menu" ref="menu" @keydown="menuKeyDown">
 			<input
 				class="search-input"
@@ -19,7 +23,11 @@
 					draggable="true"
 					:class="item == selectedItem ? 'selected-card' : ''"
 				>
-					<img v-if="imageExists(item.name)" v-bind:src="calcImagePath(item.name)" class="thumbnail" />
+					<img
+						v-if="imageExists(item.name)"
+						v-bind:src="calcImagePath(item.name)"
+						class="thumbnail"
+					/>
 					<div v-else class="thumbnail" />
 					<!-- <span class="thumbnail"></span> -->
 
@@ -62,7 +70,7 @@ export default class LibraryMenu extends Vue {
 	mounted() {}
 
 	get items() {
-		let items = Object.values(this.library.nodes).map(n => {
+		let items = Object.values(this.library.nodes).map((n) => {
 			let item = new LibraryItem(LibraryItemType.Node);
 			item.name = n.name;
 			item.displayName = n.displayName;
@@ -112,7 +120,7 @@ export default class LibraryMenu extends Vue {
 		this.mouseY = y;
 
 		//
-		window.setTimeout(x => {
+		window.setTimeout((x) => {
 			console.log(<HTMLInputElement>this.$refs["search"]);
 			(<HTMLInputElement>this.$refs["search"]).focus();
 		}, 0);
@@ -213,7 +221,18 @@ export default class LibraryMenu extends Vue {
 				canvas.width / 2,
 				canvas.height / 2
 			);
-			n.setCenter(this.mouseX, this.mouseY);
+
+			// bring mouse pos to local space first
+			let canvasPos = this.editor.graph.view.globalToCanvasXY(
+				this.mouseX,
+				this.mouseY
+			);
+
+			let scenePos = this.editor.graph.view.canvasToSceneXY(
+				canvasPos.x,
+				canvasPos.y
+			);
+			n.setCenter(scenePos.x, scenePos.y);
 
 			action = new AddItemsAction(
 				this.editor.graph,
