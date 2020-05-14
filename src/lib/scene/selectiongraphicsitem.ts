@@ -15,6 +15,7 @@ import {
 import { NodeScene } from "../scene";
 import { MoveItemsAction } from "../actions/moveItemsaction";
 import { UndoStack } from "../undostack";
+import { FrameGraphicsItem } from "./framegraphicsitem";
 
 // https://stackoverflow.com/questions/5026961/html5-canvas-ctx-filltext-wont-do-line-breaks
 export class SelectionGraphicsItem extends GraphicsItem {
@@ -27,6 +28,7 @@ export class SelectionGraphicsItem extends GraphicsItem {
 	hit: boolean;
 	dragged: boolean;
 	items: GraphicsItem[];
+	draggableItems: GraphicsItem[]; // list with items and frame's items for dragging
 	itemsDragStartPos: Vector2[];
 
 	constructor(scene: NodeScene, view: SceneView) {
@@ -133,6 +135,26 @@ export class SelectionGraphicsItem extends GraphicsItem {
 		return items;
 	}
 
+	// todo: ultra slow!
+	// does frame * scenenodes check per frame
+	getDraggableHitItems(hitItems: GraphicsItem[]): GraphicsItem[] {
+		let items: Set<GraphicsItem> = new Set<GraphicsItem>();
+
+		hitItems.forEach((i: GraphicsItem) => {
+			items.add(i);
+
+			if (i instanceof FrameGraphicsItem) {
+				let captured = (<FrameGraphicsItem>i).getHoveredNodes();
+				captured.forEach((c) => items.add(c));
+			}
+		});
+
+		let results: GraphicsItem[] = [];
+		items.forEach((i: GraphicsItem) => results.push(i));
+
+		return results;
+	}
+
 	// MOUSE EVENTS
 
 	// This graphics item has two phases
@@ -155,7 +177,9 @@ export class SelectionGraphicsItem extends GraphicsItem {
 
 	public mouseMove(evt: MouseMoveEvent) {
 		if (this.items.length > 0) {
-			for (let item of this.items) item.move(evt.deltaX, evt.deltaY);
+			for (let item of this.draggableItems) {
+				item.move(evt.deltaX, evt.deltaY);
+			}
 			this.dragged = true;
 		} else if (this.hit) {
 			// movement
@@ -169,6 +193,7 @@ export class SelectionGraphicsItem extends GraphicsItem {
 		if (this.items.length == 0) {
 			this.items = this.getHitItems();
 			this.scene.setSelectedItems(this.items);
+			this.draggableItems = this.getDraggableHitItems(this.items);
 		} else {
 			//todo: check for movement
 			if (this.dragged) this.createUndoAction();

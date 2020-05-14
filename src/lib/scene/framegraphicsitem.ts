@@ -296,11 +296,13 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 			this.dragStartPos = new Vector2(this.x, this.y);
 
 			// capture nodes if alt key isnt pressed
-			if (!evt.altKey) this.captureNodes();
+			if (!evt.altKey) this.nodes = this.getHoveredNodes();
 		}
 	}
 
-	captureNodes() {
+	// return all scene's nodes in this frame
+	getHoveredNodes(): NodeGraphicsItem[] {
+		let nodes: NodeGraphicsItem[] = [];
 		for (let node of this.scene.nodes) {
 			// node must be entirely inside frame
 			if (
@@ -309,9 +311,11 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 				node.top >= this.top &&
 				node.bottom <= this.bottom
 			) {
-				this.nodes.push(node);
+				nodes.push(node);
 			}
 		}
+
+		return nodes;
 	}
 
 	public mouseMove(evt: MouseMoveEvent) {
