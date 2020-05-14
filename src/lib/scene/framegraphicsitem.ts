@@ -295,8 +295,8 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 
 			this.dragStartPos = new Vector2(this.x, this.y);
 
-			// capture nodes
-			this.captureNodes();
+			// capture nodes if alt key isnt pressed
+			if (!evt.altKey) this.captureNodes();
 		}
 	}
 
