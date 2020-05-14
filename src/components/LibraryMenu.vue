@@ -16,7 +16,7 @@
 			<div class="card-list">
 				<div
 					v-for="item in filteredList"
-					@click="addItem(item.type, item.name)"
+					@click="itemClicked(item.type, item.name)"
 					:key="item.name"
 					class="libcard"
 					href="#"
@@ -208,6 +208,11 @@ export default class LibraryMenu extends Vue {
 		index = Math.max(0, Math.min(index, list.length - 1));
 
 		this.selectedItem = list[index];
+	}
+
+	itemClicked(type: LibraryItemType, nodeName: string) {
+		this.addItem(type, nodeName);
+		this.hideModal();
 	}
 
 	addItem(type: LibraryItemType, nodeName: string) {
