@@ -212,7 +212,7 @@ export class NodeScene {
 				// self.hasFocus &&
 				self.view.isMouseOverCanvas()
 			) {
-				if (self.onlibrarymenu != null) {
+				if (self.onlibrarymenu != null && self.hitItem == null) {
 					self.onlibrarymenu();
 				}
 			}
