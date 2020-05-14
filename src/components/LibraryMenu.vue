@@ -213,6 +213,17 @@ export default class LibraryMenu extends Vue {
 	addItem(type: LibraryItemType, nodeName: string) {
 		let action: AddItemsAction = null;
 
+		// bring mouse pos to local space first
+		let canvasPos = this.editor.graph.view.globalToCanvasXY(
+			this.mouseX,
+			this.mouseY
+		);
+
+		let scenePos = this.editor.graph.view.canvasToSceneXY(
+			canvasPos.x,
+			canvasPos.y
+		);
+
 		if (type == LibraryItemType.Node) {
 			var dnode = this.library.create(nodeName);
 			var canvas = this.editor.canvas;
@@ -222,16 +233,6 @@ export default class LibraryMenu extends Vue {
 				canvas.height / 2
 			);
 
-			// bring mouse pos to local space first
-			let canvasPos = this.editor.graph.view.globalToCanvasXY(
-				this.mouseX,
-				this.mouseY
-			);
-
-			let scenePos = this.editor.graph.view.canvasToSceneXY(
-				canvasPos.x,
-				canvasPos.y
-			);
 			n.setCenter(scenePos.x, scenePos.y);
 
 			action = new AddItemsAction(
@@ -247,7 +248,7 @@ export default class LibraryMenu extends Vue {
 		}
 		if (type == LibraryItemType.Comment) {
 			let item = this.editor.createComment();
-			item.setCenter(this.mouseX, this.mouseY);
+			item.setCenter(scenePos.x, scenePos.y);
 
 			action = new AddItemsAction(
 				this.editor.graph,
@@ -262,7 +263,7 @@ export default class LibraryMenu extends Vue {
 		}
 		if (type == LibraryItemType.Frame) {
 			let item = this.editor.createFrame();
-			item.setCenter(this.mouseX, this.mouseY);
+			item.setCenter(scenePos.x, scenePos.y);
 
 			action = new AddItemsAction(
 				this.editor.graph,
@@ -277,7 +278,7 @@ export default class LibraryMenu extends Vue {
 		}
 		if (type == LibraryItemType.Navigation) {
 			let item = this.editor.createNavigation();
-			item.setCenter(this.mouseX, this.mouseY);
+			item.setCenter(scenePos.x, scenePos.y);
 
 			action = new AddItemsAction(
 				this.editor.graph,
