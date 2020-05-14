@@ -4,6 +4,7 @@ import {
 	MouseDownEvent,
 	MouseMoveEvent,
 	MouseUpEvent,
+	MouseOverEvent,
 } from "./graphicsitem";
 import { SceneView, Vector2, Rect } from "./view";
 import { Color } from "../designer/color";
@@ -41,6 +42,7 @@ export class FrameRegion {
 	dragMode: DragMode = DragMode.None;
 	xResizeDir: XResizeDir = XResizeDir.None;
 	yResizeDir: YResizeDir = YResizeDir.None;
+	cursor: string = null;
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/CSS/cursor
@@ -242,7 +244,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		}
 
 		// debug draw frames
-		if (true) {
+		if (false) {
 			let regions = this.getFrameRegions();
 			for (let region of regions) {
 				let rect = region.rect;
@@ -282,20 +284,6 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		let px = evt.globalX;
 		let py = evt.globalY;
 
-		// resize handle
-		// if (
-		// 	px >= this.x + this.width - this.resizeHandleSize &&
-		// 	px <= this.x + this.width &&
-		// 	py >= this.y + this.height - this.resizeHandleSize &&
-		// 	py <= this.y + this.height
-		// ) {
-		// 	this.dragMode = DragMode.Resize;
-		// 	this.xResize = XResizeDir.Right;
-		// 	this.yResize = YResizeDir.Bottom;
-
-		// 	this.dragStartRect = this.getRect();
-		// }
-
 		let hitRegion: FrameRegion = null;
 		let regions = this.getFrameRegions();
 		for (let region of regions) {
@@ -326,6 +314,35 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 
 				// capture nodes if alt key isnt pressed
 				if (!evt.altKey) this.nodes = this.getHoveredNodes();
+
+				// set cursor
+				this.view.canvas.style.cursor = "grabbing";
+			}
+		}
+	}
+
+	public mouseOver(evt: MouseOverEvent) {
+		let px = evt.globalX;
+		let py = evt.globalY;
+
+		let hitRegion: FrameRegion = null;
+		let regions = this.getFrameRegions();
+		for (let region of regions) {
+			if (region.rect.isPointInside(px, py)) {
+				this.view.canvas.style.cursor = region.cursor;
+				return;
+			}
+		}
+
+		// topbar
+		if (hitRegion == null) {
+			if (
+				px >= this.x &&
+				px <= this.x + this.width &&
+				py >= this.y &&
+				py <= this.y + this.handleSize
+			) {
+				this.view.canvas.style.cursor = "grab";
 			}
 		}
 	}
@@ -432,6 +449,9 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		this.hit = false;
 		this.dragMode = DragMode.None;
 		this.nodes = [];
+
+		// reset cursor
+		this.view.canvas.style.cursor = "default";
 	}
 
 	getFrameRegions(): FrameRegion[] {
@@ -453,6 +473,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		region.dragMode = DragMode.Resize;
 		region.xResizeDir = XResizeDir.Right;
 		region.yResizeDir = YResizeDir.Bottom;
+		region.cursor = "nwse-resize";
 		regions.push(region);
 
 		// bottom-left
@@ -466,6 +487,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		region.dragMode = DragMode.Resize;
 		region.xResizeDir = XResizeDir.Left;
 		region.yResizeDir = YResizeDir.Bottom;
+		region.cursor = "nesw-resize";
 		regions.push(region);
 
 		// top-left
@@ -479,6 +501,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		region.dragMode = DragMode.Resize;
 		region.xResizeDir = XResizeDir.Left;
 		region.yResizeDir = YResizeDir.Top;
+		region.cursor = "nw-resize";
 		regions.push(region);
 
 		// top-right
@@ -492,6 +515,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		region.dragMode = DragMode.Resize;
 		region.xResizeDir = XResizeDir.Right;
 		region.yResizeDir = YResizeDir.Top;
+		region.cursor = "ne-resize";
 		regions.push(region);
 
 		// SIDES
@@ -507,6 +531,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		region.dragMode = DragMode.Resize;
 		region.xResizeDir = XResizeDir.Left;
 		region.yResizeDir = YResizeDir.None;
+		region.cursor = "w-resize";
 		regions.push(region);
 
 		// right
@@ -520,6 +545,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		region.dragMode = DragMode.Resize;
 		region.xResizeDir = XResizeDir.Right;
 		region.yResizeDir = YResizeDir.None;
+		region.cursor = "e-resize";
 		regions.push(region);
 
 		// top
@@ -533,6 +559,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		region.dragMode = DragMode.Resize;
 		region.xResizeDir = XResizeDir.None;
 		region.yResizeDir = YResizeDir.Top;
+		region.cursor = "n-resize";
 		regions.push(region);
 
 		// bottom
@@ -546,6 +573,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		region.dragMode = DragMode.Resize;
 		region.xResizeDir = XResizeDir.None;
 		region.yResizeDir = YResizeDir.Bottom;
+		region.cursor = "s-resize";
 		regions.push(region);
 
 		// this is handles separately

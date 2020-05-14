@@ -11,6 +11,7 @@ import {
 	MouseMoveEvent,
 	MouseDownEvent,
 	MouseUpEvent,
+	MouseOverEvent,
 } from "./scene/graphicsitem";
 import { SceneView } from "./scene/view";
 import { FrameGraphicsItem } from "./scene/framegraphicsitem";
@@ -839,6 +840,26 @@ export class NodeScene {
 			mouseEvent.deltaY = drag.y;
 
 			this.hitItem.mouseMove(mouseEvent);
+		} else {
+			// do mouse over
+			let hitItem = this.getHitItem(pos.x, pos.y);
+			if (hitItem) {
+				let mouseEvent = new MouseOverEvent();
+				mouseEvent.globalX = pos.x;
+				mouseEvent.globalY = pos.y;
+
+				mouseEvent.localX = hitItem.left - pos.x;
+				mouseEvent.localY = hitItem.top - pos.y;
+
+				mouseEvent.shiftKey = evt.shiftKey;
+				mouseEvent.altKey = evt.altKey;
+				mouseEvent.ctrlKey = evt.ctrlKey;
+
+				hitItem.mouseOver(mouseEvent);
+			} else {
+				// reset pointer
+				this.view.canvas.style.cursor = "default";
+			}
 		}
 
 		// // handle dragged socket

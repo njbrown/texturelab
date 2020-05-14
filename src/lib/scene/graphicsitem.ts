@@ -43,6 +43,8 @@ export class MouseMoveEvent extends MouseEvent {
 export class MouseUpEvent extends MouseEvent {}
 export class MouseOverEvent extends MouseEvent {}
 
+export class HoverEvent extends MouseEvent {}
+
 export class GraphicsItem {
 	scene!: NodeScene;
 	protected visible: boolean = true;
