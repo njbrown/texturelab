@@ -513,6 +513,8 @@ export default class App extends Vue {
 	}
 
 	showLibraryMenu() {
+		// ensure mouse is in canvas bounds
+		//if (this.$refs.canvas.offset)
 		let lib = <any>this.$refs.libraryMenu;
 		console.log("show menu");
 		if (lib.show == false) lib.showModal(this.mouseX, this.mouseY);

@@ -187,19 +187,14 @@ export class NodeScene {
 		};
 		canvas.addEventListener("mouseup", self._mouseUp);
 
-		self._mouseClick = function(evt: MouseEvent) {
-			//console.log(evt.target == canvas);
-			// if (evt.target == canvas) {
-			// 	self.hasFocus = true;
-			// 	// focus copy element
-			// 	self.copyElement.focus();
-			// 	self.copyElement.select();
-			// 	console.log("focus");
-			// } else {
-			// 	self.hasFocus = false;
-			// }
-		};
-		window.addEventListener("click", self._mouseClick);
+		// self._mouseClick = function(evt: MouseEvent) {
+		// 	if (evt.target == canvas) {
+		// 		self.hasFocus = true;
+		// 	} else {
+		// 		self.hasFocus = false;
+		// 	}
+		// };
+		// window.addEventListener("click", self._mouseClick);
 
 		self._keyDown = function(evt: KeyboardEvent) {
 			if (
@@ -211,7 +206,11 @@ export class NodeScene {
 				self.deleteItems(self.selectedItems);
 			}
 
-			if (evt.key == " " && self.hasFocus) {
+			if (
+				evt.key == " " &&
+				// self.hasFocus &&
+				self.view.isMouseOverCanvas()
+			) {
 				if (self.onlibrarymenu != null) {
 					self.onlibrarymenu();
 				}

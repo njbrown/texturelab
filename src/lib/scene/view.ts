@@ -129,6 +129,8 @@ export class SceneView {
 	context: CanvasRenderingContext2D;
 
 	// screen/canvas space
+	globalMousePos: Vector2;
+
 	mousePos: Vector2;
 	prevMousePos: Vector2;
 	mouseDownPos: Vector2; // pos of last mouse down
@@ -165,15 +167,30 @@ export class SceneView {
 		});
 
 		// todo: do document mouse move event callback too
+		document.addEventListener("mousemove", function(evt: MouseEvent) {
+			self.onGlobalMouseMove(evt);
+		});
 
 		this.zoomFactor = 1;
 		this.offset = new Vector2(0, 0);
 
 		this.mousePos = new Vector2(0, 0);
+		this.globalMousePos = new Vector2(0, 0);
 	}
 
 	getAbsPos() {
 		return new Vector2(this.canvas.offsetLeft, this.canvas.offsetTop);
+	}
+
+	isMouseOverCanvas() {
+		var rect = this.canvas.getBoundingClientRect();
+		console.log(rect);
+		if (this.globalMousePos.x < rect.x) return false;
+		if (this.globalMousePos.y < rect.y) return false;
+		if (this.globalMousePos.x > rect.right) return false;
+		if (this.globalMousePos.y > rect.bottom) return false;
+
+		return true;
 	}
 
 	onMouseDown(evt: MouseEvent) {
@@ -206,6 +223,10 @@ export class SceneView {
 			this.offset.x -= diff.x * factor;
 			this.offset.y -= diff.y * factor;
 		}
+	}
+
+	onGlobalMouseMove(evt: MouseEvent) {
+		this.globalMousePos = new Vector2(evt.pageX, evt.pageY);
 	}
 
 	onMouseScroll(evt: WheelEvent) {
