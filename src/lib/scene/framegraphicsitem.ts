@@ -36,6 +36,13 @@ enum DragMode {
 	Resize,
 }
 
+export class FrameRegion {
+	rect: Rect = null;
+	dragMode: DragMode = DragMode.None;
+	xResizeDir: XResizeDir = XResizeDir.None;
+	yResizeDir: YResizeDir = YResizeDir.None;
+}
+
 // https://developer.mozilla.org/en-US/docs/Web/CSS/cursor
 export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 	title: string;
@@ -233,23 +240,30 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 
 			ctx.restore();
 		}
+
+		// debug draw frames
+		if (true) {
+			let regions = this.getFrameRegions();
+			for (let region of regions) {
+				let rect = region.rect;
+				ctx.beginPath();
+				ctx.lineWidth = 1;
+				ctx.strokeStyle = "rgb(100, 0, 0, 0.8)";
+				ctx.rect(rect.x, rect.y, rect.width, rect.height);
+				ctx.stroke();
+			}
+		}
 	}
 
 	public isPointInside(px: number, py: number): boolean {
-		// check resize borders first
+		let regions = this.getFrameRegions();
+		for (let region of regions) {
+			if (region.rect.isPointInside(px, py)) {
+				return true;
+			}
+		}
 
-		// 1) corners
-		if (
-			px >= this.x + this.width - this.resizeHandleSize &&
-			px <= this.x + this.width &&
-			py >= this.y + this.height - this.resizeHandleSize &&
-			py <= this.y + this.height
-		)
-			return true;
-
-		// 2) sides
-
-		// 3) top handle
+		// top handle
 		if (
 			px >= this.x &&
 			px <= this.x + this.width &&
@@ -269,34 +283,50 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		let py = evt.globalY;
 
 		// resize handle
-		if (
-			px >= this.x + this.width - this.resizeHandleSize &&
-			px <= this.x + this.width &&
-			py >= this.y + this.height - this.resizeHandleSize &&
-			py <= this.y + this.height
-		) {
-			this.dragMode = DragMode.Resize;
-			this.xResize = XResizeDir.Right;
-			this.yResize = YResizeDir.Bottom;
+		// if (
+		// 	px >= this.x + this.width - this.resizeHandleSize &&
+		// 	px <= this.x + this.width &&
+		// 	py >= this.y + this.height - this.resizeHandleSize &&
+		// 	py <= this.y + this.height
+		// ) {
+		// 	this.dragMode = DragMode.Resize;
+		// 	this.xResize = XResizeDir.Right;
+		// 	this.yResize = YResizeDir.Bottom;
 
-			this.dragStartRect = this.getRect();
+		// 	this.dragStartRect = this.getRect();
+		// }
+
+		let hitRegion: FrameRegion = null;
+		let regions = this.getFrameRegions();
+		for (let region of regions) {
+			if (region.rect.isPointInside(px, py)) {
+				this.dragMode = region.dragMode;
+				this.xResize = region.xResizeDir;
+				this.yResize = region.yResizeDir;
+
+				this.dragStartRect = this.getRect();
+				hitRegion = region;
+				break;
+			}
 		}
 
 		// topbar
-		if (
-			px >= this.x &&
-			px <= this.x + this.width &&
-			py >= this.y &&
-			py <= this.y + this.handleSize
-		) {
-			this.dragMode = DragMode.HandleTop;
-			this.xResize = XResizeDir.None;
-			this.yResize = YResizeDir.None;
+		if (hitRegion == null) {
+			if (
+				px >= this.x &&
+				px <= this.x + this.width &&
+				py >= this.y &&
+				py <= this.y + this.handleSize
+			) {
+				this.dragMode = DragMode.HandleTop;
+				this.xResize = XResizeDir.None;
+				this.yResize = YResizeDir.None;
 
-			this.dragStartPos = new Vector2(this.x, this.y);
+				this.dragStartPos = new Vector2(this.x, this.y);
 
-			// capture nodes if alt key isnt pressed
-			if (!evt.altKey) this.nodes = this.getHoveredNodes();
+				// capture nodes if alt key isnt pressed
+				if (!evt.altKey) this.nodes = this.getHoveredNodes();
+			}
 		}
 	}
 
@@ -334,14 +364,14 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 			if (this.dragMode == DragMode.Resize) {
 				if (this.xResize == XResizeDir.Left) {
 					this.left += evt.deltaX;
-					this.width += evt.deltaX;
+					this.width -= evt.deltaX;
 				}
 				if (this.xResize == XResizeDir.Right) {
 					this.width += evt.deltaX;
 				}
 				if (this.yResize == YResizeDir.Top) {
 					this.top += evt.deltaY;
-					this.height += evt.deltaY;
+					this.height -= evt.deltaY;
 				}
 				if (this.yResize == YResizeDir.Bottom) {
 					this.height += evt.deltaY;
@@ -402,5 +432,84 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		this.hit = false;
 		this.dragMode = DragMode.None;
 		this.nodes = [];
+	}
+
+	getFrameRegions(): FrameRegion[] {
+		let regions: FrameRegion[] = [];
+		let frameRect = this.getRect();
+		let rect: Rect = null;
+		let region: FrameRegion = null;
+
+		// CORNERS
+
+		// bottom-right
+		region = new FrameRegion();
+		rect = new Rect();
+		rect.x = frameRect.right - this.resizeHandleSize;
+		rect.y = frameRect.bottom - this.resizeHandleSize;
+		rect.width = this.resizeHandleSize;
+		rect.height = this.resizeHandleSize;
+		region.rect = rect;
+		region.dragMode = DragMode.Resize;
+		region.xResizeDir = XResizeDir.Right;
+		region.yResizeDir = YResizeDir.Bottom;
+		regions.push(region);
+
+		// bottom-left
+		region = new FrameRegion();
+		rect = new Rect();
+		rect.x = frameRect.left;
+		rect.y = frameRect.bottom - this.resizeHandleSize;
+		rect.width = this.resizeHandleSize;
+		rect.height = this.resizeHandleSize;
+		region.rect = rect;
+		region.dragMode = DragMode.Resize;
+		region.xResizeDir = XResizeDir.Left;
+		region.yResizeDir = YResizeDir.Bottom;
+		regions.push(region);
+
+		// top-left
+		region = new FrameRegion();
+		rect = new Rect();
+		rect.x = frameRect.left;
+		rect.y = frameRect.top;
+		rect.width = this.resizeHandleSize;
+		rect.height = this.resizeHandleSize;
+		region.rect = rect;
+		region.dragMode = DragMode.Resize;
+		region.xResizeDir = XResizeDir.Left;
+		region.yResizeDir = YResizeDir.Top;
+		regions.push(region);
+
+		// top-right
+		region = new FrameRegion();
+		rect = new Rect();
+		rect.x = frameRect.right - this.resizeHandleSize;
+		rect.y = frameRect.top;
+		rect.width = this.resizeHandleSize;
+		rect.height = this.resizeHandleSize;
+		region.rect = rect;
+		region.dragMode = DragMode.Resize;
+		region.xResizeDir = XResizeDir.Right;
+		region.yResizeDir = YResizeDir.Top;
+		regions.push(region);
+
+		// SIDES
+
+		// this is handles separately
+		// TOPBAR
+		// region = new FrameRegion();
+		// rect = new Rect();
+		// rect.x = frameRect.right - this.resizeHandleSize;
+		// rect.y = frameRect.bottom - this.resizeHandleSize;
+		// rect.width = this.resizeHandleSize;
+		// rect.height = this.resizeHandleSize;
+		// region.rect = rect;
+		// region.dragMode = DragMode.HandleTop;
+		// region.xResizeDir = XResizeDir.None;
+		// region.yResizeDir = YResizeDir.None;
+		// regions.push(region);
+
+		return regions;
 	}
 }
