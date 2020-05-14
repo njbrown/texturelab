@@ -5,7 +5,7 @@ import {
 	MouseMoveEvent,
 	MouseUpEvent,
 } from "./graphicsitem";
-import { SceneView, Vector2 } from "./view";
+import { SceneView, Vector2, Rect } from "./view";
 import { Color } from "../designer/color";
 import {
 	IPropertyHolder,
@@ -102,17 +102,36 @@ export class SelectionGraphicsItem extends GraphicsItem {
 		ctx.setLineDash([]);
 	}
 
+	/**
+	 * If user drags left of up, the width or height becomes negative
+	 * This returns a rect with positive dimensions
+	 */
+	getPositiveRect(): Rect {
+		let rect = new Rect();
+		rect.x = this.x;
+		rect.y = this.y;
+
+		rect.width = Math.abs(this.width);
+		rect.height = Math.abs(this.height);
+
+		if (this.width < 0) rect.x += this.width;
+		if (this.height < 0) rect.y += this.height;
+
+		return rect;
+	}
+
 	getHitItems(): GraphicsItem[] {
 		let items: GraphicsItem[] = [];
+		let rect = this.getPositiveRect();
 
 		for (let node of this.scene.nodes) {
-			if (node.intersects(this)) {
+			if (node.intersectsRect(rect)) {
 				items.push(node);
 			}
 		}
 
 		for (let item of this.scene.comments) {
-			if (item.intersects(this)) {
+			if (item.intersectsRect(rect)) {
 				items.push(item);
 			}
 		}
@@ -121,13 +140,13 @@ export class SelectionGraphicsItem extends GraphicsItem {
 		// check if any of the sides were hit
 		// by the selection box for a valid selection
 		for (let item of this.scene.frames) {
-			if (item.intersects(this)) {
+			if (item.intersectsRect(rect)) {
 				items.push(item);
 			}
 		}
 
 		for (let item of this.scene.navigations) {
-			if (item.intersects(this)) {
+			if (item.intersectsRect(rect)) {
 				items.push(item);
 			}
 		}
