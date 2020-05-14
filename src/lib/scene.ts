@@ -611,6 +611,9 @@ export class NodeScene {
 			let mouseEvent = new MouseDownEvent();
 			mouseEvent.globalX = pos.x;
 			mouseEvent.globalY = pos.y;
+			mouseEvent.shiftKey = evt.shiftKey;
+			mouseEvent.altKey = evt.altKey;
+			mouseEvent.ctrlKey = evt.ctrlKey;
 
 			if (hitItem != null) {
 				mouseEvent.localX = hitItem.left - pos.x;
@@ -735,6 +738,9 @@ export class NodeScene {
 				mouseEvent.globalY = pos.y;
 				mouseEvent.localX = hitItem.left - pos.x;
 				mouseEvent.localY = hitItem.top - pos.y;
+				mouseEvent.shiftKey = evt.shiftKey;
+				mouseEvent.altKey = evt.altKey;
+				mouseEvent.ctrlKey = evt.ctrlKey;
 
 				hitItem.mouseUp(mouseEvent);
 
@@ -823,6 +829,10 @@ export class NodeScene {
 
 			mouseEvent.localX = this.hitItem.left - pos.x;
 			mouseEvent.localY = this.hitItem.top - pos.y;
+
+			mouseEvent.shiftKey = evt.shiftKey;
+			mouseEvent.altKey = evt.altKey;
+			mouseEvent.ctrlKey = evt.ctrlKey;
 
 			let drag = this.view.getMouseDeltaSceneSpace();
 			mouseEvent.deltaX = drag.x;

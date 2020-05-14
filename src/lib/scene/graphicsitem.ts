@@ -11,6 +11,11 @@ export class MouseEvent {
 
 	mouseButton: number;
 
+	// modifiers
+	shiftKey: boolean = false;
+	altKey: boolean = false;
+	ctrlKey: boolean = false;
+
 	// default is accepted
 	private accepted: boolean = true;
 	public accept() {
