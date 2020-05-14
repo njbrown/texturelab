@@ -78,8 +78,8 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		this.yResize = YResizeDir.None;
 		this.dragMode = DragMode.None;
 
-		this.handleSize = 20;
-		this.resizeHandleSize = 10;
+		this.handleSize = 30;
+		this.resizeHandleSize = 20;
 
 		this.setSize(500, 300);
 
@@ -346,6 +346,14 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 				if (this.yResize == YResizeDir.Bottom) {
 					this.height += evt.deltaY;
 				}
+
+				// clamp
+				this.height = Math.max(
+					this.height,
+					this.handleSize + this.resizeHandleSize
+				);
+
+				this.width = Math.max(this.width, this.resizeHandleSize * 2);
 			}
 
 			this.dragged = true;
