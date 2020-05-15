@@ -224,7 +224,7 @@ export class SelectionGraphicsItem extends GraphicsItem {
 	// UNDO-REDO
 	captureDragStarts() {
 		this.itemsDragStartPos = [];
-		for (let item of this.items) {
+		for (let item of this.draggableItems) {
 			let pos = new Vector2(item.left, item.top);
 			this.itemsDragStartPos.push(pos);
 		}
@@ -232,13 +232,13 @@ export class SelectionGraphicsItem extends GraphicsItem {
 
 	createUndoAction() {
 		let newPosList = [];
-		for (let item of this.items) {
+		for (let item of this.draggableItems) {
 			let pos = new Vector2(item.left, item.top);
 			newPosList.push(pos);
 		}
 
 		let action = new MoveItemsAction(
-			this.items,
+			this.draggableItems,
 			this.itemsDragStartPos,
 			newPosList
 		);
