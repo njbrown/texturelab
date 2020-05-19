@@ -1,6 +1,15 @@
 import { SocketGraphicsItem, SocketType } from "./socketgraphicsitem";
 import { ImageCanvas } from "../designer/imagecanvas";
-import { GraphicsItem } from "./graphicsitem";
+import {
+	GraphicsItem,
+	MouseDownEvent,
+	MouseMoveEvent,
+	MouseUpEvent,
+} from "./graphicsitem";
+import { NodeScene } from "../scene";
+import { Vector2 } from "./view";
+import { MoveItemsAction } from "../actions/moveItemsaction";
+import { UndoStack } from "../undostack";
 
 export class NodeGraphicsItemRenderState {
 	hovered: boolean = false;
@@ -14,8 +23,12 @@ export class NodeGraphicsItem extends GraphicsItem {
 	thumbnail!: HTMLImageElement;
 	imageCanvas: ImageCanvas;
 
-	// albedo, norma, height, etc...
+	hit: boolean;
+
+	// albedo, normal, height, etc...
 	textureChannel: string;
+
+	dragStartPos: Vector2;
 
 	constructor(title: string) {
 		super();
@@ -23,6 +36,13 @@ export class NodeGraphicsItem extends GraphicsItem {
 		this.height = 100;
 		this.title = title;
 		this.imageCanvas = new ImageCanvas();
+		this.hit = false;
+	}
+
+	public setScene(scene: NodeScene) {
+		this.scene = scene;
+
+		for (let sock of this.sockets) sock.setScene(scene);
 	}
 
 	public setTextureChannel(name: string) {
@@ -118,6 +138,11 @@ export class NodeGraphicsItem extends GraphicsItem {
 			let textY = this.y + this.height + 14;
 			ctx.fillText(this.textureChannel.toUpperCase(), textX, textY);
 		}
+	}
+
+	public setPos(x: number, y: number) {
+		super.setPos(x, y);
+		this.sortSockets();
 	}
 
 	public setCenter(x: number, y: number) {
@@ -216,5 +241,38 @@ export class NodeGraphicsItem extends GraphicsItem {
 		this.sockets.push(sock);
 
 		this.sortSockets();
+	}
+
+	// MOUSE EVENTS
+	public mouseDown(evt: MouseDownEvent) {
+		this.hit = true;
+		this.dragStartPos = new Vector2(this.x, this.y);
+	}
+
+	public mouseMove(evt: MouseMoveEvent) {
+		if (this.hit) {
+			// movement
+			this.move(evt.deltaX, evt.deltaY);
+		}
+	}
+
+	public mouseUp(evt: MouseUpEvent) {
+		this.hit = false;
+
+		// add undo/redo
+		let newPos = new Vector2(this.x, this.y);
+
+		if (
+			newPos.x != this.dragStartPos.x ||
+			newPos.y != this.dragStartPos.y
+		) {
+			let action = new MoveItemsAction(
+				[this],
+				[this.dragStartPos.clone()],
+				[newPos]
+			);
+
+			UndoStack.current.push(action);
+		}
 	}
 }

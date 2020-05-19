@@ -16,6 +16,7 @@ import { DesignerNode } from "@/lib/designer/designernode";
 import { Gradient, GradientPoint } from "@/lib/designer/gradient";
 import { Color } from "@/lib/designer/color";
 import elementResizeDetectorMaker from "element-resize-detector";
+import { IPropertyHolder } from "@/lib/designer/properties";
 
 @Component
 export default class GradientPropertyView extends Vue {
@@ -29,7 +30,7 @@ export default class GradientPropertyView extends Vue {
 	designer: Designer;
 
 	@Prop()
-	node: DesignerNode;
+	propHolder: IPropertyHolder;
 
 	mounted() {
 		this.widget = new GradientWidget({
@@ -59,7 +60,7 @@ export default class GradientPropertyView extends Vue {
 	}
 
 	updateValue(gradient: Gradient) {
-		this.node.setProperty(this.prop.name, gradient);
+		this.propHolder.setProperty(this.prop.name, gradient);
 		this.propertyChanged();
 	}
 }

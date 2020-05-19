@@ -8,7 +8,8 @@ import {
 	EnumProperty,
 	ColorProperty,
 	StringProperty,
-	GradientProperty
+	GradientProperty,
+	IPropertyHolder
 } from "./properties";
 import { buildShaderProgram } from "./gl";
 import { Color } from "./color";
@@ -19,7 +20,7 @@ export class NodeInput {
 	public name: string;
 }
 
-export class DesignerNode {
+export class DesignerNode implements IPropertyHolder {
 	public id: string = Guid.newGuid();
 	public title: string;
 	public typeName: string; // added when node is created from library

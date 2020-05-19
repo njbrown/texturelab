@@ -1,16 +1,29 @@
 <template>
 	<div class="field">
-		<label>{{ prop.displayName }}</label>
 		<div>
-			<select class="enum" @change="updateValue">
-				<option
-					v-for="(opt, index) in prop.values"
-					:value="index"
-					:key="index"
-					:selected="index == prop.index"
-					>{{ opt }}</option
-				>
-			</select>
+			<label>{{ prop.displayName }}</label>
+		</div>
+		<div class="input-holder">
+			<div style="width:95%; margin-right:10px">
+				<textarea
+					v-if="prop.isMultiline"
+					:value="prop.value"
+					@input="updateValue"
+					style="width:100%"
+					rows="5"
+					@focus="focus"
+					@blur="blur"
+				></textarea>
+				<input
+					v-if="!prop.isMultiline"
+					type="text"
+					:value="prop.value"
+					@input="updateValue"
+					style="width:100%"
+					@focus="focus"
+					@blur="blur"
+				/>
+			</div>
 		</div>
 	</div>
 </template>
@@ -19,14 +32,14 @@
 import { Vue, Prop, Component, Emit } from "vue-property-decorator";
 import { Designer } from "@/lib/designer";
 import { DesignerNode } from "@/lib/designer/designernode";
-import { IPropertyHolder } from "@/lib/designer/properties";
+import { IPropertyHolder } from "../../lib/designer/properties";
 import { PropertyChangeAction } from "@/lib/actions/propertychangeaction";
 import { UndoStack } from "@/lib/undostack";
 
 @Component
-export default class EnumPropertyView extends Vue {
+export default class StringPropertyView extends Vue {
 	@Prop()
-	// EnumProperty
+	// FloatProperty
 	prop: any;
 
 	@Prop()
@@ -35,22 +48,29 @@ export default class EnumPropertyView extends Vue {
 	@Prop()
 	propHolder: IPropertyHolder;
 
+	oldValue: number;
+
 	@Emit()
 	propertyChanged() {
 		return this.prop.name;
 	}
 
 	updateValue(evt) {
-		let oldVal = this.prop.getValue();
-		this.propHolder.setProperty(this.prop.name, parseInt(evt.target.value));
+		this.propHolder.setProperty(this.prop.name, evt.target.value);
 		this.propertyChanged();
+	}
 
+	focus() {
+		this.oldValue = this.prop.value;
+	}
+
+	blur() {
 		let action = new PropertyChangeAction(
 			null,
 			this.prop.name,
 			this.propHolder,
-			oldVal,
-			evt.target.value
+			this.oldValue,
+			this.prop.value
 		);
 		UndoStack.current.push(action);
 	}
@@ -71,13 +91,14 @@ export default class EnumPropertyView extends Vue {
 	padding-left: 0;
 }
 
-.enum {
-	margin-top: 0.4em;
-	width: 100%;
-	border: solid white 1px;
+.number {
+	width: calc(100% - 4px - 1px);
+	border: solid gray 1px;
+	padding: 2px;
 	border-radius: 2px;
-	color: white;
-	background: #222;
-	padding: 4px;
+}
+
+.input-holder {
+	display: flex;
 }
 </style>
