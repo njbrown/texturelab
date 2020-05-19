@@ -140,8 +140,13 @@ export class SelectionGraphicsItem extends GraphicsItem {
 		// check if any of the sides were hit
 		// by the selection box for a valid selection
 		for (let item of this.scene.frames) {
-			if (item.intersectsRect(rect)) {
-				items.push(item);
+			let frame = <FrameGraphicsItem>item;
+			let regions = frame.getFrameRegions();
+			for (let region of regions) {
+				if (region.rect.intersects(rect)) {
+					items.push(item);
+					break;
+				}
 			}
 		}
 
