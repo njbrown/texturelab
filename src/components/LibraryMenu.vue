@@ -344,9 +344,10 @@ export default class LibraryMenu extends Vue {
 	position: fixed;
 	background-color: #fefefe;
 	/* margin: 15% auto; */
-	padding: 20px;
+	/* padding: 20px; */
 	border: 1px solid #888;
-	width: 300px; /* Could be more or less, depending on screen size */
+	width: 350px; /* Could be more or less, depending on screen size */
+	background: rgb(44, 44, 44);
 }
 
 .card-list {
@@ -355,7 +356,24 @@ export default class LibraryMenu extends Vue {
 }
 
 .search-input {
-	width: 100%;
+	background: transparent;
+	color: white;
+	border: solid rgb(77, 156, 187) 1px;
+
+	float: none;
+	display: block;
+	text-align: left;
+	width: calc(100% - 20px);
+	margin: 10px;
+	padding: 10px;
+	background: rgb(88, 88, 88);
+
+	box-sizing: border-box;
+	font-size: 1.2rem;
+}
+
+.search-input:focus {
+	outline: none;
 }
 
 .thumbnail {
@@ -363,15 +381,28 @@ export default class LibraryMenu extends Vue {
 }
 
 .libcard {
-	padding: 1em 0.5em;
+	padding: 5px;
+	color: white;
+	border: solid transparent 1px;
+	display: table; /* for center-aligning text */
 }
 
 .libcard:hover {
-	border: solid skyblue 1px;
+	background: rgb(30, 30, 36);
 }
 
 .selected-card {
-	border: solid skyblue 2px;
 	background: gray;
+}
+
+.libcard span {
+	padding-left: 10px;
+	width: 100%;
+	display: table-cell; /* for center-aligning text */
+	vertical-align: middle;
+}
+
+.libcard img {
+	width: 40px;
 }
 </style>
