@@ -107,6 +107,16 @@ export class Rect {
 		return true;
 	}
 
+	public expand(uniformSize: number) {
+		let halfSize = uniformSize * 0.5;
+
+		// assume it's a rect with a positive area
+		this.x -= halfSize;
+		this.y -= halfSize;
+		this.width += halfSize * 2;
+		this.height += halfSize * 2;
+	}
+
 	clone(): Rect {
 		let rect = new Rect();
 		rect.x = this.x;
