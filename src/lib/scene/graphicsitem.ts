@@ -1,5 +1,5 @@
 import { NodeScene } from "../scene";
-import { Rect } from "./view";
+import { Rect, Vector2 } from "./view";
 
 export class MouseEvent {
 	// scene space
@@ -65,6 +65,10 @@ export class GraphicsItem {
 	public setPos(x: number, y: number) {
 		this.x = x;
 		this.y = y;
+	}
+
+	public getPos() {
+		return new Vector2(this.x, this.y);
 	}
 
 	public setSize(w: number, h: number) {

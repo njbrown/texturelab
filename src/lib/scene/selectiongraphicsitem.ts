@@ -132,6 +132,12 @@ export class SelectionGraphicsItem extends GraphicsItem {
 		return rect;
 	}
 
+	// for manually setting the hit items
+	setHitItems(items: GraphicsItem[]) {
+		this.items = items;
+		this.draggableItems = this.getDraggableHitItems(this.items);
+	}
+
 	getHitItems(): GraphicsItem[] {
 		let items: GraphicsItem[] = [];
 		let rect = this.getPositiveRect();

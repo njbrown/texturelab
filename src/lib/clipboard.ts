@@ -14,6 +14,7 @@ import { ConnectionGraphicsItem } from "./scene/connectiongraphicsitem";
 import { Guid } from "./utils";
 import { AddItemsAction } from "./actions/additemsaction";
 import { UndoStack } from "./undostack";
+import { Rect, Vector2 } from "./scene/view";
 
 export class ItemClipboard {
 	public static copyItems(
@@ -117,7 +118,7 @@ export class ItemClipboard {
 		clipboard: DataTransfer
 	) {
 		let json = clipboard.getData("json/nodes");
-		console.log(json);
+		//console.log(json);
 		if (json == null || json == "") return;
 
 		let data = JSON.parse(json);
@@ -129,6 +130,9 @@ export class ItemClipboard {
 		let cons: ConnectionGraphicsItem[] = [];
 		let nodes: NodeGraphicsItem[] = [];
 		let dnodes: DesignerNode[] = [];
+
+		// for selecting pasted items
+		let focusItems: GraphicsItem[] = [];
 
 		// FRAMES
 		if (data.frames) {
@@ -144,6 +148,7 @@ export class ItemClipboard {
 
 				scene.addFrame(frame);
 				frames.push(frame);
+				focusItems.push(frame);
 			}
 		}
 
@@ -157,6 +162,7 @@ export class ItemClipboard {
 
 				scene.addComment(comment);
 				comments.push(comment);
+				focusItems.push(comment);
 			}
 		}
 
@@ -167,6 +173,7 @@ export class ItemClipboard {
 				nav.setPos(d.x, d.y);
 				scene.addNavigation(nav);
 				navs.push(nav);
+				focusItems.push(nav);
 			}
 		}
 
@@ -196,6 +203,7 @@ export class ItemClipboard {
 			node.addSocket("output", "output", SocketType.Out);
 			node.id = dNode.id;
 			scene.addNode(node);
+			focusItems.push(node);
 
 			// generate thumbnail
 			var thumb = designer.generateImageFromNode(dNode);
@@ -243,6 +251,24 @@ export class ItemClipboard {
 			nodes.length != 0 ||
 			dnodes.length != 0
 		) {
+			// gather bounding box and center items to screen
+			if (focusItems.length > 0) {
+				let rect = this.getItemsBounds(focusItems);
+				let center = scene.view.sceneCenter;
+
+				// find diff, then offset each object by that diff
+				//let diff = Vector2.subtract(center, rect.center);
+				for (let item of focusItems) {
+					let offsetFromRect = Vector2.subtract(
+						item.getPos(),
+						rect.center
+					);
+					let newPos = Vector2.add(center, offsetFromRect);
+					item.setPos(newPos.x, newPos.y);
+					//item.move(diff.x, diff.y);
+				}
+			}
+
 			// add undo-redo
 			let action = new AddItemsAction(
 				scene,
@@ -255,6 +281,9 @@ export class ItemClipboard {
 				dnodes
 			);
 			UndoStack.current.push(action);
+
+			// make items selected
+			scene.setSelectedItems(focusItems, true);
 		}
 	}
 
@@ -321,5 +350,15 @@ export class ItemClipboard {
 		for (let node of nodeList) if (node["id"] == id) return node;
 
 		return null;
+	}
+
+	static getItemsBounds(items: GraphicsItem[]): Rect {
+		let rect: Rect = items[0].getRect();
+		for (let item of items) {
+			let r = item.getRect();
+			rect.expandByRect(r);
+		}
+
+		return rect;
 	}
 }

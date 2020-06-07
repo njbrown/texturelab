@@ -30,6 +30,10 @@ export class Vector2 {
 	static add(a: Vector2, b: Vector2): Vector2 {
 		return new Vector2(a.x + b.x, a.y + b.y);
 	}
+
+	static subtract(a: Vector2, b: Vector2): Vector2 {
+		return new Vector2(a.x - b.x, a.y - b.y);
+	}
 }
 
 export class Rect {
@@ -98,6 +102,10 @@ export class Rect {
 		return this.y + this.height;
 	}
 
+	public get center() {
+		return new Vector2(this.centerX(), this.centerY());
+	}
+
 	public intersects(other: Rect) {
 		if (this.left > other.right) return false;
 		if (this.right < other.left) return false;
@@ -115,6 +123,14 @@ export class Rect {
 		this.y -= halfSize;
 		this.width += halfSize * 2;
 		this.height += halfSize * 2;
+	}
+
+	public expandByRect(rect: Rect) {
+		// assume it's a rect with a positive area
+		this.x = Math.min(this.x, rect.x);
+		this.y = Math.min(this.y, rect.y);
+		this.width = Math.max(this.width, rect.width);
+		this.height = Math.max(this.height, rect.height);
 	}
 
 	clone(): Rect {

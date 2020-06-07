@@ -230,7 +230,7 @@ export class NodeScene {
 
 		this._copyEvent = (evt) => {
 			if (self.hasFocus && evt.target == self.copyElement) {
-				alert("copying selection");
+				// alert("copying selection");
 				console.log(evt.target);
 				evt.preventDefault();
 
@@ -241,7 +241,7 @@ export class NodeScene {
 
 		this._cutEvent = (evt) => {
 			if (self.hasFocus && evt.target == self.copyElement) {
-				alert("cutting selection");
+				// alert("cutting selection");
 				console.log(evt.target);
 				evt.preventDefault();
 
@@ -253,13 +253,14 @@ export class NodeScene {
 
 		this._pasteEvent = (evt) => {
 			if (self.hasFocus && evt.target == self.copyElement) {
-				alert("pasting selection");
-				console.log(evt.target);
-				console.log(evt.clipboardData);
+				// alert("pasting selection");
+				// console.log(evt.target);
+				// console.log(evt.clipboardData);
 				evt.preventDefault();
 				self.copyElement.value = " ";
 
 				self.onPaste(evt);
+				console.log(self);
 			}
 		};
 		document.addEventListener("paste", this._pasteEvent);
@@ -290,8 +291,18 @@ export class NodeScene {
 		// this.copyElement.removeEventListener("paste", this._copyEvent);
 	}
 
-	setSelectedItems(items: GraphicsItem[]) {
+	setSelectedItems(items: GraphicsItem[], createSelection: boolean = false) {
 		this.selectedItems = items;
+
+		// create actual selection object to encapsulate items
+		if (createSelection == true) {
+			let sel: SelectionGraphicsItem = new SelectionGraphicsItem(
+				this,
+				this.view
+			);
+			sel.setHitItems(items);
+			this.selection = sel;
+		}
 	}
 
 	// no callbacks are made here
