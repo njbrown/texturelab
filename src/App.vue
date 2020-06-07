@@ -499,10 +499,14 @@ export default class App extends Vue {
 	}
 
 	undoAction() {
+		if (document.activeElement instanceof HTMLElement)
+			(document.activeElement as HTMLElement).blur();
 		this.editor.undo();
 	}
 
 	redoAction() {
+		if (document.activeElement instanceof HTMLElement)
+			(document.activeElement as HTMLElement).blur();
 		this.editor.redo();
 	}
 
