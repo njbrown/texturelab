@@ -90,15 +90,15 @@ export class SelectionGraphicsItem extends GraphicsItem {
 				this.drawSelectedItems(items, ctx);
 			}
 		} else {
-			this.drawSelectedItems(this.items, ctx);
+			//this.drawSelectedItems(this.items, ctx);
 		}
 	}
 
 	drawSelectedItems(items: GraphicsItem[], ctx: CanvasRenderingContext2D) {
 		for (let item of items) {
 			ctx.beginPath();
-			ctx.lineWidth = 3;
-			ctx.strokeStyle = "rgba(255, 255, 255)";
+			ctx.lineWidth = 2;
+			ctx.strokeStyle = "rgba(250, 250, 250)";
 			//this.roundRect(ctx, this.x, this.y, width, height, 1);
 			// ctx.rect(item.left, item.top, item.getWidth(), item.getHeight());
 			var rect = item.getRect();
@@ -107,7 +107,7 @@ export class SelectionGraphicsItem extends GraphicsItem {
 
 			ctx.stroke();
 
-			ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+			ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
 			ctx.rect(rect.left, rect.top, rect.width, rect.height);
 			ctx.fill();
 		}
@@ -208,6 +208,7 @@ export class SelectionGraphicsItem extends GraphicsItem {
 		} else {
 			this.x = evt.globalX;
 			this.y = evt.globalY;
+			this.scene.setSelectedItems([]);
 		}
 	}
 
