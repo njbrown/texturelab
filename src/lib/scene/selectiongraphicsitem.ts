@@ -97,13 +97,19 @@ export class SelectionGraphicsItem extends GraphicsItem {
 	drawSelectedItems(items: GraphicsItem[], ctx: CanvasRenderingContext2D) {
 		for (let item of items) {
 			ctx.beginPath();
-			ctx.lineWidth = 5;
-			ctx.strokeStyle = "rgb(250, 250, 250)";
+			ctx.lineWidth = 3;
+			ctx.strokeStyle = "rgba(255, 255, 255)";
 			//this.roundRect(ctx, this.x, this.y, width, height, 1);
-			ctx.rect(item.left, item.top, item.getWidth(), item.getHeight());
+			// ctx.rect(item.left, item.top, item.getWidth(), item.getHeight());
+			var rect = item.getRect();
+			rect.expand(15);
+			ctx.rect(rect.left, rect.top, rect.width, rect.height);
 
-			ctx.setLineDash([5, 3]);
 			ctx.stroke();
+
+			ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+			ctx.rect(rect.left, rect.top, rect.width, rect.height);
+			ctx.fill();
 		}
 		ctx.setLineDash([]);
 	}
