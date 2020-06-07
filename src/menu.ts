@@ -12,6 +12,12 @@ export enum MenuCommands {
 	FileSaveAs = "file_saveas",
 	FileExit = "file_exit",
 
+	EditUndo = "edit_undo",
+	EditRedo = "edit_redo",
+	EditCut = "edit_cut",
+	EditCopy = "edit_copy",
+	EditPaste = "edit_paste",
+
 	ExportZip = "export_zip",
 	ExportUnity = "export_unity",
 	ExportUnityZip = "export_unity_zip",
@@ -23,7 +29,7 @@ export enum MenuCommands {
 
 	HelpTutorials = "help_tutorials",
 	HelpAbout = "help_about",
-	HelpSubmitBug = "help_submitbug"
+	HelpSubmitBug = "help_submitbug",
 }
 
 export function setupMenu() {
@@ -36,36 +42,76 @@ export function setupMenu() {
 					accelerator: "CmdOrCtrl+N",
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.FileNew);
-					}
+					},
 				},
 				{
 					label: "Open",
 					accelerator: "CmdOrCtrl+O",
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.FileOpen);
-					}
+					},
 				},
 				{
 					label: "Save",
 					accelerator: "CmdOrCtrl+S",
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.FileSave);
-					}
+					},
 				},
 				{
 					label: "Save As..",
 					accelerator: "CmdOrCtrl+Shift+S",
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.FileSaveAs);
-					}
+					},
 				},
 				{
 					label: "Exit",
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.FileExit);
-					}
-				}
-			]
+					},
+				},
+			],
+		},
+		{
+			label: "Edit",
+			submenu: [
+				{
+					label: "Undo",
+					accelerator: "CmdOrCtrl+Z",
+					click: (item, focusedWindow) => {
+						focusedWindow.webContents.send(MenuCommands.EditUndo);
+					},
+				},
+				{
+					label: "Redo",
+					accelerator: "CmdOrCtrl+Shift+Z",
+					click: (item, focusedWindow) => {
+						focusedWindow.webContents.send(MenuCommands.EditRedo);
+					},
+				},
+				{
+					label: "Cut",
+					accelerator: "CmdOrCtrl+X",
+					click: (item, focusedWindow) => {
+						focusedWindow.webContents.send(MenuCommands.EditCut);
+					},
+				},
+				{
+					label: "Copy",
+					accelerator: "CmdOrCtrl+C",
+					click: (item, focusedWindow) => {
+						focusedWindow.webContents.send(MenuCommands.EditCopy);
+					},
+				},
+				{
+					label: "Paste",
+					accelerator: "CmdOrCtrl+V",
+					click: (item, focusedWindow) => {
+						focusedWindow.webContents.send(MenuCommands.EditPaste);
+					},
+				},
+			],
 		},
 		{
 			label: "Export",
@@ -74,7 +120,7 @@ export function setupMenu() {
 					label: "Zip",
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.ExportZip);
-					}
+					},
 				},
 				{
 					label: "Unity Material",
@@ -82,7 +128,7 @@ export function setupMenu() {
 						focusedWindow.webContents.send(
 							MenuCommands.ExportUnity
 						);
-					}
+					},
 				},
 				{
 					label: "Unity (Zip)",
@@ -90,9 +136,9 @@ export function setupMenu() {
 						focusedWindow.webContents.send(
 							MenuCommands.ExportUnityZip
 						);
-					}
-				}
-			]
+					},
+				},
+			],
 		},
 		{
 			label: "Examples",
@@ -103,7 +149,7 @@ export function setupMenu() {
 						focusedWindow.webContents.send(
 							MenuCommands.ExamplesGoldLinesMarbleTiles
 						);
-					}
+					},
 				},
 				{
 					label: "Grenade",
@@ -111,7 +157,7 @@ export function setupMenu() {
 						focusedWindow.webContents.send(
 							MenuCommands.ExamplesGrenade
 						);
-					}
+					},
 				},
 				{
 					label: "Screws",
@@ -119,7 +165,7 @@ export function setupMenu() {
 						focusedWindow.webContents.send(
 							MenuCommands.ExamplesScrews
 						);
-					}
+					},
 				},
 				{
 					label: "WoodenPlanks",
@@ -127,9 +173,9 @@ export function setupMenu() {
 						focusedWindow.webContents.send(
 							MenuCommands.ExamplesWoodenPlanks
 						);
-					}
-				}
-			]
+					},
+				},
+			],
 		},
 		// {
 		//   label: "Help",
@@ -167,7 +213,7 @@ export function setupMenu() {
 										}
 										focusedWindow.reload();
 									}
-								}
+								},
 							},
 							{ role: "toggledevtools" },
 							{ type: "separator" },
@@ -175,11 +221,11 @@ export function setupMenu() {
 							{ role: "zoomin" },
 							{ role: "zoomout" },
 							{ type: "separator" },
-							{ role: "togglefullscreen" }
-						]
-					}
+							{ role: "togglefullscreen" },
+						],
+					},
 			  ]
-			: [])
+			: []),
 	];
 
 	//console.log(template);

@@ -441,7 +441,6 @@ export default class App extends Vue {
 			if (action != null) {
 				UndoStack.current.push(action);
 			}
-			console.log("drop");
 		};
 		this.editor.setSceneCanvas(canv);
 
