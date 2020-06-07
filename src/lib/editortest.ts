@@ -549,30 +549,15 @@ export class Editor {
 		};
 
 		this.graph.oncopy = function(evt: ClipboardEvent) {
-			ItemClipboard.copyItems(
-				self.designer,
-				self.library,
-				scene,
-				evt.clipboardData
-			);
+			self.executeCopy(evt);
 		};
 
 		this.graph.oncut = function(evt: ClipboardEvent) {
-			ItemClipboard.copyItems(
-				self.designer,
-				self.library,
-				scene,
-				evt.clipboardData
-			);
+			self.executeCut(evt);
 		};
 
 		this.graph.onpaste = function(evt: ClipboardEvent) {
-			ItemClipboard.pasteItems(
-				self.designer,
-				self.library,
-				scene,
-				evt.clipboardData
-			);
+			self.executePaste(evt);
 		};
 
 		this.graph.onlibrarymenu = function() {
@@ -606,6 +591,33 @@ export class Editor {
             self.updateDisplayNode(node);
         }
         */
+	}
+
+	executeCopy(evt: ClipboardEvent) {
+		ItemClipboard.copyItems(
+			this.designer,
+			this.library,
+			this.graph,
+			evt.clipboardData
+		);
+	}
+
+	executeCut(evt: ClipboardEvent) {
+		ItemClipboard.copyItems(
+			this.designer,
+			this.library,
+			this.graph,
+			evt.clipboardData
+		);
+	}
+
+	executePaste(evt: ClipboardEvent) {
+		ItemClipboard.pasteItems(
+			this.designer,
+			this.library,
+			this.graph,
+			evt.clipboardData
+		);
 	}
 
 	// adds node

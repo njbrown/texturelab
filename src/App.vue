@@ -297,6 +297,13 @@ export default class App extends Vue {
 			this.saveProject(true);
 		});
 
+		electron.ipcRenderer.on(MenuCommands.EditUndo, async (evt, arg) => {
+			this.undoAction();
+		});
+		electron.ipcRenderer.on(MenuCommands.EditRedo, async (evt, arg) => {
+			this.redoAction();
+		});
+
 		electron.ipcRenderer.on(MenuCommands.ExportZip, async (evt, arg) => {
 			await this.exportZip();
 		});
