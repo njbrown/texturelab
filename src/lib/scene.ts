@@ -580,6 +580,29 @@ export class NodeScene {
 		for (let nav of this.navigations) nav.draw(this.context);
 
 		if (this.selection) this.selection.draw(this.context);
+
+		if (this.selectedItems.length > 0) {
+			this.drawSelectedItems(this.selectedItems, this.context);
+		}
+	}
+
+	drawSelectedItems(items: GraphicsItem[], ctx: CanvasRenderingContext2D) {
+		for (let item of items) {
+			ctx.beginPath();
+			ctx.lineWidth = 3;
+			ctx.strokeStyle = "rgba(255, 255, 255)";
+			//this.roundRect(ctx, this.x, this.y, width, height, 1);
+			// ctx.rect(item.left, item.top, item.getWidth(), item.getHeight());
+			var rect = item.getRect();
+			rect.expand(15);
+			ctx.rect(rect.left, rect.top, rect.width, rect.height);
+
+			ctx.stroke();
+
+			ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+			ctx.rect(rect.left, rect.top, rect.width, rect.height);
+			ctx.fill();
+		}
 	}
 
 	onCopy(evt: ClipboardEvent) {
@@ -664,7 +687,12 @@ export class NodeScene {
 						}
 					}
 
-					this.selectedItems = [hitItem];
+					// selection graphics item can never be *selected*
+					if (
+						!(hitItem instanceof SelectionGraphicsItem) &&
+						!(hitItem instanceof SocketGraphicsItem)
+					)
+						this.selectedItems = [hitItem];
 				}
 			} else {
 				let hitItem = new SelectionGraphicsItem(this, this.view);
@@ -903,10 +931,21 @@ export class NodeScene {
 	// gets item over mouse x and y
 	// obeys precedence
 	getHitItem(x: number, y: number): GraphicsItem {
-		if (this.selection != null) {
+		let hitItem = this._getHitItem(x, y);
+
+		// if item is in selection then return whole selection
+		if (
+			hitItem != null &&
+			this.isItemSelected(hitItem) &&
+			this.selection != null
+		) {
 			if (this.selection.isPointInside(x, y)) return this.selection;
 		}
 
+		return hitItem;
+	}
+
+	_getHitItem(x: number, y: number): GraphicsItem {
 		// 1) navigation pins
 		for (var index = this.navigations.length - 1; index >= 0; index--) {
 			let nav = this.navigations[index];
@@ -940,6 +979,12 @@ export class NodeScene {
 		}
 
 		return null;
+	}
+
+	isItemSelected(hitItem): boolean {
+		// todo: use dictionary
+		for (let item of this.selectedItems) if (item == hitItem) return true;
+		return false;
 	}
 
 	// UTILITY
