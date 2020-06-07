@@ -25,6 +25,8 @@ export class SelectionGraphicsItem extends GraphicsItem {
 	padding: number;
 	fontHeight: number;
 
+	tooSmallSize: number;
+
 	hit: boolean;
 	dragged: boolean;
 	items: GraphicsItem[];
@@ -44,6 +46,8 @@ export class SelectionGraphicsItem extends GraphicsItem {
 
 		this.padding = 5;
 		this.fontHeight = 20;
+
+		this.tooSmallSize = 5;
 	}
 
 	public isPointInside(px: number, py: number): boolean {
@@ -69,20 +73,22 @@ export class SelectionGraphicsItem extends GraphicsItem {
 		let height = this.height;
 
 		if (this.items.length == 0) {
-			// stroke bounding rect
-			ctx.beginPath();
-			ctx.lineWidth = 3;
-			ctx.strokeStyle = "rgb(250, 250, 250)";
-			//this.roundRect(ctx, this.x, this.y, width, height, 1);
-			ctx.rect(this.x, this.y, width, height);
+			if (!this.isTooSmall()) {
+				// stroke bounding rect
+				ctx.beginPath();
+				ctx.lineWidth = 3;
+				ctx.strokeStyle = "rgb(250, 250, 250)";
+				//this.roundRect(ctx, this.x, this.y, width, height, 1);
+				ctx.rect(this.x, this.y, width, height);
 
-			ctx.setLineDash([5, 3]);
-			ctx.stroke();
-			ctx.setLineDash([]);
+				ctx.setLineDash([5, 3]);
+				ctx.stroke();
+				ctx.setLineDash([]);
 
-			// if hit, then mouse is being dragged, these items are temporary
-			let items = this.getHitItems();
-			this.drawSelectedItems(items, ctx);
+				// if hit, then mouse is being dragged, these items are temporary
+				let items = this.getHitItems();
+				this.drawSelectedItems(items, ctx);
+			}
 		} else {
 			this.drawSelectedItems(this.items, ctx);
 		}
@@ -214,7 +220,7 @@ export class SelectionGraphicsItem extends GraphicsItem {
 
 	public mouseUp(evt: MouseUpEvent) {
 		this.hit = false;
-		if (this.items.length == 0) {
+		if (this.items.length == 0 && !this.isTooSmall()) {
 			this.items = this.getHitItems();
 			this.scene.setSelectedItems(this.items);
 			this.draggableItems = this.getDraggableHitItems(this.items);
@@ -233,6 +239,13 @@ export class SelectionGraphicsItem extends GraphicsItem {
 			let pos = new Vector2(item.left, item.top);
 			this.itemsDragStartPos.push(pos);
 		}
+	}
+
+	isTooSmall(): boolean {
+		return (
+			Math.abs(this.width) < this.tooSmallSize ||
+			Math.abs(this.height) < this.tooSmallSize
+		);
 	}
 
 	createUndoAction() {
