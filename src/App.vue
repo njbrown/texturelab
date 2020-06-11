@@ -4,8 +4,10 @@
 			<a class="button" href="#" @click="undoAction()">Undo</a>
 			<a class="button" href="#" @click="redoAction()">Redo</a>
 
-			<a class="right button" href="#">Unity Export</a>
-			<a class="right button" href="#">Zip Export</a>
+			<a class="right button" href="#" @click="exportUnity()"
+				>Unity Export</a
+			>
+			<a class="right button" href="#" @click="exportZip()">Zip Export</a>
 		</div>
 		<golden-layout
 			class="container"
@@ -134,6 +136,7 @@ body {
 	/* flex-basis: 100px; */
 	padding: 0.5em 0;
 	overflow: hidden;
+	padding-left: 0.5em;
 }
 
 .button {
