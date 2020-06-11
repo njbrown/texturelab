@@ -211,8 +211,8 @@ export class SceneView {
 	isMouseOverCanvas() {
 		var rect = this.canvas.getBoundingClientRect();
 		//console.log(rect);
-		if (this.globalMousePos.x < rect.x) return false;
-		if (this.globalMousePos.y < rect.y) return false;
+		if (this.globalMousePos.x < rect.left) return false;
+		if (this.globalMousePos.y < rect.top) return false;
 		if (this.globalMousePos.x > rect.right) return false;
 		if (this.globalMousePos.y > rect.bottom) return false;
 
@@ -363,7 +363,7 @@ export class SceneView {
 
 	globalToCanvasXY(x: number, y: number): Vector2 {
 		let rect = this.canvas.getBoundingClientRect();
-		return new Vector2(x - rect.x, y - rect.y);
+		return new Vector2(x - rect.left, y - rect.top);
 	}
 
 	getMouseSceneSpace(): Vector2 {
