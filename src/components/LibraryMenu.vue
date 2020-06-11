@@ -82,13 +82,13 @@ export default class LibraryMenu extends Vue {
 			new LibraryItem(LibraryItemType.Comment, "comment", "Comment")
 		);
 		items.push(new LibraryItem(LibraryItemType.Frame, "frame", "Frame"));
-		items.push(
-			new LibraryItem(
-				LibraryItemType.Navigation,
-				"navigation",
-				"Navigation"
-			)
-		);
+		// items.push(
+		// 	new LibraryItem(
+		// 		LibraryItemType.Navigation,
+		// 		"navigation",
+		// 		"Navigation"
+		// 	)
+		// );
 
 		return items;
 	}

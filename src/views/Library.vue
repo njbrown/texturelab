@@ -25,7 +25,11 @@
 					draggable="true"
 				>
 					<!-- <div class="thumbnail" /> -->
-					<img v-if="imageExists(item.name)" v-bind:src="calcImagePath(item.name)" class="thumbnail" />
+					<img
+						v-if="imageExists(item.name)"
+						v-bind:src="calcImagePath(item.name)"
+						class="thumbnail"
+					/>
 					<div v-else class="thumbnail" />
 					<!-- <span class="thumbnail"></span> -->
 
@@ -52,7 +56,7 @@ export enum LibraryItemType {
 	Node = "node",
 	Comment = "comment",
 	Frame = "frame",
-	Navigation = "navigation"
+	Navigation = "navigation",
 }
 
 export class LibraryItem {
@@ -84,7 +88,7 @@ export default class LibraryView extends Vue {
 	created() {}
 
 	get items() {
-		let items = Object.values(this.library.nodes).map(n => {
+		let items = Object.values(this.library.nodes).map((n) => {
 			let item = new LibraryItem(LibraryItemType.Node);
 			item.name = n.name;
 			item.displayName = n.displayName;
@@ -96,13 +100,13 @@ export default class LibraryView extends Vue {
 			new LibraryItem(LibraryItemType.Comment, "comment", "Comment")
 		);
 		items.push(new LibraryItem(LibraryItemType.Frame, "frame", "Frame"));
-		items.push(
-			new LibraryItem(
-				LibraryItemType.Navigation,
-				"navigation",
-				"Navigation"
-			)
-		);
+		// items.push(
+		// 	new LibraryItem(
+		// 		LibraryItemType.Navigation,
+		// 		"navigation",
+		// 		"Navigation"
+		// 	)
+		// );
 
 		return items;
 	}
