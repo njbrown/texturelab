@@ -307,6 +307,16 @@ export default class App extends Vue {
 			this.redoAction();
 		});
 
+		electron.ipcRenderer.on(MenuCommands.EditCopy, async (evt, arg) => {
+			document.execCommand("copy");
+		});
+		electron.ipcRenderer.on(MenuCommands.EditCut, async (evt, arg) => {
+			document.execCommand("cut");
+		});
+		electron.ipcRenderer.on(MenuCommands.EditPaste, async (evt, arg) => {
+			document.execCommand("paste");
+		});
+
 		electron.ipcRenderer.on(MenuCommands.ExportZip, async (evt, arg) => {
 			await this.exportZip();
 		});
