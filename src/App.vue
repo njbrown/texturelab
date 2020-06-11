@@ -409,7 +409,7 @@ export default class App extends Vue {
 					this.editor.graph,
 					this.editor.designer,
 					[],
-					[item],
+					[d],
 					[],
 					[],
 					[],
@@ -422,7 +422,7 @@ export default class App extends Vue {
 				action = new AddItemsAction(
 					this.editor.graph,
 					this.editor.designer,
-					[item],
+					[d],
 					[],
 					[],
 					[],
@@ -438,7 +438,7 @@ export default class App extends Vue {
 					this.editor.designer,
 					[],
 					[],
-					[item],
+					[d],
 					[],
 					[],
 					[]
