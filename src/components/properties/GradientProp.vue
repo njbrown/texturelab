@@ -10,13 +10,15 @@
 </template>
 
 <script lang="ts">
-import { Vue, Prop, Component, Emit } from "vue-property-decorator";
+import { Vue, Prop, Component, Emit, Watch } from "vue-property-decorator";
 import { Designer } from "@/lib/designer";
 import { DesignerNode } from "@/lib/designer/designernode";
 import { Gradient, GradientPoint } from "@/lib/designer/gradient";
 import { Color } from "@/lib/designer/color";
 import elementResizeDetectorMaker from "element-resize-detector";
 import { IPropertyHolder } from "@/lib/designer/properties";
+import { PropertyChangeAction } from "@/lib/actions/propertychangeaction";
+import { UndoStack } from "@/lib/undostack";
 
 @Component
 export default class GradientPropertyView extends Vue {
@@ -32,17 +34,21 @@ export default class GradientPropertyView extends Vue {
 	@Prop()
 	propHolder: IPropertyHolder;
 
+	oldValue: Gradient;
+
 	mounted() {
 		this.widget = new GradientWidget({
 			width: (<HTMLDivElement>this.$refs.inputHolder).offsetWidth,
-			canvas: this.$refs.canvas
+			canvas: this.$refs.canvas,
 		});
 
-		this.widget.setGradient(this.prop.value);
-		this.widget.onvaluechanged = this.updateValue;
+		this.oldValue = this.prop.getValue().clone();
+		this.widget.setGradient(this.prop.value.clone());
+		this.widget.onvaluechanged = this.updateChanged;
+		this.widget.oninput = this.updateInput;
 
 		let erd = new elementResizeDetectorMaker();
-		erd.listenTo(this.$refs.inputHolder, element => {
+		erd.listenTo(this.$refs.inputHolder, (element) => {
 			var width = element.offsetWidth;
 			var height = element.offsetHeight;
 
@@ -59,9 +65,36 @@ export default class GradientPropertyView extends Vue {
 		return this.prop.name;
 	}
 
-	updateValue(gradient: Gradient) {
-		this.propHolder.setProperty(this.prop.name, gradient);
-		this.propertyChanged();
+	updateInput(gradient: Gradient) {
+		this.propHolder.setProperty(this.prop.name, gradient.clone());
+	}
+
+	updateChanged(gradient: Gradient) {
+		let newValue = gradient.clone();
+		this.propHolder.setProperty(this.prop.name, gradient.clone());
+
+		let action = new PropertyChangeAction(
+			// todo: this is a bad fix, correct fix below
+			() => {
+				this.widget.setGradient(this.prop.getValue());
+			},
+			this.prop.name,
+			this.propHolder,
+			this.oldValue,
+			newValue
+		);
+		UndoStack.current.push(action);
+
+		this.oldValue = newValue.clone();
+	}
+
+	@Watch("prop", { deep: true })
+	gradChanged(oldVal, newVal) {
+		//console.log("grad changed");
+		// if new val is different from widget val
+		// then set gradient
+		// otherwise do nothing
+		// todo: this is the proper fix
 	}
 }
 
@@ -143,6 +176,7 @@ export class GradientWidget {
 	handleSize: number;
 
 	onvaluechanged: (gradient: Gradient) => void;
+	oninput: (gradient: Gradient) => void;
 
 	constructor(options: any) {
 		this.width = options.width || 300;
@@ -178,15 +212,15 @@ export class GradientWidget {
 
 	bindEvents() {
 		var self = this;
-		this.canvas.onmousedown = evt => this.onMouseDown(evt);
+		this.canvas.onmousedown = (evt) => this.onMouseDown(evt);
 
 		//this.canvas.onmouseup = evt => this.onMouseUp(evt);
-		document.documentElement.addEventListener("mouseup", evt =>
+		document.documentElement.addEventListener("mouseup", (evt) =>
 			self.onMouseUp(evt)
 		);
 
 		//this.canvas.onmousemove = this.onMouseMove;
-		document.documentElement.addEventListener("mousemove", evt =>
+		document.documentElement.addEventListener("mousemove", (evt) =>
 			self.onMouseMove(evt)
 		);
 
@@ -225,13 +259,15 @@ export class GradientWidget {
 			self.hitHandle = handle;
 			self.isNewHandle = true;
 
-			if (self.onvaluechanged) self.onvaluechanged(self.gradient);
+			if (self.oninput) self.oninput(self.gradient);
+			//if (self.onvaluechanged) self.onvaluechanged(self.gradient);
 		} else if (self.hitHandle && evt.button == 2) {
 			// delete handle
 			self.removeHandle(self.hitHandle);
 			self.hitHandle = null;
 
-			if (self.onvaluechanged) self.onvaluechanged(self.gradient);
+			if (self.oninput) self.oninput(self.gradient);
+			//if (self.onvaluechanged) self.onvaluechanged(self.gradient);
 		}
 
 		self.redrawCanvas();
@@ -268,11 +304,20 @@ export class GradientWidget {
 			input.oninput = (ev: Event) => {
 				console.log(evt);
 				console.log("oninput");
+
+				hitHandle.gradientPoint.color = Color.parse(input.value);
+				self.redrawCanvas();
+				//self.hitHandle = null;
+
+				if (self.oninput) self.oninput(self.gradient);
 			};
 			input.click();
 
 			//input.onchange = null; // cleanup
 			//self.hitHandle = null;
+		} else if (self.hitHandle) {
+			if (self.onvaluechanged) self.onvaluechanged(self.gradient);
+			self.hitHandle = null;
 		} else {
 			self.hitHandle = null;
 			self.redrawCanvas();
@@ -296,7 +341,8 @@ export class GradientWidget {
 			// resort handles
 			self.gradient.sort();
 
-			if (self.onvaluechanged) self.onvaluechanged(self.gradient);
+			//if (self.onvaluechanged) self.onvaluechanged(self.gradient);
+			if (self.oninput) self.oninput(self.gradient);
 		}
 
 		self.redrawCanvas();
@@ -408,7 +454,7 @@ function getMousePos(canvas, evt) {
 	var rect = canvas.getBoundingClientRect();
 	return {
 		x: evt.clientX - rect.left,
-		y: evt.clientY - rect.top
+		y: evt.clientY - rect.top,
 	};
 }
 

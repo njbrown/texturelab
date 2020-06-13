@@ -8,14 +8,14 @@ import { IProperyUi } from "@/components/properties/ipropertyui";
 import App from "@/App.vue";
 
 export class PropertyChangeAction extends Action {
-	ui: IProperyUi;
+	ui: () => void;
 	propHolder: IPropertyHolder;
 	propName: string;
 	oldValue: any;
 	newValue: any;
 
 	constructor(
-		ui: IProperyUi,
+		ui: () => void,
 		propName: string,
 		propHolder: IPropertyHolder,
 		oldValue: any,
@@ -34,10 +34,12 @@ export class PropertyChangeAction extends Action {
 		this.propHolder.setProperty(this.propName, this.oldValue);
 		//App.instance.$refs.properties.$forceUpdate();
 		//this.ui.refresh();
+		if (this.ui) this.ui();
 	}
 
 	redo() {
 		this.propHolder.setProperty(this.propName, this.newValue);
 		//this.ui.refresh();
+		if (this.ui) this.ui();
 	}
 }
