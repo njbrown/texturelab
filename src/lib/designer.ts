@@ -471,7 +471,7 @@ export class Designer {
 		// force rendering to be complete
 		//gl.flush();
 
-		canvas.copyFromCanvas(this.canvas);
+		canvas.copyFromCanvas(this.canvas, true);
 	}
 
 	createThumbmailProgram() {
