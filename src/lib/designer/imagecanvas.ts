@@ -13,8 +13,9 @@ export class ImageCanvas {
 	// scales the image to fit dest canvas
 	copyFromCanvas(src: HTMLCanvasElement, resize: boolean = false) {
 		if (resize) {
-			this.canvas.width = src.width;
-			this.canvas.height = src.height;
+			if (this.canvas.width != src.width) this.canvas.width = src.width;
+			if (this.canvas.height != src.height)
+				this.canvas.height = src.height;
 		}
 		console.log("copying from " + src.width + " to " + this.canvas.width);
 		this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
