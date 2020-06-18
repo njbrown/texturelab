@@ -248,7 +248,7 @@ export class Editor {
 	createNewTexture() {
 		this.clearTextureChannels();
 
-		this.library = createV1Library();
+		this.library = createV2Library();
 		this.setDesigner(new Designer());
 		this.setScene(new NodeScene(this.canvas));
 
