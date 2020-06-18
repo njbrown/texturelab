@@ -12,6 +12,7 @@ import { SocketType } from "./scene/socketgraphicsitem";
 import { ImageCanvas } from "./designer/imagecanvas";
 
 import { createLibrary as createV1Library } from "@/lib/library/libraryv1";
+import { createLibrary as createV2Library } from "@/lib/library/libraryv2";
 import { Color } from "./designer/color";
 import { CommentGraphicsItem } from "./scene/commentgraphicsitem";
 import { FrameGraphicsItem } from "./scene/framegraphicsitem";
@@ -796,10 +797,10 @@ export class Editor {
 
 		let library;
 		if (!data["libraryVersion"]) {
-			library = createV1Library();
+			library = createV2Library();
 		} else {
 			// library = this.createLibrary(data["libraryVersion"]);
-			library = createV1Library();
+			library = createV2Library();
 		}
 		// load scene
 		var d = Designer.load(data, library);
