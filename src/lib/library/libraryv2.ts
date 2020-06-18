@@ -12,7 +12,6 @@ import { SimplexNoiseNode } from "./v1/simplexnoise";
 import { MaskNode } from "./v1/mask";
 import { Transform2DNode } from "./v1/transform2d";
 import { MapRangeNode } from "./v1/maprange";
-import { SplatNode } from "./v1/splat";
 import { Perlin3DNode } from "./v1/perlin3d";
 import { HexagonNode } from "./v1/hexagon";
 import { FractalNoiseNode } from "./v1/fractalnoise";
@@ -29,6 +28,7 @@ import { GradientNode, TriGradientNode } from "./v1/gradient";
 import { DesignerLibrary } from "../designer/library";
 import { OutputNode } from "./v1/output";
 import { GradientMapNode } from "./v1/gradientmap";
+import { SplatNodeV2 } from "./v2/splat";
 
 export function createLibrary() {
 	var lib = new DesignerLibrary();
@@ -49,7 +49,7 @@ export function createLibrary() {
 	lib.addNode("mask", "Mask", MaskNode);
 	lib.addNode("transform2d", "Transform2D", Transform2DNode);
 	lib.addNode("maprange", "Map Range", MapRangeNode);
-	lib.addNode("splat", "Splat", SplatNode);
+	lib.addNode("splat", "Splat", SplatNodeV2);
 	lib.addNode("perlin3d", "Perlin 3D", Perlin3DNode);
 	lib.addNode("hexagon", "Hexagon", HexagonNode);
 	lib.addNode("fractalnoise", "Fractal Noise", FractalNoiseNode);
