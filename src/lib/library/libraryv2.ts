@@ -29,6 +29,9 @@ import { DesignerLibrary } from "../designer/library";
 import { OutputNode } from "./v1/output";
 import { GradientMapNode } from "./v1/gradientmap";
 import { SplatNodeV2 } from "./v2/splat";
+import { BlurV2 } from "./v2/blur";
+import { AdvanceSplatterV2 } from "./v2/advancesplatter";
+import { SlopeBlur } from "./v2/slopeblur";
 
 export function createLibrary() {
 	var lib = new DesignerLibrary();
@@ -70,6 +73,9 @@ export function createLibrary() {
 	lib.addNode("trigradient", "TriGradient", TriGradientNode);
 	lib.addNode("output", "Output", OutputNode);
 	lib.addNode("gradientmap", "Gradient Map", GradientMapNode);
+	lib.addNode("blurv2", "Blur", BlurV2);
+	lib.addNode("slopeblur", "Slope Blur", SlopeBlur);
+	lib.addNode("advancesplatter", "Advance Splatter", AdvanceSplatterV2);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
