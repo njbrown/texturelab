@@ -32,6 +32,7 @@ import { SplatNodeV2 } from "./v2/splat";
 import { BlurV2 } from "./v2/blur";
 import { AdvanceSplatterV2 } from "./v2/advancesplatter";
 import { SlopeBlur } from "./v2/slopeblur";
+import { TileSampler } from "./v2/tilesampler";
 
 export function createLibrary() {
 	var lib = new DesignerLibrary();
@@ -76,6 +77,7 @@ export function createLibrary() {
 	lib.addNode("blurv2", "Blur", BlurV2);
 	lib.addNode("slopeblur", "Slope Blur", SlopeBlur);
 	lib.addNode("advancesplatter", "Advance Splatter", AdvanceSplatterV2);
+	lib.addNode("tilesampler", "Tile Sampler", TileSampler);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
