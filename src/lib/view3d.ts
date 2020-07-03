@@ -91,8 +91,10 @@ export class View3D {
 		});
 		renderer.setClearColor(0x000000, 0);
 		renderer.physicallyCorrectLights = true;
-		renderer.gammaInput = false;
-		renderer.gammaOutput = true;
+		// renderer.gammaInput = false;
+		// renderer.gammaOutput = true;
+		renderer.gammaFactor = 2.2;
+		renderer.outputEncoding = THREE.GammaEncoding;
 		renderer.shadowMap.enabled = true;
 		renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 		renderer.setSize(el.width, el.height);
