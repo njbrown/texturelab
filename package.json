@@ -20,7 +20,7 @@
 		"dedent-js": "^1.0.1",
 		"element-resize-detector": "^1.1.15",
 		"jquery": "^3.5.0",
-		"three": "^0.106.2",
+		"three": "^0.118.3",
 		"three-orbitcontrols-ts": "git+https://git@github.com/nicolaspanel/three-orbitcontrols-ts.git",
 		"typeface-open-sans": "^0.0.75",
 		"vue": "^2.6.10",
