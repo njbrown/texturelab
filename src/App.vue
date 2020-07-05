@@ -229,6 +229,20 @@ body {
 	width: 3em;
 	padding: 0 5px;
 }
+
+.enum {
+	outline: 0;
+	box-shadow: none;
+	border: 0 !important;
+
+	margin-top: 0.4em;
+	border: none;
+	border-radius: 4px;
+	color: white;
+	background: #222;
+	padding: 0.5em;
+	font-family: "Open Sans";
+}
 </style>
 
 <script lang="ts">

@@ -72,11 +72,6 @@ export default class EnumPropertyView extends Vue {
 }
 
 .enum {
-	/* reset style */
-	/* -webkit-appearance: none;
-	-moz-appearance: none;
-	-ms-appearance: none;
-	appearance: none; */
 	outline: 0;
 	box-shadow: none;
 	border: 0 !important;
@@ -90,15 +85,4 @@ export default class EnumPropertyView extends Vue {
 	padding: 0.5em;
 	font-family: "Open Sans";
 }
-
-/* .enum * {
-  margin-top: 0.4em;
-  width: 100%;
-  border: none;
-  border-radius: 4px;
-  color: white;
-  background: #222;
-  padding: 4px;
-  font-family: "Open Sans";
-} */
 </style>

@@ -101,12 +101,17 @@ export default class TextureChannelPropertyView extends Vue {
 }
 
 .enum {
+	outline: 0;
+	box-shadow: none;
+	border: 0 !important;
+
 	margin-top: 0.4em;
 	width: 100%;
-	border: solid white 1px;
-	border-radius: 2px;
+	border: none;
+	border-radius: 4px;
 	color: white;
 	background: #222;
-	padding: 4px;
+	padding: 0.5em;
+	font-family: "Open Sans";
 }
 </style>
