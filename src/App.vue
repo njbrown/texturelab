@@ -131,7 +131,7 @@ body {
 .lm_tab {
 	font-family: "Open Sans", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif !important;
 	background: #333 !important;
-	border-radius: 2px 2px 0 0;
+	/* border-radius: 2px 2px 0 0; */
 	height: 24px !important;
 	box-sizing: border-box;
 	line-height: 24px;
@@ -145,7 +145,6 @@ body {
 	-webkit-user-select: none;
 	-webkit-user-drag: none;
 	-webkit-app-region: no-drag;
-	cursor: default;
 }
 </style>
 <style scoped>
