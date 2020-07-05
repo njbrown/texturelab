@@ -4,6 +4,7 @@ import vgl from "vue-golden-layout";
 import "golden-layout/src/css/goldenlayout-dark-theme.css";
 import "../public/css/scrollbar.css";
 import "./utils/inspectelement";
+import "boxicons/css/boxicons.css";
 require("typeface-open-sans");
 
 // https://github.com/EmbeddedEnterprises/ng6-golden-layout/blob/master/README.md
@@ -22,11 +23,11 @@ import { Titlebar, Color } from "custom-electron-titlebar";
 let titleBar = new Titlebar({
 	backgroundColor: Color.fromHex("#333333"),
 	icon: "./favicon.svg",
-	shadow: true
+	shadow: true,
 });
 
 new Vue({
 	router,
 	store,
-	render: h => h(App)
+	render: (h) => h(App),
 }).$mount("#app");

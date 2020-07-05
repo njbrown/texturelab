@@ -15,6 +15,7 @@
 	"main": "background.js",
 	"dependencies": {
 		"adm-zip": "^0.4.16",
+		"boxicons": "^2.0.5",
 		"core-js": "^2.6.5",
 		"custom-electron-titlebar": "^3.1.0",
 		"dedent-js": "^1.0.1",
