@@ -43,7 +43,7 @@ export class View3D {
 	private repeat: number = 1;
 
 	// geometry
-	private sphereGeom = new SphereGeometry(0.7, 128, 128);
+	private sphereGeom = new SphereGeometry(0.7, 64, 64);
 	private cubeGeom = new THREE.BoxGeometry();
 	private planeGeom = new THREE.PlaneGeometry(1, 1, 100, 100);
 	private cylinderGeom = new CylinderGeometry(0.5, 0.5, 1, 64, 64, true);
@@ -263,7 +263,7 @@ export class View3D {
 
 		tex.needsUpdate = true;
 		this.material.displacementMap = tex;
-		this.material.displacementScale = 0.5;
+		this.material.displacementScale = 0.1;
 		this.material.needsUpdate = true;
 	}
 
