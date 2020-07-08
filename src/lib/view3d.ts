@@ -167,6 +167,9 @@ export class View3D {
 			this.setRoughnessTexture(imageCanvas, channelName);
 		if (channelName == "height")
 			this.setHeightTexture(imageCanvas, channelName);
+		if (channelName == "emission")
+			this.setEmissionTexture(imageCanvas, channelName);
+		if (channelName == "ao") this.setAoTexture(imageCanvas, channelName);
 	}
 
 	clearTexture(channelName: string) {
@@ -187,6 +190,12 @@ export class View3D {
 		if (channelName == "height") {
 			this.material.displacementMap = null;
 		}
+		if (channelName == "emission") {
+			this.material.emissiveMap = null;
+		}
+		if (channelName == "ao") {
+			this.material.aoMap = null;
+		}
 		this.material.needsUpdate = true;
 	}
 
@@ -205,6 +214,12 @@ export class View3D {
 		}
 		if (channelName == "height" && this.material.displacementMap != null) {
 			this.material.displacementMap.needsUpdate = true;
+		}
+		if (channelName == "emission" && this.material.emissiveMap != null) {
+			this.material.emissiveMap.needsUpdate = true;
+		}
+		if (channelName == "ao" && this.material.aoMap != null) {
+			this.material.aoMap.needsUpdate = true;
 		}
 		this.material.needsUpdate = true;
 	}
@@ -264,6 +279,31 @@ export class View3D {
 		tex.needsUpdate = true;
 		this.material.displacementMap = tex;
 		this.material.displacementScale = 0.1;
+		this.material.needsUpdate = true;
+	}
+
+	setEmissionTexture(imageCanvas: ImageCanvas, channelName: string) {
+		console.log("setting emission texture");
+		var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+		tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+		tex.repeat.set(this.repeat, this.repeat);
+		tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+		tex.encoding = THREE.GammaEncoding;
+
+		tex.needsUpdate = true;
+		this.material.emissiveMap = tex;
+		this.material.emissive = new THREE.Color(1, 1, 1);
+		this.material.needsUpdate = true;
+	}
+
+	setAoTexture(imageCanvas: ImageCanvas, channelName: string) {
+		var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+		tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+		tex.repeat.set(this.repeat, this.repeat);
+		tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+
+		tex.needsUpdate = true;
+		this.material.aoMap = tex;
 		this.material.needsUpdate = true;
 	}
 

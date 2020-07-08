@@ -32,6 +32,8 @@ export default class TextureChannelPropertyView extends Vue {
 		"metalness",
 		"roughness",
 		"height",
+		"emission",
+		"ao",
 	];
 	channelIndex: number = 0;
 
