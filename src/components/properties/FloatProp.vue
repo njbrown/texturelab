@@ -4,7 +4,7 @@
 			<label>{{ prop.displayName }}</label>
 		</div>
 		<div class="input-holder">
-			<div style="width:85%; margin-right:10px">
+			<div style="width:100%; margin-right:10px;padding:0.4em;">
 				<input
 					type="range"
 					:min="prop.minValue"
@@ -17,7 +17,7 @@
 					@blur="blur"
 				/>
 			</div>
-			<div style="width:15%">
+			<div style="width:70px;">
 				<input
 					type="number"
 					:value="prop.value"
