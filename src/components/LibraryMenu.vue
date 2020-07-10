@@ -332,7 +332,7 @@ export default class LibraryMenu extends Vue {
 	width: 100%; /* Full width */
 	height: 100%; /* Full height */
 	overflow: hidden; /* Enable scroll if needed */
-	background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+	background-color: rgba(0, 0, 0, 0.2); /* Black w/ opacity */
 }
 
 .show-modal {
@@ -345,9 +345,11 @@ export default class LibraryMenu extends Vue {
 	background-color: #fefefe;
 	/* margin: 15% auto; */
 	/* padding: 20px; */
-	border: 1px solid #888;
+	/* border: 1px solid #888; */
 	width: 350px; /* Could be more or less, depending on screen size */
 	background: rgb(44, 44, 44);
+	box-shadow: rgba(0, 0, 0, 0.9) 0px 1px 3px;
+	border-radius: 2px;
 }
 
 .card-list {
@@ -358,7 +360,8 @@ export default class LibraryMenu extends Vue {
 .search-input {
 	background: transparent;
 	color: white;
-	border: solid rgb(77, 156, 187) 1px;
+	/* border: solid rgb(77, 156, 187) 1px; */
+	border: none;
 
 	float: none;
 	display: block;
@@ -381,10 +384,11 @@ export default class LibraryMenu extends Vue {
 }
 
 .libcard {
-	padding: 5px;
+	padding: 0.5em;
 	color: white;
 	border: solid transparent 1px;
 	display: table; /* for center-aligning text */
+	cursor: pointer;
 }
 
 .libcard:hover {
