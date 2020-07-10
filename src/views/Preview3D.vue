@@ -1,6 +1,6 @@
 <template>
 	<div style="height:100%">
-		<div style="height:2em;">
+		<div style="padding:5px">
 			<!-- <a class="btn" href="#" @click="setShape('sphere')">S</a>
       <a class="btn" href="#" @click="setShape('cube')">C</a>
       <a class="btn" href="#" @click="setShape('plane')">P</a>
@@ -133,7 +133,6 @@ function fitCanvasToContainer(canvas) {
 	box-shadow: none;
 	border: 0 !important;
 
-	margin-top: 0.4em;
 	border: none;
 	border-radius: 4px;
 	color: white;

@@ -128,8 +128,8 @@ export default class FloatPropertyView extends Vue {
 .number::-webkit-inner-spin-button {
 	width: 1em;
 	border-left: 1px solid #bbb;
-	opacity: 0.4; /* shows Spin Buttons per default (Chrome >= 39) */
-	color: white;
+	opacity: 1;
+	color: rgb(130, 130, 130);
 	position: absolute;
 	top: 0;
 	right: 0;
