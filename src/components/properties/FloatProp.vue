@@ -113,7 +113,7 @@ export default class FloatPropertyView extends Vue {
 	width: calc(100% - 0.6em - 1px);
 	border: solid gray 1px;
 	padding: 0.3em;
-	border-radius: 2px;
+	border-radius: 4px;
 	position: relative;
 	outline: none;
 }
