@@ -110,12 +110,15 @@ export default class FloatPropertyView extends Vue {
 }
 
 .number {
-	width: calc(100% - 0.6em - 1px);
-	border: solid gray 1px;
-	padding: 0.3em;
+	width: calc(100% - 1em - 1px);
+	border: solid transparent 1px;
 	border-radius: 4px;
 	position: relative;
 	outline: none;
+
+	background: #4e4e4e;
+	color: rgba(255, 255, 255, 0.8);
+	padding: 0.5em;
 }
 
 .number:focus {
@@ -123,10 +126,10 @@ export default class FloatPropertyView extends Vue {
 }
 
 .number::-webkit-inner-spin-button {
-	opacity: 1;
 	width: 1em;
 	border-left: 1px solid #bbb;
-	opacity: 0.5; /* shows Spin Buttons per default (Chrome >= 39) */
+	opacity: 0.4; /* shows Spin Buttons per default (Chrome >= 39) */
+	color: white;
 	position: absolute;
 	top: 0;
 	right: 0;
