@@ -1,35 +1,35 @@
 <template>
-  <div class="field">
-    <div>
-      <label>{{ prop.displayName }}</label>
-    </div>
-    <div class="input-holder">
-      <div style="width:85%; margin-right:10px">
-        <input
-          type="range"
-          :min="prop.minValue"
-          :max="prop.maxValue"
-          :value="prop.value"
-          :step="prop.step"
-          @input="updateValue"
-          class="slider"
-          @focus="focus"
-          @blur="blur"
-        />
-      </div>
-      <div style="width:15%">
-        <input
-          type="number"
-          :value="prop.value"
-          :step="prop.step"
-          @input="updateValue"
-          class="number"
-          @focus="focus"
-          @blur="blur"
-        />
-      </div>
-    </div>
-  </div>
+	<div class="field">
+		<div>
+			<label>{{ prop.displayName }}</label>
+		</div>
+		<div class="input-holder">
+			<div style="width:85%; margin-right:10px">
+				<input
+					type="range"
+					:min="prop.minValue"
+					:max="prop.maxValue"
+					:value="prop.value"
+					:step="prop.step"
+					@input="updateValue"
+					class="slider"
+					@focus="focus"
+					@blur="blur"
+				/>
+			</div>
+			<div style="width:15%">
+				<input
+					type="number"
+					:value="prop.value"
+					:step="prop.step"
+					@input="updateValue"
+					class="number"
+					@focus="focus"
+					@blur="blur"
+				/>
+			</div>
+		</div>
+	</div>
 </template>
 
 <script lang="ts">
@@ -43,149 +43,167 @@ import { PropertyChangeAction } from "@/lib/actions/propertychangeaction";
 
 @Component
 export default class FloatPropertyView extends Vue {
-  @Prop()
-  // FloatProperty
-  prop: any;
+	@Prop()
+	// FloatProperty
+	prop: any;
 
-  @Prop()
-  designer: Designer;
+	@Prop()
+	designer: Designer;
 
-  @Prop()
-  propHolder: IPropertyHolder;
+	@Prop()
+	propHolder: IPropertyHolder;
 
-  oldValue: number;
+	oldValue: number;
 
-  @Emit()
-  propertyChanged() {
-    return this.prop.name;
-  }
+	@Emit()
+	propertyChanged() {
+		return this.prop.name;
+	}
 
-  @Emit()
-  propertyChangeCompleted(evt: PropertyChangeComplete) {
-    return evt;
-  }
+	@Emit()
+	propertyChangeCompleted(evt: PropertyChangeComplete) {
+		return evt;
+	}
 
-  updateValue(evt) {
-    this.propHolder.setProperty(this.prop.name, evt.target.value);
-    this.propertyChanged();
-  }
+	updateValue(evt) {
+		this.propHolder.setProperty(this.prop.name, evt.target.value);
+		this.propertyChanged();
+	}
 
-  focus() {
-    //console.log("focus");
-    this.oldValue = this.prop.value;
-  }
+	focus() {
+		//console.log("focus");
+		this.oldValue = this.prop.value;
+	}
 
-  blur() {
-    //console.log("blur");
-    // let evt = {
-    // 	propName: this.prop.name,
-    // 	oldValue: this.oldValue,
-    // 	newValue: this.prop.value,
-    // };
-    // this.propertyChangeCompleted(evt);
-    let action = new PropertyChangeAction(
-      null,
-      this.prop.name,
-      this.propHolder,
-      this.oldValue,
-      this.prop.value
-    );
-    UndoStack.current.push(action);
-  }
+	blur() {
+		//console.log("blur");
+		// let evt = {
+		// 	propName: this.prop.name,
+		// 	oldValue: this.oldValue,
+		// 	newValue: this.prop.value,
+		// };
+		// this.propertyChangeCompleted(evt);
+		let action = new PropertyChangeAction(
+			null,
+			this.prop.name,
+			this.propHolder,
+			this.oldValue,
+			this.prop.value
+		);
+		UndoStack.current.push(action);
+	}
 }
 </script>
 
 <style scoped>
 .field {
-  font-size: 12px;
-  padding: 0.9em 0.5em;
-  color: rgba(255, 255, 255, 0.7);
-  border-bottom: 1px rgb(61, 61, 61) solid;
+	font-size: 12px;
+	padding: 0.9em 0.5em;
+	color: rgba(255, 255, 255, 0.7);
+	border-bottom: 1px rgb(61, 61, 61) solid;
 }
 
 .field label {
-  font-weight: bold;
-  padding: 0.4em;
-  padding-left: 0;
+	font-weight: bold;
+	padding: 0.4em;
+	padding-left: 0;
 }
 
 .number {
-  width: calc(100% - 4px - 1px);
-  border: solid gray 1px;
-  padding: 2px;
-  border-radius: 2px;
+	width: calc(100% - 0.6em - 1px);
+	border: solid gray 1px;
+	padding: 0.3em;
+	border-radius: 2px;
+	position: relative;
+	outline: none;
+}
+
+.number:focus {
+	border-color: dodgerblue;
+}
+
+.number::-webkit-inner-spin-button {
+	opacity: 1;
+	width: 1em;
+	border-left: 1px solid #bbb;
+	opacity: 0.5; /* shows Spin Buttons per default (Chrome >= 39) */
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	cursor: pointer;
 }
 
 .input-holder {
-  display: flex;
+	display: flex;
 }
 
 /* https://www.w3schools.com/howto/howto_js_rangeslider.asp */
 /* http://jsfiddle.net/brenna/f4uq9edL/?utm_source=website&utm_medium=embed&utm_campaign=f4uq9edL */
 .slider {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 3px;
-  border-radius: 5px;
-  background-color: rgb(255, 255, 255, 0.7);
-  color: rgba(0, 0, 0);
-  outline: none;
-  -webkit-transition: 0.2s;
-  transition: opacity 0.2s;
+	-webkit-appearance: none;
+	width: 100%;
+	height: 3px;
+	border-radius: 5px;
+	background-color: rgb(255, 255, 255, 0.7);
+	color: rgba(0, 0, 0);
+	outline: none;
+	-webkit-transition: 0.2s;
+	transition: opacity 0.2s;
 }
 
 .slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 17px;
-  height: 17px;
-  border-radius: 50%;
-  /* background: #fff -webkit-linear-gradient(transparent, rgba(0, 0, 0, 0.05)); */
-  background-color: rgb(51, 51, 51);
-  border: solid white 2px;
-  outline: solid rgb(51, 51, 51) 3px;
-  cursor: pointer !important;
-  /* box-shadow: 0 1px 2px 0 rgba(34, 36, 38, 0.15),
+	-webkit-appearance: none;
+	appearance: none;
+	width: 17px;
+	height: 17px;
+	border-radius: 50%;
+	/* background: #fff -webkit-linear-gradient(transparent, rgba(0, 0, 0, 0.05)); */
+	background-color: rgb(51, 51, 51);
+	border: solid white 2px;
+	outline: solid rgb(51, 51, 51) 3px;
+	cursor: pointer !important;
+	/* box-shadow: 0 1px 2px 0 rgba(34, 36, 38, 0.15),
     0 0 0 1px rgba(34, 36, 38, 0.15) inset; */
 }
 
 .slider::-moz-range-thumb {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background-color: rgb(51, 51, 51);
-  border: solid white 2px;
-  outline: solid rgb(51, 51, 51) 3px;
-  cursor: pointer !important;
-  box-shadow: 0 1px 2px 0 rgba(34, 36, 38, 0.15),
-    0 0 0 1px rgba(34, 36, 38, 0.15) inset;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background-color: rgb(51, 51, 51);
+	border: solid white 2px;
+	outline: solid rgb(51, 51, 51) 3px;
+	cursor: pointer !important;
+	box-shadow: 0 1px 2px 0 rgba(34, 36, 38, 0.15),
+		0 0 0 1px rgba(34, 36, 38, 0.15) inset;
 }
 
 .slider::-ms-thumb {
-  min-height: 20px;
-  transform: scale(1) !important;
-  width: 25px;
-  height: 25px;
-  border-radius: 50%;
-  background-color: rgb(51, 51, 51);
-  border: solid white 2px;
-  outline: solid rgb(51, 51, 51) 3px;
+	min-height: 20px;
+	transform: scale(1) !important;
+	width: 25px;
+	height: 25px;
+	border-radius: 50%;
+	background-color: rgb(51, 51, 51);
+	border: solid white 2px;
+	outline: solid rgb(51, 51, 51) 3px;
 }
 
 .slider::-ms-fill-lower {
-  background: #777;
-  border-radius: 10px;
+	background: #777;
+	border-radius: 10px;
 }
 
 .slider::-ms-fill-upper {
-  background: #ddd;
-  border-radius: 10px;
+	background: #ddd;
+	border-radius: 10px;
 }
 
 .texture-options {
-  background: #e0e0e0;
-  border-radius: 3px;
-  margin-bottom: 1em !important;
-  padding: 1em;
+	background: #e0e0e0;
+	border-radius: 3px;
+	margin-bottom: 1em !important;
+	padding: 1em;
 }
 </style>
