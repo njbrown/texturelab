@@ -265,7 +265,7 @@ export default class LibraryView extends Vue {
 
 .search-container input {
 	/* width: calc(100% - 2em); */
-	width: calc(100% - 1em - 0.5em);
+	width: calc(100% - 0.5em) !important;
 	padding: 0.5em;
 	height: 1.5em;
 	flex: 0 1 auto;
