@@ -19,6 +19,8 @@
 			class="container"
 			@itemCreated="itemCreated"
 			:headerHeight="30"
+			:showPopoutIcon="false"
+			:showMaximiseIcon="false"
 			ref="GL"
 		>
 			<gl-row>
