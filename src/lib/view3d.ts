@@ -5,6 +5,7 @@ import { DesignerNode } from "./designer/designernode";
 import { ImageCanvas } from "./designer/imagecanvas";
 import { SphereGeometry } from "./geometry/sphere";
 import { CylinderGeometry } from "./geometry/cylinder";
+import { PlaneGeometry } from "./geometry/plane";
 import path from "path";
 
 // https://www.bostonbiomotion.com/
@@ -45,7 +46,7 @@ export class View3D {
 	// geometry
 	private sphereGeom = new SphereGeometry(0.7, 64, 64);
 	private cubeGeom = new THREE.BoxGeometry();
-	private planeGeom = new THREE.PlaneGeometry(1, 1, 100, 100);
+	private planeGeom = new PlaneGeometry(2, 2, 100, 100);
 	private cylinderGeom = new CylinderGeometry(0.5, 0.5, 1, 64, 64, true);
 
 	setCanvas(el: HTMLCanvasElement) {
