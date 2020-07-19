@@ -33,6 +33,8 @@ export class View3D {
 			color: 0xffffff,
 			roughness: 0.5,
 			metalness: 0.0,
+			transparent: true,
+			alphaTest: 0,
 			side: THREE.DoubleSide,
 		}
 	);
@@ -44,7 +46,7 @@ export class View3D {
 	private repeat: number = 1;
 
 	// geometry
-	private sphereGeom = new SphereGeometry(0.7, 64, 64);
+	private sphereGeom = new SphereGeometry(0.7, 128, 128);
 	private cubeGeom = new THREE.BoxGeometry();
 	private planeGeom = new PlaneGeometry(2, 2, 100, 100);
 	private cylinderGeom = new CylinderGeometry(0.5, 0.5, 1, 64, 64, true);
@@ -171,6 +173,8 @@ export class View3D {
 		if (channelName == "emission")
 			this.setEmissionTexture(imageCanvas, channelName);
 		if (channelName == "ao") this.setAoTexture(imageCanvas, channelName);
+		if (channelName == "alpha")
+			this.setAlphaTexture(imageCanvas, channelName);
 	}
 
 	clearTexture(channelName: string) {
@@ -197,6 +201,9 @@ export class View3D {
 		if (channelName == "ao") {
 			this.material.aoMap = null;
 		}
+		if (channelName == "alpha") {
+			this.material.alphaMap = null;
+		}
 		this.material.needsUpdate = true;
 	}
 
@@ -221,6 +228,9 @@ export class View3D {
 		}
 		if (channelName == "ao" && this.material.aoMap != null) {
 			this.material.aoMap.needsUpdate = true;
+		}
+		if (channelName == "alpha" && this.material.alphaMap != null) {
+			this.material.alphaMap.needsUpdate = true;
 		}
 		this.material.needsUpdate = true;
 	}
@@ -305,6 +315,17 @@ export class View3D {
 
 		tex.needsUpdate = true;
 		this.material.aoMap = tex;
+		this.material.needsUpdate = true;
+	}
+
+	setAlphaTexture(imageCanvas: ImageCanvas, channelName: string) {
+		var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+		tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+		tex.repeat.set(this.repeat, this.repeat);
+		tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+
+		tex.needsUpdate = true;
+		this.material.alphaMap = tex;
 		this.material.needsUpdate = true;
 	}
 

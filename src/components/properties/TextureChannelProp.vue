@@ -34,6 +34,7 @@ export default class TextureChannelPropertyView extends Vue {
 		"height",
 		"emission",
 		"ao",
+		"alpha",
 	];
 	channelIndex: number = 0;
 
