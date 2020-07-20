@@ -7,7 +7,7 @@
   <a href="https://njbrown.itch.io/texturelab">DOWNLOAD AT ITCH.IO</a>
 </p>
 
-![TextureLab](https://i.imgur.com/Sk30dcQ.png)
+![TextureLab](https://i.imgur.com/VBXk0zP.png)
 
 ## Building
 
@@ -21,7 +21,7 @@ git submodule update --init
 
 ```
 
-yarn:
+yarn (recommended):
 
 ```
 yarn install
