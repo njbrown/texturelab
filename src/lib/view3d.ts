@@ -110,17 +110,17 @@ export class View3D {
 
 		const brightness = 2;
 
-		var object3d = new THREE.DirectionalLight("white", 0.225 * brightness);
+		let object3d = new THREE.DirectionalLight("white", 0.225 * brightness);
 		object3d.position.set(2.6, 1, 3);
 		object3d.name = "Back light";
 		container.add(object3d);
 
-		var object3d = new THREE.DirectionalLight("white", 0.375 * brightness);
+		object3d = new THREE.DirectionalLight("white", 0.375 * brightness);
 		object3d.position.set(-2, -1, 0);
 		object3d.name = "Key light";
 		container.add(object3d);
 
-		var object3d = new THREE.DirectionalLight("white", 0.75 * brightness);
+		object3d = new THREE.DirectionalLight("white", 0.75 * brightness);
 		object3d.position.set(3, 3, 2);
 		object3d.name = "Fill light";
 		container.add(object3d);

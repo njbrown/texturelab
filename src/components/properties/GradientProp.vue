@@ -38,8 +38,8 @@ export default class GradientPropertyView extends Vue {
 
 	mounted() {
 		this.widget = new GradientWidget({
-			width: (<HTMLDivElement>this.$refs.inputHolder).offsetWidth,
-			canvas: this.$refs.canvas,
+			width: (this.$refs.inputHolder as HTMLDivElement).offsetWidth,
+			canvas: this.$refs.canvas
 		});
 
 		this.oldValue = this.prop.getValue().clone();
@@ -48,7 +48,7 @@ export default class GradientPropertyView extends Vue {
 		this.widget.oninput = this.updateInput;
 
 		let erd = new elementResizeDetectorMaker();
-		erd.listenTo(this.$refs.inputHolder, (element) => {
+		erd.listenTo(this.$refs.inputHolder, element => {
 			var width = element.offsetWidth;
 			var height = element.offsetHeight;
 
@@ -212,15 +212,15 @@ export class GradientWidget {
 
 	bindEvents() {
 		var self = this;
-		this.canvas.onmousedown = (evt) => this.onMouseDown(evt);
+		this.canvas.onmousedown = evt => this.onMouseDown(evt);
 
 		//this.canvas.onmouseup = evt => this.onMouseUp(evt);
-		document.documentElement.addEventListener("mouseup", (evt) =>
+		document.documentElement.addEventListener("mouseup", evt =>
 			self.onMouseUp(evt)
 		);
 
 		//this.canvas.onmousemove = this.onMouseMove;
-		document.documentElement.addEventListener("mousemove", (evt) =>
+		document.documentElement.addEventListener("mousemove", evt =>
 			self.onMouseMove(evt)
 		);
 
@@ -454,7 +454,7 @@ function getMousePos(canvas, evt) {
 	var rect = canvas.getBoundingClientRect();
 	return {
 		x: evt.clientX - rect.left,
-		y: evt.clientY - rect.top,
+		y: evt.clientY - rect.top
 	};
 }
 

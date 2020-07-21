@@ -232,17 +232,17 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		}
 
 		// debug draw frames
-		if (false) {
-			const regions = this.getFrameRegions();
-			for (const region of regions) {
-				const rect = region.rect;
-				ctx.beginPath();
-				ctx.lineWidth = 1;
-				ctx.strokeStyle = "rgb(100, 0, 0, 0.8)";
-				ctx.rect(rect.x, rect.y, rect.width, rect.height);
-				ctx.stroke();
-			}
-		}
+		// if (false) {
+		// 	const regions = this.getFrameRegions();
+		// 	for (const region of regions) {
+		// 		const rect = region.rect;
+		// 		ctx.beginPath();
+		// 		ctx.lineWidth = 1;
+		// 		ctx.strokeStyle = "rgb(100, 0, 0, 0.8)";
+		// 		ctx.rect(rect.x, rect.y, rect.width, rect.height);
+		// 		ctx.stroke();
+		// 	}
+		// }
 	}
 
 	public isPointInside(px: number, py: number): boolean {

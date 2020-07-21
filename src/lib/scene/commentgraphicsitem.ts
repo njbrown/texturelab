@@ -155,7 +155,7 @@ export class CommentGraphicsItem extends GraphicsItem
 		ctx.lineWidth = 1;
 
 		//console.log(ctx.font);
-		for (var i = 0; i < lines.length; ++i) {
+		for (let i = 0; i < lines.length; ++i) {
 			ctx.fillText(lines[i], textX, textY);
 			textY += lineHeight;
 			const size = ctx.measureText(lines[i]);

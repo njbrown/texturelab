@@ -2,17 +2,13 @@
 	<div>
 		<div class="topbar no-select">
 			<a class="button" href="#" @click="undoAction()">
-				<i class="bx bx-undo" style="font-size:1.4rem !important;"></i
-				>Undo
+				<i class="bx bx-undo" style="font-size:1.4rem !important;"></i>Undo
 			</a>
 			<a class="button" href="#" @click="redoAction()">
-				<i class="bx bx-redo" style="font-size:1.4rem !important;"></i
-				>Redo
+				<i class="bx bx-redo" style="font-size:1.4rem !important;"></i>Redo
 			</a>
 
-			<a class="right button" href="#" @click="exportUnity()"
-				>Unity Export</a
-			>
+			<a class="right button" href="#" @click="exportUnity()">Unity Export</a>
 			<a class="right button" href="#" @click="exportZip()">Zip Export</a>
 		</div>
 		<golden-layout
@@ -45,11 +41,7 @@
 				</gl-col>
 
 				<gl-col width="55" ref="canvas">
-					<gl-component
-						title="Editor"
-						class="test-component"
-						:closable="false"
-					>
+					<gl-component title="Editor" class="test-component" :closable="false">
 						<library-menu
 							:editor="this.editor"
 							:library="this.library"
@@ -61,25 +53,15 @@
       <a class="btn" href="#" @click="setShape('cube')">C</a>
       <a class="btn" href="#" @click="setShape('plane')">P</a>
 							<a class="btn" href="#" @click="setShape('cylinder')">C</a>-->
-							<select
-								class="enum"
-								:value="resolution"
-								@change="setResolution"
-							>
+							<select class="enum" :value="resolution" @change="setResolution">
 								<option value="32">Resolution: 32x32</option>
 								<option value="64">Resolution: 64x64</option>
 								<option value="128">Resolution: 128x128</option>
 								<option value="256">Resolution: 256x256</option>
 								<option value="512">Resolution: 512x512</option>
-								<option value="1024"
-									>Resolution: 1024x1024</option
-								>
-								<option value="2048"
-									>Resolution: 2048x2048</option
-								>
-								<option value="4096"
-									>Resolution: 4096x4096</option
-								>
+								<option value="1024">Resolution: 1024x1024</option>
+								<option value="2048">Resolution: 2048x2048</option>
+								<option value="4096">Resolution: 4096x4096</option>
 							</select>
 							<span>RandomSeed:</span>
 							<input
@@ -288,8 +270,8 @@ declare var __static: any;
 		NodePropertiesView,
 		LibraryMenu,
 		preview2d: Preview2D,
-		preview3d: Preview3D,
-	},
+		preview3d: Preview3D
+	}
 })
 export default class App extends Vue {
 	editor!: Editor;
@@ -359,12 +341,9 @@ export default class App extends Vue {
 		electron.ipcRenderer.on(MenuCommands.ExportUnity, async (evt, arg) => {
 			await this.exportUnity();
 		});
-		electron.ipcRenderer.on(
-			MenuCommands.ExportUnityZip,
-			async (evt, arg) => {
-				await this.exportUnityZip();
-			}
-		);
+		electron.ipcRenderer.on(MenuCommands.ExportUnityZip, async (evt, arg) => {
+			await this.exportUnityZip();
+		});
 
 		// samples
 		electron.ipcRenderer.on(
@@ -374,19 +353,13 @@ export default class App extends Vue {
 			}
 		);
 
-		electron.ipcRenderer.on(
-			MenuCommands.ExamplesGrenade,
-			async (evt, arg) => {
-				this.openExample("Grenade.texture");
-			}
-		);
+		electron.ipcRenderer.on(MenuCommands.ExamplesGrenade, async (evt, arg) => {
+			this.openExample("Grenade.texture");
+		});
 
-		electron.ipcRenderer.on(
-			MenuCommands.ExamplesScrews,
-			async (evt, arg) => {
-				this.openExample("Screws.texture");
-			}
-		);
+		electron.ipcRenderer.on(MenuCommands.ExamplesScrews, async (evt, arg) => {
+			this.openExample("Screws.texture");
+		});
 
 		electron.ipcRenderer.on(
 			MenuCommands.ExamplesWoodenPlanks,
@@ -409,13 +382,13 @@ export default class App extends Vue {
 	mounted() {
 		this.setupMenu();
 
-		document.addEventListener("mousemove", (evt) => {
+		document.addEventListener("mousemove", evt => {
 			this.mouseX = evt.pageX;
 			this.mouseY = evt.pageY;
 		});
 
-		const canv = <HTMLCanvasElement>document.getElementById("editor");
-		canv.ondrop = (evt) => {
+		const canv = document.getElementById("editor") as HTMLCanvasElement;
+		canv.ondrop = evt => {
 			evt.preventDefault();
 
 			var itemJson = evt.dataTransfer.getData("text/plain");
@@ -501,15 +474,15 @@ export default class App extends Vue {
 		this.editor.setSceneCanvas(canv);
 
 		//this.designer = this.editor.designer;
-		this.editor.onnodeselected = (node) => {
+		this.editor.onnodeselected = node => {
 			//this.selectedNode = node;
 			this.propHolder = node;
 		};
-		this.editor.oncommentselected = (comment) => {
+		this.editor.oncommentselected = comment => {
 			this.propHolder = comment;
 			console.log("comment selected");
 		};
-		this.editor.onframeselected = (frame) => {
+		this.editor.onframeselected = frame => {
 			this.propHolder = frame;
 		};
 		// this.editor.onnavigationselected = nav => {
@@ -574,7 +547,7 @@ export default class App extends Vue {
 	showLibraryMenu() {
 		// ensure mouse is in canvas bounds
 		//if (this.$refs.canvas.offset)
-		let lib = <any>this.$refs.libraryMenu;
+		let lib = this.$refs.libraryMenu as any;
 		console.log("show menu");
 		if (lib.show == false) lib.showModal(this.mouseX, this.mouseY);
 	}
@@ -584,9 +557,7 @@ export default class App extends Vue {
 		if (item.config.title == "Editor") {
 			let container = item.container;
 			item.container.on("resize", function() {
-				const canvas = <HTMLCanvasElement>(
-					document.getElementById("editor")
-				);
+				const canvas = document.getElementById("editor") as HTMLCanvasElement;
 				canvas.width = container.width;
 				canvas.height = container.height - 32;
 			});
@@ -600,10 +571,7 @@ export default class App extends Vue {
 				// canvas.width = container.width;
 				// canvas.height = container.height;
 
-				(this.$refs.preview2d as any).resize(
-					container.width,
-					container.height
-				);
+				(this.$refs.preview2d as any).resize(container.width, container.height);
 			});
 		}
 
@@ -615,10 +583,7 @@ export default class App extends Vue {
 				// canvas.width = container.width;
 				// canvas.height = container.height;
 				//if (this.view3d) this.view3d.resize(container.width, container.height);
-				(this.$refs.preview3d as any).resize(
-					container.width,
-					container.height
-				);
+				(this.$refs.preview3d as any).resize(container.width, container.height);
 			});
 		}
 	}
@@ -659,16 +624,16 @@ export default class App extends Vue {
 					filters: [
 						{
 							name: "TextureLab Texture",
-							extensions: ["texture"],
-						},
+							extensions: ["texture"]
+						}
 					],
-					defaultPath: "material.texture",
+					defaultPath: "material.texture"
 				},
-				(path) => {
+				path => {
 					//console.log(path);
 					if (!path.endsWith(".texture")) path += ".texture";
 
-					this.project.name = path.replace(/^.*[\\\/]/, "");
+					this.project.name = path.replace(/^.*[\\/]/, "");
 					this.project.path = path;
 
 					ProjectManager.save(path, this.project);
@@ -688,10 +653,10 @@ export default class App extends Vue {
 				filters: [
 					{
 						name: "TextureLab Texture",
-						extensions: ["texture"],
-					},
+						extensions: ["texture"]
+					}
 				],
-				defaultPath: "material",
+				defaultPath: "material"
 			},
 			(paths, bookmarks) => {
 				let path = paths[0];
@@ -734,15 +699,15 @@ export default class App extends Vue {
 				filters: [
 					{
 						name: "Unity Package",
-						extensions: ["unitypackage"],
-					},
+						extensions: ["unitypackage"]
+					}
 				],
 				defaultPath:
 					(this.project.name
 						? this.project.name.replace(".texture", "")
-						: "material") + ".unitypackage",
+						: "material") + ".unitypackage"
 			},
-			(path) => {
+			path => {
 				if (!path) return;
 
 				fs.writeFile(path, buffer, function(err) {
@@ -761,15 +726,15 @@ export default class App extends Vue {
 				filters: [
 					{
 						name: "Zip File",
-						extensions: ["zip"],
-					},
+						extensions: ["zip"]
+					}
 				],
 				defaultPath:
 					(this.project.name
 						? this.project.name.replace(".texture", "")
-						: "material") + ".zip",
+						: "material") + ".zip"
 			},
-			async (path) => {
+			async path => {
 				if (!path) {
 					return;
 				}
@@ -794,15 +759,15 @@ export default class App extends Vue {
 				filters: [
 					{
 						name: "Zip File",
-						extensions: ["zip"],
-					},
+						extensions: ["zip"]
+					}
 				],
 				defaultPath:
 					(this.project.name
 						? this.project.name.replace(".texture", "")
-						: "material") + ".zip",
+						: "material") + ".zip"
 			},
-			async (path) => {
+			async path => {
 				if (!path) {
 					return;
 				}

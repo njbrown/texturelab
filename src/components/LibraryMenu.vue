@@ -1,9 +1,5 @@
 <template>
-	<div
-		class="modal"
-		:class="show ? 'show-modal' : ''"
-		@click.self="hideModal"
-	>
+	<div class="modal" :class="show ? 'show-modal' : ''" @click.self="hideModal">
 		<div class="menu" ref="menu" @keydown="menuKeyDown">
 			<input
 				class="search-input"
@@ -70,7 +66,7 @@ export default class LibraryMenu extends Vue {
 	mounted() {}
 
 	get items() {
-		let items = Object.values(this.library.nodes).map((n) => {
+		let items = Object.values(this.library.nodes).map(n => {
 			let item = new LibraryItem(LibraryItemType.Node);
 			item.name = n.name;
 			item.displayName = n.displayName;
@@ -78,9 +74,7 @@ export default class LibraryMenu extends Vue {
 			return item;
 		});
 
-		items.push(
-			new LibraryItem(LibraryItemType.Comment, "comment", "Comment")
-		);
+		items.push(new LibraryItem(LibraryItemType.Comment, "comment", "Comment"));
 		items.push(new LibraryItem(LibraryItemType.Frame, "frame", "Frame"));
 		// items.push(
 		// 	new LibraryItem(
@@ -110,7 +104,7 @@ export default class LibraryMenu extends Vue {
 		this.show = true;
 		this.selectedItem = null;
 
-		let el = <HTMLElement>this.$refs.menu;
+		let el = this.$refs.menu as HTMLElement;
 		console.log(x + " " + y);
 
 		el.style.left = x + "px";
@@ -120,9 +114,9 @@ export default class LibraryMenu extends Vue {
 		this.mouseY = y;
 
 		//
-		window.setTimeout((x) => {
-			console.log(<HTMLInputElement>this.$refs["search"]);
-			(<HTMLInputElement>this.$refs["search"]).focus();
+		window.setTimeout(x => {
+			console.log(this.$refs["search"] as HTMLInputElement);
+			(this.$refs["search"] as HTMLInputElement).focus();
 		}, 0);
 	}
 
@@ -232,11 +226,7 @@ export default class LibraryMenu extends Vue {
 		if (type == LibraryItemType.Node) {
 			var dnode = this.library.create(nodeName);
 			var canvas = this.editor.canvas;
-			var n = this.editor.addNode(
-				dnode,
-				canvas.width / 2,
-				canvas.height / 2
-			);
+			var n = this.editor.addNode(dnode, canvas.width / 2, canvas.height / 2);
 
 			n.setCenter(scenePos.x, scenePos.y);
 
@@ -313,8 +303,7 @@ export default class LibraryMenu extends Vue {
 		//return `./assets/nodes/${node}.png`;
 		if (process.env.NODE_ENV == "production")
 			return (
-				"file://" +
-				path.join(process.env.BASE_URL, `assets/nodes/${node}.png`)
+				"file://" + path.join(process.env.BASE_URL, `assets/nodes/${node}.png`)
 			);
 		return path.join(process.env.BASE_URL, `assets/nodes/${node}.png`);
 	}

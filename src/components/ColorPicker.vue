@@ -143,7 +143,7 @@ export default class ColorPicker extends Vue {
 	documentClick(e) {
 		let el = this.$refs.colorpicker,
 			target = e.target;
-		let sketch = (<Vue>this.$refs.sketch).$el;
+		let sketch = (this.$refs.sketch as Vue).$el;
 
 		if (
 			target !== el &&

@@ -38,7 +38,7 @@ import GradientPropertyView from "@/components/properties/GradientProp.vue";
 import StringPropertyView from "@/components/properties/StringProp.vue";
 import {
 	IProperyUi,
-	PropertyChangeComplete,
+	PropertyChangeComplete
 } from "../components/properties/ipropertyui";
 import { UndoStack } from "@/lib/undostack";
 import { PropertyChangeAction } from "@/lib/actions/propertychangeaction";
@@ -59,8 +59,8 @@ class PropHolder {
 		string: StringPropertyView,
 
 		textureChannel: TextureChannelPropertyView,
-		Accordion,
-	},
+		Accordion
+	}
 })
 export default class NodePropertiesView extends Vue implements IProperyUi {
 	@Prop()
@@ -98,11 +98,11 @@ export default class NodePropertiesView extends Vue implements IProperyUi {
 
 	// calculated
 	get properties(): PropHolder[] {
-		let props: PropHolder[] = this.node.properties.map((prop) => {
+		let props: PropHolder[] = this.node.properties.map(prop => {
 			//let name: string = "";
 			return {
 				prop: prop,
-				componentName: prop.type,
+				componentName: prop.type
 			};
 		});
 
@@ -115,7 +115,7 @@ export default class NodePropertiesView extends Vue implements IProperyUi {
 	}
 
 	get getNode(): DesignerNode {
-		return <DesignerNode>this.node;
+		return this.node as DesignerNode;
 	}
 
 	refresh() {
