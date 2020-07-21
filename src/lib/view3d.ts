@@ -239,6 +239,7 @@ export class View3D {
 		tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
 		tex.repeat.set(this.repeat, this.repeat);
 		tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+		tex.encoding = THREE.GammaEncoding;
 
 		tex.needsUpdate = true;
 		this.material.map = tex;
