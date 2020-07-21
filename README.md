@@ -1,3 +1,4 @@
+![Build](https://github.com/njbrown/texturelab/workflows/Build/badge.svg)
 <h1 align="center">
   TextureLab
 </h1>

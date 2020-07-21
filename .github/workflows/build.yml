@@ -26,4 +26,4 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: npm install -g yarn
     - run: yarn install
-    - run: yarn electron:build
+    - run: yarn electron:build --publish=never
