@@ -1,7 +1,7 @@
 # This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
 
-name: Build
+name: Update and build application
 
 on:
   push:
@@ -19,11 +19,27 @@ jobs:
         node-version: [10.x, 12.x, 14.x]
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout source code
+      uses: actions/checkout@master
+
+    - name: Setup cache
+      id: yarn-cache-dir-path
+      run: echo "::set-output name=dir::$(yarn cache dir)"
+
+    - uses: actions/cache@master
+      id: yarn-cache
+      with:
+        path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@master
       with:
         node-version: ${{ matrix.node-version }}
-    - run: npm install -g yarn
-    - run: yarn install
-    - run: yarn electron:build --publish=never
+
+    - name: Install dependencies and build
+      run: |
+        yarn install
+        yarn electron:build --publish=never
