@@ -38,7 +38,7 @@
 import { Component, Prop, Vue, Watch } from "vue-property-decorator";
 import { DesignerLibrary } from "@/lib/designer/library";
 import { LibraryItem, LibraryItemType } from "@/views/Library.vue";
-import { Editor } from "@/lib/editortest";
+import { Editor } from "@/lib/editor";
 import fs from "fs";
 import path from "path";
 import { AddItemsAction } from "@/lib/actions/additemsaction";

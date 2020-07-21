@@ -19,7 +19,7 @@
 import { Vue, Prop, Component, Emit, Watch } from "vue-property-decorator";
 import { Designer } from "@/lib/designer";
 import { DesignerNode } from "@/lib/designer/designernode";
-import { Editor } from "@/lib/editortest";
+import { Editor } from "@/lib/editor";
 import { ChangeTextureChannelAction } from "../../lib/actions/changetexturechannelaction";
 import { UndoStack } from "../../lib/undostack";
 

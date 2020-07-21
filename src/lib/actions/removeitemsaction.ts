@@ -9,7 +9,7 @@ import { NodeGraphicsItem } from "../scene/nodegraphicsitem";
 import { NavigationGraphicsItem } from "../scene/navigationgraphicsitem";
 import { DesignerNode } from "../designer/designernode";
 import { Designer } from "../designer";
-import { Editor } from "../editortest";
+import { Editor } from "../editor";
 
 // used when items are added to the scene
 // also used for paste events

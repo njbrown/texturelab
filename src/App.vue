@@ -235,7 +235,7 @@ import { Component, Prop, Vue, Watch, Model } from "vue-property-decorator";
 import EditorView from "@/views/Editor.vue";
 import LibraryView from "@/views/Library.vue";
 import LibraryMenu from "@/components/LibraryMenu.vue";
-import { Editor } from "@/lib/editortest";
+import { Editor } from "@/lib/editor";
 import { View3D } from "@/lib/view3d";
 import { createLibrary as createV1Library } from "@/lib/library/libraryv1";
 import NodePropertiesView from "./views/NodeProperties.vue";

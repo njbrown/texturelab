@@ -31,7 +31,7 @@ import EnumPropertyView from "@/components/properties/EnumProp.vue";
 import ColorPropertyView from "@/components/properties/ColorProp.vue";
 import TextureChannelPropertyView from "@/components/properties/TextureChannelProp.vue";
 import Accordion from "@/components/Accordion.vue";
-import { Editor } from "@/lib/editortest";
+import { Editor } from "@/lib/editor";
 import { DesignerNode } from "@/lib/designer/designernode";
 import { Property, IPropertyHolder } from "@/lib/designer/properties";
 import GradientPropertyView from "@/components/properties/GradientProp.vue";

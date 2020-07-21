@@ -2,7 +2,6 @@ import { Action } from "../undostack";
 import { GraphicsItem } from "../scene/graphicsitem";
 import { Vector2, Rect } from "../scene/view";
 import { FrameGraphicsItem } from "../scene/framegraphicsitem";
-import { Editor } from "../editortest";
 import { IPropertyHolder } from "../designer/properties";
 import { IProperyUi } from "@/components/properties/ipropertyui";
 import App from "@/App.vue";

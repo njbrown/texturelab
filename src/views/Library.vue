@@ -42,7 +42,7 @@
 
 <script lang="ts">
 import { Component, Prop, Model, Vue } from "vue-property-decorator";
-import { Editor } from "@/lib/editortest";
+import { Editor } from "@/lib/editor";
 import { DesignerLibrary } from "@/lib/designer/library";
 import fs from "fs";
 import path from "path";
