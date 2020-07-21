@@ -1,25 +1,25 @@
 import { DesignerNode } from "../../designer/designernode";
 
 export class BrickGeneratorNode extends DesignerNode {
-  public init() {
-    this.title = "Brick Generator";
+	public init() {
+		this.title = "Brick Generator";
 
-    this.addFloatProperty("offset", "Offset", 0.5, 0, 1, 0.1);
+		this.addFloatProperty("offset", "Offset", 0.5, 0, 1, 0.1);
 
-    // brick size
-    this.addFloatProperty("brickWidth", "Brick Width", 0.9, 0, 1, 0.01);
-    this.addFloatProperty("brickHeight", "Brick Height", 0.9, 0, 1, 0.01);
+		// brick size
+		this.addFloatProperty("brickWidth", "Brick Width", 0.9, 0, 1, 0.01);
+		this.addFloatProperty("brickHeight", "Brick Height", 0.9, 0, 1, 0.01);
 
-    // height
-    this.addFloatProperty("heightMin", "Height Min", 0.0, 0, 1, 0.05);
-    this.addFloatProperty("heightMax", "Height Max", 1.0, 0, 1, 0.05);
-    this.addFloatProperty("heightBalance", "Height Balance", 1.0, 0, 1, 0.05);
-    this.addFloatProperty("heightVariance", "Height Variance", 0, 0, 1, 0.05);
+		// height
+		this.addFloatProperty("heightMin", "Height Min", 0.0, 0, 1, 0.05);
+		this.addFloatProperty("heightMax", "Height Max", 1.0, 0, 1, 0.05);
+		this.addFloatProperty("heightBalance", "Height Balance", 1.0, 0, 1, 0.05);
+		this.addFloatProperty("heightVariance", "Height Variance", 0, 0, 1, 0.05);
 
-    this.addFloatProperty("rows", "Rows", 6, 1, 20, 1);
-    this.addFloatProperty("columns", "Columns", 6, 1, 20, 1);
+		this.addFloatProperty("rows", "Rows", 6, 1, 20, 1);
+		this.addFloatProperty("columns", "Columns", 6, 1, 20, 1);
 
-    var source = `
+		var source = `
         //vec2 brickSize = vec2(prop_brickWidth, prop_brickHeight);
         //vec2 tileSize = vec2(prop_rows, prop_columns);
 
@@ -118,6 +118,6 @@ export class BrickGeneratorNode extends DesignerNode {
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }

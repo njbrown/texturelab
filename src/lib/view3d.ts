@@ -35,7 +35,7 @@ export class View3D {
 			metalness: 0.0,
 			transparent: true,
 			alphaTest: 0,
-			side: THREE.DoubleSide,
+			side: THREE.DoubleSide
 		}
 	);
 	private cubeMap: THREE.CubeTexture;
@@ -90,7 +90,7 @@ export class View3D {
 			alpha: true,
 			canvas: el,
 			preserveDrawingBuffer: true,
-			antialias: true,
+			antialias: true
 		});
 		renderer.setClearColor(0x000000, 0);
 		renderer.physicallyCorrectLights = true;
@@ -144,7 +144,7 @@ export class View3D {
 			LEFT: 0,
 			UP: 0,
 			RIGHT: 0,
-			BOTTOM: 0,
+			BOTTOM: 0
 		};
 
 		this.controls = controls;
@@ -173,8 +173,7 @@ export class View3D {
 		if (channelName == "emission")
 			this.setEmissionTexture(imageCanvas, channelName);
 		if (channelName == "ao") this.setAoTexture(imageCanvas, channelName);
-		if (channelName == "alpha")
-			this.setAlphaTexture(imageCanvas, channelName);
+		if (channelName == "alpha") this.setAlphaTexture(imageCanvas, channelName);
 	}
 
 	clearTexture(channelName: string) {
@@ -381,7 +380,7 @@ export class View3D {
 			color: 0xffffff,
 			roughness: 0.5,
 			metalness: 0.0,
-			side: THREE.DoubleSide,
+			side: THREE.DoubleSide
 		});
 
 		this.material.envMap = this.cubeMap;
@@ -401,7 +400,7 @@ export class View3D {
 			basePath + "posy" + format,
 			basePath + "negy" + format,
 			basePath + "posz" + format,
-			basePath + "negz" + format,
+			basePath + "negz" + format
 		]);
 
 		return envMap;

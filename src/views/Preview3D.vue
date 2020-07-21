@@ -35,7 +35,7 @@ export default {
 	// },
 	data() {
 		return {
-			view3d: null,
+			view3d: null
 		};
 	},
 	mounted() {
@@ -70,10 +70,7 @@ export default {
 
 			// repaint
 			if (this.view3d)
-				this.view3d.resize(
-					this.$refs.canvas.width,
-					this.$refs.canvas.height
-				);
+				this.view3d.resize(this.$refs.canvas.width, this.$refs.canvas.height);
 		},
 		setShape(evt) {
 			// todo: set 3d model
@@ -89,8 +86,8 @@ export default {
 			// clear all textures
 			// reset camera position
 			this.view3d.reset();
-		},
-	},
+		}
+	}
 };
 
 //https://stackoverflow.com/questions/10214873/make-canvas-as-wide-and-as-high-as-parent

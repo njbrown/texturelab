@@ -23,16 +23,11 @@ class PlaneGeometry extends Geometry {
 			width: width,
 			height: height,
 			widthSegments: widthSegments,
-			heightSegments: heightSegments,
+			heightSegments: heightSegments
 		};
 
 		this.fromBufferGeometry(
-			new PlaneBufferGeometry(
-				width,
-				height,
-				widthSegments,
-				heightSegments
-			)
+			new PlaneBufferGeometry(width, height, widthSegments, heightSegments)
 		);
 		this.mergeVertices();
 	}
@@ -52,7 +47,7 @@ class PlaneBufferGeometry extends BufferGeometry {
 			width: width,
 			height: height,
 			widthSegments: widthSegments,
-			heightSegments: heightSegments,
+			heightSegments: heightSegments
 		};
 
 		width = width || 1;

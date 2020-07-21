@@ -33,7 +33,7 @@ class SphereGeometry extends Geometry {
 			phiStart: phiStart,
 			phiLength: phiLength,
 			thetaStart: thetaStart,
-			thetaLength: thetaLength,
+			thetaLength: thetaLength
 		};
 
 		this.fromBufferGeometry(
@@ -75,7 +75,7 @@ class SphereBufferGeometry extends BufferGeometry {
 			phiStart: phiStart,
 			phiLength: phiLength,
 			thetaStart: thetaStart,
-			thetaLength: thetaLength,
+			thetaLength: thetaLength
 		};
 
 		radius = radius || 1;

@@ -2,14 +2,14 @@ import { DesignerNode } from "../../designer/designernode";
 
 // http://www.smart-page.net/smartnormal/js/SmartNormalMapFilter.js
 export class NormalMapNode extends DesignerNode {
-  public init() {
-    this.title = "Normal Map";
-    //this.exportName = "result";
-    this.addInput("height");
+	public init() {
+		this.title = "Normal Map";
+		//this.exportName = "result";
+		this.addInput("height");
 
-    this.addFloatProperty("strength", "Strength", 0.02, -0.02, 0.02, 0.00001);
+		this.addFloatProperty("strength", "Strength", 0.02, -0.02, 0.02, 0.00001);
 
-    var source = `
+		var source = `
         vec4 process(vec2 uv)
         {
             //vec2 size = textureSize(height);
@@ -47,21 +47,21 @@ export class NormalMapNode extends DesignerNode {
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }
 
 export class BetterWarpNode extends DesignerNode {
-  public init() {
-    this.title = "Better Warp Node";
-    //this.exportName = "result";
-    this.addInput("image");
-    this.addInput("height");
+	public init() {
+		this.title = "Better Warp Node";
+		//this.exportName = "result";
+		this.addInput("image");
+		this.addInput("height");
 
-    this.addFloatProperty("strength", "Strength", 0.001, -0.02, 0.02, 0.00001);
-    this.addFloatProperty("spread", "Spread", 0.1, 0, 1, 0.01);
+		this.addFloatProperty("strength", "Strength", 0.001, -0.02, 0.02, 0.00001);
+		this.addFloatProperty("spread", "Spread", 0.1, 0, 1, 0.01);
 
-    var source = `
+		var source = `
         vec4 process(vec2 uv)
         {
             //vec2 size = textureSize(height);
@@ -104,6 +104,6 @@ export class BetterWarpNode extends DesignerNode {
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }

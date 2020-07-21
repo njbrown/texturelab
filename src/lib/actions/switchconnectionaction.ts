@@ -6,7 +6,7 @@ import { NodeScene } from "../scene";
 
 export enum ConnectionSwitchAction {
 	Add = "add",
-	Remove = "delete",
+	Remove = "delete"
 }
 
 export class SwitchConnectionAction extends Action {

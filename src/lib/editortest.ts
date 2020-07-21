@@ -25,9 +25,9 @@ function hexToRgb(hex) {
 	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
 	return result
 		? {
-				r: parseInt(result[1], 16),
-				g: parseInt(result[2], 16),
-				b: parseInt(result[3], 16),
+			r: parseInt(result[1], 16),
+			g: parseInt(result[2], 16),
+			b: parseInt(result[3], 16)
 		  }
 		: null;
 }
@@ -66,7 +66,7 @@ export enum DisplayChannel {
 	Metallic,
 	Roughness,
 	Normal,
-	Height,
+	Height
 }
 
 export class Editor {
@@ -336,10 +336,7 @@ export class Editor {
 			var graphNode = self.graph.getNodeById(dnode.id);
 			if (!graphNode) return; // node could have been deleted
 
-			self.designer.copyNodeTextureToImageCanvas(
-				dnode,
-				graphNode.imageCanvas
-			);
+			self.designer.copyNodeTextureToImageCanvas(dnode, graphNode.imageCanvas);
 
 			if (self.onpreviewnode) {
 				if (dnode == self.selectedDesignerNode)
@@ -411,20 +408,14 @@ export class Editor {
 
 			// make connection
 			// switch from `title` to `name`
-			self.designer.addConnection(
-				leftDNode,
-				rightDNode,
-				con.socketB.title
-			);
+			self.designer.addConnection(leftDNode, rightDNode, con.socketB.title);
 
 			// refresh right node image
 			//var thumb = self.designer.generateImageFromNode(rightDNode);
 			//rightNode.setThumbnail(thumb);
 		};
 
-		this.graph.onconnectiondestroyed = function(
-			con: ConnectionGraphicsItem
-		) {
+		this.graph.onconnectiondestroyed = function(con: ConnectionGraphicsItem) {
 			// get node from graph
 			var leftNode = con.socketA.node;
 			var rightNode = con.socketB.node;
@@ -435,11 +426,7 @@ export class Editor {
 
 			// remove connection
 			// switch from `title` to `name`
-			self.designer.removeConnection(
-				leftDNode,
-				rightDNode,
-				con.socketB.title
-			);
+			self.designer.removeConnection(leftDNode, rightDNode, con.socketB.title);
 
 			// clear right node image
 			rightNode.setThumbnail(null);
@@ -487,9 +474,7 @@ export class Editor {
 			if (self.onframeselected) self.onframeselected(item);
 		};
 
-		this.graph.onnavigationselected = function(
-			item: NavigationGraphicsItem
-		) {
+		this.graph.onnavigationselected = function(item: NavigationGraphicsItem) {
 			if (self.onnavigationselected) self.onnavigationselected(item);
 		};
 
@@ -517,8 +502,7 @@ export class Editor {
 				let dnode = self.designer.getNodeById(node.id);
 
 				// should never happen!
-				if (dnode == null)
-					throw "Node with id " + dnode.id + " doesnt exist!!";
+				if (dnode == null) throw "Node with id " + dnode.id + " doesnt exist!!";
 
 				dnodes.push(dnode);
 			}
@@ -834,9 +818,7 @@ export class Editor {
 			for (let channelName in e.textureChannels) {
 				if (!e.textureChannels.hasOwnProperty(channelName)) continue;
 				console.log(e);
-				let node = this.graph.getNodeById(
-					e.textureChannels[channelName]
-				);
+				let node = this.graph.getNodeById(e.textureChannels[channelName]);
 				if (node) this.assignNodeToTextureChannel(node.id, channelName);
 			}
 
@@ -856,7 +838,7 @@ export class Editor {
 
 		data["editor"] = {
 			//displayNodes: this.displayNodes,
-			textureChannels: textureChannels,
+			textureChannels: textureChannels
 		};
 
 		//data["libraryVersion"] = this.library.getVersionName();

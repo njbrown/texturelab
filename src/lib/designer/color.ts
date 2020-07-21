@@ -52,8 +52,6 @@ export class Color {
 		var r = ~~(this.r * 255);
 		var g = ~~(this.g * 255);
 		var b = ~~(this.b * 255);
-		return (
-			"#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)
-		);
+		return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 	}
 }

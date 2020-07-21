@@ -31,8 +31,8 @@ import { UndoStack } from "@/lib/undostack";
 
 @Component({
 	components: {
-		ColorPicker,
-	},
+		ColorPicker
+	}
 })
 export default class ColorPropertyView extends Vue {
 	@Prop()

@@ -29,7 +29,7 @@ export enum MenuCommands {
 
 	HelpTutorials = "help_tutorials",
 	HelpAbout = "help_about",
-	HelpSubmitBug = "help_submitbug",
+	HelpSubmitBug = "help_submitbug"
 }
 
 export function setupMenu() {
@@ -42,36 +42,36 @@ export function setupMenu() {
 					accelerator: "CmdOrCtrl+N",
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.FileNew);
-					},
+					}
 				},
 				{
 					label: "Open",
 					accelerator: "CmdOrCtrl+O",
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.FileOpen);
-					},
+					}
 				},
 				{
 					label: "Save",
 					accelerator: "CmdOrCtrl+S",
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.FileSave);
-					},
+					}
 				},
 				{
 					label: "Save As..",
 					accelerator: "CmdOrCtrl+Shift+S",
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.FileSaveAs);
-					},
+					}
 				},
 				{
 					label: "Exit",
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.FileExit);
-					},
-				},
-			],
+					}
+				}
+			]
 		},
 		{
 			label: "Edit",
@@ -81,37 +81,37 @@ export function setupMenu() {
 					accelerator: "CmdOrCtrl+Z",
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.EditUndo);
-					},
+					}
 				},
 				{
 					label: "Redo",
 					accelerator: "CmdOrCtrl+Shift+Z",
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.EditRedo);
-					},
+					}
 				},
 				{
 					label: "Cut",
 					accelerator: "CmdOrCtrl+X",
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.EditCut);
-					},
+					}
 				},
 				{
 					label: "Copy",
 					accelerator: "CmdOrCtrl+C",
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.EditCopy);
-					},
+					}
 				},
 				{
 					label: "Paste",
 					accelerator: "CmdOrCtrl+V",
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.EditPaste);
-					},
-				},
-			],
+					}
+				}
+			]
 		},
 		{
 			label: "Export",
@@ -120,25 +120,21 @@ export function setupMenu() {
 					label: "Zip",
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.ExportZip);
-					},
+					}
 				},
 				{
 					label: "Unity Material",
 					click: (item, focusedWindow) => {
-						focusedWindow.webContents.send(
-							MenuCommands.ExportUnity
-						);
-					},
+						focusedWindow.webContents.send(MenuCommands.ExportUnity);
+					}
 				},
 				{
 					label: "Unity (Zip)",
 					click: (item, focusedWindow) => {
-						focusedWindow.webContents.send(
-							MenuCommands.ExportUnityZip
-						);
-					},
-				},
-			],
+						focusedWindow.webContents.send(MenuCommands.ExportUnityZip);
+					}
+				}
+			]
 		},
 		{
 			label: "Examples",
@@ -149,33 +145,27 @@ export function setupMenu() {
 						focusedWindow.webContents.send(
 							MenuCommands.ExamplesGoldLinesMarbleTiles
 						);
-					},
+					}
 				},
 				{
 					label: "Grenade",
 					click: (item, focusedWindow) => {
-						focusedWindow.webContents.send(
-							MenuCommands.ExamplesGrenade
-						);
-					},
+						focusedWindow.webContents.send(MenuCommands.ExamplesGrenade);
+					}
 				},
 				{
 					label: "Screws",
 					click: (item, focusedWindow) => {
-						focusedWindow.webContents.send(
-							MenuCommands.ExamplesScrews
-						);
-					},
+						focusedWindow.webContents.send(MenuCommands.ExamplesScrews);
+					}
 				},
 				{
 					label: "WoodenPlanks",
 					click: (item, focusedWindow) => {
-						focusedWindow.webContents.send(
-							MenuCommands.ExamplesWoodenPlanks
-						);
-					},
-				},
-			],
+						focusedWindow.webContents.send(MenuCommands.ExamplesWoodenPlanks);
+					}
+				}
+			]
 		},
 		// {
 		//   label: "Help",
@@ -203,17 +193,15 @@ export function setupMenu() {
 									if (focusedWindow) {
 										// After overloading, refresh and close all secondary forms
 										if (focusedWindow.id === 1) {
-											BrowserWindow.getAllWindows().forEach(
-												function(win) {
-													if (win.id > 1) {
-														win.close();
-													}
+											BrowserWindow.getAllWindows().forEach(function(win) {
+												if (win.id > 1) {
+													win.close();
 												}
-											);
+											});
 										}
 										focusedWindow.reload();
 									}
-								},
+								}
 							},
 							{ role: "toggledevtools" },
 							{ type: "separator" },
@@ -221,11 +209,11 @@ export function setupMenu() {
 							{ role: "zoomin" },
 							{ role: "zoomout" },
 							{ type: "separator" },
-							{ role: "togglefullscreen" },
-						],
-					},
+							{ role: "togglefullscreen" }
+						]
+					}
 			  ]
-			: []),
+			: [])
 	];
 
 	//console.log(template);

@@ -4,7 +4,7 @@ import {
 	GraphicsItem,
 	MouseDownEvent,
 	MouseMoveEvent,
-	MouseUpEvent,
+	MouseUpEvent
 } from "./graphicsitem";
 import { NodeScene } from "../scene";
 import { Vector2 } from "./view";
@@ -262,10 +262,7 @@ export class NodeGraphicsItem extends GraphicsItem {
 		// add undo/redo
 		let newPos = new Vector2(this.x, this.y);
 
-		if (
-			newPos.x != this.dragStartPos.x ||
-			newPos.y != this.dragStartPos.y
-		) {
+		if (newPos.x != this.dragStartPos.x || newPos.y != this.dragStartPos.y) {
 			let action = new MoveItemsAction(
 				[this],
 				[this.dragStartPos.clone()],

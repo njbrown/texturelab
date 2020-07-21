@@ -41,7 +41,7 @@ export default {
 			// HtmlCanvasElement...it will auto update when the node's image changes
 			image: null,
 			canvas: null,
-			dragZoom: null,
+			dragZoom: null
 		};
 	},
 	mounted() {
@@ -95,12 +95,12 @@ export default {
 					filters: [
 						{
 							name: "PNG",
-							extensions: ["png"],
-						},
+							extensions: ["png"]
+						}
 					],
-					defaultPath: "image",
+					defaultPath: "image"
 				},
-				(path) => {
+				path => {
 					if (!path) return;
 
 					let img = this.dragZoom.image;
@@ -113,9 +113,7 @@ export default {
 					// Get the DataUrl from the Canvas
 					// https://github.com/mattdesl/electron-canvas-to-buffer/blob/master/index.js
 					const url = canvas.toDataURL("image/png", 1);
-					const nativeImage = electron.nativeImage.createFromDataURL(
-						url
-					);
+					const nativeImage = electron.nativeImage.createFromDataURL(url);
 					const buffer = nativeImage.toPNG();
 
 					fs.writeFile(path, buffer, function(err) {
@@ -138,7 +136,7 @@ export default {
 		reset() {
 			this.dragZoom.centerImage();
 			this.dragZoom.setImage(null);
-		},
+		}
 	},
 
 	computed: {
@@ -147,8 +145,8 @@ export default {
 		},
 		hasImage() {
 			return this.dragZoom && this.dragZoom.image != null;
-		},
-	},
+		}
+	}
 };
 
 //https://stackoverflow.com/questions/10214873/make-canvas-as-wide-and-as-high-as-parent

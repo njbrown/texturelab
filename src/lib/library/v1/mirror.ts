@@ -1,21 +1,21 @@
 import { DesignerNode } from "../../designer/designernode";
 
 export class MirrorNode extends DesignerNode {
-  public init() {
-    this.title = "Mirror";
+	public init() {
+		this.title = "Mirror";
 
-    this.addInput("image");
+		this.addInput("image");
 
-    this.addEnumProperty("mode", "Mirror Mode", [
-      "Left To Right",
-      "Right To Left",
-      "Top To Bottom",
-      "Bottom To Top"
-    ]);
-    this.addFloatProperty("offset", "Offset", 0.5, 0, 1, 0.01);
-    this.addBoolProperty("clamp", "Clamp", true);
+		this.addEnumProperty("mode", "Mirror Mode", [
+			"Left To Right",
+			"Right To Left",
+			"Top To Bottom",
+			"Bottom To Top"
+		]);
+		this.addFloatProperty("offset", "Offset", 0.5, 0, 1, 0.01);
+		this.addBoolProperty("clamp", "Clamp", true);
 
-    var source = `
+		var source = `
         vec4 process(vec2 uv)
         {
             // left to right
@@ -46,6 +46,6 @@ export class MirrorNode extends DesignerNode {
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }

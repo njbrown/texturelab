@@ -3,14 +3,14 @@ import {
 	GraphicsItem,
 	MouseDownEvent,
 	MouseMoveEvent,
-	MouseUpEvent,
+	MouseUpEvent
 } from "./graphicsitem";
 import { SceneView, Vector2, Rect } from "./view";
 import { Color } from "../designer/color";
 import {
 	IPropertyHolder,
 	Property,
-	StringProperty,
+	StringProperty
 } from "../designer/properties";
 import { NodeScene } from "../scene";
 import { MoveItemsAction } from "../actions/moveItemsaction";
@@ -187,7 +187,7 @@ export class SelectionGraphicsItem extends GraphicsItem {
 
 			if (i instanceof FrameGraphicsItem) {
 				let captured = (<FrameGraphicsItem>i).getHoveredNodes();
-				captured.forEach((c) => items.add(c));
+				captured.forEach(c => items.add(c));
 			}
 		});
 

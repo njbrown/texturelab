@@ -1,44 +1,44 @@
 import { DesignerNode } from "./designernode";
 
 export class DesignerNodeFactory {
-  public name: string;
-  public displayName: string;
-  public create: () => DesignerNode;
+	public name: string;
+	public displayName: string;
+	public create: () => DesignerNode;
 }
 
 // holds list of node factories
 export class DesignerLibrary {
-  versionName: string;
-  nodes = new Array();
+	versionName: string;
+	nodes = new Array();
 
-  // https://www.snip2code.com/Snippet/685188/Create-instance-of-generic-type-on-TypeS
-  public addNode<T extends DesignerNode>(
-    name: string,
-    displayName: string,
-    type: { new (): T }
-  ) {
-    var factory = new DesignerNodeFactory();
-    factory.name = name;
-    factory.displayName = displayName;
-    factory.create = (): DesignerNode => {
-      return new type();
-    };
+	// https://www.snip2code.com/Snippet/685188/Create-instance-of-generic-type-on-TypeS
+	public addNode<T extends DesignerNode>(
+		name: string,
+		displayName: string,
+		type: { new (): T }
+	) {
+		var factory = new DesignerNodeFactory();
+		factory.name = name;
+		factory.displayName = displayName;
+		factory.create = (): DesignerNode => {
+			return new type();
+		};
 
-    //this.nodes.push(factory);
-    this.nodes[name] = factory;
-  }
+		//this.nodes.push(factory);
+		this.nodes[name] = factory;
+	}
 
-  getVersionName() {
-    return this.versionName;
-  }
+	getVersionName() {
+		return this.versionName;
+	}
 
-  public create(name: string): DesignerNode {
-    //if (this.nodes.indexOf(name) == -1)
-    //    return null;
+	public create(name: string): DesignerNode {
+		//if (this.nodes.indexOf(name) == -1)
+		//    return null;
 
-    var node = this.nodes[name].create();
-    node.typeName = name;
+		var node = this.nodes[name].create();
+		node.typeName = name;
 
-    return node;
-  }
+		return node;
+	}
 }

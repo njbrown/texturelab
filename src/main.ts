@@ -23,11 +23,11 @@ import { Titlebar, Color } from "custom-electron-titlebar";
 let titleBar = new Titlebar({
 	backgroundColor: Color.fromHex("#333333"),
 	icon: "./favicon.svg",
-	shadow: true,
+	shadow: true
 });
 
 new Vue({
 	router,
 	store,
-	render: (h) => h(App),
+	render: h => h(App)
 }).$mount("#app");

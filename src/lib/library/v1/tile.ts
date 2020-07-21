@@ -1,21 +1,21 @@
 import { DesignerNode } from "../../designer/designernode";
 
 export class TileNode extends DesignerNode {
-  public init() {
-    this.title = "Tile";
+	public init() {
+		this.title = "Tile";
 
-    this.addInput("image");
+		this.addInput("image");
 
-    this.addFloatProperty("offset", "Offset", 0.5, 0, 1, 0.1);
+		this.addFloatProperty("offset", "Offset", 0.5, 0, 1, 0.1);
 
-    // brick size
-    this.addFloatProperty("brickWidth", "Tile Width", 1.0, 0, 1, 0.01);
-    this.addFloatProperty("brickHeight", "Tile Height", 1.0, 0, 1, 0.01);
+		// brick size
+		this.addFloatProperty("brickWidth", "Tile Width", 1.0, 0, 1, 0.01);
+		this.addFloatProperty("brickHeight", "Tile Height", 1.0, 0, 1, 0.01);
 
-    this.addFloatProperty("rows", "Rows", 6, 1, 20, 1);
-    this.addFloatProperty("columns", "Columns", 6, 1, 20, 1);
+		this.addFloatProperty("rows", "Rows", 6, 1, 20, 1);
+		this.addFloatProperty("columns", "Columns", 6, 1, 20, 1);
 
-    var source = `
+		var source = `
         // offset for alternating rows
             
         vec2 is_brick(vec2 pos)
@@ -66,6 +66,6 @@ export class TileNode extends DesignerNode {
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }

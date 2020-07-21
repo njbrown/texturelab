@@ -2,11 +2,11 @@ import {
 	GraphicsItem,
 	MouseDownEvent,
 	MouseMoveEvent,
-	MouseUpEvent,
+	MouseUpEvent
 } from "./graphicsitem";
 import {
 	NodeGraphicsItem,
-	NodeGraphicsItemRenderState,
+	NodeGraphicsItemRenderState
 } from "./nodegraphicsitem";
 import { ConnectionGraphicsItem } from "./connectiongraphicsitem";
 import { AddConnectionAction } from "../actions/addconnectionaction";
@@ -14,12 +14,12 @@ import { UndoStack } from "../undostack";
 import { RemoveConnectionAction } from "../actions/removeconnectionaction";
 import {
 	ConnectionSwitchAction,
-	SwitchConnectionAction,
+	SwitchConnectionAction
 } from "../actions/switchconnectionaction";
 
 export enum SocketType {
 	In,
-	Out,
+	Out
 }
 
 export class SocketGraphicsItem extends GraphicsItem {
@@ -105,13 +105,7 @@ export class SocketGraphicsItem extends GraphicsItem {
 			//console.log("con");
 			ctx.beginPath();
 			ctx.fillStyle = "rgb(100,100,100)";
-			ctx.arc(
-				this.centerX(),
-				this.centerY(),
-				this.radius / 3,
-				0,
-				2 * Math.PI
-			);
+			ctx.arc(this.centerX(), this.centerY(), this.radius / 3, 0, 2 * Math.PI);
 			ctx.fill();
 		}
 

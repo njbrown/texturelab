@@ -21,12 +21,12 @@ import { Vue, Prop, Component, Emit, Model } from "vue-property-decorator";
 @Component
 export default class Accordion extends Vue {
 	@Prop({
-		default: "Header",
+		default: "Header"
 	})
 	header: string;
 
 	@Prop({
-		default: false,
+		default: false
 	})
 	collapsed: boolean;
 

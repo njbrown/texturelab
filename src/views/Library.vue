@@ -56,7 +56,7 @@ export enum LibraryItemType {
 	Node = "node",
 	Comment = "comment",
 	Frame = "frame",
-	Navigation = "navigation",
+	Navigation = "navigation"
 }
 
 export class LibraryItem {
@@ -88,7 +88,7 @@ export default class LibraryView extends Vue {
 	created() {}
 
 	get items() {
-		let items = Object.values(this.library.nodes).map((n) => {
+		let items = Object.values(this.library.nodes).map(n => {
 			let item = new LibraryItem(LibraryItemType.Node);
 			item.name = n.name;
 			item.displayName = n.displayName;
@@ -96,9 +96,7 @@ export default class LibraryView extends Vue {
 			return item;
 		});
 
-		items.push(
-			new LibraryItem(LibraryItemType.Comment, "comment", "Comment")
-		);
+		items.push(new LibraryItem(LibraryItemType.Comment, "comment", "Comment"));
 		items.push(new LibraryItem(LibraryItemType.Frame, "frame", "Frame"));
 		// items.push(
 		// 	new LibraryItem(
@@ -125,11 +123,7 @@ export default class LibraryView extends Vue {
 		if (type == LibraryItemType.Node) {
 			var dnode = this.library.create(nodeName);
 			var canvas = this.editor.canvas;
-			var n = this.editor.addNode(
-				dnode,
-				canvas.width / 2,
-				canvas.height / 2
-			);
+			var n = this.editor.addNode(dnode, canvas.width / 2, canvas.height / 2);
 			n.setCenter(200, 200);
 
 			action = new AddItemsAction(
@@ -206,8 +200,7 @@ export default class LibraryView extends Vue {
 		//return `./assets/nodes/${node}.png`;
 		if (process.env.NODE_ENV == "production")
 			return (
-				"file://" +
-				path.join(process.env.BASE_URL, `assets/nodes/${node}.png`)
+				"file://" + path.join(process.env.BASE_URL, `assets/nodes/${node}.png`)
 			);
 		return path.join(process.env.BASE_URL, `assets/nodes/${node}.png`);
 	}

@@ -3,7 +3,7 @@ import {
 	GraphicsItem,
 	MouseDownEvent,
 	MouseMoveEvent,
-	MouseUpEvent,
+	MouseUpEvent
 } from "./graphicsitem";
 import { Vector2 } from "./view";
 import { MoveItemsAction } from "../actions/moveItemsaction";

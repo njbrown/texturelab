@@ -84,10 +84,7 @@ export class DesignerNode implements IPropertyHolder {
 				texIndex
 			);
 			gl.uniform1i(
-				gl.getUniformLocation(
-					this.shaderProgram,
-					input.name + "_connected"
-				),
+				gl.getUniformLocation(this.shaderProgram, input.name + "_connected"),
 				1
 			);
 			//console.log("bound texture " + texIndex);
@@ -111,37 +108,25 @@ export class DesignerNode implements IPropertyHolder {
 		for (let prop of this.properties) {
 			if (prop instanceof FloatProperty) {
 				gl.uniform1f(
-					gl.getUniformLocation(
-						this.shaderProgram,
-						"prop_" + prop.name
-					),
+					gl.getUniformLocation(this.shaderProgram, "prop_" + prop.name),
 					(prop as FloatProperty).value
 				);
 			}
 			if (prop instanceof IntProperty) {
 				gl.uniform1i(
-					gl.getUniformLocation(
-						this.shaderProgram,
-						"prop_" + prop.name
-					),
+					gl.getUniformLocation(this.shaderProgram, "prop_" + prop.name),
 					(prop as IntProperty).value
 				);
 			}
 			if (prop instanceof BoolProperty) {
 				gl.uniform1i(
-					gl.getUniformLocation(
-						this.shaderProgram,
-						"prop_" + prop.name
-					),
+					gl.getUniformLocation(this.shaderProgram, "prop_" + prop.name),
 					(prop as BoolProperty).value == false ? 0 : 1
 				);
 			}
 			if (prop instanceof EnumProperty) {
 				gl.uniform1i(
-					gl.getUniformLocation(
-						this.shaderProgram,
-						"prop_" + prop.name
-					),
+					gl.getUniformLocation(this.shaderProgram, "prop_" + prop.name),
 					(prop as EnumProperty).index
 				);
 			}
@@ -149,10 +134,7 @@ export class DesignerNode implements IPropertyHolder {
 				var col = (prop as ColorProperty).value;
 				//console.log("color: ", col);
 				gl.uniform4f(
-					gl.getUniformLocation(
-						this.shaderProgram,
-						"prop_" + prop.name
-					),
+					gl.getUniformLocation(this.shaderProgram, "prop_" + prop.name),
 					col.r,
 					col.g,
 					col.b,
@@ -197,10 +179,7 @@ export class DesignerNode implements IPropertyHolder {
 
 		// bind mesh
 		var posLoc = gl.getAttribLocation(this.shaderProgram, "a_pos");
-		var texCoordLoc = gl.getAttribLocation(
-			this.shaderProgram,
-			"a_texCoord"
-		);
+		var texCoordLoc = gl.getAttribLocation(this.shaderProgram, "a_texCoord");
 
 		// provide texture coordinates for the rectangle.
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.designer.posBuffer);
@@ -314,11 +293,7 @@ export class DesignerNode implements IPropertyHolder {
 			"#line 0\n" +
 			source;
 
-		this.shaderProgram = buildShaderProgram(
-			this.gl,
-			vertSource,
-			fragSource
-		);
+		this.shaderProgram = buildShaderProgram(this.gl, vertSource, fragSource);
 	}
 
 	// creates opengl texture for this node

@@ -2,27 +2,27 @@ import { DesignerNode } from "../../designer/designernode";
 import { Color } from "@/lib/designer/color";
 
 export class GradientNode extends DesignerNode {
-  public init() {
-    this.title = "Gradient";
+	public init() {
+		this.title = "Gradient";
 
-    let white = new Color();
-    white.r = 1;
-    white.g = 1;
-    white.b = 1;
+		let white = new Color();
+		white.r = 1;
+		white.g = 1;
+		white.b = 1;
 
-    this.addColorProperty("colorA", "Color A", Color.parse("#000000"));
-    this.addFloatProperty("posA", "Position A", 0, 0, 1, 0.01);
-    this.addColorProperty("colorB", "Color B", white);
-    this.addFloatProperty("posB", "Position B", 1, 0, 1, 0.01);
+		this.addColorProperty("colorA", "Color A", Color.parse("#000000"));
+		this.addFloatProperty("posA", "Position A", 0, 0, 1, 0.01);
+		this.addColorProperty("colorB", "Color B", white);
+		this.addFloatProperty("posB", "Position B", 1, 0, 1, 0.01);
 
-    this.addEnumProperty("mode", "Gradient Direction", [
-      "Left To Right",
-      "Right To Left",
-      "Top To Bottom",
-      "Bottom To Top"
-    ]);
+		this.addEnumProperty("mode", "Gradient Direction", [
+			"Left To Right",
+			"Right To Left",
+			"Top To Bottom",
+			"Bottom To Top"
+		]);
 
-    var source = `
+		var source = `
         #define POINTS_MAX 32
 
         // assumes points are sorted
@@ -95,36 +95,36 @@ export class GradientNode extends DesignerNode {
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }
 
 export class TriGradientNode extends DesignerNode {
-  public init() {
-    this.title = "TriGradient";
+	public init() {
+		this.title = "TriGradient";
 
-    let white = new Color();
-    white.r = 1;
-    white.g = 1;
-    white.b = 1;
+		let white = new Color();
+		white.r = 1;
+		white.g = 1;
+		white.b = 1;
 
-    this.addColorProperty("colorA", "Color A", Color.parse("#000000"));
-    this.addFloatProperty("posA", "Position A", 0, 0, 1, 0.01);
+		this.addColorProperty("colorA", "Color A", Color.parse("#000000"));
+		this.addFloatProperty("posA", "Position A", 0, 0, 1, 0.01);
 
-    this.addColorProperty("colorB", "Color B", white);
-    this.addFloatProperty("posB", "Position B", 0.5, 0, 1, 0.01);
+		this.addColorProperty("colorB", "Color B", white);
+		this.addFloatProperty("posB", "Position B", 0.5, 0, 1, 0.01);
 
-    this.addColorProperty("colorC", "Color C", Color.parse("#000000"));
-    this.addFloatProperty("posC", "Position C", 1, 0, 1, 0.01);
+		this.addColorProperty("colorC", "Color C", Color.parse("#000000"));
+		this.addFloatProperty("posC", "Position C", 1, 0, 1, 0.01);
 
-    this.addEnumProperty("mode", "Gradient Direction", [
-      "Left To Right",
-      "Right To Left",
-      "Top To Bottom",
-      "Bottom To Top"
-    ]);
+		this.addEnumProperty("mode", "Gradient Direction", [
+			"Left To Right",
+			"Right To Left",
+			"Top To Bottom",
+			"Bottom To Top"
+		]);
 
-    var source = `
+		var source = `
           #define POINTS_MAX 32
   
           // assumes points are sorted
@@ -199,6 +199,6 @@ export class TriGradientNode extends DesignerNode {
           }
           `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }

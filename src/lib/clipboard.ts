@@ -36,15 +36,14 @@ export class ItemClipboard {
 			comments: [],
 			frames: [],
 			navigations: [],
-			libraryVersion: "",
+			libraryVersion: ""
 		};
 
 		// NODES AND CONNECTIONS
 		let nodeList: NodeGraphicsItem[] = [];
-		items.forEach((i) => {
+		items.forEach(i => {
 			// check if this works with obfuscated code
-			if (i instanceof NodeGraphicsItem)
-				nodeList.push(<NodeGraphicsItem>i);
+			if (i instanceof NodeGraphicsItem) nodeList.push(<NodeGraphicsItem>i);
 		});
 
 		data.nodes = this.getNodes(designer, nodeList);
@@ -259,10 +258,7 @@ export class ItemClipboard {
 				// find diff, then offset each object by that diff
 				//let diff = Vector2.subtract(center, rect.center);
 				for (let item of focusItems) {
-					let offsetFromRect = Vector2.subtract(
-						item.getPos(),
-						rect.center
-					);
+					let offsetFromRect = Vector2.subtract(item.getPos(), rect.center);
 					let newPos = Vector2.add(center, offsetFromRect);
 					item.setPos(newPos.x, newPos.y);
 					//item.move(diff.x, diff.y);
@@ -294,7 +290,7 @@ export class ItemClipboard {
 		items: NodeGraphicsItem[]
 	): Array<object> {
 		let dnodes = [];
-		items.forEach((i) => {
+		items.forEach(i => {
 			let node = designer.getNodeById(i.id);
 
 			var n = {};
@@ -327,7 +323,7 @@ export class ItemClipboard {
 
 		// we're searching for connections with both left and right socket
 		// in our selection pool
-		designer.conns.forEach((con) => {
+		designer.conns.forEach(con => {
 			if (
 				ItemClipboard.getNodeById(con.leftNode.id, nodeList) &&
 				ItemClipboard.getNodeById(con.rightNode.id, nodeList)

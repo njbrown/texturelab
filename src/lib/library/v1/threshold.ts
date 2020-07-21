@@ -1,15 +1,15 @@
 import { DesignerNode } from "../../designer/designernode";
 
 export class ThresholdNode extends DesignerNode {
-  public init() {
-    this.title = "Threshold";
+	public init() {
+		this.title = "Threshold";
 
-    this.addInput("image");
+		this.addInput("image");
 
-    this.addFloatProperty("threshold", "Threshold", 0.0, 0.0, 1.0, 0.01);
-    this.addBoolProperty("invert", "Invert", true);
+		this.addFloatProperty("threshold", "Threshold", 0.0, 0.0, 1.0, 0.01);
+		this.addBoolProperty("invert", "Invert", true);
 
-    var source = `
+		var source = `
         vec4 process(vec2 uv)
         {
             vec4 a =  texture(image, uv);
@@ -23,6 +23,6 @@ export class ThresholdNode extends DesignerNode {
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }

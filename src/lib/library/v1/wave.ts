@@ -1,16 +1,16 @@
 import { DesignerNode } from "../../designer/designernode";
 
 export class WaveNode extends DesignerNode {
-  public init() {
-    this.title = "Wave";
+	public init() {
+		this.title = "Wave";
 
-    this.addIntProperty("xfrequency", "X Frequency", 1, 0, 20, 0.01);
-    this.addIntProperty("yfrequency", "Y Frequency", 0, 0, 20, 0.01);
-    this.addFloatProperty("phase", "Phase Offset", 0.0, 0.0, 3.142, 0.01);
-    this.addFloatProperty("amp", "Amplitude", 0.5, 0.0, 1.0, 0.01);
+		this.addIntProperty("xfrequency", "X Frequency", 1, 0, 20, 0.01);
+		this.addIntProperty("yfrequency", "Y Frequency", 0, 0, 20, 0.01);
+		this.addFloatProperty("phase", "Phase Offset", 0.0, 0.0, 3.142, 0.01);
+		this.addFloatProperty("amp", "Amplitude", 0.5, 0.0, 1.0, 0.01);
 
-    // calculates normal, then warps uv by it
-    var source = `
+		// calculates normal, then warps uv by it
+		var source = `
         vec4 process(vec2 uv)
         {
             float fx = uv.x * 3.142 * 2.0 * float(prop_xfrequency);
@@ -24,6 +24,6 @@ export class WaveNode extends DesignerNode {
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }

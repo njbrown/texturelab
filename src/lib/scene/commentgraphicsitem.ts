@@ -3,14 +3,14 @@ import {
 	GraphicsItem,
 	MouseDownEvent,
 	MouseMoveEvent,
-	MouseUpEvent,
+	MouseUpEvent
 } from "./graphicsitem";
 import { SceneView, Vector2 } from "./view";
 import { Color } from "../designer/color";
 import {
 	IPropertyHolder,
 	Property,
-	StringProperty,
+	StringProperty
 } from "../designer/properties";
 import { MoveItemsAction } from "../actions/moveItemsaction";
 import { UndoStack } from "../undostack";
@@ -42,12 +42,7 @@ export class CommentGraphicsItem extends GraphicsItem
 		this.padding = 5;
 		this.fontHeight = 20;
 
-		this.textProp = new StringProperty(
-			"comment",
-			"Comment",
-			"Comment.",
-			true
-		);
+		this.textProp = new StringProperty("comment", "Comment", "Comment.", true);
 		this.properties.push(this.textProp);
 
 		this.setText("comment");
@@ -55,7 +50,7 @@ export class CommentGraphicsItem extends GraphicsItem
 
 	properties: Property[] = new Array();
 	setProperty(name: string, value: any) {
-		let prop = this.properties.find((x) => {
+		let prop = this.properties.find(x => {
 			return x.name == name;
 		});
 

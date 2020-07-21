@@ -559,15 +559,9 @@ function renderToImage(exporter, program, inputs) {
 			gl.activeTexture(gl.TEXTURE0 + texIndex);
 			gl.bindTexture(gl.TEXTURE_2D, input.tex);
 			gl.uniform1i(gl.getUniformLocation(program, input.name), texIndex);
-			gl.uniform1i(
-				gl.getUniformLocation(program, input.name + "Enabled"),
-				1
-			);
+			gl.uniform1i(gl.getUniformLocation(program, input.name + "Enabled"), 1);
 		} else {
-			gl.uniform1i(
-				gl.getUniformLocation(program, input.name + "Enabled"),
-				0
-			);
+			gl.uniform1i(gl.getUniformLocation(program, input.name + "Enabled"), 0);
 		}
 		texIndex++;
 	}

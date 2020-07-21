@@ -2,7 +2,7 @@ import { ImageCanvas } from "./designer/imagecanvas";
 import { Designer } from "./designer";
 import {
 	NodeGraphicsItem,
-	NodeGraphicsItemRenderState,
+	NodeGraphicsItemRenderState
 } from "./scene/nodegraphicsitem";
 import { ConnectionGraphicsItem } from "./scene/connectiongraphicsitem";
 import { SocketGraphicsItem, SocketType } from "./scene/socketgraphicsitem";
@@ -11,7 +11,7 @@ import {
 	MouseMoveEvent,
 	MouseDownEvent,
 	MouseUpEvent,
-	MouseOverEvent,
+	MouseOverEvent
 } from "./scene/graphicsitem";
 import { SceneView } from "./scene/view";
 import { FrameGraphicsItem } from "./scene/framegraphicsitem";
@@ -28,7 +28,7 @@ enum DragMode {
 	Socket,
 	Frame,
 	Pin,
-	Comment,
+	Comment
 }
 
 class Selection {
@@ -228,7 +228,7 @@ export class NodeScene {
 		};
 		canvas.addEventListener("contextmenu", self._contextMenu);
 
-		this._copyEvent = (evt) => {
+		this._copyEvent = evt => {
 			if (self.hasFocus && evt.target == self.copyElement) {
 				// alert("copying selection");
 				console.log(evt.target);
@@ -239,7 +239,7 @@ export class NodeScene {
 		};
 		document.addEventListener("copy", this._copyEvent);
 
-		this._cutEvent = (evt) => {
+		this._cutEvent = evt => {
 			if (self.hasFocus && evt.target == self.copyElement) {
 				// alert("cutting selection");
 				console.log(evt.target);
@@ -251,7 +251,7 @@ export class NodeScene {
 		};
 		document.addEventListener("cut", this._cutEvent);
 
-		this._pasteEvent = (evt) => {
+		this._pasteEvent = evt => {
 			if (self.hasFocus && evt.target == self.copyElement) {
 				// alert("pasting selection");
 				// console.log(evt.target);
@@ -460,9 +460,7 @@ export class NodeScene {
 		var rightNode = this.getNodeById(rightId);
 
 		// get sockets
-		con.socketA = leftNode.sockets.find(
-			(x) => x.socketType == SocketType.Out
-		);
+		con.socketA = leftNode.sockets.find(x => x.socketType == SocketType.Out);
 		con.socketB = rightNode.sockets[rightIndex];
 
 		this.addConnection(con);
@@ -573,7 +571,7 @@ export class NodeScene {
 		let mouseY = mouse.y;
 		let nodeState: NodeGraphicsItemRenderState = {
 			hovered: false, // mouse over
-			selected: false, // selected node
+			selected: false // selected node
 		};
 		for (let item of this.nodes) {
 			// check for selection ( only do this when not dragging anything )
@@ -756,9 +754,7 @@ export class NodeScene {
 	moveNodeToTop(node: NodeGraphicsItem) {
 		var index = this.nodes.indexOf(node);
 		if (index === -1) {
-			console.log(
-				"Attempting to push node that doesnt exist in node list"
-			);
+			console.log("Attempting to push node that doesnt exist in node list");
 		}
 		this.nodes.splice(index, 1);
 		this.nodes.push(node);
@@ -1158,6 +1154,6 @@ function _getMousePos(canvas, evt) {
 	var rect = canvas.getBoundingClientRect();
 	return {
 		x: evt.clientX - rect.left,
-		y: evt.clientY - rect.top,
+		y: evt.clientY - rect.top
 	};
 }

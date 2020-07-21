@@ -1,28 +1,28 @@
 import { DesignerNode } from "../../designer/designernode";
 
 export class TestGradientNode extends DesignerNode {
-  public init() {
-    this.title = "Gradient Node";
-    console.log("goodbye from inside gradient node");
+	public init() {
+		this.title = "Gradient Node";
+		console.log("goodbye from inside gradient node");
 
-    var source = `
+		var source = `
         vec4 process(vec2 uv)
         {
             return vec4(uv.x, 0, uv.y, 1);
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }
 
 export class TestInvertNode extends DesignerNode {
-  public init() {
-    this.title = "Invert";
+	public init() {
+		this.title = "Invert";
 
-    this.addInput("color");
+		this.addInput("color");
 
-    var source = `
+		var source = `
         vec4 process(vec2 uv)
         {
             vec4 col = vec4(1.0) - texture(color,uv);
@@ -31,18 +31,18 @@ export class TestInvertNode extends DesignerNode {
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }
 
 export class TestMultiplyNode extends DesignerNode {
-  public init() {
-    this.title = "Multiply";
+	public init() {
+		this.title = "Multiply";
 
-    this.addInput("colorA");
-    this.addInput("colorB");
+		this.addInput("colorA");
+		this.addInput("colorB");
 
-    var source = `
+		var source = `
         vec4 process(vec2 uv)
         {
             vec4 colA = texture(colorA,uv);
@@ -51,16 +51,16 @@ export class TestMultiplyNode extends DesignerNode {
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }
 
 export class TestShapeNode extends DesignerNode {
-  public init() {
-    this.title = "Shape";
-    //this.exportName = "result";
+	public init() {
+		this.title = "Shape";
+		//this.exportName = "result";
 
-    var source = `
+		var source = `
         #define PI 3.14159265359
         #define TWO_PI 6.28318530718
 
@@ -86,18 +86,18 @@ export class TestShapeNode extends DesignerNode {
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }
 
 export class TestWorleyNode extends DesignerNode {
-  public init() {
-    this.title = "Worley";
-    //this.exportName = "result";
+	public init() {
+		this.title = "Worley";
+		//this.exportName = "result";
 
-    this.addFloatProperty("scale", "Cell Scale", 5, 1, 20);
+		this.addFloatProperty("scale", "Cell Scale", 5, 1, 20);
 
-    var source = `
+		var source = `
         vec3 mod289(vec3 x) {
             return x - floor(x * (1.0 / 289.0)) * 289.0;
           }
@@ -168,20 +168,20 @@ export class TestWorleyNode extends DesignerNode {
           }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }
 
 // http://www.smart-page.net/smartnormal/js/SmartNormalMapFilter.js
 export class TestNormalNode extends DesignerNode {
-  public init() {
-    this.title = "Normal Map";
-    //this.exportName = "result";
-    this.addInput("height");
+	public init() {
+		this.title = "Normal Map";
+		//this.exportName = "result";
+		this.addInput("height");
 
-    this.addFloatProperty("strength", "Strength", 1, 0, 10, 0.01);
+		this.addFloatProperty("strength", "Strength", 1, 0, 10, 0.01);
 
-    var source = `
+		var source = `
         vec4 process(vec2 uv)
         {
             //vec2 size = textureSize(height);
@@ -215,21 +215,21 @@ export class TestNormalNode extends DesignerNode {
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }
 
 export class TestWarpNode extends DesignerNode {
-  public init() {
-    this.title = "Warp";
+	public init() {
+		this.title = "Warp";
 
-    this.addInput("inputImage");
-    this.addInput("height");
+		this.addInput("inputImage");
+		this.addInput("height");
 
-    this.addFloatProperty("strength", "Strength", 1, 0, 100, 0.01);
+		this.addFloatProperty("strength", "Strength", 1, 0, 100, 0.01);
 
-    // calculates normal, then warps uv by it
-    var source = `
+		// calculates normal, then warps uv by it
+		var source = `
         vec4 process(vec2 uv)
         {
             //vec2 size = textureSize(height);
@@ -264,18 +264,18 @@ export class TestWarpNode extends DesignerNode {
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }
 
 // https://thebookofshaders.com/11/
 export class TestSimplexNode extends DesignerNode {
-  public init() {
-    this.title = "Simplex Noise";
+	public init() {
+		this.title = "Simplex Noise";
 
-    this.addFloatProperty("scale", "Scale", 100, 1, 1000, 0.01);
+		this.addFloatProperty("scale", "Scale", 100, 1, 1000, 0.01);
 
-    var source = `
+		var source = `
         float random (in vec2 st) {
             return fract(sin(dot(st.xy,
                                  vec2(12.9898,78.233)))
@@ -334,21 +334,21 @@ export class TestSimplexNode extends DesignerNode {
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }
 
 export class TestBrickNode extends DesignerNode {
-  public init() {
-    this.title = "Brick";
+	public init() {
+		this.title = "Brick";
 
-    this.addIntProperty("widthX", "Width X", 3, 0, 10, 1);
-    this.addIntProperty("widthY", "Width Y", 6, 0, 10, 1);
+		this.addIntProperty("widthX", "Width X", 3, 0, 10, 1);
+		this.addIntProperty("widthY", "Width Y", 6, 0, 10, 1);
 
-    this.addFloatProperty("holeX", "Hole X", 2, 1, 10, 0.01);
-    this.addFloatProperty("holeY", "Hole Y", 2, 1, 10, 0.01);
+		this.addFloatProperty("holeX", "Hole X", 2, 1, 10, 0.01);
+		this.addFloatProperty("holeY", "Hole Y", 2, 1, 10, 0.01);
 
-    var source = `
+		var source = `
         vec4 process(vec2 uv)
         {
             float u = uv.x;
@@ -411,6 +411,6 @@ export class TestBrickNode extends DesignerNode {
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }

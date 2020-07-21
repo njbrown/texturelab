@@ -4,7 +4,7 @@ import {
 	MouseDownEvent,
 	MouseMoveEvent,
 	MouseUpEvent,
-	MouseOverEvent,
+	MouseOverEvent
 } from "./graphicsitem";
 import { SceneView, Vector2, Rect } from "./view";
 import { Color } from "../designer/color";
@@ -13,7 +13,7 @@ import {
 	IPropertyHolder,
 	Property,
 	StringProperty,
-	BoolProperty,
+	BoolProperty
 } from "../designer/properties";
 import { MoveItemsAction } from "../actions/moveItemsaction";
 import { UndoStack } from "../undostack";
@@ -22,19 +22,19 @@ import { ResizeFrameAction } from "../actions/resizeframeaction";
 enum XResizeDir {
 	None,
 	Left,
-	Right,
+	Right
 }
 
 enum YResizeDir {
 	None,
 	Top,
-	Bottom,
+	Bottom
 }
 
 enum DragMode {
 	None,
 	HandleTop,
-	Resize,
+	Resize
 }
 
 export class FrameRegion {
@@ -96,12 +96,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 
 		this.titleProp = new StringProperty("title", "Title", "Frame");
 		this.showTitleProp = new BoolProperty("showtitle", "Show Title", true);
-		this.descrProp = new StringProperty(
-			"description",
-			"Description",
-			"",
-			true
-		);
+		this.descrProp = new StringProperty("description", "Description", "", true);
 		this.properties.push(this.titleProp);
 		this.properties.push(this.showTitleProp);
 		this.properties.push(this.descrProp);
@@ -218,14 +213,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 
 			ctx.save();
 			//ctx.scale(1.0 / this.view.zoomFactor, 1.0 / this.view.zoomFactor);
-			ctx.setTransform(
-				1,
-				0,
-				0,
-				1,
-				this.view.offset.x,
-				this.view.offset.y
-			);
+			ctx.setTransform(1, 0, 0, 1, this.view.offset.x, this.view.offset.y);
 
 			//ctx.font = fontSize + "px 'Open Sans'";
 			ctx.font = "30px 'Open Sans'";

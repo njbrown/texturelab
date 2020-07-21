@@ -1,12 +1,12 @@
 import { DesignerNode } from "../../designer/designernode";
 
 export class InvertNode extends DesignerNode {
-  public init() {
-    this.title = "Invert";
+	public init() {
+		this.title = "Invert";
 
-    this.addInput("color");
+		this.addInput("color");
 
-    var source = `
+		var source = `
         vec4 process(vec2 uv)
         {
             vec4 col = vec4(1.0) - texture(color,uv);
@@ -15,6 +15,6 @@ export class InvertNode extends DesignerNode {
         }
         `;
 
-    this.buildShader(source);
-  }
+		this.buildShader(source);
+	}
 }
