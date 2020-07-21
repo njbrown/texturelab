@@ -10,7 +10,7 @@ export class GradientMapNode extends DesignerNode {
 
 		this.addGradientProperty("gradient", "Gradient", Gradient.default());
 
-		var source = `
+		const source = `
         float grayscale(vec3 col)
         {
             return (col.r + col.g + col.b) / 3.0;

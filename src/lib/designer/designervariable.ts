@@ -23,5 +23,5 @@ export class DesignerVariable {
 	// used to keep the value in bounds
 	property: Property;
 
-	nodes: DesignerNodePropertyMap[] = new Array();
+	nodes: DesignerNodePropertyMap[] = [];
 }

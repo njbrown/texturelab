@@ -48,9 +48,9 @@ export class CommentGraphicsItem extends GraphicsItem
 		this.setText("comment");
 	}
 
-	properties: Property[] = new Array();
+	properties: Property[] = [];
 	setProperty(name: string, value: any) {
-		let prop = this.properties.find(x => {
+		const prop = this.properties.find(x => {
 			return x.name == name;
 		});
 
@@ -66,21 +66,21 @@ export class CommentGraphicsItem extends GraphicsItem
 	setText(text: string) {
 		this.text = text;
 		this.textProp.setValue(text);
-		let fontHeight = this.fontHeight;
+		const fontHeight = this.fontHeight;
 
-		let ctx = this.view.context;
+		const ctx = this.view.context;
 
 		ctx.lineWidth = 1;
 		ctx.font = fontHeight + "px 'Open Sans'";
-		let size = ctx.measureText(this.text);
+		const size = ctx.measureText(this.text);
 
-		var maxWidth = 0;
-		var lines = this.text.split("\n");
+		let maxWidth = 0;
+		const lines = this.text.split("\n");
 		// console.log(lines);
 		// console.log(ctx);
 		// console.log(ctx.font);
-		for (var i = 0; i < lines.length; ++i) {
-			let size = ctx.measureText(lines[i]);
+		for (let i = 0; i < lines.length; ++i) {
+			const size = ctx.measureText(lines[i]);
 			//console.log("INITIAL WITH: " + size.width);
 			maxWidth = Math.max(maxWidth, size.width);
 		}
@@ -93,7 +93,7 @@ export class CommentGraphicsItem extends GraphicsItem
 	}
 
 	private buildColor(color: Color, alpha: number) {
-		var col =
+		const col =
 			"rgba(" +
 			color.r * 255 +
 			"," +
@@ -108,16 +108,16 @@ export class CommentGraphicsItem extends GraphicsItem
 	}
 
 	draw(ctx: CanvasRenderingContext2D, renderData: any = null) {
-		let fontHeight = this.fontHeight;
+		const fontHeight = this.fontHeight;
 		ctx.font = fontHeight + "px 'Open Sans'";
 		ctx.fillStyle = "rgb(240, 240, 240)";
 
 		// recalc rect
 		let maxWidth = 0;
 		//console.log(this.text);
-		let lines = this.text.split("\n");
+		const lines = this.text.split("\n");
 		for (var i = 0; i < lines.length; ++i) {
-			let size = ctx.measureText(lines[i]);
+			const size = ctx.measureText(lines[i]);
 			maxWidth = Math.max(maxWidth, size.width);
 		}
 
@@ -126,8 +126,8 @@ export class CommentGraphicsItem extends GraphicsItem
 
 		// --------------------------------------------------------
 
-		let width = this.width;
-		let height = this.height;
+		const width = this.width;
+		const height = this.height;
 
 		// stroke bounding rect
 		ctx.beginPath();
@@ -145,10 +145,10 @@ export class CommentGraphicsItem extends GraphicsItem
 
 		// multiline text
 		ctx.fillStyle = "rgb(240, 240, 240)";
-		let textX = this.x + this.padding;
+		const textX = this.x + this.padding;
 		let textY = this.y + fontHeight;
 
-		let lineHeight = fontHeight;
+		const lineHeight = fontHeight;
 		//var lines = this.text.split("\n");
 		ctx.font = fontHeight + "px 'Open Sans'";
 		ctx.textAlign = "left";
@@ -158,7 +158,7 @@ export class CommentGraphicsItem extends GraphicsItem
 		for (var i = 0; i < lines.length; ++i) {
 			ctx.fillText(lines[i], textX, textY);
 			textY += lineHeight;
-			let size = ctx.measureText(lines[i]);
+			const size = ctx.measureText(lines[i]);
 			//console.log("RENDER WITH: " + size.width);
 		}
 	}
@@ -183,10 +183,10 @@ export class CommentGraphicsItem extends GraphicsItem
 		this.hit = false;
 
 		// add undo/redo
-		let newPos = new Vector2(this.x, this.y);
+		const newPos = new Vector2(this.x, this.y);
 
 		if (this.dragged) {
-			let action = new MoveItemsAction(
+			const action = new MoveItemsAction(
 				[this],
 				[this.dragStartPos.clone()],
 				[newPos]

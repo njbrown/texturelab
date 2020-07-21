@@ -9,7 +9,7 @@ export class BrightnessContrastNode extends DesignerNode {
 
 		this.addFloatProperty("contrast", "Contrast", 0.0, -1, 1, 0.1);
 		this.addFloatProperty("brightness", "Brightness", 0.0, -1, 1, 0.1);
-		var source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             vec4 col = texture(image, uv);

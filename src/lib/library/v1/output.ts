@@ -8,7 +8,7 @@ export class OutputNode extends DesignerNode {
 		this.addInput("image");
 		this.addColorProperty("color", "Default Color", new Color());
 
-		var source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             vec4 col;

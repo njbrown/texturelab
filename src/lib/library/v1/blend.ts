@@ -22,7 +22,7 @@ export class BlendNode extends DesignerNode {
 		]);
 		this.addFloatProperty("opacity", "Opacity", 1.0, 0.0, 1.0, 0.01);
 
-		var source = `
+		const source = `
 
         float screen(float fg, float bg) {
             float res = (1.0 - fg) * (1.0 - bg);

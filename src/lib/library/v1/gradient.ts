@@ -5,7 +5,7 @@ export class GradientNode extends DesignerNode {
 	public init() {
 		this.title = "Gradient";
 
-		let white = new Color();
+		const white = new Color();
 		white.r = 1;
 		white.g = 1;
 		white.b = 1;
@@ -22,7 +22,7 @@ export class GradientNode extends DesignerNode {
 			"Bottom To Top"
 		]);
 
-		var source = `
+		const source = `
         #define POINTS_MAX 32
 
         // assumes points are sorted
@@ -103,7 +103,7 @@ export class TriGradientNode extends DesignerNode {
 	public init() {
 		this.title = "TriGradient";
 
-		let white = new Color();
+		const white = new Color();
 		white.r = 1;
 		white.g = 1;
 		white.b = 1;
@@ -124,7 +124,7 @@ export class TriGradientNode extends DesignerNode {
 			"Bottom To Top"
 		]);
 
-		var source = `
+		const source = `
           #define POINTS_MAX 32
   
           // assumes points are sorted

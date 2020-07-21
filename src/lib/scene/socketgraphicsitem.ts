@@ -27,12 +27,12 @@ export class SocketGraphicsItem extends GraphicsItem {
 	public title!: string;
 	public node!: NodeGraphicsItem;
 	public socketType!: SocketType;
-	radius: number = 8;
+	radius = 8;
 
 	// only in sockets store the connection
 	// since outsockets can have multiple connections
 	//public con:ConnectionGraphicsItem;
-	conns: ConnectionGraphicsItem[] = new Array();
+	conns: ConnectionGraphicsItem[] = [];
 
 	hit: boolean;
 	hitSocket: SocketGraphicsItem;
@@ -53,7 +53,7 @@ export class SocketGraphicsItem extends GraphicsItem {
 	// retruns a connection where the outSocket == socketA
 	// returns null if no result is found
 	getConnectionFrom(socketA: SocketGraphicsItem) {
-		for (let con of this.conns) {
+		for (const con of this.conns) {
 			if (con.socketA == socketA) return con;
 		}
 
@@ -63,7 +63,7 @@ export class SocketGraphicsItem extends GraphicsItem {
 	// retruns a connection where the inSocket == socketB
 	// returns null if no result is found
 	getConnectionTo(socketB: SocketGraphicsItem) {
-		for (let con of this.conns) {
+		for (const con of this.conns) {
 			if (con.socketB == socketB) return con;
 		}
 
@@ -116,10 +116,10 @@ export class SocketGraphicsItem extends GraphicsItem {
 			ctx.fillStyle = "rgb(150,150,150)";
 			ctx.font = "9px 'Open Sans'";
 			if (this.socketType == SocketType.Out) {
-				let w = ctx.measureText(this.title).width;
+				const w = ctx.measureText(this.title).width;
 				ctx.fillText(this.title, this.x + this.width + 4, this.y + 12);
 			} else {
-				let w = ctx.measureText(this.title).width;
+				const w = ctx.measureText(this.title).width;
 				ctx.fillText(this.title, this.x - 4 - w, this.y + 12);
 			}
 		}
@@ -127,8 +127,8 @@ export class SocketGraphicsItem extends GraphicsItem {
 
 	drawActiveConnection(ctx: CanvasRenderingContext2D) {
 		if (this.hitSocket) {
-			let mouseX = this.mouseDragX;
-			let mouseY = this.mouseDragY;
+			const mouseX = this.mouseDragX;
+			const mouseY = this.mouseDragY;
 
 			ctx.beginPath();
 			ctx.strokeStyle = "rgb(200, 200, 200)";
@@ -189,12 +189,12 @@ export class SocketGraphicsItem extends GraphicsItem {
 
 	public mouseUp(evt: MouseUpEvent) {
 		console.log("mouse up!!");
-		let mouseX = evt.globalX;
-		let mouseY = evt.globalY;
+		const mouseX = evt.globalX;
+		const mouseY = evt.globalY;
 
 		// for undo-redo
-		let movedCons: ConnectionGraphicsItem[] = [];
-		let actions: ConnectionSwitchAction[] = [];
+		const movedCons: ConnectionGraphicsItem[] = [];
+		const actions: ConnectionSwitchAction[] = [];
 
 		if (this.hitSocket) {
 			// remove previous connection
@@ -214,7 +214,7 @@ export class SocketGraphicsItem extends GraphicsItem {
 				this.hitConnection = null;
 			}
 
-			let closeSock: SocketGraphicsItem = this.scene.getHitSocket(
+			const closeSock: SocketGraphicsItem = this.scene.getHitSocket(
 				mouseX,
 				mouseY
 			);
@@ -226,7 +226,7 @@ export class SocketGraphicsItem extends GraphicsItem {
 				closeSock.node != this.hitSocket.node
 			) {
 				// close socket
-				var con: ConnectionGraphicsItem = new ConnectionGraphicsItem();
+				const con: ConnectionGraphicsItem = new ConnectionGraphicsItem();
 				// out socket should be on the left, socketA
 				if (this.hitSocket.socketType == SocketType.Out) {
 					// out socket
@@ -236,7 +236,7 @@ export class SocketGraphicsItem extends GraphicsItem {
 					// close sock is an inSocket which means it should only have one connection
 					// remove current connection from inSocket
 					if (closeSock.hasConnections()) {
-						let removeCon = closeSock.getConnection(0);
+						const removeCon = closeSock.getConnection(0);
 						this.scene.removeConnection(removeCon);
 						movedCons.push(removeCon);
 						actions.push(ConnectionSwitchAction.Remove);
@@ -299,7 +299,7 @@ export class SocketGraphicsItem extends GraphicsItem {
 		this.hitConnection = null;
 
 		// undo-redo
-		let action = new SwitchConnectionAction(this.scene, movedCons, actions);
+		const action = new SwitchConnectionAction(this.scene, movedCons, actions);
 		UndoStack.current.push(action);
 	}
 }

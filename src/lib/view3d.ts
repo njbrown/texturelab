@@ -43,7 +43,7 @@ export class View3D {
 	private model: THREE.Object3D;
 	private controls: OrbitControls;
 	// texture repeat
-	private repeat: number = 1;
+	private repeat = 1;
 
 	// geometry
 	private sphereGeom = new SphereGeometry(0.7, 128, 128);
@@ -86,7 +86,7 @@ export class View3D {
 	}
 
 	setupRenderer(el: HTMLCanvasElement) {
-		let renderer = new THREE.WebGLRenderer({
+		const renderer = new THREE.WebGLRenderer({
 			alpha: true,
 			canvas: el,
 			preserveDrawingBuffer: true,
@@ -106,9 +106,9 @@ export class View3D {
 	}
 
 	setupLighting() {
-		var container = new THREE.Object3D();
+		const container = new THREE.Object3D();
 
-		var brightness = 2;
+		const brightness = 2;
 
 		var object3d = new THREE.DirectionalLight("white", 0.225 * brightness);
 		object3d.position.set(2.6, 1, 3);
@@ -235,7 +235,7 @@ export class View3D {
 	}
 
 	setAlbedoTexture(imageCanvas: ImageCanvas, channelName: string) {
-		var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+		const tex = new THREE.CanvasTexture(imageCanvas.canvas);
 		tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
 		tex.repeat.set(this.repeat, this.repeat);
 		tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
@@ -246,7 +246,7 @@ export class View3D {
 	}
 
 	setNormalTexture(imageCanvas: ImageCanvas, channelName: string) {
-		var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+		const tex = new THREE.CanvasTexture(imageCanvas.canvas);
 		tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
 		tex.repeat.set(this.repeat, this.repeat);
 		tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
@@ -257,7 +257,7 @@ export class View3D {
 	}
 
 	setMetalnessTexture(imageCanvas: ImageCanvas, channelName: string) {
-		var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+		const tex = new THREE.CanvasTexture(imageCanvas.canvas);
 		tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
 		tex.repeat.set(this.repeat, this.repeat);
 		tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
@@ -269,7 +269,7 @@ export class View3D {
 	}
 
 	setRoughnessTexture(imageCanvas: ImageCanvas, channelName: string) {
-		var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+		const tex = new THREE.CanvasTexture(imageCanvas.canvas);
 		tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
 		tex.repeat.set(this.repeat, this.repeat);
 		tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
@@ -281,7 +281,7 @@ export class View3D {
 	}
 
 	setHeightTexture(imageCanvas: ImageCanvas, channelName: string) {
-		var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+		const tex = new THREE.CanvasTexture(imageCanvas.canvas);
 		tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
 		tex.repeat.set(this.repeat, this.repeat);
 		tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
@@ -294,7 +294,7 @@ export class View3D {
 
 	setEmissionTexture(imageCanvas: ImageCanvas, channelName: string) {
 		console.log("setting emission texture");
-		var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+		const tex = new THREE.CanvasTexture(imageCanvas.canvas);
 		tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
 		tex.repeat.set(this.repeat, this.repeat);
 		tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
@@ -307,7 +307,7 @@ export class View3D {
 	}
 
 	setAoTexture(imageCanvas: ImageCanvas, channelName: string) {
-		var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+		const tex = new THREE.CanvasTexture(imageCanvas.canvas);
 		tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
 		tex.repeat.set(this.repeat, this.repeat);
 		tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
@@ -318,7 +318,7 @@ export class View3D {
 	}
 
 	setAlphaTexture(imageCanvas: ImageCanvas, channelName: string) {
-		var tex = new THREE.CanvasTexture(imageCanvas.canvas);
+		const tex = new THREE.CanvasTexture(imageCanvas.canvas);
 		tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
 		tex.repeat.set(this.repeat, this.repeat);
 		tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
@@ -390,11 +390,11 @@ export class View3D {
 
 	loadEnv() {
 		//var path = '/images/cube/Bridge2/';
-		var basePath =
+		const basePath =
 			(process.env.NODE_ENV == "production" ? "file://" : "") +
 			path.join(process.env.BASE_URL, "assets/env/SwedishRoyalCastle/");
-		var format = ".jpg";
-		var envMap = new THREE.CubeTextureLoader().load([
+		const format = ".jpg";
+		const envMap = new THREE.CubeTextureLoader().load([
 			basePath + "posx" + format,
 			basePath + "negx" + format,
 			basePath + "posy" + format,

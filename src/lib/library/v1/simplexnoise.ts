@@ -7,7 +7,7 @@ export class SimplexNoiseNode extends DesignerNode {
 
 		this.addFloatProperty("scale", "Scale", 100, 1, 1000, 0.01);
 
-		var source = `
+		const source = `
         float random (in vec2 st) {
             return fract(sin(dot(st.xy,
                                  vec2(12.9898,78.233)))

@@ -9,7 +9,7 @@ export class ColorizeNode extends DesignerNode {
 
 		this.addColorProperty("color", "Color", new Color());
 
-		var source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             return texture(image,uv) * prop_color;
@@ -26,7 +26,7 @@ export class ColorNode extends DesignerNode {
 
 		this.addColorProperty("color", "Color", new Color());
 
-		var source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             return prop_color;

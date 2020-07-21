@@ -12,13 +12,13 @@ import { MoveItemsAction } from "../actions/moveItemsaction";
 import { UndoStack } from "../undostack";
 
 export class NodeGraphicsItemRenderState {
-	hovered: boolean = false;
-	selected: boolean = false;
+	hovered = false;
+	selected = false;
 }
 
 export class NodeGraphicsItem extends GraphicsItem {
 	id!: string;
-	sockets: SocketGraphicsItem[] = Array();
+	sockets: SocketGraphicsItem[] = [];
 	public title: string;
 	thumbnail!: HTMLImageElement;
 	imageCanvas: ImageCanvas;
@@ -42,7 +42,7 @@ export class NodeGraphicsItem extends GraphicsItem {
 	public setScene(scene: NodeScene) {
 		this.scene = scene;
 
-		for (let sock of this.sockets) sock.setScene(scene);
+		for (const sock of this.sockets) sock.setScene(scene);
 	}
 
 	public setTextureChannel(name: string) {
@@ -60,7 +60,7 @@ export class NodeGraphicsItem extends GraphicsItem {
 	public move(dx: number, dy: number) {
 		this.x += dx;
 		this.y += dy;
-		for (let sock of this.sockets) {
+		for (const sock of this.sockets) {
 			sock.move(dx, dy);
 		}
 	}
@@ -108,9 +108,9 @@ export class NodeGraphicsItem extends GraphicsItem {
 			//ctx.font = "14px monospace";
 			ctx.font = "bold 9px 'Open Sans'";
 			ctx.fillStyle = "rgb(255,255,255)";
-			let size = ctx.measureText(this.title);
-			let textX = this.centerX() - size.width / 2;
-			let textY = this.y + 14;
+			const size = ctx.measureText(this.title);
+			const textX = this.centerX() - size.width / 2;
+			const textY = this.y + 14;
 			ctx.fillText(this.title, textX, textY);
 		}
 
@@ -123,7 +123,7 @@ export class NodeGraphicsItem extends GraphicsItem {
 		this.roundRect(ctx, this.x, this.y, this.width, this.height, 2);
 		ctx.stroke();
 
-		for (let sock of this.sockets) {
+		for (const sock of this.sockets) {
 			sock.draw(ctx, renderState);
 		}
 
@@ -133,9 +133,9 @@ export class NodeGraphicsItem extends GraphicsItem {
 			//ctx.font = "14px monospace";
 			ctx.font = "12px 'Open Sans'";
 			ctx.fillStyle = "rgb(200, 255, 200)";
-			let size = ctx.measureText(this.textureChannel.toUpperCase());
-			let textX = this.centerX() - size.width / 2;
-			let textY = this.y + this.height + 14;
+			const size = ctx.measureText(this.textureChannel.toUpperCase());
+			const textX = this.centerX() - size.width / 2;
+			const textY = this.y + this.height + 14;
 			ctx.fillText(this.textureChannel.toUpperCase(), textX, textY);
 		}
 	}
@@ -152,16 +152,16 @@ export class NodeGraphicsItem extends GraphicsItem {
 
 	public sortSockets() {
 		// top and bottom padding for sockets
-		let pad = 10;
+		const pad = 10;
 
 		// sort in sockets
 		let socks = this.getInSockets();
 		let incr = (this.height - pad * 2) / socks.length;
 		let mid = incr / 2.0;
 		let i = 0;
-		for (let sock of socks) {
-			let y = pad + i * incr + mid;
-			let x = this.x;
+		for (const sock of socks) {
+			const y = pad + i * incr + mid;
+			const x = this.x;
 			sock.setCenter(x, this.y + y);
 			i++;
 		}
@@ -171,17 +171,17 @@ export class NodeGraphicsItem extends GraphicsItem {
 		incr = (this.height - pad * 2) / socks.length;
 		mid = incr / 2.0;
 		i = 0;
-		for (let sock of socks) {
-			let y = pad + i * incr + mid;
-			let x = this.x + this.width;
+		for (const sock of socks) {
+			const y = pad + i * incr + mid;
+			const x = this.x + this.width;
 			sock.setCenter(x, this.y + y);
 			i++;
 		}
 	}
 
 	getInSockets() {
-		var array = new Array();
-		for (var sock of this.sockets) {
+		const array = [];
+		for (const sock of this.sockets) {
 			if (sock.socketType == SocketType.In) array.push(sock);
 		}
 
@@ -189,7 +189,7 @@ export class NodeGraphicsItem extends GraphicsItem {
 	}
 
 	getInSocketByName(name: string): SocketGraphicsItem {
-		for (var sock of this.sockets) {
+		for (const sock of this.sockets) {
 			if (sock.socketType == SocketType.In)
 				if (sock.title == name)
 					//todo: separate title from name
@@ -200,8 +200,8 @@ export class NodeGraphicsItem extends GraphicsItem {
 	}
 
 	getOutSockets() {
-		var array = new Array();
-		for (var sock of this.sockets) {
+		const array = [];
+		for (const sock of this.sockets) {
 			if (sock.socketType == SocketType.Out) array.push(sock);
 		}
 
@@ -211,7 +211,7 @@ export class NodeGraphicsItem extends GraphicsItem {
 	getOutSocketByName(name: string): SocketGraphicsItem {
 		// blank or empty name means first out socket
 		if (!name) {
-			let socks = this.getOutSockets();
+			const socks = this.getOutSockets();
 			if (socks.length > 0) return socks[0];
 			else {
 				console.log(
@@ -221,7 +221,7 @@ export class NodeGraphicsItem extends GraphicsItem {
 			}
 		}
 
-		for (var sock of this.sockets) {
+		for (const sock of this.sockets) {
 			if (sock.socketType == SocketType.Out)
 				if (sock.title == name)
 					//todo: separate title from name
@@ -233,7 +233,7 @@ export class NodeGraphicsItem extends GraphicsItem {
 
 	// adds socket to node
 	public addSocket(name: string, id: string, type: SocketType) {
-		var sock = new SocketGraphicsItem();
+		const sock = new SocketGraphicsItem();
 		sock.id = id;
 		sock.title = name;
 		sock.node = this;
@@ -260,10 +260,10 @@ export class NodeGraphicsItem extends GraphicsItem {
 		this.hit = false;
 
 		// add undo/redo
-		let newPos = new Vector2(this.x, this.y);
+		const newPos = new Vector2(this.x, this.y);
 
 		if (newPos.x != this.dragStartPos.x || newPos.y != this.dragStartPos.y) {
-			let action = new MoveItemsAction(
+			const action = new MoveItemsAction(
 				[this],
 				[this.dragStartPos.clone()],
 				[newPos]

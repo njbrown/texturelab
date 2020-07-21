@@ -10,7 +10,7 @@ export class MapRangeNode extends DesignerNode {
 		this.addFloatProperty("out_min", "Output Minimum", 0, 0, 1.0, 0.01);
 		this.addFloatProperty("out_max", "Output Maximum", 1, 0, 1.0, 0.01);
 
-		var source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             vec4 col = texture(color,uv);

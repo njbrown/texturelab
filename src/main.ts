@@ -20,7 +20,7 @@ Vue.config.productionTip = false;
 Vue.use(vgl);
 
 import { Titlebar, Color } from "custom-electron-titlebar";
-let titleBar = new Titlebar({
+const titleBar = new Titlebar({
 	backgroundColor: Color.fromHex("#333333"),
 	icon: "./favicon.svg",
 	shadow: true

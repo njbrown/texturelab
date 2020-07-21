@@ -19,7 +19,7 @@ export class BrickGeneratorNode extends DesignerNode {
 		this.addFloatProperty("rows", "Rows", 6, 1, 20, 1);
 		this.addFloatProperty("columns", "Columns", 6, 1, 20, 1);
 
-		var source = `
+		const source = `
         //vec2 brickSize = vec2(prop_brickWidth, prop_brickHeight);
         //vec2 tileSize = vec2(prop_rows, prop_columns);
 

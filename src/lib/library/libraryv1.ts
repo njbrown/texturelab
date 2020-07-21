@@ -31,7 +31,7 @@ import { OutputNode } from "./v1/output";
 import { GradientMapNode } from "./v1/gradientmap";
 
 export function createLibrary() {
-	var lib = new DesignerLibrary();
+	const lib = new DesignerLibrary();
 	lib.versionName = "v1";
 	lib.addNode("brickgenerator", "Brick Generator", BrickGeneratorNode);
 	lib.addNode("normalmap", "Normal Map", NormalMapNode);

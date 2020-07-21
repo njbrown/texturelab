@@ -9,7 +9,7 @@ export class HexagonNode extends DesignerNode {
 		this.addFloatProperty("margin", "Margin", 0.9, 0.0, 1.0, 0.01);
 		this.addFloatProperty("gradient", "Gradient", 0, 0, 1.0, 0.01);
 
-		var source = `
+		const source = `
         // https://www.shadertoy.com/view/Xljczw
         
         //todo: cleanup

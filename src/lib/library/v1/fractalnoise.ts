@@ -21,7 +21,7 @@ export class FractalNoiseNode extends DesignerNode {
 		);
 		this.addFloatProperty("brightness", "Brightness", 0.5, 0.0, 1.0, 0.01);
 
-		var source = `
+		const source = `
         //
         // GLSL textureless classic 2D noise "cnoise",
         // with an RSL-style periodic variant "pnoise".

@@ -24,13 +24,13 @@ export class ItemClipboard {
 		clipboard: DataTransfer
 	) {
 		clipboard.clearData();
-		let items = scene.selectedItems;
+		const items = scene.selectedItems;
 		if (items.length == 0) {
 			// empty clipboard
 			clipboard.setData("text/nodes", "");
 		}
 
-		let data = {
+		const data = {
 			nodes: [],
 			connections: [],
 			comments: [],
@@ -40,7 +40,7 @@ export class ItemClipboard {
 		};
 
 		// NODES AND CONNECTIONS
-		let nodeList: NodeGraphicsItem[] = [];
+		const nodeList: NodeGraphicsItem[] = [];
 		items.forEach(i => {
 			// check if this works with obfuscated code
 			if (i instanceof NodeGraphicsItem) nodeList.push(<NodeGraphicsItem>i);
@@ -50,12 +50,12 @@ export class ItemClipboard {
 		data.connections = this.getConnections(data.nodes, designer, nodeList);
 
 		// FRAMES
-		let frames = [];
-		for (let item of items) {
+		const frames = [];
+		for (const item of items) {
 			if (!(item instanceof FrameGraphicsItem)) continue;
-			let frame = <FrameGraphicsItem>item;
+			const frame = <FrameGraphicsItem>item;
 
-			let n: any = {};
+			const n: any = {};
 			n["x"] = frame.left;
 			n["y"] = frame.top;
 			n["width"] = frame.getWidth();
@@ -71,12 +71,12 @@ export class ItemClipboard {
 		data.frames = frames;
 
 		// COMMENTS
-		let comments = [];
-		for (let item of items) {
+		const comments = [];
+		for (const item of items) {
 			if (!(item instanceof CommentGraphicsItem)) continue;
-			let comment = <CommentGraphicsItem>item;
+			const comment = <CommentGraphicsItem>item;
 
-			let n: any = {};
+			const n: any = {};
 			n["x"] = comment.left;
 			n["y"] = comment.top;
 
@@ -88,12 +88,12 @@ export class ItemClipboard {
 		data.comments = comments;
 
 		// NAVIGATIONS
-		let navs = [];
-		for (let item of items) {
+		const navs = [];
+		for (const item of items) {
 			if (!(item instanceof NavigationGraphicsItem)) continue;
-			let nav = <NavigationGraphicsItem>item;
+			const nav = <NavigationGraphicsItem>item;
 
-			let n: any = {};
+			const n: any = {};
 			n["x"] = nav.left;
 			n["y"] = nav.top;
 
@@ -104,7 +104,7 @@ export class ItemClipboard {
 		// let data = scene.save(); // do to items
 		data.libraryVersion = library.getVersionName();
 
-		let json = JSON.stringify(data);
+		const json = JSON.stringify(data);
 		console.log(data);
 
 		clipboard.setData("json/nodes", json);
@@ -116,27 +116,27 @@ export class ItemClipboard {
 		scene: NodeScene,
 		clipboard: DataTransfer
 	) {
-		let json = clipboard.getData("json/nodes");
+		const json = clipboard.getData("json/nodes");
 		//console.log(json);
 		if (json == null || json == "") return;
 
-		let data = JSON.parse(json);
+		const data = JSON.parse(json);
 		if (!data) return;
 
-		let frames: FrameGraphicsItem[] = [];
-		let comments: CommentGraphicsItem[] = [];
-		let navs: NavigationGraphicsItem[] = [];
-		let cons: ConnectionGraphicsItem[] = [];
-		let nodes: NodeGraphicsItem[] = [];
-		let dnodes: DesignerNode[] = [];
+		const frames: FrameGraphicsItem[] = [];
+		const comments: CommentGraphicsItem[] = [];
+		const navs: NavigationGraphicsItem[] = [];
+		const cons: ConnectionGraphicsItem[] = [];
+		const nodes: NodeGraphicsItem[] = [];
+		const dnodes: DesignerNode[] = [];
 
 		// for selecting pasted items
-		let focusItems: GraphicsItem[] = [];
+		const focusItems: GraphicsItem[] = [];
 
 		// FRAMES
 		if (data.frames) {
-			for (let d of data.frames) {
-				let frame = new FrameGraphicsItem(scene.view);
+			for (const d of data.frames) {
+				const frame = new FrameGraphicsItem(scene.view);
 				frame.setPos(d.x, d.y);
 				frame.setSize(d.width, d.height);
 
@@ -153,8 +153,8 @@ export class ItemClipboard {
 
 		// COMMENTS
 		if (data.comments) {
-			for (let d of data.comments) {
-				let comment = new CommentGraphicsItem(scene.view);
+			for (const d of data.comments) {
+				const comment = new CommentGraphicsItem(scene.view);
 				comment.setPos(d.x, d.y);
 				comment.setText(d.text);
 				comment.color = Color.parse(d.color);
@@ -167,8 +167,8 @@ export class ItemClipboard {
 
 		// NAVIGATION
 		if (data.navigations) {
-			for (let d of data.navigations) {
-				let nav = new NavigationGraphicsItem();
+			for (const d of data.navigations) {
+				const nav = new NavigationGraphicsItem();
 				nav.setPos(d.x, d.y);
 				scene.addNavigation(nav);
 				navs.push(nav);
@@ -179,24 +179,24 @@ export class ItemClipboard {
 		//NODES AND CONNECTIONS
 
 		// old : new
-		var nodeIdMap = {};
+		const nodeIdMap = {};
 		// add them to designer then add them to scene
-		for (let n of data.nodes) {
+		for (const n of data.nodes) {
 			console.log(n.typeName);
-			let dNode = library.create(n.typeName);
+			const dNode = library.create(n.typeName);
 
 			// add to designer
 			designer.addNode(dNode);
 			nodeIdMap[n.id] = dNode.id;
 
 			// assign properties
-			for (let propName in n.properties) {
+			for (const propName in n.properties) {
 				dNode.setProperty(propName, n.properties[propName]);
 			}
 
 			// create scene version
-			var node = new NodeGraphicsItem(dNode.title);
-			for (let input of dNode.getInputs()) {
+			const node = new NodeGraphicsItem(dNode.title);
+			for (const input of dNode.getInputs()) {
 				node.addSocket(input, input, SocketType.In);
 			}
 			node.addSocket("output", "output", SocketType.Out);
@@ -205,7 +205,7 @@ export class ItemClipboard {
 			focusItems.push(node);
 
 			// generate thumbnail
-			var thumb = designer.generateImageFromNode(dNode);
+			const thumb = designer.generateImageFromNode(dNode);
 			node.setThumbnail(thumb);
 
 			node.setCenter(n.x, n.y);
@@ -218,19 +218,19 @@ export class ItemClipboard {
 		// console.log(scene.nodes);
 
 		// add connections
-		for (let c of data.connections) {
+		for (const c of data.connections) {
 			console.log(c);
 			// map to ids of new nodes
-			let leftId = nodeIdMap[c.leftNodeId];
-			let rightId = nodeIdMap[c.rightNodeId];
+			const leftId = nodeIdMap[c.leftNodeId];
+			const rightId = nodeIdMap[c.rightNodeId];
 
 			// create connection
-			var con = new ConnectionGraphicsItem();
+			const con = new ConnectionGraphicsItem();
 			con.id = Guid.newGuid(); // brand new connection
 
 			// get nodes
-			var leftNode = scene.getNodeById(leftId);
-			var rightNode = scene.getNodeById(rightId);
+			const leftNode = scene.getNodeById(leftId);
+			const rightNode = scene.getNodeById(rightId);
 
 			// get sockets
 			con.socketA = leftNode.getOutSocketByName(c.leftNodeOutput);
@@ -252,21 +252,21 @@ export class ItemClipboard {
 		) {
 			// gather bounding box and center items to screen
 			if (focusItems.length > 0) {
-				let rect = this.getItemsBounds(focusItems);
-				let center = scene.view.sceneCenter;
+				const rect = this.getItemsBounds(focusItems);
+				const center = scene.view.sceneCenter;
 
 				// find diff, then offset each object by that diff
 				//let diff = Vector2.subtract(center, rect.center);
-				for (let item of focusItems) {
-					let offsetFromRect = Vector2.subtract(item.getPos(), rect.center);
-					let newPos = Vector2.add(center, offsetFromRect);
+				for (const item of focusItems) {
+					const offsetFromRect = Vector2.subtract(item.getPos(), rect.center);
+					const newPos = Vector2.add(center, offsetFromRect);
 					item.setPos(newPos.x, newPos.y);
 					//item.move(diff.x, diff.y);
 				}
 			}
 
 			// add undo-redo
-			let action = new AddItemsAction(
+			const action = new AddItemsAction(
 				scene,
 				designer,
 				frames,
@@ -289,18 +289,18 @@ export class ItemClipboard {
 		designer: Designer,
 		items: NodeGraphicsItem[]
 	): Array<object> {
-		let dnodes = [];
+		const dnodes = [];
 		items.forEach(i => {
-			let node = designer.getNodeById(i.id);
+			const node = designer.getNodeById(i.id);
 
-			var n = {};
+			const n = {};
 			n["id"] = node.id;
 			n["typeName"] = node.typeName;
 			n["exportName"] = node.exportName;
 			//n["inputs"] = node.inputs;// not needed imo
 
-			var props = {};
-			for (let prop of node.properties) {
+			const props = {};
+			for (const prop of node.properties) {
 				props[prop.name] = prop.getValue();
 			}
 			n["properties"] = props;
@@ -319,7 +319,7 @@ export class ItemClipboard {
 		designer: Designer,
 		items: NodeGraphicsItem[]
 	): Array<object> {
-		let conns = [];
+		const conns = [];
 
 		// we're searching for connections with both left and right socket
 		// in our selection pool
@@ -328,7 +328,7 @@ export class ItemClipboard {
 				ItemClipboard.getNodeById(con.leftNode.id, nodeList) &&
 				ItemClipboard.getNodeById(con.rightNode.id, nodeList)
 			) {
-				var c = {};
+				const c = {};
 				c["id"] = con.id;
 				c["leftNodeId"] = con.leftNode.id;
 				c["leftNodeOutput"] = con.leftNodeOutput;
@@ -343,15 +343,15 @@ export class ItemClipboard {
 	}
 
 	static getNodeById(id: string, nodeList: Array<object>): object {
-		for (let node of nodeList) if (node["id"] == id) return node;
+		for (const node of nodeList) if (node["id"] == id) return node;
 
 		return null;
 	}
 
 	static getItemsBounds(items: GraphicsItem[]): Rect {
-		let rect: Rect = items[0].getRect();
-		for (let item of items) {
-			let r = item.getRect();
+		const rect: Rect = items[0].getRect();
+		for (const item of items) {
+			const r = item.getRect();
 			rect.expandByRect(r);
 		}
 

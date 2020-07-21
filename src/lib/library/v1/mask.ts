@@ -8,7 +8,7 @@ export class MaskNode extends DesignerNode {
 		this.addInput("textureB");
 		this.addInput("mask");
 
-		var source = `
+		const source = `
         float lum(vec4 col)
         {
             return (col.r + col.g + col.b) / 3.0;

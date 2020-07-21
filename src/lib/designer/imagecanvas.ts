@@ -2,7 +2,7 @@ export class ImageCanvas {
 	canvas: HTMLCanvasElement;
 	context: CanvasRenderingContext2D;
 
-	constructor(width: number = 1024, height: number = 1024) {
+	constructor(width = 1024, height = 1024) {
 		this.canvas = document.createElement("canvas");
 		this.canvas.width = width;
 		this.canvas.height = height;
@@ -11,7 +11,7 @@ export class ImageCanvas {
 
 	// copies image from source
 	// scales the image to fit dest canvas
-	copyFromCanvas(src: HTMLCanvasElement, resize: boolean = false) {
+	copyFromCanvas(src: HTMLCanvasElement, resize = false) {
 		if (resize) {
 			if (this.canvas.width != src.width) this.canvas.width = src.width;
 			if (this.canvas.height != src.height) this.canvas.height = src.height;
@@ -46,7 +46,7 @@ export class ImageCanvas {
 	}
 
 	toImage(): HTMLImageElement {
-		var img: HTMLImageElement = <HTMLImageElement>(
+		const img: HTMLImageElement = <HTMLImageElement>(
 			document.createElement("image")
 		);
 		//var img:HTMLImageElement = new Image(this.width, this.height);
@@ -56,7 +56,7 @@ export class ImageCanvas {
 	}
 
 	createTexture(gl: WebGLRenderingContext): WebGLTexture {
-		var texture = gl.createTexture();
+		const texture = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, texture);
 
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);

@@ -9,7 +9,7 @@ export class NormalMapNode extends DesignerNode {
 
 		this.addFloatProperty("strength", "Strength", 0.02, -0.02, 0.02, 0.00001);
 
-		var source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             //vec2 size = textureSize(height);
@@ -61,7 +61,7 @@ export class BetterWarpNode extends DesignerNode {
 		this.addFloatProperty("strength", "Strength", 0.001, -0.02, 0.02, 0.00001);
 		this.addFloatProperty("spread", "Spread", 0.1, 0, 1, 0.01);
 
-		var source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             //vec2 size = textureSize(height);

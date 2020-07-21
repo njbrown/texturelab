@@ -83,7 +83,7 @@ class CylinderBufferGeometry extends BufferGeometry {
 			thetaLength: thetaLength
 		};
 
-		var scope = this;
+		const scope = this;
 
 		radiusTop = radiusTop !== undefined ? radiusTop : 1;
 		radiusBottom = radiusBottom !== undefined ? radiusBottom : 1;
@@ -98,17 +98,17 @@ class CylinderBufferGeometry extends BufferGeometry {
 
 		// buffers
 
-		var indices = [];
-		var vertices = [];
-		var normals = [];
-		var uvs = [];
+		const indices = [];
+		const vertices = [];
+		const normals = [];
+		const uvs = [];
 
 		// helper variables
 
-		var index = 0;
-		var indexArray = [];
-		var halfHeight = height / 2;
-		var groupStart = 0;
+		let index = 0;
+		const indexArray = [];
+		const halfHeight = height / 2;
+		let groupStart = 0;
 
 		// generate geometry
 
@@ -128,33 +128,33 @@ class CylinderBufferGeometry extends BufferGeometry {
 		this.addAttribute("uv", new Float32BufferAttribute(uvs, 2));
 
 		function generateTorso() {
-			var x, y;
-			var normal = new Vector3();
-			var vertex = new Vector3();
+			let x, y;
+			const normal = new Vector3();
+			const vertex = new Vector3();
 
-			var groupCount = 0;
+			let groupCount = 0;
 
 			// this will be used to calculate the normal
-			var slope = (radiusBottom - radiusTop) / height;
+			const slope = (radiusBottom - radiusTop) / height;
 
 			// generate vertices, normals and uvs
 
 			for (y = 0; y <= heightSegments; y++) {
-				var indexRow = [];
+				const indexRow = [];
 
-				var v = y / heightSegments;
+				const v = y / heightSegments;
 
 				// calculate the radius of the current row
 
-				var radius = v * (radiusBottom - radiusTop) + radiusTop;
+				const radius = v * (radiusBottom - radiusTop) + radiusTop;
 
 				for (x = 0; x <= radialSegments; x++) {
-					var u = x / radialSegments;
+					const u = x / radialSegments;
 
-					var theta = u * thetaLength + thetaStart;
+					const theta = u * thetaLength + thetaStart;
 
-					var sinTheta = Math.sin(theta);
-					var cosTheta = Math.cos(theta);
+					const sinTheta = Math.sin(theta);
+					const cosTheta = Math.cos(theta);
 
 					// vertex
 
@@ -188,10 +188,10 @@ class CylinderBufferGeometry extends BufferGeometry {
 				for (y = 0; y < heightSegments; y++) {
 					// we use the index array to access the correct indices
 
-					var a = indexArray[y][x];
-					var b = indexArray[y + 1][x];
-					var c = indexArray[y + 1][x + 1];
-					var d = indexArray[y][x + 1];
+					const a = indexArray[y][x];
+					const b = indexArray[y + 1][x];
+					const c = indexArray[y + 1][x + 1];
+					const d = indexArray[y][x + 1];
 
 					// faces
 

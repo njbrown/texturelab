@@ -10,7 +10,7 @@
 
 // get local mouse position
 function _getMousePos(canvas, evt) {
-	var rect = canvas.getBoundingClientRect();
+	const rect = canvas.getBoundingClientRect();
 	return new Vector2(evt.clientX - rect.left, evt.clientY - rect.top);
 }
 
@@ -37,8 +37,8 @@ export class Vector2 {
 }
 
 export class Rect {
-	public x: number = 0;
-	public y: number = 0;
+	public x = 0;
+	public y = 0;
 	public width: number;
 	public height: number;
 
@@ -116,7 +116,7 @@ export class Rect {
 	}
 
 	public expand(uniformSize: number) {
-		let halfSize = uniformSize * 0.5;
+		const halfSize = uniformSize * 0.5;
 
 		// assume it's a rect with a positive area
 		this.x -= halfSize;
@@ -134,7 +134,7 @@ export class Rect {
 	}
 
 	clone(): Rect {
-		let rect = new Rect();
+		const rect = new Rect();
 		rect.x = this.x;
 		rect.y = this.y;
 		rect.width = this.width;
@@ -172,7 +172,7 @@ export class SceneView {
 		this.canvas = canvas;
 		this.context = this.canvas.getContext("2d");
 
-		var self = this;
+		const self = this;
 		canvas.addEventListener("mousemove", function(evt: MouseEvent) {
 			self.onMouseMove(evt);
 		});
@@ -209,7 +209,7 @@ export class SceneView {
 	}
 
 	isMouseOverCanvas() {
-		var rect = this.canvas.getBoundingClientRect();
+		const rect = this.canvas.getBoundingClientRect();
 		//console.log(rect);
 		if (this.globalMousePos.x < rect.left) return false;
 		if (this.globalMousePos.y < rect.top) return false;
@@ -259,8 +259,8 @@ export class SceneView {
 		// no panning while zooming
 		if (this.panning) return;
 
-		var pos = _getMousePos(this.canvas, evt);
-		var delta = (<any>evt).wheelDelta > 0 ? 1.1 : 1.0 / 1.1;
+		const pos = _getMousePos(this.canvas, evt);
+		const delta = (<any>evt).wheelDelta > 0 ? 1.1 : 1.0 / 1.1;
 
 		// offset from mouse pos
 		// find offset from previous zoom then move offset by that value
@@ -286,7 +286,7 @@ export class SceneView {
 
 	zoom(x: number, y: number, level: number) {}
 
-	clear(context: CanvasRenderingContext2D, style: string = "rgb(50,50,50)") {
+	clear(context: CanvasRenderingContext2D, style = "rgb(50,50,50)") {
 		const ctx = context;
 
 		ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -315,8 +315,8 @@ export class SceneView {
 		// todo: convert line points to canvas space, reset context and draw them there to preserve line width
 
 		//const GRID_SIZE = 100;
-		let tl = this.canvasToSceneXY(0, 0);
-		let br = this.canvasToSceneXY(this.canvas.width, this.canvas.height);
+		const tl = this.canvasToSceneXY(0, 0);
+		const br = this.canvasToSceneXY(this.canvas.width, this.canvas.height);
 
 		//ctx.strokeStyle = "#4A5050";
 		//ctx.strokeStyle = "#464C4C";
@@ -359,7 +359,7 @@ export class SceneView {
 	}
 
 	globalToCanvasXY(x: number, y: number): Vector2 {
-		let rect = this.canvas.getBoundingClientRect();
+		const rect = this.canvas.getBoundingClientRect();
 		return new Vector2(x - rect.left, y - rect.top);
 	}
 

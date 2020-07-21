@@ -12,12 +12,12 @@ export class MouseEvent {
 	mouseButton: number;
 
 	// modifiers
-	shiftKey: boolean = false;
-	altKey: boolean = false;
-	ctrlKey: boolean = false;
+	shiftKey = false;
+	altKey = false;
+	ctrlKey = false;
 
 	// default is accepted
-	private accepted: boolean = true;
+	private accepted = true;
 	public accept() {
 		this.accepted = true;
 	}
@@ -47,10 +47,10 @@ export class HoverEvent extends MouseEvent {}
 
 export class GraphicsItem {
 	scene!: NodeScene;
-	protected visible: boolean = true;
+	protected visible = true;
 
-	protected x: number = 0;
-	protected y: number = 0;
+	protected x = 0;
+	protected y = 0;
 	protected width: number;
 	protected height: number;
 
@@ -134,7 +134,7 @@ export class GraphicsItem {
 	}
 
 	public getRect(): Rect {
-		let rect = new Rect();
+		const rect = new Rect();
 		rect.x = this.x;
 		rect.y = this.y;
 		rect.width = this.width;

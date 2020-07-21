@@ -22,7 +22,7 @@ import { UndoStack } from "./undostack";
 import { RemoveItemsAction } from "./actions/removeitemsaction";
 
 function hexToRgb(hex) {
-	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+	const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
 	return result
 		? {
 				r: parseInt(result[1], 16),
@@ -130,8 +130,8 @@ export class Editor {
 			this.textureChannels[channelName]
 		) {
 			// remove label from node view
-			let oldNode = this.textureChannels[channelName] as DesignerNode;
-			let nodeView = this.graph.getNodeById(oldNode.id);
+			const oldNode = this.textureChannels[channelName] as DesignerNode;
+			const nodeView = this.graph.getNodeById(oldNode.id);
 			nodeView.clearTextureChannel();
 			//this.textureChannels[channelName] = null;
 			delete this.textureChannels[channelName];
@@ -141,10 +141,10 @@ export class Editor {
 			}
 		}
 
-		let nodeView = this.graph.getNodeById(nodeId);
+		const nodeView = this.graph.getNodeById(nodeId);
 		nodeView.setTextureChannel(channelName);
 
-		let newNode = this.designer.getNodeById(nodeId);
+		const newNode = this.designer.getNodeById(nodeId);
 		this.textureChannels[channelName] = newNode;
 
 		// notify 3d view
@@ -155,12 +155,12 @@ export class Editor {
 
 	clearTextureChannel(nodeId: string) {
 		// eval which channel has this node assigned
-		for (let channelName in this.textureChannels) {
-			let node = this.textureChannels[channelName];
+		for (const channelName in this.textureChannels) {
+			const node = this.textureChannels[channelName];
 
 			if (node.id == nodeId) {
-				let oldNode = this.textureChannels[channelName] as DesignerNode;
-				let nodeView = this.graph.getNodeById(oldNode.id);
+				const oldNode = this.textureChannels[channelName] as DesignerNode;
+				const nodeView = this.graph.getNodeById(oldNode.id);
 
 				// if this function is called when a node is deleted
 				// nodeView will be null
@@ -193,8 +193,8 @@ export class Editor {
 	}
 
 	clearTextureChannels() {
-		for (let channelName in this.textureChannels) {
-			let node = this.textureChannels[channelName];
+		for (const channelName in this.textureChannels) {
+			const node = this.textureChannels[channelName];
 
 			this.clearTextureChannel(node.id);
 		}
@@ -203,8 +203,8 @@ export class Editor {
 	getChannelCanvasImage(channelName: string) {
 		if (this.hasTextureChannel(channelName)) {
 			//console.log(this.textureChannels[channelName]);
-			let dnodeId = this.textureChannels[channelName].id;
-			let nodeView = this.graph.getNodeById(dnodeId);
+			const dnodeId = this.textureChannels[channelName].id;
+			const nodeView = this.graph.getNodeById(dnodeId);
 			//console.log(nodeView)
 			//console.log(this.graph)
 			return nodeView.imageCanvas;
@@ -256,8 +256,8 @@ export class Editor {
 	}
 
 	setupDefaultScene() {
-		let offset = 100;
-		let spacing = 150;
+		const offset = 100;
+		const spacing = 150;
 
 		// albedo
 		let node = this.library.create("output");
@@ -274,7 +274,7 @@ export class Editor {
 		node.setProperty("color", new Color(0.5, 0.5, 1, 1));
 		nodeView.setCenter(800, offset + spacing * 1);
 		this.assignNodeToTextureChannel(nodeView.id, "normal");
-		let normalId = node.id;
+		const normalId = node.id;
 
 		// normal map
 		node = this.library.create("normalmap");
@@ -330,10 +330,10 @@ export class Editor {
 
 	setDesigner(designer: Designer) {
 		this.designer = designer;
-		var self = this;
+		const self = this;
 
 		designer.onnodetextureupdated = function(dnode) {
-			var graphNode = self.graph.getNodeById(dnode.id);
+			const graphNode = self.graph.getNodeById(dnode.id);
 			if (!graphNode) return; // node could have been deleted
 
 			self.designer.copyNodeTextureToImageCanvas(dnode, graphNode.imageCanvas);
@@ -396,15 +396,15 @@ export class Editor {
 
 		this.graph = scene;
 
-		var self = this;
+		const self = this;
 		this.graph.onconnectioncreated = function(con: ConnectionGraphicsItem) {
 			// get node from graph
-			var leftNode = con.socketA.node;
-			var rightNode = con.socketB.node;
+			const leftNode = con.socketA.node;
+			const rightNode = con.socketB.node;
 
 			// get node from designer and connect them
-			var leftDNode = self.designer.getNodeById(leftNode.id);
-			var rightDNode = self.designer.getNodeById(rightNode.id);
+			const leftDNode = self.designer.getNodeById(leftNode.id);
+			const rightDNode = self.designer.getNodeById(rightNode.id);
 
 			// make connection
 			// switch from `title` to `name`
@@ -417,12 +417,12 @@ export class Editor {
 
 		this.graph.onconnectiondestroyed = function(con: ConnectionGraphicsItem) {
 			// get node from graph
-			var leftNode = con.socketA.node;
-			var rightNode = con.socketB.node;
+			const leftNode = con.socketA.node;
+			const rightNode = con.socketB.node;
 
 			// get node from designer and connect them
-			var leftDNode = self.designer.getNodeById(leftNode.id);
-			var rightDNode = self.designer.getNodeById(rightNode.id);
+			const leftDNode = self.designer.getNodeById(leftNode.id);
+			const rightDNode = self.designer.getNodeById(rightNode.id);
 
 			// remove connection
 			// switch from `title` to `name`
@@ -495,9 +495,9 @@ export class Editor {
 			cons: ConnectionGraphicsItem[],
 			nodes: NodeGraphicsItem[]
 		) {
-			let dnodes: DesignerNode[] = [];
-			for (let node of nodes) {
-				let dnode = self.designer.getNodeById(node.id);
+			const dnodes: DesignerNode[] = [];
+			for (const node of nodes) {
+				const dnode = self.designer.getNodeById(node.id);
 
 				// should never happen!
 				if (dnode == null) throw "Node with id " + dnode.id + " doesnt exist!!";
@@ -505,7 +505,7 @@ export class Editor {
 				dnodes.push(dnode);
 			}
 
-			let action = new RemoveItemsAction(
+			const action = new RemoveItemsAction(
 				self,
 				self.graph,
 				self.designer,
@@ -605,17 +605,13 @@ export class Editor {
 
 	// adds node
 	// x and y are screen space
-	addNode(
-		dNode: DesignerNode,
-		screenX: number = 0,
-		screenY: number = 0
-	): NodeGraphicsItem {
+	addNode(dNode: DesignerNode, screenX = 0, screenY = 0): NodeGraphicsItem {
 		// must add to designer first
 		this.designer.addNode(dNode);
 
 		// create node from designer
-		var node = new NodeGraphicsItem(dNode.title);
-		for (let input of dNode.getInputs()) {
+		const node = new NodeGraphicsItem(dNode.title);
+		for (const input of dNode.getInputs()) {
 			node.addSocket(input, input, SocketType.In);
 		}
 		node.addSocket("output", "output", SocketType.Out);
@@ -623,18 +619,18 @@ export class Editor {
 		node.id = dNode.id;
 
 		// generate thumbnail
-		var thumb = this.designer.generateImageFromNode(dNode);
+		const thumb = this.designer.generateImageFromNode(dNode);
 		node.setThumbnail(thumb);
 
-		var pos = this.graph.view.canvasToSceneXY(screenX, screenY);
+		const pos = this.graph.view.canvasToSceneXY(screenX, screenY);
 		node.setCenter(pos.x, pos.y);
 
 		return node;
 	}
 
 	createComment(): CommentGraphicsItem {
-		let comment = new CommentGraphicsItem(this.graph.view);
-		var pos = this.graph.view.sceneCenter;
+		const comment = new CommentGraphicsItem(this.graph.view);
+		const pos = this.graph.view.sceneCenter;
 		comment.setCenter(pos.x, pos.y);
 
 		this.graph.addComment(comment);
@@ -643,8 +639,8 @@ export class Editor {
 	}
 
 	createFrame(): FrameGraphicsItem {
-		let frame = new FrameGraphicsItem(this.graph.view);
-		var pos = this.graph.view.sceneCenter;
+		const frame = new FrameGraphicsItem(this.graph.view);
+		const pos = this.graph.view.sceneCenter;
 		frame.setCenter(pos.x, pos.y);
 
 		this.graph.addFrame(frame);
@@ -653,8 +649,8 @@ export class Editor {
 	}
 
 	createNavigation(): NavigationGraphicsItem {
-		let nav = new NavigationGraphicsItem();
-		var pos = this.graph.view.sceneCenter;
+		const nav = new NavigationGraphicsItem();
+		const pos = this.graph.view.sceneCenter;
 		nav.setCenter(pos.x, pos.y);
 
 		this.graph.addNavigation(nav);
@@ -704,7 +700,7 @@ export class Editor {
 	}
 
 	setDisplayChannelNode(channel: DisplayChannel, nodeId: string) {
-		var node = this.graph.getNodeById(nodeId);
+		const node = this.graph.getNodeById(nodeId);
 		if (channel == DisplayChannel.Albedo) {
 			this.displayNodes.albedoNode = nodeId;
 		}
@@ -726,8 +722,8 @@ export class Editor {
 
 	exposeVariable(node: DesignerNode, prop: Property, varDisplayName: string) {
 		// create new variable
-		var varName = Guid.newGuid();
-		var dvar = this.designer.addVariable(
+		const varName = Guid.newGuid();
+		const dvar = this.designer.addVariable(
 			varName,
 			varDisplayName,
 			this.evalDesignerVariableType(prop)
@@ -785,10 +781,10 @@ export class Editor {
 			library = createV2Library();
 		}
 		// load scene
-		var d = Designer.load(data, library);
+		const d = Designer.load(data, library);
 
 		// load graph
-		var g = NodeScene.load(d, data["scene"], this.canvas);
+		const g = NodeScene.load(d, data["scene"], this.canvas);
 
 		//todo: properly destroy existing graph
 
@@ -803,7 +799,7 @@ export class Editor {
 
 		// load editor data
 		if (data["editor"] != null) {
-			var e = data["editor"];
+			const e = data["editor"];
 			// console.log("loading editor data");
 			// console.log(e.displayNodes);
 
@@ -813,10 +809,10 @@ export class Editor {
 			// this.displayNodes.roughnessNode = e.displayNodes.roughnessNode;
 			// this.displayNodes.heightNode = e.displayNodes.heightNode;
 
-			for (let channelName in e.textureChannels) {
+			for (const channelName in e.textureChannels) {
 				if (!e.textureChannels.hasOwnProperty(channelName)) continue;
 				console.log(e);
-				let node = this.graph.getNodeById(e.textureChannels[channelName]);
+				const node = this.graph.getNodeById(e.textureChannels[channelName]);
 				if (node) this.assignNodeToTextureChannel(node.id, channelName);
 			}
 
@@ -826,11 +822,11 @@ export class Editor {
 	}
 
 	save(): any {
-		var data = this.designer.save();
+		const data = this.designer.save();
 		data["scene"] = this.graph.save();
 
-		let textureChannels = {};
-		for (let channelName in this.textureChannels) {
+		const textureChannels = {};
+		for (const channelName in this.textureChannels) {
 			textureChannels[channelName] = this.textureChannels[channelName].id;
 		}
 

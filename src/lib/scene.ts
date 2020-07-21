@@ -44,7 +44,7 @@ class Rect {
 	width: number;
 	height: number;
 
-	Rect(x: number = 0, y: number = 0, width: number = 1, height: number = 1) {
+	Rect(x = 0, y = 0, width = 1, height = 1) {
 		this.x = x;
 		this.y = y;
 		this.width = width;
@@ -131,11 +131,11 @@ export class NodeScene {
 		this.view = new SceneView(canvas);
 		this.hasFocus = false;
 		this.contextExtra = this.context;
-		this.frames = new Array();
-		this.comments = new Array();
-		this.nodes = new Array();
-		this.conns = new Array();
-		this.navigations = new Array();
+		this.frames = [];
+		this.comments = [];
+		this.nodes = [];
+		this.conns = [];
+		this.navigations = [];
 		this.dragMode = null;
 		this.selectionRect = new Rect();
 		//this.selectedItem = null;
@@ -161,7 +161,7 @@ export class NodeScene {
 		// this.navigations.push(nav);
 
 		// bind event listeners
-		var self = this;
+		const self = this;
 		this._mouseMove = function(evt: MouseEvent) {
 			self.onMouseMove(evt);
 		};
@@ -291,12 +291,12 @@ export class NodeScene {
 		// this.copyElement.removeEventListener("paste", this._copyEvent);
 	}
 
-	setSelectedItems(items: GraphicsItem[], createSelection: boolean = false) {
+	setSelectedItems(items: GraphicsItem[], createSelection = false) {
 		this.selectedItems = items;
 
 		// create actual selection object to encapsulate items
 		if (createSelection == true) {
-			let sel: SelectionGraphicsItem = new SelectionGraphicsItem(
+			const sel: SelectionGraphicsItem = new SelectionGraphicsItem(
 				this,
 				this.view
 			);
@@ -320,7 +320,7 @@ export class NodeScene {
 
 	removeComment(item: CommentGraphicsItem) {
 		//todo: remove from selection
-		let i = this.comments.indexOf(item);
+		const i = this.comments.indexOf(item);
 		if (i !== -1) this.comments.splice(i, 1);
 	}
 
@@ -331,7 +331,7 @@ export class NodeScene {
 
 	removeFrame(item: FrameGraphicsItem) {
 		//todo: remove from selection
-		let i = this.frames.indexOf(item);
+		const i = this.frames.indexOf(item);
 		if (i !== -1) this.frames.splice(i, 1);
 	}
 
@@ -342,15 +342,15 @@ export class NodeScene {
 
 	removeNavigation(item: NavigationGraphicsItem) {
 		//todo: remove from selection
-		let i = this.navigations.indexOf(item);
+		const i = this.navigations.indexOf(item);
 		if (i !== -1) this.navigations.splice(i, 1);
 	}
 
 	deleteNode(item: NodeGraphicsItem) {
 		// delete connections
-		let conns = this.conns;
+		const conns = this.conns;
 		for (let i = this.conns.length - 1; i >= 0; i--) {
-			let con = this.conns[i];
+			const con = this.conns[i];
 			if (
 				(con.socketA && con.socketA.node.id == item.id) ||
 				(con.socketB && con.socketB.node.id == item.id)
@@ -375,13 +375,13 @@ export class NodeScene {
 	// called by delete or cut event
 	deleteItems(items: GraphicsItem[]) {
 		// 1 - put items in buckets
-		let frames: FrameGraphicsItem[] = [];
-		let comments: CommentGraphicsItem[] = [];
-		let navs: NavigationGraphicsItem[] = [];
-		let cons: ConnectionGraphicsItem[] = [];
-		let nodes: NodeGraphicsItem[] = [];
+		const frames: FrameGraphicsItem[] = [];
+		const comments: CommentGraphicsItem[] = [];
+		const navs: NavigationGraphicsItem[] = [];
+		const cons: ConnectionGraphicsItem[] = [];
+		const nodes: NodeGraphicsItem[] = [];
 
-		for (let item of items) {
+		for (const item of items) {
 			if (item instanceof FrameGraphicsItem) {
 				frames.push(<FrameGraphicsItem>item);
 			}
@@ -406,11 +406,11 @@ export class NodeScene {
 			return;
 
 		// 2 - gather affected connections
-		let conDict = new Map<string, ConnectionGraphicsItem>();
-		for (let node of nodes) {
+		const conDict = new Map<string, ConnectionGraphicsItem>();
+		for (const node of nodes) {
 			// add all connections to map
-			for (let sock of node.sockets) {
-				for (let con of sock.conns) {
+			for (const sock of node.sockets) {
+				for (const con of sock.conns) {
 					conDict.set(con.id, con);
 				}
 			}
@@ -422,10 +422,10 @@ export class NodeScene {
 			this.onitemsdeleting(frames, comments, navs, cons, nodes);
 		}
 
-		for (let frame of frames) this.removeFrame(frame);
-		for (let comment of comments) this.removeComment(comment);
-		for (let nav of navs) this.removeNavigation(nav);
-		for (let node of nodes) this.deleteNode(node);
+		for (const frame of frames) this.removeFrame(frame);
+		for (const comment of comments) this.removeComment(comment);
+		for (const nav of navs) this.removeNavigation(nav);
+		for (const node of nodes) this.deleteNode(node);
 
 		// 4 - callback
 		if (this.onitemsdeleted) {
@@ -434,7 +434,7 @@ export class NodeScene {
 	}
 
 	getNodeById(id: string): NodeGraphicsItem {
-		for (let node of this.nodes) {
+		for (const node of this.nodes) {
 			if (node.id == id) return node;
 		}
 		return null;
@@ -452,12 +452,12 @@ export class NodeScene {
 		if (this.onconnectioncreated) this.onconnectioncreated(con);
 	}
 
-	createConnection(leftId: string, rightId: string, rightIndex: number = 0) {
-		var con = new ConnectionGraphicsItem();
+	createConnection(leftId: string, rightId: string, rightIndex = 0) {
+		const con = new ConnectionGraphicsItem();
 
 		// get nodes
-		var leftNode = this.getNodeById(leftId);
-		var rightNode = this.getNodeById(rightId);
+		const leftNode = this.getNodeById(leftId);
+		const rightNode = this.getNodeById(rightId);
 
 		// get sockets
 		con.socketA = leftNode.sockets.find(x => x.socketType == SocketType.Out);
@@ -479,11 +479,11 @@ export class NodeScene {
 
 	// if the user click drags on a socket then it's making a connection
 	drawActiveConnection() {
-		let mouse = this.view.getMouseSceneSpace();
-		let mouseX = mouse.x;
-		let mouseY = mouse.y;
+		const mouse = this.view.getMouseSceneSpace();
+		const mouseX = mouse.x;
+		const mouseY = mouse.y;
 
-		let ctx = this.context;
+		const ctx = this.context;
 		if (this.hitSocket) {
 			ctx.beginPath();
 			ctx.strokeStyle = "rgb(200, 200, 200)";
@@ -550,13 +550,13 @@ export class NodeScene {
 		this.clearAndDrawGrid();
 
 		// draw frames
-		for (let frame of this.frames) frame.draw(this.context);
+		for (const frame of this.frames) frame.draw(this.context);
 
 		// draw comments
-		for (let comment of this.comments) comment.draw(this.context);
+		for (const comment of this.comments) comment.draw(this.context);
 
 		// draw connections
-		for (let con of this.conns) {
+		for (const con of this.conns) {
 			if (con == this.hitConnection) continue;
 			con.draw(this.context);
 		}
@@ -566,14 +566,14 @@ export class NodeScene {
 		}
 
 		// draw nodes
-		let mouse = this.view.getMouseSceneSpace();
-		let mouseX = mouse.x;
-		let mouseY = mouse.y;
-		let nodeState: NodeGraphicsItemRenderState = {
+		const mouse = this.view.getMouseSceneSpace();
+		const mouseX = mouse.x;
+		const mouseY = mouse.y;
+		const nodeState: NodeGraphicsItemRenderState = {
 			hovered: false, // mouse over
 			selected: false // selected node
 		};
-		for (let item of this.nodes) {
+		for (const item of this.nodes) {
 			// check for selection ( only do this when not dragging anything )
 			//if (item == this.selectedNode) nodeState.selected = true;
 			//else nodeState.selected = false;
@@ -586,7 +586,7 @@ export class NodeScene {
 			item.draw(this.context, nodeState);
 		}
 
-		for (let nav of this.navigations) nav.draw(this.context);
+		for (const nav of this.navigations) nav.draw(this.context);
 
 		if (this.selection) this.selection.draw(this.context);
 
@@ -596,13 +596,13 @@ export class NodeScene {
 	}
 
 	drawSelectedItems(items: GraphicsItem[], ctx: CanvasRenderingContext2D) {
-		for (let item of items) {
+		for (const item of items) {
 			ctx.beginPath();
 			ctx.lineWidth = 3;
 			ctx.strokeStyle = "rgba(255, 255, 255)";
 			//this.roundRect(ctx, this.x, this.y, width, height, 1);
 			// ctx.rect(item.left, item.top, item.getWidth(), item.getHeight());
-			var rect = item.getRect();
+			const rect = item.getRect();
 			rect.expand(15);
 			ctx.rect(rect.left, rect.top, rect.width, rect.height);
 
@@ -635,13 +635,13 @@ export class NodeScene {
 	// mouse events
 	onMouseDown(evt: MouseEvent) {
 		//todo: look at double event calling
-		var pos = this.getScenePos(evt);
-		let mouseX = pos.x;
-		let mouseY = pos.y;
+		const pos = this.getScenePos(evt);
+		const mouseX = pos.x;
+		const mouseY = pos.y;
 
 		if (evt.button == 0) {
-			let hitItem = this.getHitItem(mouseX, mouseY);
-			let mouseEvent = new MouseDownEvent();
+			const hitItem = this.getHitItem(mouseX, mouseY);
+			const mouseEvent = new MouseDownEvent();
 			mouseEvent.globalX = pos.x;
 			mouseEvent.globalY = pos.y;
 			mouseEvent.shiftKey = evt.shiftKey;
@@ -658,7 +658,7 @@ export class NodeScene {
 
 					//console.log(hitItem);
 					if (hitItem instanceof NodeGraphicsItem) {
-						let hitNode = <NodeGraphicsItem>hitItem;
+						const hitNode = <NodeGraphicsItem>hitItem;
 						//move node to stop of stack
 						this.moveNodeToTop(hitNode);
 
@@ -670,7 +670,7 @@ export class NodeScene {
 
 					//todo: look at double event calling for comments
 					if (hitItem instanceof CommentGraphicsItem) {
-						let hitComment = <CommentGraphicsItem>hitItem;
+						const hitComment = <CommentGraphicsItem>hitItem;
 
 						if (this.oncommentselected) {
 							if (hitComment) this.oncommentselected(hitComment);
@@ -679,7 +679,7 @@ export class NodeScene {
 					}
 
 					if (hitItem instanceof FrameGraphicsItem) {
-						let hit = <FrameGraphicsItem>hitItem;
+						const hit = <FrameGraphicsItem>hitItem;
 
 						if (this.onframeselected) {
 							if (hit) this.onframeselected(hit);
@@ -688,7 +688,7 @@ export class NodeScene {
 					}
 
 					if (hitItem instanceof NavigationGraphicsItem) {
-						let hit = <NavigationGraphicsItem>hitItem;
+						const hit = <NavigationGraphicsItem>hitItem;
 
 						if (this.onnavigationselected) {
 							if (hit) this.onnavigationselected(hit);
@@ -704,7 +704,7 @@ export class NodeScene {
 						this.selectedItems = [hitItem];
 				}
 			} else {
-				let hitItem = new SelectionGraphicsItem(this, this.view);
+				const hitItem = new SelectionGraphicsItem(this, this.view);
 				mouseEvent.localX = hitItem.left - pos.x;
 				mouseEvent.localY = hitItem.top - pos.y;
 				hitItem.mouseDown(mouseEvent);
@@ -752,7 +752,7 @@ export class NodeScene {
 
 	// https://stackoverflow.com/questions/5306680/move-an-array-element-from-one-array-position-to-another
 	moveNodeToTop(node: NodeGraphicsItem) {
-		var index = this.nodes.indexOf(node);
+		const index = this.nodes.indexOf(node);
 		if (index === -1) {
 			console.log("Attempting to push node that doesnt exist in node list");
 		}
@@ -761,15 +761,15 @@ export class NodeScene {
 	}
 
 	onMouseUp(evt: MouseEvent) {
-		var pos = this.getScenePos(evt);
-		let mouseX = pos.x;
-		let mouseY = pos.y;
+		const pos = this.getScenePos(evt);
+		const mouseX = pos.x;
+		const mouseY = pos.y;
 
 		if (evt.button == 0) {
 			if (this.hitItem != null) {
-				let hitItem = this.hitItem;
+				const hitItem = this.hitItem;
 
-				let mouseEvent = new MouseUpEvent();
+				const mouseEvent = new MouseUpEvent();
 				mouseEvent.globalX = pos.x;
 				mouseEvent.globalY = pos.y;
 				mouseEvent.localX = hitItem.left - pos.x;
@@ -856,10 +856,10 @@ export class NodeScene {
 	}
 
 	onMouseMove(evt: MouseEvent) {
-		var pos = this.getScenePos(evt);
+		const pos = this.getScenePos(evt);
 
 		if (this.hitItem) {
-			let mouseEvent = new MouseMoveEvent();
+			const mouseEvent = new MouseMoveEvent();
 			mouseEvent.globalX = pos.x;
 			mouseEvent.globalY = pos.y;
 
@@ -870,16 +870,16 @@ export class NodeScene {
 			mouseEvent.altKey = evt.altKey;
 			mouseEvent.ctrlKey = evt.ctrlKey;
 
-			let drag = this.view.getMouseDeltaSceneSpace();
+			const drag = this.view.getMouseDeltaSceneSpace();
 			mouseEvent.deltaX = drag.x;
 			mouseEvent.deltaY = drag.y;
 
 			this.hitItem.mouseMove(mouseEvent);
 		} else {
 			// do mouse over
-			let hitItem = this.getHitItem(pos.x, pos.y);
+			const hitItem = this.getHitItem(pos.x, pos.y);
 			if (hitItem) {
-				let mouseEvent = new MouseOverEvent();
+				const mouseEvent = new MouseOverEvent();
 				mouseEvent.globalX = pos.x;
 				mouseEvent.globalY = pos.y;
 
@@ -917,8 +917,8 @@ export class NodeScene {
 	// x and y are scene space
 	getHitNode(x: number, y: number): NodeGraphicsItem {
 		// for (let node of this.nodes) {
-		for (var index = this.nodes.length - 1; index >= 0; index--) {
-			let node = this.nodes[index];
+		for (let index = this.nodes.length - 1; index >= 0; index--) {
+			const node = this.nodes[index];
 			if (node.isPointInside(x, y)) return node;
 		}
 
@@ -926,8 +926,8 @@ export class NodeScene {
 	}
 
 	getHitSocket(x: number, y: number): SocketGraphicsItem {
-		for (let node of this.nodes) {
-			for (let sock of node.sockets) {
+		for (const node of this.nodes) {
+			for (const sock of node.sockets) {
 				if (sock.isPointInside(x, y)) return sock;
 			}
 		}
@@ -938,7 +938,7 @@ export class NodeScene {
 	// gets item over mouse x and y
 	// obeys precedence
 	getHitItem(x: number, y: number): GraphicsItem {
-		let hitItem = this._getHitItem(x, y);
+		const hitItem = this._getHitItem(x, y);
 
 		// if item is in selection then return whole selection
 		if (
@@ -954,17 +954,17 @@ export class NodeScene {
 
 	_getHitItem(x: number, y: number): GraphicsItem {
 		// 1) navigation pins
-		for (var index = this.navigations.length - 1; index >= 0; index--) {
-			let nav = this.navigations[index];
+		for (let index = this.navigations.length - 1; index >= 0; index--) {
+			const nav = this.navigations[index];
 
 			if (nav.isPointInside(x, y)) return nav;
 		}
 
 		// 2) nodes and their sockets
 		for (let index = this.nodes.length - 1; index >= 0; index--) {
-			let node = this.nodes[index];
+			const node = this.nodes[index];
 
-			for (let sock of node.sockets) {
+			for (const sock of node.sockets) {
 				if (sock.isPointInside(x, y)) return sock;
 			}
 
@@ -973,14 +973,14 @@ export class NodeScene {
 
 		// 3) comments
 		for (let index = this.comments.length - 1; index >= 0; index--) {
-			let comment = this.comments[index];
+			const comment = this.comments[index];
 
 			if (comment.isPointInside(x, y)) return comment;
 		}
 
 		// 4) frame
 		for (let index = this.frames.length - 1; index >= 0; index--) {
-			let frame = this.frames[index];
+			const frame = this.frames[index];
 
 			if (frame.isPointInside(x, y)) return frame;
 		}
@@ -990,7 +990,7 @@ export class NodeScene {
 
 	isItemSelected(hitItem): boolean {
 		// todo: use dictionary
-		for (let item of this.selectedItems) if (item == hitItem) return true;
+		for (const item of this.selectedItems) if (item == hitItem) return true;
 		return false;
 	}
 
@@ -998,7 +998,7 @@ export class NodeScene {
 
 	// returns the scene pos from the mouse event
 	getScenePos(evt: MouseEvent) {
-		var canvasPos = _getMousePos(this.canvas, evt);
+		const canvasPos = _getMousePos(this.canvas, evt);
 		return this.view.canvasToSceneXY(canvasPos.x, canvasPos.y);
 	}
 
@@ -1006,12 +1006,12 @@ export class NodeScene {
 
 	// only save position data to associative array
 	save(): any {
-		let data: any = {};
+		const data: any = {};
 
 		// NODES
-		let nodes = {};
-		for (let node of this.nodes) {
-			let n: any = {};
+		const nodes = {};
+		for (const node of this.nodes) {
+			const n: any = {};
 			n["id"] = node.id;
 			n["x"] = node.centerX();
 			n["y"] = node.centerY();
@@ -1021,9 +1021,9 @@ export class NodeScene {
 		data["nodes"] = nodes;
 
 		// FRAMES
-		let frames = [];
-		for (let frame of this.frames) {
-			let n: any = {};
+		const frames = [];
+		for (const frame of this.frames) {
+			const n: any = {};
 			n["x"] = frame.left;
 			n["y"] = frame.top;
 			n["width"] = frame.getWidth();
@@ -1039,9 +1039,9 @@ export class NodeScene {
 		data["frames"] = frames;
 
 		// COMMENTS
-		let comments = [];
-		for (let comment of this.comments) {
-			let n: any = {};
+		const comments = [];
+		for (const comment of this.comments) {
+			const n: any = {};
 			n["x"] = comment.left;
 			n["y"] = comment.top;
 
@@ -1053,9 +1053,9 @@ export class NodeScene {
 		data["comments"] = comments;
 
 		// NAVIGATIONS
-		let navs = [];
-		for (let nav of this.navigations) {
-			let n: any = {};
+		const navs = [];
+		for (const nav of this.navigations) {
+			const n: any = {};
 			n["x"] = nav.left;
 			n["y"] = nav.top;
 
@@ -1071,13 +1071,13 @@ export class NodeScene {
 		data: any,
 		canvas: HTMLCanvasElement
 	): NodeScene {
-		var s = new NodeScene(canvas);
+		const s = new NodeScene(canvas);
 
 		// add nodes one by one
-		for (let dNode of designer.nodes) {
+		for (const dNode of designer.nodes) {
 			// create node from designer
-			var node = new NodeGraphicsItem(dNode.title);
-			for (let input of dNode.getInputs()) {
+			const node = new NodeGraphicsItem(dNode.title);
+			for (const input of dNode.getInputs()) {
 				node.addSocket(input, input, SocketType.In);
 			}
 			node.addSocket("output", "output", SocketType.Out);
@@ -1085,19 +1085,19 @@ export class NodeScene {
 			node.id = dNode.id;
 
 			// get position
-			var x = data["nodes"][node.id].x;
-			var y = data["nodes"][node.id].y;
+			const x = data["nodes"][node.id].x;
+			const y = data["nodes"][node.id].y;
 			node.setCenter(x, y);
 		}
 
 		// add connection one by one
-		for (let dcon of designer.conns) {
-			var con = new ConnectionGraphicsItem();
+		for (const dcon of designer.conns) {
+			const con = new ConnectionGraphicsItem();
 			con.id = dcon.id;
 
 			// get nodes
-			var leftNode = s.getNodeById(dcon.leftNode.id);
-			var rightNode = s.getNodeById(dcon.rightNode.id);
+			const leftNode = s.getNodeById(dcon.leftNode.id);
+			const rightNode = s.getNodeById(dcon.rightNode.id);
 
 			// get sockets
 			con.socketA = leftNode.getOutSocketByName(dcon.leftNodeOutput);
@@ -1109,8 +1109,8 @@ export class NodeScene {
 		//todo: integrity checks
 		// FRAMES
 		if (data.frames) {
-			for (let d of data.frames) {
-				let frame = new FrameGraphicsItem(s.view);
+			for (const d of data.frames) {
+				const frame = new FrameGraphicsItem(s.view);
 				frame.setPos(d.x, d.y);
 				frame.setSize(d.width, d.height);
 
@@ -1125,8 +1125,8 @@ export class NodeScene {
 
 		// COMMENTS
 		if (data.comments) {
-			for (let d of data.comments) {
-				let comment = new CommentGraphicsItem(s.view);
+			for (const d of data.comments) {
+				const comment = new CommentGraphicsItem(s.view);
 				comment.setPos(d.x, d.y);
 				comment.setText(d.text);
 				comment.color = Color.parse(d.color);
@@ -1137,8 +1137,8 @@ export class NodeScene {
 
 		// NAVIGATION
 		if (data.navigations) {
-			for (let d of data.navigations) {
-				let nav = new NavigationGraphicsItem();
+			for (const d of data.navigations) {
+				const nav = new NavigationGraphicsItem();
 				nav.setPos(d.x, d.y);
 				s.addNavigation(nav);
 			}
@@ -1151,7 +1151,7 @@ export class NodeScene {
 // https://www.html5canvastutorials.com/advanced/html5-canvas-mouse-coordinates/
 // https://stackoverflow.com/questions/17130395/real-mouse-position-in-canvas
 function _getMousePos(canvas, evt) {
-	var rect = canvas.getBoundingClientRect();
+	const rect = canvas.getBoundingClientRect();
 	return {
 		x: evt.clientX - rect.left,
 		y: evt.clientY - rect.top

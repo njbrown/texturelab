@@ -1,7 +1,7 @@
 const IMAGE_RENDER_SIZE = 1000;
 
 function _getMousePos(canvas, evt) {
-	var rect = canvas.getBoundingClientRect();
+	const rect = canvas.getBoundingClientRect();
 	return new Vector2(evt.clientX - rect.left, evt.clientY - rect.top);
 }
 
@@ -21,10 +21,10 @@ export enum DrawMode {
 }
 
 class Rect {
-	protected visible: boolean = true;
+	protected visible = true;
 
-	protected x: number = 0;
-	protected y: number = 0;
+	protected x = 0;
+	protected y = 0;
 	protected width: number;
 	protected height: number;
 
@@ -114,7 +114,7 @@ export class DragZoom {
 		this.context = this.canvas.getContext("2d");
 		this.image = null;
 
-		var self = this;
+		const self = this;
 		canvas.addEventListener("mousemove", function(evt: MouseEvent) {
 			self.onMouseMove(evt);
 		});
@@ -230,8 +230,8 @@ export class DragZoom {
 		// no panning while zooming
 		if (this.panning) return;
 
-		var pos = _getMousePos(this.canvas, evt);
-		var delta = (<any>evt).wheelDelta > 0 ? 1.1 : 1.0 / 1.1;
+		const pos = _getMousePos(this.canvas, evt);
+		const delta = (<any>evt).wheelDelta > 0 ? 1.1 : 1.0 / 1.1;
 
 		// offset from mouse pos
 		// find offset from previous zoom then move offset by that value

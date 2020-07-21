@@ -28,7 +28,7 @@ export class UndoStack {
 	undo() {
 		if (this.pointer < 0) return;
 
-		let action = this.stack[this.pointer];
+		const action = this.stack[this.pointer];
 		action.undo();
 
 		this.pointer -= 1;
@@ -39,7 +39,7 @@ export class UndoStack {
 
 		this.pointer += 1;
 
-		let action = this.stack[this.pointer];
+		const action = this.stack[this.pointer];
 		action.redo();
 	}
 }

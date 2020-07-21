@@ -10,7 +10,7 @@ export class WaveNode extends DesignerNode {
 		this.addFloatProperty("amp", "Amplitude", 0.5, 0.0, 1.0, 0.01);
 
 		// calculates normal, then warps uv by it
-		var source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             float fx = uv.x * 3.142 * 2.0 * float(prop_xfrequency);

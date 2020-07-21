@@ -5,7 +5,7 @@ export class TestGradientNode extends DesignerNode {
 		this.title = "Gradient Node";
 		console.log("goodbye from inside gradient node");
 
-		var source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             return vec4(uv.x, 0, uv.y, 1);
@@ -22,7 +22,7 @@ export class TestInvertNode extends DesignerNode {
 
 		this.addInput("color");
 
-		var source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             vec4 col = vec4(1.0) - texture(color,uv);
@@ -42,7 +42,7 @@ export class TestMultiplyNode extends DesignerNode {
 		this.addInput("colorA");
 		this.addInput("colorB");
 
-		var source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             vec4 colA = texture(colorA,uv);
@@ -60,7 +60,7 @@ export class TestShapeNode extends DesignerNode {
 		this.title = "Shape";
 		//this.exportName = "result";
 
-		var source = `
+		const source = `
         #define PI 3.14159265359
         #define TWO_PI 6.28318530718
 
@@ -97,7 +97,7 @@ export class TestWorleyNode extends DesignerNode {
 
 		this.addFloatProperty("scale", "Cell Scale", 5, 1, 20);
 
-		var source = `
+		const source = `
         vec3 mod289(vec3 x) {
             return x - floor(x * (1.0 / 289.0)) * 289.0;
           }
@@ -181,7 +181,7 @@ export class TestNormalNode extends DesignerNode {
 
 		this.addFloatProperty("strength", "Strength", 1, 0, 10, 0.01);
 
-		var source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             //vec2 size = textureSize(height);
@@ -229,7 +229,7 @@ export class TestWarpNode extends DesignerNode {
 		this.addFloatProperty("strength", "Strength", 1, 0, 100, 0.01);
 
 		// calculates normal, then warps uv by it
-		var source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             //vec2 size = textureSize(height);
@@ -275,7 +275,7 @@ export class TestSimplexNode extends DesignerNode {
 
 		this.addFloatProperty("scale", "Scale", 100, 1, 1000, 0.01);
 
-		var source = `
+		const source = `
         float random (in vec2 st) {
             return fract(sin(dot(st.xy,
                                  vec2(12.9898,78.233)))
@@ -348,7 +348,7 @@ export class TestBrickNode extends DesignerNode {
 		this.addFloatProperty("holeX", "Hole X", 2, 1, 10, 0.01);
 		this.addFloatProperty("holeY", "Hole Y", 2, 1, 10, 0.01);
 
-		var source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             float u = uv.x;

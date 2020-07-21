@@ -1,12 +1,12 @@
 import AdmZip from "adm-zip";
 import electron from "electron";
 
-var TextureType = {
+const TextureType = {
 	Default: 0,
 	NormalMap: 1
 };
 
-var exporter = {
+const exporter = {
 	canvas: null,
 	gl: null,
 	posBuffer: null,
@@ -18,7 +18,7 @@ var exporter = {
 };
 
 export async function zipExport(editor, materialName) {
-	let zip = new AdmZip();
+	const zip = new AdmZip();
 
 	// write albedo first
 	// if (editor.hasTextureChannel("albedo")) {
@@ -28,7 +28,7 @@ export async function zipExport(editor, materialName) {
 	//   );
 	// }
 
-	for (let channel in editor.textureChannels) {
+	for (const channel in editor.textureChannels) {
 		if (editor.textureChannels.hasOwnProperty(channel)) {
 			zip.addFile(
 				channel + ".png",
@@ -104,8 +104,8 @@ const METALLICGLOSS_FRAG = `precision mediump float;
 // creates canvas and context
 // creates shaders for converting the the textures
 function initGLAndResources(exporter) {
-	var canvas = document.createElement("canvas");
-	var gl = canvas.getContext("webgl");
+	const canvas = document.createElement("canvas");
+	const gl = canvas.getContext("webgl");
 
 	exporter.canvas = canvas;
 	exporter.gl = gl;
@@ -121,13 +121,13 @@ function initGLAndResources(exporter) {
 }
 
 function getShaderSource(id) {
-	var shaderScript = document.getElementById(id);
+	const shaderScript = document.getElementById(id);
 	if (!shaderScript) {
 		return null;
 	}
 
-	var str = "";
-	var k = shaderScript.firstChild;
+	let str = "";
+	let k = shaderScript.firstChild;
 	while (k) {
 		if (k.nodeType == 3) {
 			str += k.textContent;
@@ -139,7 +139,7 @@ function getShaderSource(id) {
 }
 
 function compileShader(gl, source, shaderType) {
-	var shader = gl.createShader(shaderType);
+	const shader = gl.createShader(shaderType);
 
 	gl.shaderSource(shader, source);
 	gl.compileShader(shader);
@@ -153,10 +153,10 @@ function compileShader(gl, source, shaderType) {
 }
 
 function buildShaderProgram(gl, vertSource, fragSource) {
-	var vertexShader = compileShader(gl, vertSource, gl.VERTEX_SHADER);
-	var fragmentShader = compileShader(gl, fragSource, gl.FRAGMENT_SHADER);
+	const vertexShader = compileShader(gl, vertSource, gl.VERTEX_SHADER);
+	const fragmentShader = compileShader(gl, fragSource, gl.FRAGMENT_SHADER);
 
-	var shaderProgram = gl.createProgram();
+	const shaderProgram = gl.createProgram();
 	gl.attachShader(shaderProgram, vertexShader);
 	gl.attachShader(shaderProgram, fragmentShader);
 	gl.linkProgram(shaderProgram);
@@ -176,7 +176,7 @@ function buildShaderProgram(gl, vertSource, fragSource) {
 // render quad using shader and texture inputs
 // returns HtmlImageElement
 function renderToImage(exporter, program, inputs) {
-	var gl = exporter.gl;
+	const gl = exporter.gl;
 
 	gl.viewport(0, 0, exporter.canvas.width, exporter.canvas.height);
 
@@ -188,9 +188,9 @@ function renderToImage(exporter, program, inputs) {
 	gl.useProgram(program);
 
 	// pass textures
-	var texIndex = 0;
-	for (var i in inputs) {
-		var input = inputs[i];
+	let texIndex = 0;
+	for (const i in inputs) {
+		const input = inputs[i];
 		if (input.tex) {
 			gl.activeTexture(gl.TEXTURE0 + texIndex);
 			gl.bindTexture(gl.TEXTURE_2D, input.tex);
@@ -203,8 +203,8 @@ function renderToImage(exporter, program, inputs) {
 	}
 
 	// bind mesh
-	var posLoc = gl.getAttribLocation(program, "a_pos");
-	var texCoordLoc = gl.getAttribLocation(program, "a_texCoord");
+	const posLoc = gl.getAttribLocation(program, "a_pos");
+	const texCoordLoc = gl.getAttribLocation(program, "a_texCoord");
 
 	// provide texture coordinates for the rectangle.
 	gl.bindBuffer(gl.ARRAY_BUFFER, exporter.posBuffer);
@@ -222,10 +222,10 @@ function renderToImage(exporter, program, inputs) {
 }
 
 function createVertexBuffers(exporter) {
-	var gl = exporter.gl;
+	const gl = exporter.gl;
 
 	// provide texture coordinates for the rectangle.
-	var texCoordBuffer = gl.createBuffer();
+	const texCoordBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
 	gl.bufferData(
 		gl.ARRAY_BUFFER,
@@ -246,7 +246,7 @@ function createVertexBuffers(exporter) {
 		gl.STATIC_DRAW
 	);
 
-	var posBuffer = gl.createBuffer();
+	const posBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
 	gl.bufferData(
 		gl.ARRAY_BUFFER,
@@ -280,7 +280,7 @@ function createVertexBuffers(exporter) {
 }
 
 function canvasToBase64(canvas) {
-	var data = canvas.toDataURL();
+	let data = canvas.toDataURL();
 	// todo: maybe script header?
 	// https://code-examples.net/en/q/6f412f
 	data = data.replace(/^data:image\/(png|jpg);base64,/, "");

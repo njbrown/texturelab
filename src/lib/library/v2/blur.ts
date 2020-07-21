@@ -12,7 +12,7 @@ export class BlurV2 extends DesignerNode {
 		this.addFloatProperty("intensity", "Intensity", 1, 0, 10, 0.1);
 		this.addIntProperty("samples", "Samples", 50, 0, 100, 1);
 
-		var source = `
+		const source = `
         #define pow2(x) (x * x)
 
         const float pi = atan(1.0) * 4.0;

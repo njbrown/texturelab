@@ -15,7 +15,7 @@ export class MirrorNode extends DesignerNode {
 		this.addFloatProperty("offset", "Offset", 0.5, 0, 1, 0.01);
 		this.addBoolProperty("clamp", "Clamp", true);
 
-		var source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             // left to right

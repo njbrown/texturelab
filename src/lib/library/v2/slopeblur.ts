@@ -11,7 +11,7 @@ export class SlopeBlur extends DesignerNode {
 		this.addFloatProperty("intensity", "Intensity", 1, 0, 5, 0.1);
 		this.addIntProperty("quality", "Quality", 5, 0, 10, 1);
 
-		var source = `
+		const source = `
         vec2 calcSlope(vec2 uv)
         {
             vec3 sl = vec3(0.0,0.0,0.0);

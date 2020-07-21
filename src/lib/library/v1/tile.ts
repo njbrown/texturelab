@@ -15,7 +15,7 @@ export class TileNode extends DesignerNode {
 		this.addFloatProperty("rows", "Rows", 6, 1, 20, 1);
 		this.addFloatProperty("columns", "Columns", 6, 1, 20, 1);
 
-		var source = `
+		const source = `
         // offset for alternating rows
             
         vec2 is_brick(vec2 pos)

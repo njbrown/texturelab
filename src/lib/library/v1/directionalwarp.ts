@@ -11,7 +11,7 @@ export class DirectionalWarpNode extends DesignerNode {
 		this.addFloatProperty("angle", "Angle", 0.85, 0.0, 3.142, 0.01);
 
 		// calculates normal, then warps uv by it
-		var source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             vec2 step = vec2(1.0,1.0)/_textureSize;

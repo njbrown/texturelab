@@ -36,6 +36,8 @@
 		"@types/jest": "^23.1.4",
 		"@types/jquery": "^3.3.30",
 		"@types/three": "^0.103.2",
+		"@typescript-eslint/eslint-plugin": "^2.33.0",
+		"@typescript-eslint/parser": "^2.33.0",
 		"@vue/cli-plugin-babel": "^3.8.0",
 		"@vue/cli-plugin-eslint": "^3.8.0",
 		"@vue/cli-plugin-typescript": "^3.8.0",
@@ -52,8 +54,6 @@
 		"ts-jest": "^23.0.0",
 		"typescript": "^3.9.5",
 		"vue-cli-plugin-electron-builder": "^1.4.0",
-		"vue-template-compiler": "^2.6.10",
-		"@typescript-eslint/eslint-plugin": "^2.33.0",
-		"@typescript-eslint/parser": "^2.33.0"
+		"vue-template-compiler": "^2.6.10"
 	}
 }

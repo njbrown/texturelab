@@ -18,7 +18,7 @@ export class TileSampler extends DesignerNode {
 		this.addFloatProperty("scale", "Scale", 1, 0, 4, 0.1);
 		this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.1);
 
-		var source = `
+		const source = `
 
         mat3 transMat(vec2 t)
         {

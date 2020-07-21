@@ -3,7 +3,7 @@ export function createTexture(
 	width: number,
 	height: number
 ): WebGLTexture {
-	var texture = gl.createTexture();
+	const texture = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 
 	// Set the parameters so we can render any size image.
@@ -21,13 +21,13 @@ export function createTexture(
 }
 
 export function getShaderSource(id) {
-	var shaderScript = document.getElementById(id);
+	const shaderScript = document.getElementById(id);
 	if (!shaderScript) {
 		return null;
 	}
 
-	var str = "";
-	var k = shaderScript.firstChild;
+	let str = "";
+	let k = shaderScript.firstChild;
 	while (k) {
 		if (k.nodeType == 3) {
 			str += k.textContent;
@@ -39,7 +39,7 @@ export function getShaderSource(id) {
 }
 
 export function compileShader(gl, source, shaderType) {
-	var shader = gl.createShader(shaderType);
+	const shader = gl.createShader(shaderType);
 
 	gl.shaderSource(shader, source);
 	gl.compileShader(shader);
@@ -53,10 +53,10 @@ export function compileShader(gl, source, shaderType) {
 }
 
 export function buildShaderProgram(gl, vertSource, fragSource) {
-	var vertexShader = compileShader(gl, vertSource, gl.VERTEX_SHADER);
-	var fragmentShader = compileShader(gl, fragSource, gl.FRAGMENT_SHADER);
+	const vertexShader = compileShader(gl, vertSource, gl.VERTEX_SHADER);
+	const fragmentShader = compileShader(gl, fragSource, gl.FRAGMENT_SHADER);
 
-	var shaderProgram = gl.createProgram();
+	const shaderProgram = gl.createProgram();
 	gl.attachShader(shaderProgram, vertexShader);
 	gl.attachShader(shaderProgram, fragmentShader);
 	gl.linkProgram(shaderProgram);

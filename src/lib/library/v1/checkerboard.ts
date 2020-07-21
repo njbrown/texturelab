@@ -11,7 +11,7 @@ export class CheckerBoardNode extends DesignerNode {
 
 		this.addColorProperty("color", "Color", new Color());
 
-		var source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             if ((mod(prop_columns*uv.x, 1.0) < 0.5) ^^ (mod(prop_rows*uv.y, 1.0) < 0.5))

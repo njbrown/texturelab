@@ -33,11 +33,11 @@ export class DesignerNode implements IPropertyHolder {
 	shaderProgram: WebGLProgram;
 	exportName: string;
 
-	inputs: string[] = new Array();
-	properties: Property[] = new Array();
+	inputs: string[] = [];
+	properties: Property[] = [];
 
 	// tells scene to update the texture next frame
-	needsUpdate: boolean = true;
+	needsUpdate = true;
 
 	// callbacks
 	onthumbnailgenerated: (DesignerNode, HTMLImageElement) => void;
@@ -53,7 +53,7 @@ export class DesignerNode implements IPropertyHolder {
 	}
 
 	public render(inputs: NodeInput[]) {
-		var gl = this.gl;
+		const gl = this.gl;
 		// bind texture to fbo
 		//gl.clearColor(0,0,1,1);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -62,7 +62,7 @@ export class DesignerNode implements IPropertyHolder {
 		gl.useProgram(this.shaderProgram);
 
 		// clear all inputs
-		for (let input of this.inputs) {
+		for (const input of this.inputs) {
 			gl.activeTexture(gl.TEXTURE0 + texIndex);
 			gl.bindTexture(gl.TEXTURE_2D, null);
 
@@ -76,7 +76,7 @@ export class DesignerNode implements IPropertyHolder {
 
 		// pass inputs for rendering
 		var texIndex = 0;
-		for (let input of inputs) {
+		for (const input of inputs) {
 			gl.activeTexture(gl.TEXTURE0 + texIndex);
 			gl.bindTexture(gl.TEXTURE_2D, input.node.tex);
 			gl.uniform1i(
@@ -105,7 +105,7 @@ export class DesignerNode implements IPropertyHolder {
 		);
 
 		// pass properties
-		for (let prop of this.properties) {
+		for (const prop of this.properties) {
 			if (prop instanceof FloatProperty) {
 				gl.uniform1f(
 					gl.getUniformLocation(this.shaderProgram, "prop_" + prop.name),
@@ -131,7 +131,7 @@ export class DesignerNode implements IPropertyHolder {
 				);
 			}
 			if (prop instanceof ColorProperty) {
-				var col = (prop as ColorProperty).value;
+				const col = (prop as ColorProperty).value;
 				//console.log("color: ", col);
 				gl.uniform4f(
 					gl.getUniformLocation(this.shaderProgram, "prop_" + prop.name),
@@ -142,7 +142,7 @@ export class DesignerNode implements IPropertyHolder {
 				);
 			}
 			if (prop instanceof GradientProperty) {
-				let gradient = (prop as GradientProperty).value;
+				const gradient = (prop as GradientProperty).value;
 
 				gl.uniform1i(
 					gl.getUniformLocation(
@@ -153,8 +153,8 @@ export class DesignerNode implements IPropertyHolder {
 				);
 
 				for (let i = 0; i < gradient.points.length; i++) {
-					let point = gradient.points[i];
-					let col = point.color;
+					const point = gradient.points[i];
+					const col = point.color;
 
 					gl.uniform3f(
 						gl.getUniformLocation(
@@ -178,8 +178,8 @@ export class DesignerNode implements IPropertyHolder {
 		}
 
 		// bind mesh
-		var posLoc = gl.getAttribLocation(this.shaderProgram, "a_pos");
-		var texCoordLoc = gl.getAttribLocation(this.shaderProgram, "a_texCoord");
+		const posLoc = gl.getAttribLocation(this.shaderProgram, "a_pos");
+		const texCoordLoc = gl.getAttribLocation(this.shaderProgram, "a_texCoord");
 
 		// provide texture coordinates for the rectangle.
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.designer.posBuffer);
@@ -207,7 +207,7 @@ export class DesignerNode implements IPropertyHolder {
 	}
 
 	public setProperty(name: string, value: any) {
-		let prop = this.properties.find(x => {
+		const prop = this.properties.find(x => {
 			return x.name == name;
 		});
 
@@ -250,7 +250,7 @@ export class DesignerNode implements IPropertyHolder {
 
 	// #source gets appended to fragment shader
 	buildShader(source: string) {
-		var vertSource: string = `#version 300 es
+		const vertSource = `#version 300 es
         precision highp float;
 
         in vec3 a_pos;
@@ -264,7 +264,7 @@ export class DesignerNode implements IPropertyHolder {
             v_texCoord = a_texCoord;
         }`;
 
-		var fragSource: string = `#version 300 es
+		let fragSource = `#version 300 es
         precision highp float;
         in vec2 v_texCoord;
 
@@ -300,14 +300,14 @@ export class DesignerNode implements IPropertyHolder {
 	// gets the height from the scene
 	// if the texture is already created, delete it and recreate it
 	createTexture() {
-		var gl = this.gl;
+		const gl = this.gl;
 
 		if (this.tex) {
 			gl.deleteTexture(this.tex);
 			this.tex = null;
 		}
 
-		var tex = gl.createTexture();
+		const tex = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, tex);
 
 		const level = 0;
@@ -341,7 +341,7 @@ export class DesignerNode implements IPropertyHolder {
 
 	createRandomLibOld(): string {
 		// float _seed = `+this.designer.getRandomSeed().toFixed(1)+`;
-		var code: string = `
+		const code = `
         // this offsets the random start (should be a uniform)
         uniform float _seed;
         // this is the starting number for the rng
@@ -395,7 +395,7 @@ export class DesignerNode implements IPropertyHolder {
 
 	createRandomLib(): string {
 		// float _seed = `+this.designer.getRandomSeed().toFixed(1)+`;
-		var code: string = `
+		const code = `
         // this offsets the random start (should be a uniform)
         uniform float _seed;
         // this is the starting number for the rng
@@ -493,7 +493,7 @@ export class DesignerNode implements IPropertyHolder {
 
 	createGradientLib(): string {
 		// float _seed = `+this.designer.getRandomSeed().toFixed(1)+`;
-		var code: string = `
+		const code = `
     struct Gradient {
 				vec3 colors[GRADIENT_MAX_POINTS];
 				float positions[GRADIENT_MAX_POINTS];
@@ -547,9 +547,9 @@ export class DesignerNode implements IPropertyHolder {
 	}
 
 	createCodeForInputs() {
-		var code: string = "";
+		let code = "";
 
-		for (let input of this.inputs) {
+		for (const input of this.inputs) {
 			code += "uniform sampler2D " + input + ";\n";
 			code += "uniform bool " + input + "_connected;\n";
 		}
@@ -558,12 +558,12 @@ export class DesignerNode implements IPropertyHolder {
 	}
 
 	createCodeForProps() {
-		var code: string = "";
+		let code = "";
 
 		//console.log(this.properties);
 		//console.log(typeof FloatProperty);
 
-		for (let prop of this.properties) {
+		for (const prop of this.properties) {
 			//code += "uniform sampler2D " + input + ";\n";
 			if (prop instanceof FloatProperty) {
 				code += "uniform float prop_" + prop.name + ";\n";
@@ -600,12 +600,12 @@ export class DesignerNode implements IPropertyHolder {
 	addIntProperty(
 		id: string,
 		displayName: string,
-		defaultVal: number = 1,
-		minVal: number = 1,
-		maxVal: number = 100,
-		increment: number = 1
+		defaultVal = 1,
+		minVal = 1,
+		maxVal = 100,
+		increment = 1
 	): IntProperty {
-		var prop = new IntProperty(id, displayName, defaultVal);
+		const prop = new IntProperty(id, displayName, defaultVal);
 		prop.minValue = minVal;
 		prop.maxValue = maxVal;
 		prop.step = increment;
@@ -617,12 +617,12 @@ export class DesignerNode implements IPropertyHolder {
 	addFloatProperty(
 		id: string,
 		displayName: string,
-		defaultVal: number = 1,
-		minVal: number = 1,
-		maxVal: number = 100,
-		increment: number = 1
+		defaultVal = 1,
+		minVal = 1,
+		maxVal = 100,
+		increment = 1
 	): FloatProperty {
-		var prop = new FloatProperty(id, displayName, defaultVal);
+		const prop = new FloatProperty(id, displayName, defaultVal);
 		prop.minValue = minVal;
 		prop.maxValue = maxVal;
 		prop.step = increment;
@@ -634,9 +634,9 @@ export class DesignerNode implements IPropertyHolder {
 	addBoolProperty(
 		id: string,
 		displayName: string,
-		defaultVal: boolean = false
+		defaultVal = false
 	): BoolProperty {
-		var prop = new BoolProperty(id, displayName, defaultVal);
+		const prop = new BoolProperty(id, displayName, defaultVal);
 
 		this.properties.push(prop);
 		return prop;
@@ -645,9 +645,9 @@ export class DesignerNode implements IPropertyHolder {
 	addEnumProperty(
 		id: string,
 		displayName: string,
-		defaultVal: string[] = new Array()
+		defaultVal: string[] = []
 	): EnumProperty {
-		var prop = new EnumProperty(id, displayName, defaultVal);
+		const prop = new EnumProperty(id, displayName, defaultVal);
 
 		this.properties.push(prop);
 		return prop;
@@ -658,7 +658,7 @@ export class DesignerNode implements IPropertyHolder {
 		displayName: string,
 		defaultVal: Color
 	): ColorProperty {
-		var prop = new ColorProperty(id, displayName, defaultVal);
+		const prop = new ColorProperty(id, displayName, defaultVal);
 
 		this.properties.push(prop);
 		return prop;
@@ -667,9 +667,9 @@ export class DesignerNode implements IPropertyHolder {
 	addStringProperty(
 		id: string,
 		displayName: string,
-		defaultVal: string = ""
+		defaultVal = ""
 	): StringProperty {
-		var prop = new StringProperty(id, displayName, defaultVal);
+		const prop = new StringProperty(id, displayName, defaultVal);
 
 		this.properties.push(prop);
 		return prop;
@@ -680,7 +680,7 @@ export class DesignerNode implements IPropertyHolder {
 		displayName: string,
 		defaultVal: Gradient
 	): GradientProperty {
-		var prop = new GradientProperty(id, displayName, defaultVal);
+		const prop = new GradientProperty(id, displayName, defaultVal);
 
 		this.properties.push(prop);
 		return prop;

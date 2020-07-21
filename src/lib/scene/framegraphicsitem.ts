@@ -101,7 +101,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		this.properties.push(this.showTitleProp);
 		this.properties.push(this.descrProp);
 	}
-	properties: Property[] = new Array();
+	properties: Property[] = [];
 	setProperty(name: string, value: any) {
 		if (name == "title") {
 			this.setTitle(value);
@@ -133,7 +133,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 	}
 
 	private buildColor(color: Color, alpha: number) {
-		var col =
+		const col =
 			"rgba(" +
 			color.r * 255 +
 			"," +
@@ -149,7 +149,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 
 	public setPos(x: number, y: number) {
 		// find diff
-		let diff = new Vector2(x - this.x, y - this.y);
+		const diff = new Vector2(x - this.x, y - this.y);
 		super.setPos(x, y);
 
 		// do a move
@@ -175,7 +175,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		ctx.stroke();
 
 		// handle
-		let handleSize = this.handleSize;
+		const handleSize = this.handleSize;
 		ctx.beginPath();
 		ctx.lineWidth = 1;
 		//ctx.fillStyle = "rgba(100, 0, 0, 0.5)";
@@ -209,7 +209,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		if (this.showTitle == true) {
 			ctx.beginPath();
 
-			let fontSize = 18; // * this.view.zoomFactor;
+			const fontSize = 18; // * this.view.zoomFactor;
 
 			ctx.save();
 			//ctx.scale(1.0 / this.view.zoomFactor, 1.0 / this.view.zoomFactor);
@@ -219,8 +219,8 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 			ctx.font = "30px 'Open Sans'";
 			ctx.fillStyle = "rgb(240, 240, 240)";
 			//let size = ctx.measureText(this.textureChannel.toUpperCase());
-			let textX = this.x;
-			let textY = this.y;
+			const textX = this.x;
+			const textY = this.y;
 			//ctx.fillText("Hello World", textX, textY - 5);
 			ctx.fillText(
 				this.title,
@@ -233,9 +233,9 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 
 		// debug draw frames
 		if (false) {
-			let regions = this.getFrameRegions();
-			for (let region of regions) {
-				let rect = region.rect;
+			const regions = this.getFrameRegions();
+			for (const region of regions) {
+				const rect = region.rect;
 				ctx.beginPath();
 				ctx.lineWidth = 1;
 				ctx.strokeStyle = "rgb(100, 0, 0, 0.8)";
@@ -246,8 +246,8 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 	}
 
 	public isPointInside(px: number, py: number): boolean {
-		let regions = this.getFrameRegions();
-		for (let region of regions) {
+		const regions = this.getFrameRegions();
+		for (const region of regions) {
 			if (region.rect.isPointInside(px, py)) {
 				return true;
 			}
@@ -269,12 +269,12 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		this.hit = true;
 		this.dragged = false;
 
-		let px = evt.globalX;
-		let py = evt.globalY;
+		const px = evt.globalX;
+		const py = evt.globalY;
 
 		let hitRegion: FrameRegion = null;
-		let regions = this.getFrameRegions();
-		for (let region of regions) {
+		const regions = this.getFrameRegions();
+		for (const region of regions) {
 			if (region.rect.isPointInside(px, py)) {
 				this.dragMode = region.dragMode;
 				this.xResize = region.xResizeDir;
@@ -310,12 +310,12 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 	}
 
 	public mouseOver(evt: MouseOverEvent) {
-		let px = evt.globalX;
-		let py = evt.globalY;
+		const px = evt.globalX;
+		const py = evt.globalY;
 
-		let hitRegion: FrameRegion = null;
-		let regions = this.getFrameRegions();
-		for (let region of regions) {
+		const hitRegion: FrameRegion = null;
+		const regions = this.getFrameRegions();
+		for (const region of regions) {
 			if (region.rect.isPointInside(px, py)) {
 				this.view.canvas.style.cursor = region.cursor;
 				return;
@@ -337,8 +337,8 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 
 	// return all scene's nodes in this frame
 	getHoveredNodes(): NodeGraphicsItem[] {
-		let nodes: NodeGraphicsItem[] = [];
-		for (let node of this.scene.nodes) {
+		const nodes: NodeGraphicsItem[] = [];
+		for (const node of this.scene.nodes) {
 			// node must be entirely inside frame
 			if (
 				node.left >= this.left &&
@@ -360,7 +360,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 				this.move(evt.deltaX, evt.deltaY);
 
 				// move nodes
-				for (let node of this.nodes) {
+				for (const node of this.nodes) {
 					node.move(evt.deltaX, evt.deltaY);
 				}
 			}
@@ -399,33 +399,33 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		// add undo/redo action
 		if (this.dragged) {
 			if (this.dragMode == DragMode.HandleTop) {
-				let newPos = new Vector2(this.x, this.y);
-				let items: GraphicsItem[] = [this];
-				let oldPosList: Vector2[] = [this.dragStartPos.clone()];
-				let newPosList: Vector2[] = [newPos];
+				const newPos = new Vector2(this.x, this.y);
+				const items: GraphicsItem[] = [this];
+				const oldPosList: Vector2[] = [this.dragStartPos.clone()];
+				const newPosList: Vector2[] = [newPos];
 
 				// reverse diff: new pos to old pos
-				let diff = new Vector2(
+				const diff = new Vector2(
 					this.dragStartPos.x - newPos.x,
 					this.dragStartPos.y - newPos.y
 				);
 
 				// add all captured nodes
-				for (let node of this.nodes) {
+				for (const node of this.nodes) {
 					items.push(node);
 					// new pos is the current pos
-					let itemNewPos = new Vector2(node.left, node.top);
+					const itemNewPos = new Vector2(node.left, node.top);
 					// old pos is current pos plus reverse diff
-					let itemOldPos = Vector2.add(itemNewPos, diff);
+					const itemOldPos = Vector2.add(itemNewPos, diff);
 
 					newPosList.push(itemNewPos);
 					oldPosList.push(itemOldPos);
 				}
 
-				let action = new MoveItemsAction(items, oldPosList, newPosList);
+				const action = new MoveItemsAction(items, oldPosList, newPosList);
 				UndoStack.current.push(action);
 			} else if (this.dragMode == DragMode.Resize) {
-				let action = new ResizeFrameAction(
+				const action = new ResizeFrameAction(
 					this,
 					this.dragStartRect.clone(),
 					this.getRect().clone()
@@ -443,8 +443,8 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 	}
 
 	getFrameRegions(): FrameRegion[] {
-		let regions: FrameRegion[] = [];
-		let frameRect = this.getRect();
+		const regions: FrameRegion[] = [];
+		const frameRect = this.getRect();
 		let rect: Rect = null;
 		let region: FrameRegion = null;
 

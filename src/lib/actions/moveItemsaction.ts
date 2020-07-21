@@ -21,14 +21,14 @@ export class MoveItemsAction extends Action {
 
 	undo() {
 		for (let i = 0; i < this.items.length; i++) {
-			let pos = this.oldPosList[i];
+			const pos = this.oldPosList[i];
 			this.items[i].setPos(pos.x, pos.y);
 		}
 	}
 
 	redo() {
 		for (let i = 0; i < this.items.length; i++) {
-			let pos = this.newPosList[i];
+			const pos = this.newPosList[i];
 			this.items[i].setPos(pos.x, pos.y);
 		}
 	}

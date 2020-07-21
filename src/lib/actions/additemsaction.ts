@@ -45,15 +45,15 @@ export class AddItemsAction extends Action {
 	}
 
 	undo() {
-		for (let frame of this.frames) {
+		for (const frame of this.frames) {
 			this.scene.removeFrame(frame);
 		}
 
-		for (let comment of this.comments) {
+		for (const comment of this.comments) {
 			this.scene.removeComment(comment);
 		}
 
-		for (let nav of this.navs) {
+		for (const nav of this.navs) {
 			this.scene.removeNavigation(nav);
 		}
 
@@ -63,7 +63,7 @@ export class AddItemsAction extends Action {
 
 		// relying on callbacks to add the connection
 		// in designer
-		for (let con of this.cons) {
+		for (const con of this.cons) {
 			this.scene.removeConnection(con);
 		}
 
@@ -72,35 +72,35 @@ export class AddItemsAction extends Action {
 		//       since texture channels are not assigned upon a node being
 		//		 added to a scene then there is no need to attempt to
 		//		 reassign any
-		for (let node of this.nodes) {
+		for (const node of this.nodes) {
 			this.scene.deleteNode(node);
 		}
 	}
 
 	redo() {
-		for (let frame of this.frames) {
+		for (const frame of this.frames) {
 			this.scene.addFrame(frame);
 		}
 
-		for (let comment of this.comments) {
+		for (const comment of this.comments) {
 			this.scene.addComment(comment);
 		}
 
-		for (let nav of this.navs) {
+		for (const nav of this.navs) {
 			this.scene.addNavigation(nav);
 		}
 
-		for (let node of this.nodes) {
+		for (const node of this.nodes) {
 			this.scene.addNode(node);
 		}
 
-		for (let dnode of this.dnodes) {
+		for (const dnode of this.dnodes) {
 			this.designer.addNode(dnode, false);
 		}
 
 		// relying on callbacks to add the connection
 		// in designer
-		for (let con of this.cons) {
+		for (const con of this.cons) {
 			this.scene.addConnection(con);
 		}
 	}

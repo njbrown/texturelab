@@ -8,7 +8,7 @@ export class SplatNodeV2 extends DesignerNode {
 
 		this.addIntProperty("count", "Count", 50, 0, 1000, 1);
 
-		var source = `
+		const source = `
         // https://github.com/glslify/glsl-inverse/blob/master/index.glsl
         // mat3 inverse(mat3 m) {
         //     float a00 = m[0][0], a01 = m[0][1], a02 = m[0][2];

@@ -12,11 +12,11 @@ export class Gradient {
 	points: GradientPoint[];
 
 	constructor() {
-		this.points = new Array();
+		this.points = [];
 	}
 
 	addPoint(t: number, color: Color): GradientPoint {
-		var point = new GradientPoint();
+		const point = new GradientPoint();
 		point.t = t;
 		point.color = color;
 
@@ -47,17 +47,17 @@ export class Gradient {
 		// here at least two points are available
 		if (t < this.points[0].t) return this.points[0].color.clone();
 
-		var last = this.points.length - 1;
+		const last = this.points.length - 1;
 		if (t > this.points[last].t) return this.points[last].color.clone();
 
 		// find two points and lerp
-		for (var i = 0; i < this.points.length - 1; i++) {
+		for (let i = 0; i < this.points.length - 1; i++) {
 			if (this.points[i + 1].t > t) {
-				var p1 = this.points[i];
-				var p2 = this.points[i + 1];
+				const p1 = this.points[i];
+				const p2 = this.points[i + 1];
 
-				var lerpPos = (t - p1.t) / (p2.t - p1.t);
-				var color = new Color();
+				const lerpPos = (t - p1.t) / (p2.t - p1.t);
+				const color = new Color();
 				color.copy(p1.color);
 				color.lerp(p2.color, lerpPos);
 
@@ -70,10 +70,10 @@ export class Gradient {
 	}
 
 	clone() {
-		let grad = new Gradient();
+		const grad = new Gradient();
 		grad.clear();
 
-		for (let p of this.points) {
+		for (const p of this.points) {
 			grad.addPoint(p.t, p.color.clone());
 		}
 
@@ -81,10 +81,10 @@ export class Gradient {
 	}
 
 	public static parse(obj: any) {
-		let gradient = new Gradient();
-		for (let p of obj.points) {
-			let t = p.t;
-			let color = new Color();
+		const gradient = new Gradient();
+		for (const p of obj.points) {
+			const t = p.t;
+			const color = new Color();
 			color.copy(p.color);
 
 			gradient.addPoint(t, color);
@@ -94,7 +94,7 @@ export class Gradient {
 	}
 
 	public static default() {
-		let gradient = new Gradient();
+		const gradient = new Gradient();
 		gradient.addPoint(0, new Color(0, 0, 0, 1.0));
 		gradient.addPoint(1, new Color(1, 1, 1, 1.0));
 

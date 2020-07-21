@@ -9,7 +9,7 @@ export class Project {
 
 export class ProjectManager {
 	static load(path: string): Project {
-		let project = new Project();
+		const project = new Project();
 
 		project.path = path;
 		project.name = path.replace(/^.*[\\/]/, "");

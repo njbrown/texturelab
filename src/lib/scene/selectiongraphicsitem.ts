@@ -38,8 +38,8 @@ export class SelectionGraphicsItem extends GraphicsItem {
 		this.scene = scene;
 		this.view = view;
 		this.color = new Color(0.9, 0.9, 0.9);
-		this.items = new Array();
-		this.itemsDragStartPos = new Array();
+		this.items = [];
+		this.itemsDragStartPos = [];
 
 		this.hit = false;
 		this.dragged = false;
@@ -52,7 +52,7 @@ export class SelectionGraphicsItem extends GraphicsItem {
 
 	public isPointInside(px: number, py: number): boolean {
 		//todo: loop through child items rect to see if a hit is made
-		for (let item of this.items) {
+		for (const item of this.items) {
 			if (
 				px >= item.left &&
 				px <= item.left + item.getWidth() &&
@@ -69,8 +69,8 @@ export class SelectionGraphicsItem extends GraphicsItem {
 		// should only display if hit or has items
 		if (this.hit == false && this.items.length == 0) return;
 
-		let width = this.width;
-		let height = this.height;
+		const width = this.width;
+		const height = this.height;
 
 		if (this.items.length == 0) {
 			if (!this.isTooSmall()) {
@@ -86,7 +86,7 @@ export class SelectionGraphicsItem extends GraphicsItem {
 				ctx.setLineDash([]);
 
 				// if hit, then mouse is being dragged, these items are temporary
-				let items = this.getHitItems();
+				const items = this.getHitItems();
 				this.drawSelectedItems(items, ctx);
 			}
 		} else {
@@ -95,13 +95,13 @@ export class SelectionGraphicsItem extends GraphicsItem {
 	}
 
 	drawSelectedItems(items: GraphicsItem[], ctx: CanvasRenderingContext2D) {
-		for (let item of items) {
+		for (const item of items) {
 			ctx.beginPath();
 			ctx.lineWidth = 2;
 			ctx.strokeStyle = "rgba(250, 250, 250)";
 			//this.roundRect(ctx, this.x, this.y, width, height, 1);
 			// ctx.rect(item.left, item.top, item.getWidth(), item.getHeight());
-			var rect = item.getRect();
+			const rect = item.getRect();
 			rect.expand(15);
 			ctx.rect(rect.left, rect.top, rect.width, rect.height);
 
@@ -119,7 +119,7 @@ export class SelectionGraphicsItem extends GraphicsItem {
 	 * This returns a rect with positive dimensions
 	 */
 	getPositiveRect(): Rect {
-		let rect = new Rect();
+		const rect = new Rect();
 		rect.x = this.x;
 		rect.y = this.y;
 
@@ -139,16 +139,16 @@ export class SelectionGraphicsItem extends GraphicsItem {
 	}
 
 	getHitItems(): GraphicsItem[] {
-		let items: GraphicsItem[] = [];
-		let rect = this.getPositiveRect();
+		const items: GraphicsItem[] = [];
+		const rect = this.getPositiveRect();
 
-		for (let node of this.scene.nodes) {
+		for (const node of this.scene.nodes) {
 			if (node.intersectsRect(rect)) {
 				items.push(node);
 			}
 		}
 
-		for (let item of this.scene.comments) {
+		for (const item of this.scene.comments) {
 			if (item.intersectsRect(rect)) {
 				items.push(item);
 			}
@@ -157,10 +157,10 @@ export class SelectionGraphicsItem extends GraphicsItem {
 		// Frames are treated differently
 		// check if any of the sides were hit
 		// by the selection box for a valid selection
-		for (let item of this.scene.frames) {
-			let frame = <FrameGraphicsItem>item;
-			let regions = frame.getFrameRegions();
-			for (let region of regions) {
+		for (const item of this.scene.frames) {
+			const frame = <FrameGraphicsItem>item;
+			const regions = frame.getFrameRegions();
+			for (const region of regions) {
 				if (region.rect.intersects(rect)) {
 					items.push(item);
 					break;
@@ -168,7 +168,7 @@ export class SelectionGraphicsItem extends GraphicsItem {
 			}
 		}
 
-		for (let item of this.scene.navigations) {
+		for (const item of this.scene.navigations) {
 			if (item.intersectsRect(rect)) {
 				items.push(item);
 			}
@@ -180,18 +180,18 @@ export class SelectionGraphicsItem extends GraphicsItem {
 	// todo: ultra slow!
 	// does frame * scenenodes check per frame
 	getDraggableHitItems(hitItems: GraphicsItem[]): GraphicsItem[] {
-		let items: Set<GraphicsItem> = new Set<GraphicsItem>();
+		const items: Set<GraphicsItem> = new Set<GraphicsItem>();
 
 		hitItems.forEach((i: GraphicsItem) => {
 			items.add(i);
 
 			if (i instanceof FrameGraphicsItem) {
-				let captured = (<FrameGraphicsItem>i).getHoveredNodes();
+				const captured = (<FrameGraphicsItem>i).getHoveredNodes();
 				captured.forEach(c => items.add(c));
 			}
 		});
 
-		let results: GraphicsItem[] = [];
+		const results: GraphicsItem[] = [];
 		items.forEach((i: GraphicsItem) => results.push(i));
 
 		return results;
@@ -220,7 +220,7 @@ export class SelectionGraphicsItem extends GraphicsItem {
 
 	public mouseMove(evt: MouseMoveEvent) {
 		if (this.items.length > 0) {
-			for (let item of this.draggableItems) {
+			for (const item of this.draggableItems) {
 				item.move(evt.deltaX, evt.deltaY);
 			}
 			this.dragged = true;
@@ -248,8 +248,8 @@ export class SelectionGraphicsItem extends GraphicsItem {
 	// UNDO-REDO
 	captureDragStarts() {
 		this.itemsDragStartPos = [];
-		for (let item of this.draggableItems) {
-			let pos = new Vector2(item.left, item.top);
+		for (const item of this.draggableItems) {
+			const pos = new Vector2(item.left, item.top);
 			this.itemsDragStartPos.push(pos);
 		}
 	}
@@ -262,13 +262,13 @@ export class SelectionGraphicsItem extends GraphicsItem {
 	}
 
 	createUndoAction() {
-		let newPosList = [];
-		for (let item of this.draggableItems) {
-			let pos = new Vector2(item.left, item.top);
+		const newPosList = [];
+		for (const item of this.draggableItems) {
+			const pos = new Vector2(item.left, item.top);
 			newPosList.push(pos);
 		}
 
-		let action = new MoveItemsAction(
+		const action = new MoveItemsAction(
 			this.draggableItems,
 			this.itemsDragStartPos,
 			newPosList

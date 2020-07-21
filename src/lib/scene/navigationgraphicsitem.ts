@@ -65,10 +65,10 @@ export class NavigationGraphicsItem extends GraphicsItem {
 		this.hit = false;
 
 		// add undo/redo
-		let newPos = new Vector2(this.x, this.y);
+		const newPos = new Vector2(this.x, this.y);
 
 		if (this.dragged) {
-			let action = new MoveItemsAction(
+			const action = new MoveItemsAction(
 				[this],
 				[this.dragStartPos.clone()],
 				[newPos]

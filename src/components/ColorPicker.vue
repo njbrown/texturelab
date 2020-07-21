@@ -62,8 +62,8 @@ import { Color } from "../lib/designer/color";
 
 @Component({
 	components: {
-		Sketch,
-	},
+		Sketch
+	}
 })
 export default class ColorPicker extends Vue {
 	@Prop()
@@ -145,7 +145,6 @@ export default class ColorPicker extends Vue {
 			target = e.target;
 		let sketch = (<Vue>this.$refs.sketch).$el;
 
-		// if (el !== target && !el.contains(target)) {
 		if (
 			target !== el &&
 			target !== this.$refs.span &&

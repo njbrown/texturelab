@@ -36,14 +36,14 @@ export interface IPropertyHolder {
 
 export class FloatProperty extends Property {
 	value: number;
-	minValue: number = 0;
-	maxValue: number = 1;
-	step: number = 1;
+	minValue = 0;
+	maxValue = 1;
+	step = 1;
 	public constructor(
 		name: string,
 		displayName: string,
 		value: number,
-		step: number = 1
+		step = 1
 	) {
 		super();
 		this.name = name;
@@ -63,7 +63,7 @@ export class FloatProperty extends Property {
 	}
 
 	public clone(): Property {
-		var prop = new FloatProperty(
+		const prop = new FloatProperty(
 			this.name,
 			this.displayName,
 			this.value,
@@ -85,14 +85,14 @@ export class FloatProperty extends Property {
 
 export class IntProperty extends Property {
 	value: number;
-	minValue: number = 0;
-	maxValue: number = 100;
-	step: number = 1;
+	minValue = 0;
+	maxValue = 100;
+	step = 1;
 	public constructor(
 		name: string,
 		displayName: string,
 		value: number,
-		step: number = 1
+		step = 1
 	) {
 		super();
 		this.name = name;
@@ -112,7 +112,7 @@ export class IntProperty extends Property {
 	}
 
 	public clone(): Property {
-		var prop = new IntProperty(
+		const prop = new IntProperty(
 			this.name,
 			this.displayName,
 			this.value,
@@ -152,7 +152,7 @@ export class BoolProperty extends Property {
 	}
 
 	public clone(): Property {
-		var prop = new BoolProperty(this.name, this.displayName, this.value);
+		const prop = new BoolProperty(this.name, this.displayName, this.value);
 
 		return prop;
 	}
@@ -164,7 +164,7 @@ export class BoolProperty extends Property {
 
 export class EnumProperty extends Property {
 	values: string[];
-	index: number = 0;
+	index = 0;
 	public constructor(name: string, displayName: string, values: string[]) {
 		super();
 		this.name = name;
@@ -187,7 +187,7 @@ export class EnumProperty extends Property {
 	}
 
 	public clone(): Property {
-		var prop = new EnumProperty(
+		const prop = new EnumProperty(
 			this.name,
 			this.displayName,
 			this.values.slice(0)
@@ -224,7 +224,7 @@ export class ColorProperty extends Property {
 		else if (typeof val == "string") this.value = Color.parse(val);
 		else if (typeof val == "object") {
 			console.log("setting value", val);
-			var value = new Color();
+			const value = new Color();
 			value.r = val.r || 0;
 			value.g = val.g || 0;
 			value.b = val.b || 0;
@@ -235,7 +235,7 @@ export class ColorProperty extends Property {
 	}
 
 	public clone(): Property {
-		var prop = new ColorProperty(this.name, this.displayName, this.value);
+		const prop = new ColorProperty(this.name, this.displayName, this.value);
 
 		return prop;
 	}
@@ -251,8 +251,8 @@ export class StringProperty extends Property {
 	public constructor(
 		name: string,
 		displayName: string,
-		value: string = "",
-		isMultiline: boolean = false
+		value = "",
+		isMultiline = false
 	) {
 		super();
 		this.name = name;
@@ -272,7 +272,7 @@ export class StringProperty extends Property {
 	}
 
 	public clone(): Property {
-		var prop = new StringProperty(this.name, this.displayName, this.value);
+		const prop = new StringProperty(this.name, this.displayName, this.value);
 
 		return prop;
 	}
@@ -302,7 +302,7 @@ export class GradientProperty extends Property {
 	}
 
 	public clone(): Property {
-		var prop = new GradientProperty(
+		const prop = new GradientProperty(
 			this.name,
 			this.displayName,
 			this.value.clone()

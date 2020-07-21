@@ -10,9 +10,9 @@ NOTES:
 */
 import JSZip from "jszip";
 
-var keyWords = "_METALLICGLOSSMAP _NORMALMAP";
+const keyWords = "_METALLICGLOSSMAP _NORMALMAP";
 
-var materialTemplate = `%YAML 1.1
+const materialTemplate = `%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!21 &2100000
 Material:
@@ -84,7 +84,7 @@ Material:
       - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
 `;
 
-var materialMetaTemplate = `fileFormatVersion: 2
+const materialMetaTemplate = `fileFormatVersion: 2
 guid: {{material_guid}}
 NativeFormatImporter:
     externalObjects: {}
@@ -94,7 +94,7 @@ NativeFormatImporter:
     assetBundleVariant: 
 `;
 
-var textureMetaTemplate = `fileFormatVersion: 2
+const textureMetaTemplate = `fileFormatVersion: 2
 guid: {{texture_guid}}
 TextureImporter:
   fileIDToRecycleName: {}
@@ -213,20 +213,20 @@ TextureImporter:
   assetBundleVariant: 
 `;
 
-var TextureType = {
+const TextureType = {
 	Default: 0,
 	NormalMap: 1
 };
 
-var matNullTexTemp = `m_Texture: {fileID: 0}
+const matNullTexTemp = `m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}`;
 
-var matTexTemp = `m_Texture: {fileID: 2800000, guid: {{guid}}, type: 3}
+const matTexTemp = `m_Texture: {fileID: 2800000, guid: {{guid}}, type: 3}
         m_Scale: {x: {{repeatx}}, y: {{repeaty}}}
         m_Offset: {x: 0, y: 0}`;
 
-var exporter = {
+const exporter = {
 	canvas: null,
 	gl: null,
 	posBuffer: null,
@@ -238,12 +238,12 @@ var exporter = {
 };
 
 export function unityExport(editor, materialName) {
-	var zip = new JSZip();
+	const zip = new JSZip();
 
 	// todo : filter name, might have illegal characters
 	//var materialName = saveData.name;
 
-	var matData = {
+	const matData = {
 		name: materialName,
 		keywords: "",
 		albedo_tex: matNullTexTemp,
@@ -254,7 +254,7 @@ export function unityExport(editor, materialName) {
 
 	// write texture first
 	if (editor.hasTextureChannel("albedo")) {
-		var albedoGuid = newGuid();
+		const albedoGuid = newGuid();
 		zip.file(
 			albedoGuid + "/asset",
 			canvasToBase64(editor.getChannelCanvasImage("albedo").canvas),
@@ -280,9 +280,9 @@ export function unityExport(editor, materialName) {
 	}
 
 	if (editor.hasTextureChannel("normal")) {
-		var guid = newGuid();
+		const guid = newGuid();
 
-		var normalCanvas = editor.getChannelCanvasImage("normal");
+		const normalCanvas = editor.getChannelCanvasImage("normal");
 		exporter.canvas.width = normalCanvas.width();
 		exporter.canvas.height = normalCanvas.height();
 
@@ -310,7 +310,7 @@ export function unityExport(editor, materialName) {
 		editor.hasTextureChannel("metalness") ||
 		editor.hasTextureChannel("roughness")
 	) {
-		var guid = newGuid();
+		const guid = newGuid();
 
 		//var normalCanvas = viewer.normalCanvas;
 		// resize canvas
@@ -318,13 +318,13 @@ export function unityExport(editor, materialName) {
 		exporter.canvas.width = editor.getImageWidth();
 		exporter.canvas.height = editor.getImageHeight();
 
-		var mTex = null;
+		let mTex = null;
 		if (editor.hasTextureChannel("metalness"))
 			mTex = editor
 				.getChannelCanvasImage("metalness")
 				.createTexture(exporter.gl);
 
-		var rTex = null;
+		let rTex = null;
 		if (editor.hasTextureChannel("roughness"))
 			rTex = editor
 				.getChannelCanvasImage("roughness")
@@ -357,7 +357,7 @@ export function unityExport(editor, materialName) {
 	// glosiness is the inverse of the roughness map
 
 	// write material last
-	var matGuid = newGuid();
+	const matGuid = newGuid();
 	/*
         zip.file(matGuid+"/asset",template(materialTemplate,{
             keywords:"",
@@ -389,15 +389,15 @@ export function unityExport(editor, materialName) {
 
 function newGuid() {
 	return "xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx".replace(/[xy]/g, function(c) {
-		var r = (Math.random() * 16) | 0,
+		const r = (Math.random() * 16) | 0,
 			v = c == "x" ? r : (r & 0x3) | 0x8;
 		return v.toString(16);
 	});
 }
 
 function template(str, data) {
-	var res = str;
-	for (var name in data) {
+	let res = str;
+	for (const name in data) {
 		res = res.replace("{{" + name + "}}", data[name]);
 	}
 
@@ -468,8 +468,8 @@ const METALLICGLOSS_FRAG = `precision mediump float;
 // creates canvas and context
 // creates shaders for converting the the textures
 function initGLAndResources(exporter) {
-	var canvas = document.createElement("canvas");
-	var gl = canvas.getContext("webgl");
+	const canvas = document.createElement("canvas");
+	const gl = canvas.getContext("webgl");
 
 	exporter.canvas = canvas;
 	exporter.gl = gl;
@@ -485,13 +485,13 @@ function initGLAndResources(exporter) {
 }
 
 function getShaderSource(id) {
-	var shaderScript = document.getElementById(id);
+	const shaderScript = document.getElementById(id);
 	if (!shaderScript) {
 		return null;
 	}
 
-	var str = "";
-	var k = shaderScript.firstChild;
+	let str = "";
+	let k = shaderScript.firstChild;
 	while (k) {
 		if (k.nodeType == 3) {
 			str += k.textContent;
@@ -503,7 +503,7 @@ function getShaderSource(id) {
 }
 
 function compileShader(gl, source, shaderType) {
-	var shader = gl.createShader(shaderType);
+	const shader = gl.createShader(shaderType);
 
 	gl.shaderSource(shader, source);
 	gl.compileShader(shader);
@@ -517,10 +517,10 @@ function compileShader(gl, source, shaderType) {
 }
 
 function buildShaderProgram(gl, vertSource, fragSource) {
-	var vertexShader = compileShader(gl, vertSource, gl.VERTEX_SHADER);
-	var fragmentShader = compileShader(gl, fragSource, gl.FRAGMENT_SHADER);
+	const vertexShader = compileShader(gl, vertSource, gl.VERTEX_SHADER);
+	const fragmentShader = compileShader(gl, fragSource, gl.FRAGMENT_SHADER);
 
-	var shaderProgram = gl.createProgram();
+	const shaderProgram = gl.createProgram();
 	gl.attachShader(shaderProgram, vertexShader);
 	gl.attachShader(shaderProgram, fragmentShader);
 	gl.linkProgram(shaderProgram);
@@ -540,7 +540,7 @@ function buildShaderProgram(gl, vertSource, fragSource) {
 // render quad using shader and texture inputs
 // returns HtmlImageElement
 function renderToImage(exporter, program, inputs) {
-	var gl = exporter.gl;
+	const gl = exporter.gl;
 
 	gl.viewport(0, 0, exporter.canvas.width, exporter.canvas.height);
 
@@ -552,9 +552,9 @@ function renderToImage(exporter, program, inputs) {
 	gl.useProgram(program);
 
 	// pass textures
-	var texIndex = 0;
-	for (var i in inputs) {
-		var input = inputs[i];
+	let texIndex = 0;
+	for (const i in inputs) {
+		const input = inputs[i];
 		if (input.tex) {
 			gl.activeTexture(gl.TEXTURE0 + texIndex);
 			gl.bindTexture(gl.TEXTURE_2D, input.tex);
@@ -567,8 +567,8 @@ function renderToImage(exporter, program, inputs) {
 	}
 
 	// bind mesh
-	var posLoc = gl.getAttribLocation(program, "a_pos");
-	var texCoordLoc = gl.getAttribLocation(program, "a_texCoord");
+	const posLoc = gl.getAttribLocation(program, "a_pos");
+	const texCoordLoc = gl.getAttribLocation(program, "a_texCoord");
 
 	// provide texture coordinates for the rectangle.
 	gl.bindBuffer(gl.ARRAY_BUFFER, exporter.posBuffer);
@@ -586,10 +586,10 @@ function renderToImage(exporter, program, inputs) {
 }
 
 function createVertexBuffers(exporter) {
-	var gl = exporter.gl;
+	const gl = exporter.gl;
 
 	// provide texture coordinates for the rectangle.
-	var texCoordBuffer = gl.createBuffer();
+	const texCoordBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
 	gl.bufferData(
 		gl.ARRAY_BUFFER,
@@ -610,7 +610,7 @@ function createVertexBuffers(exporter) {
 		gl.STATIC_DRAW
 	);
 
-	var posBuffer = gl.createBuffer();
+	const posBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
 	gl.bufferData(
 		gl.ARRAY_BUFFER,
@@ -644,7 +644,7 @@ function createVertexBuffers(exporter) {
 }
 
 function canvasToBase64(canvas) {
-	var data = canvas.toDataURL();
+	let data = canvas.toDataURL();
 	// todo: maybe script header?
 	// https://code-examples.net/en/q/6f412f
 	data = data.replace(/^data:image\/(png|jpg);base64,/, "");
