@@ -50,12 +50,12 @@ export class ItemClipboard {
 		data.connections = this.getConnections(data.nodes, designer, nodeList);
 
 		// FRAMES
-		var frames = [];
+		let frames = [];
 		for (let item of items) {
 			if (!(item instanceof FrameGraphicsItem)) continue;
 			let frame = <FrameGraphicsItem>item;
 
-			var n: any = {};
+			let n: any = {};
 			n["x"] = frame.left;
 			n["y"] = frame.top;
 			n["width"] = frame.getWidth();
@@ -71,12 +71,12 @@ export class ItemClipboard {
 		data.frames = frames;
 
 		// COMMENTS
-		var comments = [];
+		let comments = [];
 		for (let item of items) {
 			if (!(item instanceof CommentGraphicsItem)) continue;
 			let comment = <CommentGraphicsItem>item;
 
-			var n: any = {};
+			let n: any = {};
 			n["x"] = comment.left;
 			n["y"] = comment.top;
 
@@ -88,12 +88,12 @@ export class ItemClipboard {
 		data.comments = comments;
 
 		// NAVIGATIONS
-		var navs = [];
+		let navs = [];
 		for (let item of items) {
 			if (!(item instanceof NavigationGraphicsItem)) continue;
 			let nav = <NavigationGraphicsItem>item;
 
-			var n: any = {};
+			let n: any = {};
 			n["x"] = nav.left;
 			n["y"] = nav.top;
 

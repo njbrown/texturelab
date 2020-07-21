@@ -961,7 +961,7 @@ export class NodeScene {
 		}
 
 		// 2) nodes and their sockets
-		for (var index = this.nodes.length - 1; index >= 0; index--) {
+		for (let index = this.nodes.length - 1; index >= 0; index--) {
 			let node = this.nodes[index];
 
 			for (let sock of node.sockets) {
@@ -972,14 +972,14 @@ export class NodeScene {
 		}
 
 		// 3) comments
-		for (var index = this.comments.length - 1; index >= 0; index--) {
+		for (let index = this.comments.length - 1; index >= 0; index--) {
 			let comment = this.comments[index];
 
 			if (comment.isPointInside(x, y)) return comment;
 		}
 
 		// 4) frame
-		for (var index = this.frames.length - 1; index >= 0; index--) {
+		for (let index = this.frames.length - 1; index >= 0; index--) {
 			let frame = this.frames[index];
 
 			if (frame.isPointInside(x, y)) return frame;
@@ -1006,12 +1006,12 @@ export class NodeScene {
 
 	// only save position data to associative array
 	save(): any {
-		var data: any = {};
+		let data: any = {};
 
 		// NODES
-		var nodes = {};
+		let nodes = {};
 		for (let node of this.nodes) {
-			var n: any = {};
+			let n: any = {};
 			n["id"] = node.id;
 			n["x"] = node.centerX();
 			n["y"] = node.centerY();
@@ -1021,9 +1021,9 @@ export class NodeScene {
 		data["nodes"] = nodes;
 
 		// FRAMES
-		var frames = [];
+		let frames = [];
 		for (let frame of this.frames) {
-			var n: any = {};
+			let n: any = {};
 			n["x"] = frame.left;
 			n["y"] = frame.top;
 			n["width"] = frame.getWidth();
@@ -1039,9 +1039,9 @@ export class NodeScene {
 		data["frames"] = frames;
 
 		// COMMENTS
-		var comments = [];
+		let comments = [];
 		for (let comment of this.comments) {
-			var n: any = {};
+			let n: any = {};
 			n["x"] = comment.left;
 			n["y"] = comment.top;
 
@@ -1053,9 +1053,9 @@ export class NodeScene {
 		data["comments"] = comments;
 
 		// NAVIGATIONS
-		var navs = [];
+		let navs = [];
 		for (let nav of this.navigations) {
-			var n: any = {};
+			let n: any = {};
 			n["x"] = nav.left;
 			n["y"] = nav.top;
 

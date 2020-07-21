@@ -25,9 +25,9 @@ function hexToRgb(hex) {
 	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
 	return result
 		? {
-			r: parseInt(result[1], 16),
-			g: parseInt(result[2], 16),
-			b: parseInt(result[3], 16)
+				r: parseInt(result[1], 16),
+				g: parseInt(result[2], 16),
+				b: parseInt(result[3], 16)
 		  }
 		: null;
 }
@@ -438,28 +438,26 @@ export class Editor {
 				self.selectedDesignerNode = dnode;
 				//console.log(dnode);
 
-				if (true) {
-					if (self.preview2DCtx) {
-						self.preview2DCtx.drawImage(
-							node.imageCanvas.canvas,
-							0,
-							0,
-							self.preview2D.width,
-							self.preview2D.height
-						);
-					}
+				if (self.preview2DCtx) {
+					self.preview2DCtx.drawImage(
+						node.imageCanvas.canvas,
+						0,
+						0,
+						self.preview2D.width,
+						self.preview2D.height
+					);
+				}
 
-					// todo: move to double click
-					if (self.onpreviewnode) {
-						self.onpreviewnode(dnode, node.imageCanvas.canvas);
-					}
+				// todo: move to double click
+				if (self.onpreviewnode) {
+					self.onpreviewnode(dnode, node.imageCanvas.canvas);
+				}
 
-					//console.log(this.scene3D);
-					if (self.scene3D) {
-						//console.log("setting height texture");
-						//self.scene3D.setHeightTexture(node.thumbnail);
-						self.updateDisplayNode(node);
-					}
+				//console.log(this.scene3D);
+				if (self.scene3D) {
+					//console.log("setting height texture");
+					//self.scene3D.setHeightTexture(node.thumbnail);
+					self.updateDisplayNode(node);
 				}
 			}
 

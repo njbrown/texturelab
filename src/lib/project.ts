@@ -12,7 +12,7 @@ export class ProjectManager {
 		let project = new Project();
 
 		project.path = path;
-		project.name = path.replace(/^.*[\\\/]/, "");
+		project.name = path.replace(/^.*[\\/]/, "");
 		project.data = JSON.parse(fs.readFileSync(path).toString());
 		return project;
 	}
