@@ -1,10 +1,11 @@
-![Build](https://github.com/njbrown/texturelab/workflows/Build/badge.svg)
+
 
 <h1 align="center">
   TextureLab
 </h1>
 
 <p align="center">
+  <img src="https://github.com/njbrown/texturelab/workflows/Build/badge.svg" /> <img src="https://img.shields.io/badge/License-GPLv3-blue.svg" /><br/>
   Free, Cross-Platform, GPU-Accelerated Procedural Texture Generator.<br/>
   <a href="https://njbrown.itch.io/texturelab">DOWNLOAD AT ITCH.IO</a>
 </p>
