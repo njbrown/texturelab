@@ -373,6 +373,21 @@ export class View3D {
 		this.scene.add(this.model);
 	}
 
+	loadModel(modelPath: string) {
+		if (this.model) this.scene.remove(this.model);
+
+		let loader = new OBJLoader();
+		loader.load(modelPath, group => {
+			// assign material to all children
+			for (let child of group.children)
+				if (child instanceof THREE.Mesh)
+					(child as THREE.Mesh).material = this.material;
+
+			this.model = group;
+			this.scene.add(this.model);
+		});
+	}
+
 	reset() {
 		// clear all textures
 		// reset camera position

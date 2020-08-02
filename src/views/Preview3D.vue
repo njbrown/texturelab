@@ -10,6 +10,7 @@
 				<option value="cube">Cube</option>
 				<option value="plane">Plane</option>
 				<option value="cylinder">Cylinder</option>
+				<option value="load">Load..</option>
 			</select>
 
 			<select class="enum right" @change="setTiling">
@@ -26,6 +27,9 @@
 <script>
 import { View3D } from "@/lib/view3d";
 import { DesignerNode } from "@/lib/designer/designernode";
+const electron = require("electron");
+const remote = electron.remote;
+const { dialog, app, BrowserWindow, Menu } = require("electron").remote;
 
 export default {
 	// props: {
@@ -75,7 +79,25 @@ export default {
 		setShape(evt) {
 			// todo: set 3d model
 			console.log("set model: ", evt.target.value);
-			this.view3d.setModel(evt.target.value);
+			if (evt.target.value !== "load") this.view3d.setModel(evt.target.value);
+			else {
+				dialog.showOpenDialog(
+					remote.getCurrentWindow(),
+					{
+						filters: [
+							{
+								name: "Obj Model",
+								extensions: ["obj"]
+							}
+						],
+						defaultPath: ""
+					},
+					(paths, bookmarks) => {
+						let path = paths[0];
+						this.view3d.loadModel(path);
+					}
+				);
+			}
 		},
 		setTiling(evt) {
 			// todo: set 3d model
