@@ -33,6 +33,7 @@ import { BlurV2 } from "./v2/blur";
 import { AdvanceSplatterV2 } from "./v2/advancesplatter";
 import { SlopeBlur } from "./v2/slopeblur";
 import { TileSampler } from "./v2/tilesampler";
+import { GradientDynamic } from "./v2/gradientdynamic";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -78,6 +79,7 @@ export function createLibrary() {
 	lib.addNode("slopeblur", "Slope Blur", SlopeBlur);
 	lib.addNode("advancesplatter", "Advance Splatter", AdvanceSplatterV2);
 	lib.addNode("tilesampler", "Tile Sampler", TileSampler);
+	lib.addNode("gradientdynamic", "Gradient Dynamic", GradientDynamic);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
