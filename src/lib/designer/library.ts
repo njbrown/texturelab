@@ -12,7 +12,7 @@ export class DesignerLibrary {
 	nodes = [];
 
 	// https://www.snip2code.com/Snippet/685188/Create-instance-of-generic-type-on-TypeS
-	public addNode<T extends GpuDesignerNode>(
+	public addNode<T extends DesignerNode>(
 		name: string,
 		displayName: string,
 		type: { new (): T }
