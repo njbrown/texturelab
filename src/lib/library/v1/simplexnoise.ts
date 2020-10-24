@@ -1,7 +1,7 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
 // https://thebookofshaders.com/11/
-export class SimplexNoiseNode extends DesignerNode {
+export class SimplexNoiseNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Simplex Noise";
 

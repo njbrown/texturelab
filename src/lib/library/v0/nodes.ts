@@ -1,6 +1,6 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
-export class TestGradientNode extends DesignerNode {
+export class TestGradientNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Gradient Node";
 		console.log("goodbye from inside gradient node");
@@ -16,7 +16,7 @@ export class TestGradientNode extends DesignerNode {
 	}
 }
 
-export class TestInvertNode extends DesignerNode {
+export class TestInvertNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Invert";
 
@@ -35,7 +35,7 @@ export class TestInvertNode extends DesignerNode {
 	}
 }
 
-export class TestMultiplyNode extends DesignerNode {
+export class TestMultiplyNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Multiply";
 
@@ -55,7 +55,7 @@ export class TestMultiplyNode extends DesignerNode {
 	}
 }
 
-export class TestShapeNode extends DesignerNode {
+export class TestShapeNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Shape";
 		//this.exportName = "result";
@@ -90,7 +90,7 @@ export class TestShapeNode extends DesignerNode {
 	}
 }
 
-export class TestWorleyNode extends DesignerNode {
+export class TestWorleyNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Worley";
 		//this.exportName = "result";
@@ -173,7 +173,7 @@ export class TestWorleyNode extends DesignerNode {
 }
 
 // http://www.smart-page.net/smartnormal/js/SmartNormalMapFilter.js
-export class TestNormalNode extends DesignerNode {
+export class TestNormalNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Normal Map";
 		//this.exportName = "result";
@@ -219,7 +219,7 @@ export class TestNormalNode extends DesignerNode {
 	}
 }
 
-export class TestWarpNode extends DesignerNode {
+export class TestWarpNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Warp";
 
@@ -269,7 +269,7 @@ export class TestWarpNode extends DesignerNode {
 }
 
 // https://thebookofshaders.com/11/
-export class TestSimplexNode extends DesignerNode {
+export class TestSimplexNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Simplex Noise";
 
@@ -338,7 +338,7 @@ export class TestSimplexNode extends DesignerNode {
 	}
 }
 
-export class TestBrickNode extends DesignerNode {
+export class TestBrickNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Brick";
 

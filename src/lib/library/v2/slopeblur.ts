@@ -1,7 +1,7 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
 // multiple pass warp
-export class SlopeBlur extends DesignerNode {
+export class SlopeBlur extends GpuDesignerNode {
 	public init() {
 		this.title = "Slope Blur";
 

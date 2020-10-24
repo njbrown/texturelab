@@ -1,6 +1,6 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
-export class HexagonNode extends DesignerNode {
+export class HexagonNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Hexagon";
 

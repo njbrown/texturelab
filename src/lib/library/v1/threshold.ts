@@ -1,6 +1,6 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
-export class ThresholdNode extends DesignerNode {
+export class ThresholdNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Threshold";
 

@@ -1,7 +1,7 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
 // https://thebookofshaders.com/edit.php#12/tissue.frag
-export class LineCellNode extends DesignerNode {
+export class LineCellNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Lined Cell";
 

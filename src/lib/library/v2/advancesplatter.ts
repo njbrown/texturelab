@@ -1,6 +1,6 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
-export class AdvanceSplatterV2 extends DesignerNode {
+export class AdvanceSplatterV2 extends GpuDesignerNode {
 	public init() {
 		this.title = "Advance Splatter";
 

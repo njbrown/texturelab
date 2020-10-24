@@ -1,6 +1,6 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
-export class HeightShiftNode extends DesignerNode {
+export class HeightShiftNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Height Shift";
 

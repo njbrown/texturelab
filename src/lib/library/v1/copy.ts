@@ -1,6 +1,6 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
-export class CopyNode extends DesignerNode {
+export class CopyNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Copy";
 

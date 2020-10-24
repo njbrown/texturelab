@@ -1,7 +1,7 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
 // https://thebookofshaders.com/12/
-export class CellNode extends DesignerNode {
+export class CellNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Cell";
 

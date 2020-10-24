@@ -1,7 +1,7 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
 // http://www.smart-page.net/smartnormal/js/SmartNormalMapFilter.js
-export class NormalMapNode extends DesignerNode {
+export class NormalMapNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Normal Map";
 		//this.exportName = "result";
@@ -51,7 +51,7 @@ export class NormalMapNode extends DesignerNode {
 	}
 }
 
-export class BetterWarpNode extends DesignerNode {
+export class BetterWarpNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Better Warp Node";
 		//this.exportName = "result";

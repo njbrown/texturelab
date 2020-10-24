@@ -1,7 +1,7 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 import { Color } from "@/lib/designer/color";
 
-export class ColorizeNode extends DesignerNode {
+export class ColorizeNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Colorize";
 
@@ -20,7 +20,7 @@ export class ColorizeNode extends DesignerNode {
 	}
 }
 
-export class ColorNode extends DesignerNode {
+export class ColorNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Color";
 

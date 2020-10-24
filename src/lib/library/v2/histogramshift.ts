@@ -1,6 +1,6 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
-export class HistogramShift extends DesignerNode {
+export class HistogramShift extends GpuDesignerNode {
 	public init() {
 		this.title = "Histogram Shift";
 

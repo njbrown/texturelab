@@ -1,6 +1,6 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
-export class TileSampler extends DesignerNode {
+export class TileSampler extends GpuDesignerNode {
 	public init() {
 		this.title = "Tile Sampler";
 

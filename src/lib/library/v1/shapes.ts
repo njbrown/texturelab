@@ -1,7 +1,7 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
 // https://thebookofshaders.com/07/
-export class PolygonNode extends DesignerNode {
+export class PolygonNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Polygon";
 
@@ -42,7 +42,7 @@ export class PolygonNode extends DesignerNode {
 	}
 }
 
-export class CircleNode extends DesignerNode {
+export class CircleNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Circle";
 

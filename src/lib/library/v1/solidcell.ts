@@ -1,6 +1,6 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
-export class SolidCellNode extends DesignerNode {
+export class SolidCellNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Solid Cell";
 

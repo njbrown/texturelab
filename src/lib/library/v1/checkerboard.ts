@@ -1,8 +1,8 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 import { Color } from "@/lib/designer/color";
 
 // https://stackoverflow.com/questions/4694608/glsl-checkerboard-pattern
-export class CheckerBoardNode extends DesignerNode {
+export class CheckerBoardNode extends GpuDesignerNode {
 	public init() {
 		this.title = "CheckerBoard";
 

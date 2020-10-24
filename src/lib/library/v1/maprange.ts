@@ -1,6 +1,6 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
-export class MapRangeNode extends DesignerNode {
+export class MapRangeNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Map Range";
 

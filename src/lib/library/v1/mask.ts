@@ -1,6 +1,6 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
-export class MaskNode extends DesignerNode {
+export class MaskNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Mask";
 

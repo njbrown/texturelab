@@ -1,6 +1,6 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
-export class BrickGeneratorNode extends DesignerNode {
+export class BrickGeneratorNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Brick Generator";
 

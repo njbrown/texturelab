@@ -1,6 +1,6 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
-export class Quantize extends DesignerNode {
+export class Quantize extends GpuDesignerNode {
 	public init() {
 		this.title = "Quantize";
 

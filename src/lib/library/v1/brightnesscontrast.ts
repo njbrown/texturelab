@@ -1,7 +1,7 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
 // https://github.com/evanw/glfx.js/blob/master/src/filters/adjust/brightnesscontrast.js
-export class BrightnessContrastNode extends DesignerNode {
+export class BrightnessContrastNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Brightness Contrast";
 

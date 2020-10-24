@@ -1,6 +1,6 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
-export class Perlin3DNode extends DesignerNode {
+export class Perlin3DNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Perlin 3D";
 

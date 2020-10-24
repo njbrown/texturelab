@@ -1,6 +1,6 @@
-import { DesignerNode } from "../../designer/designernode";
+import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
-export class Transform2DNode extends DesignerNode {
+export class Transform2DNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Transform2D";
 
