@@ -36,6 +36,7 @@ import { TileSampler } from "./v2/tilesampler";
 import { GradientDynamic } from "./v2/gradientdynamic";
 import { Clamp } from "./v2/clamp";
 import { Pow } from "./v2/pow";
+import { Quantize } from "./v2/quantize";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -84,6 +85,7 @@ export function createLibrary() {
 	lib.addNode("gradientdynamic", "Gradient Dynamic", GradientDynamic);
 	lib.addNode("clamp", "Clamp", Clamp);
 	lib.addNode("pow", "Pow", Pow);
+	lib.addNode("quantize", "Quantize", Quantize);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
