@@ -1,5 +1,5 @@
 import { Guid } from "../utils";
-import { Designer } from "../designer";
+import { Designer, NodeRenderContext } from "../designer";
 import {
 	Property,
 	FloatProperty,
@@ -52,8 +52,22 @@ export class DesignerNode implements IPropertyHolder {
 		this.designer.requestUpdate(this);
 	}
 
-	public render(inputs: NodeInput[]) {
+	public render(context:NodeRenderContext) {
+		const inputs = context.inputs;
 		const gl = this.gl;
+
+		gl.bindFramebuffer(gl.FRAMEBUFFER, context.fbo);
+		gl.activeTexture(gl.TEXTURE0);
+		gl.framebufferTexture2D(
+			gl.FRAMEBUFFER,
+			gl.COLOR_ATTACHMENT0,
+			gl.TEXTURE_2D,
+			this.tex,
+			0
+		);
+
+		gl.viewport(0, 0, context.textureWidth, context.textureHeight);
+
 		// bind texture to fbo
 		//gl.clearColor(0,0,1,1);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -195,7 +209,7 @@ export class DesignerNode implements IPropertyHolder {
 		gl.disableVertexAttribArray(posLoc);
 		gl.disableVertexAttribArray(texCoordLoc);
 
-		// render
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	}
 
 	public getInputs(): string[] {

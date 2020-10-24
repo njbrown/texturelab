@@ -19,6 +19,19 @@ import {
 	DesignerNodePropertyMap
 } from "./designer/designervariable";
 
+export class NodeRenderContext
+{
+	canvas: HTMLCanvasElement;
+	gl: WebGLRenderingContext;
+	fbo: WebGLFramebuffer;
+	inputs: NodeInput[];
+
+	textureWidth:number;
+	textureHeight:number;
+
+	randomSeed: number;
+}
+
 export class Designer {
 	canvas: HTMLCanvasElement;
 	gl: WebGLRenderingContext;
@@ -43,6 +56,8 @@ export class Designer {
 	//variables
 	variables: DesignerVariable[];
 
+	renderContext: NodeRenderContext;
+
 	// callbacks
 	onthumbnailgenerated: (DesignerNode, HTMLImageElement) => void;
 
@@ -61,6 +76,8 @@ export class Designer {
 		this.canvas.width = this.width;
 		this.canvas.height = this.height;
 		this.gl = this.canvas.getContext("webgl2");
+
+		this.renderContext = new NodeRenderContext();
 
 		this.nodes = [];
 		this.conns = [];
@@ -354,21 +371,16 @@ export class Designer {
 
 		const gl = this.gl;
 
-		// todo: move to node maybe
-		gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
-		gl.activeTexture(gl.TEXTURE0);
-		gl.framebufferTexture2D(
-			gl.FRAMEBUFFER,
-			gl.COLOR_ATTACHMENT0,
-			gl.TEXTURE_2D,
-			node.tex,
-			0
-		);
+		let context = this.renderContext;
+		context.gl = gl;
+		context.canvas = this.canvas;
+		context.inputs = inputs;
+		context.randomSeed = this.randomSeed;
+		context.fbo = this.fbo;
+		context.textureWidth = this.width;
+		context.textureHeight = this.height;
 
-		gl.viewport(0, 0, this.width, this.height);
-		node.render(inputs);
-
-		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		node.render(context);
 
 		if (this.onnodetextureupdated) {
 			this.onnodetextureupdated(node);
