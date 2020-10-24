@@ -35,6 +35,7 @@ import { SlopeBlur } from "./v2/slopeblur";
 import { TileSampler } from "./v2/tilesampler";
 import { GradientDynamic } from "./v2/gradientdynamic";
 import { Clamp } from "./v2/clamp";
+import { Pow } from "./v2/pow";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -82,6 +83,7 @@ export function createLibrary() {
 	lib.addNode("tilesampler", "Tile Sampler", TileSampler);
 	lib.addNode("gradientdynamic", "Gradient Dynamic", GradientDynamic);
 	lib.addNode("clamp", "Clamp", Clamp);
+	lib.addNode("pow", "Pow", Pow);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
