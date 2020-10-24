@@ -40,6 +40,7 @@ import { Quantize } from "./v2/quantize";
 import { HistogramShift } from "./v2/histogramshift";
 import { HistogramScan } from "./v2/histogramscan";
 import { HistogramSelect } from "./v2/histogramselect";
+import { Skew } from "./v2/skew";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -92,6 +93,7 @@ export function createLibrary() {
 	lib.addNode("histogramshift", "Histogram Shift", HistogramShift);
 	lib.addNode("histogramscan", "Histogram Scan", HistogramScan);
 	lib.addNode("histogramselect", "Histogram Select", HistogramSelect);
+	lib.addNode("skew", "Skew", Skew);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
