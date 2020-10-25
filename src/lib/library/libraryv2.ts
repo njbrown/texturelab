@@ -41,6 +41,7 @@ import { HistogramShift } from "./v2/histogramshift";
 import { HistogramScan } from "./v2/histogramscan";
 import { HistogramSelect } from "./v2/histogramselect";
 import { Skew } from "./v2/skew";
+import { Bevel } from "./v2/bevel";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -94,6 +95,7 @@ export function createLibrary() {
 	lib.addNode("histogramscan", "Histogram Scan", HistogramScan);
 	lib.addNode("histogramselect", "Histogram Select", HistogramSelect);
 	lib.addNode("skew", "Skew", Skew);
+	lib.addNode("bevel", "Bevel", Bevel);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
