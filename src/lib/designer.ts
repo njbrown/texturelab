@@ -64,7 +64,7 @@ export class Designer {
 	// called everytime a node's texture gets updated
 	// listeners can use this update their CanvasTextures
 	// by rendering the node's texture with renderNodeTextureToCanvas(node, imageCanvas)
-	onnodetextureupdated: (DesignerNode) => void;
+	onnodetextureupdated: (DesignerNode, number) => void;
 
 	public constructor() {
 		this.width = 1024;
@@ -380,10 +380,13 @@ export class Designer {
 		context.textureWidth = this.width;
 		context.textureHeight = this.height;
 
+		let startTime = Date.now();
 		node.render(context);
+		let endTime = Date.now();
+		let dtInMs = endTime - startTime;
 
 		if (this.onnodetextureupdated) {
-			this.onnodetextureupdated(node);
+			this.onnodetextureupdated(node, dtInMs);
 		}
 
 		const thumb = this.generateThumbnailFromNode(node);

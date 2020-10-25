@@ -23,6 +23,8 @@ export class NodeGraphicsItem extends GraphicsItem {
 	thumbnail!: HTMLImageElement;
 	imageCanvas: ImageCanvas;
 
+	processingTime:number;
+
 	hit: boolean;
 
 	// albedo, normal, height, etc...
@@ -36,6 +38,7 @@ export class NodeGraphicsItem extends GraphicsItem {
 		this.height = 100;
 		this.title = title;
 		this.imageCanvas = new ImageCanvas();
+		this.processingTime = 0;
 		this.hit = false;
 	}
 
@@ -114,6 +117,7 @@ export class NodeGraphicsItem extends GraphicsItem {
 			ctx.fillText(this.title, textX, textY);
 		}
 
+		// DRAW SHAPE
 		ctx.beginPath();
 		ctx.lineWidth = 4;
 		// if (renderState.selected) ctx.strokeStyle = "rgb(255, 255, 255)";
@@ -127,6 +131,16 @@ export class NodeGraphicsItem extends GraphicsItem {
 			sock.draw(ctx, renderState);
 		}
 
+		// processing time
+		ctx.beginPath();
+		let procTime = this.processingTime+"ms";
+		ctx.font = "bold 9px 'Open Sans'";
+		ctx.fillStyle = "rgb(255,255,255)";
+		const size = ctx.measureText(procTime);
+		const textX = this.centerX() - size.width / 2;
+		const textY = this.y + this.height + 14;
+		ctx.fillText(procTime, textX, textY);
+
 		// texture channel
 		if (this.textureChannel) {
 			ctx.beginPath();
@@ -135,9 +149,12 @@ export class NodeGraphicsItem extends GraphicsItem {
 			ctx.fillStyle = "rgb(200, 255, 200)";
 			const size = ctx.measureText(this.textureChannel.toUpperCase());
 			const textX = this.centerX() - size.width / 2;
-			const textY = this.y + this.height + 14;
+			//const textY = this.y + this.height + 14;
+
+			const textY = this.y - 12;
 			ctx.fillText(this.textureChannel.toUpperCase(), textX, textY);
 		}
+
 	}
 
 	public setPos(x: number, y: number) {

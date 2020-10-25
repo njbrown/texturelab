@@ -332,9 +332,11 @@ export class Editor {
 		this.designer = designer;
 		const self = this;
 
-		designer.onnodetextureupdated = function(dnode) {
+		designer.onnodetextureupdated = function(dnode, dtInMs) {
 			const graphNode = self.graph.getNodeById(dnode.id);
 			if (!graphNode) return; // node could have been deleted
+
+			graphNode.processingTime = dtInMs;
 
 			self.designer.copyNodeTextureToImageCanvas(dnode, graphNode.imageCanvas);
 
