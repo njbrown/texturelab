@@ -77,9 +77,9 @@ export class Bevel extends DesignerNode {
         // copy data over from canvas data to grid
         for(let i = 0; i< gridSize;i++) {
             let col = 0;
-            col += pixels[i * 4 + 0];
-            col += pixels[i * 4 + 1];
-            col += pixels[i * 4 + 2];
+            col += 255 - pixels[i * 4 + 0];
+            col += 255 - pixels[i * 4 + 1];
+            col += 255 - pixels[i * 4 + 2];
 
 
             //grid[i] = (col * 0.3333) / 255;
@@ -115,8 +115,8 @@ export class Bevel extends DesignerNode {
         console.log(min, max, range, scale);
 
         for(let i = 0; i< gridSize;i++) {
-            let col = (grid[i] - min) * scale;
-            //let col = 255 - (grid[i] - min) * scale; // de-invert
+            //let col = (grid[i] - min) * scale;
+            let col = 255 - (grid[i] - min) * scale; // de-invert
             
             pixels[i * 4 + 0] = col;
             pixels[i * 4 + 1] = col;
@@ -165,24 +165,26 @@ var INF = 1e20;
 
 // 2D Euclidean squared distance transform by Felzenszwalb & Huttenlocher https://cs.brown.edu/~pff/papers/dt-final.pdf
 function edt(data:Float64Array, width:number, height:number, f:Float64Array, v:Uint16Array, z:Float64Array) {
-    for (var x = 0; x < width; x++) edt1d(data, x, width, height, f, v, z);
-    for (var y = 0; y < height; y++) edt1d(data, y * width, 1, width, f, v, z);
+    for (let x = 0; x < width; x++) edt1d(data, x, width, height, f, v, z);
+    for (let y = 0; y < height; y++) edt1d(data, y * width, 1, width, f, v, z);
 }
 
 // 1D squared distance transform
 function edt1d(grid:Float64Array, offset:number, stride:number, length:number, f:Float64Array, v:Uint16Array, z:Float64Array) {
-    var q, k, s, r;
+    let q, k, s, r;
     v[0] = 0;
     z[0] = -INF;
     z[1] = INF;
 
+    // load line in array for convenient access
     for (q = 0; q < length; q++) f[q] = grid[offset + q * stride];
 
     for (q = 1, k = 0, s = 0; q < length; q++) {
         do {
             r = v[k];
             s = (f[q] - f[r] + q * q - r * r) / (q - r) / 2;
-        } while (s <= z[k] && --k > -1);
+        // todo: wrap k in z[k] and make --k > -length
+        } while (s <= z[k] && --k > -1); 
 
         k++;
         v[k] = q;
