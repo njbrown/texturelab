@@ -30,9 +30,10 @@ export class Bevel extends DesignerNode {
 
         let size = Math.max(width, height);
 
-        this.f = new Float64Array(size);
-        this.z = new Float64Array(size + 1);
-        this.v = new Uint16Array(size);
+        // make it span 3 textures wide to get wrapping
+        this.f = new Float64Array(size * 3);
+        this.z = new Float64Array(size * 3 + 1);
+        this.v = new Uint16Array(size * 3);
 
         // convert image to float64 array
         let gridSize = width * height;
@@ -177,9 +178,12 @@ function edt1d(grid:Float64Array, offset:number, stride:number, length:number, f
     z[1] = INF;
 
     // load line in array for convenient access
+    // do it three times
     for (q = 0; q < length; q++) f[q] = grid[offset + q * stride];
+    for (q = 0; q < length; q++) f[q + length] = grid[offset + q * stride];
+    for (q = 0; q < length; q++) f[q + length + length] = grid[offset + q * stride];
 
-    for (q = 1, k = 0, s = 0; q < length; q++) {
+    for (q = 1, k = 0, s = 0; q < length * 3; q++) {
         do {
             r = v[k];
             s = (f[q] - f[r] + q * q - r * r) / (q - r) / 2;
@@ -192,9 +196,12 @@ function edt1d(grid:Float64Array, offset:number, stride:number, length:number, f
         z[k + 1] = INF;
     }
 
-    for (q = 0, k = 0; q < length; q++) {
+    // only cope over mid section
+    // |----|----|----|
+    //         ^
+    for (q = length, k = 0; q < length + length; q++) {
         while (z[k + 1] < q) k++;
         r = v[k];
-        grid[offset + q * stride] = f[r] + (q - r) * (q - r);
+        grid[offset + (q - length) * stride] = f[r] + (q - r) * (q - r);
     }
 }
