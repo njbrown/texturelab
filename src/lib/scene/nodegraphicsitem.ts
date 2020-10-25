@@ -133,7 +133,10 @@ export class NodeGraphicsItem extends GraphicsItem {
 
 		// processing time
 		ctx.beginPath();
-		let procTime = this.processingTime+"ms";
+		let procTime = "calculating..";
+		if (this.processingTime >= 0)
+			procTime = this.processingTime+"ms";
+
 		ctx.font = "bold 9px 'Open Sans'";
 		ctx.fillStyle = "rgb(255,255,255)";
 		const size = ctx.measureText(procTime);

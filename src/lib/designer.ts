@@ -32,9 +32,19 @@ export class NodeRenderContext
 	randomSeed: number;
 }
 
+// keeps track of query object that tracks
+// node's processing time
+// https://www.khronos.org/registry/webgl/extensions/EXT_disjoint_timer_query_webgl2/
+export class NodeRenderTimer
+{
+	query:WebGLQuery;
+	ms:number;
+	node:DesignerNode;
+}
+
 export class Designer {
 	canvas: HTMLCanvasElement;
-	gl: WebGLRenderingContext;
+	gl: WebGL2RenderingContext;
 	public texCoordBuffer: WebGLBuffer;
 	public posBuffer: WebGLBuffer;
 	vertexShaderSource: string;
@@ -58,6 +68,9 @@ export class Designer {
 
 	renderContext: NodeRenderContext;
 
+	renderTimers:NodeRenderTimer[];
+	queryExt:any;
+
 	// callbacks
 	onthumbnailgenerated: (DesignerNode, HTMLImageElement) => void;
 
@@ -65,6 +78,8 @@ export class Designer {
 	// listeners can use this update their CanvasTextures
 	// by rendering the node's texture with renderNodeTextureToCanvas(node, imageCanvas)
 	onnodetextureupdated: (DesignerNode, number) => void;
+
+	onnodetimeupdated: (DesignerNode, number) => void;
 
 	public constructor() {
 		this.width = 1024;
@@ -77,6 +92,13 @@ export class Designer {
 		this.canvas.height = this.height;
 		this.gl = this.canvas.getContext("webgl2");
 
+		let result = this.gl.getExtension("EXT_disjoint_timer_query_webgl2");
+		if (result)
+			console.log("TIMER QUERY SUPPORTED", result);
+		else
+			console.log("TIMER QUERY NOT SUPPORTED", result);
+		this.queryExt = result;
+
 		this.renderContext = new NodeRenderContext();
 
 		this.nodes = [];
@@ -84,7 +106,41 @@ export class Designer {
 
 		this.updateList = [];
 		this.variables = [];
+
+		this.renderTimers = [];
+
 		this.init();
+	}
+
+	// evaludate rendertimers
+	// discards ones that arent ready
+	// this function should be called at the beginning
+	// of a render cycle
+	public calculateNodeProcessingTimes():NodeRenderTimer[]
+	{
+		const gl = this.gl;
+
+		let completeTimers:NodeRenderTimer[] = [];
+		for(let timer of this.renderTimers) {
+			var available = gl.getQueryParameter(timer.query, gl.QUERY_RESULT_AVAILABLE);
+			var disjoint = gl.getParameter(this.queryExt.GPU_DISJOINT_EXT as GLenum);
+
+			if (available && !disjoint) {
+				// See how much time the rendering of the object took in nanoseconds.
+				var timeElapsed = gl.getQueryParameter(timer.query, gl.QUERY_RESULT);
+				timer.ms = timeElapsed / (1000 * 1000);
+				completeTimers.push(timer);
+        	} else {
+
+			}
+		}
+
+		// decided not to empty this each frame since some operations might
+		// take long, however, something should be done so that dangling
+		// timers dont stay in the list
+		//this.renderTimers = [];
+
+		return completeTimers;
 	}
 
 	public setTextureSize(width: number, height: number) {
@@ -121,6 +177,8 @@ export class Designer {
 	}
 
 	update() {
+		this.updateRenderTimers();
+
 		let updateQuota = 10000000000000;
 		// fetch random node from update list (having all in sockets that have been updated) and update it
 		// todo: do only on per update loop
@@ -144,6 +202,17 @@ export class Designer {
 					if (updateQuota < 0) break;
 				}
 			}
+		}
+	}
+
+	updateRenderTimers()
+	{
+		if (!this.onnodetimeupdated)
+			return;
+
+		let timers = this.calculateNodeProcessingTimes();
+		for(let timer of timers) {
+			this.onnodetimeupdated(timer.node, timer.ms);
 		}
 	}
 
@@ -380,10 +449,32 @@ export class Designer {
 		context.textureWidth = this.width;
 		context.textureHeight = this.height;
 
-		let startTime = Date.now();
-		node.render(context);
-		let endTime = Date.now();
-		let dtInMs = endTime - startTime;
+		let dtInMs = 0;
+		if(node.isCpu()) {
+			let startTime = Date.now();
+
+			node.render(context);
+
+			let endTime = Date.now();
+			dtInMs = endTime - startTime;
+		} else {
+		
+			let query = gl.createQuery();
+			gl.beginQuery(this.queryExt.TIME_ELAPSED_EXT, query);
+
+			node.render(context);
+			gl.endQuery(this.queryExt.TIME_ELAPSED_EXT);
+
+			// create timer
+			let timer = new NodeRenderTimer();
+			timer.node = node;
+			timer.query = query;
+			timer.ms = 0;
+
+			this.renderTimers.push(timer);
+
+			dtInMs = -1;
+		}
 
 		if (this.onnodetextureupdated) {
 			this.onnodetextureupdated(node, dtInMs);

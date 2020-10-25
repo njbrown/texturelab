@@ -363,6 +363,13 @@ export class Editor {
 			self.updateDisplayNode(graphNode);
 		};
 
+		designer.onnodetimeupdated = function(dnode, dtInMs) {
+			const graphNode = self.graph.getNodeById(dnode.id);
+			if (!graphNode) return; // node could have been deleted
+
+			graphNode.processingTime = dtInMs;
+		};
+
 		/*
         designer.onthumbnailgenerated = function(node, thumb) {
             console.log(self.selectedDesignerNode);

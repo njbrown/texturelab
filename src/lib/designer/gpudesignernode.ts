@@ -23,6 +23,11 @@ export class GpuDesignerNode extends DesignerNode {
 	source: string; // shader code
 	shaderProgram: WebGLProgram;
 
+	public isCpu()
+	{
+		return false;
+	}
+
 	public render(context:NodeRenderContext) {
 		const inputs = context.inputs;
 		const gl = this.gl;

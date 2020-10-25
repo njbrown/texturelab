@@ -53,6 +53,11 @@ export class DesignerNode implements IPropertyHolder {
 
 	}
 
+	public isCpu()
+	{
+		return true;
+	}
+
 	public getInputs(): string[] {
 		return this.inputs;
 	}
