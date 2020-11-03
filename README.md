@@ -5,7 +5,11 @@
 </h1>
 
 <p align="center">
-  <img src="https://github.com/njbrown/texturelab/workflows/Build/badge.svg" /> <img src="https://img.shields.io/badge/License-GPLv3-blue.svg" /><br/>
+  <img src="https://github.com/njbrown/texturelab/workflows/Build/badge.svg" />
+  <img src="https://img.shields.io/badge/License-GPLv3-blue.svg" />
+  <a href="https://discord.gg/DcSNmts">
+    <img src="https://img.shields.io/discord/769312171266932786.svg?logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2" alt="Discord invite" />
+  </a><br/>
   Free, Cross-Platform, GPU-Accelerated Procedural Texture Generator.<br/>
   <a href="https://njbrown.itch.io/texturelab">DOWNLOAD AT ITCH.IO</a>
 </p>
