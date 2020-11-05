@@ -2,10 +2,10 @@ import { GpuDesignerNode } from "../../designer/gpudesignernode";
 
 export class GradientDynamic extends GpuDesignerNode {
 	public init() {
-        this.title = "Gradient Dynamic";
-        
-        this.addInput("image");
-        this.addInput("gradient");
+		this.title = "Gradient Dynamic";
+
+		this.addInput("image");
+		this.addInput("gradient");
 
 		this.addFloatProperty("position", "Position", 0, 0, 1, 0.01);
 
@@ -14,7 +14,7 @@ export class GradientDynamic extends GpuDesignerNode {
 			"Horizontal"
 		]);
 
-        const source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             float t = 0.0;

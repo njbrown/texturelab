@@ -8,8 +8,8 @@ export class HistogramSelect extends GpuDesignerNode {
 
 		this.addFloatProperty("position", "Position", 0.5, 0.0, 1.0, 0.01);
 		this.addFloatProperty("range", "Range", 0.1, 0.0, 1.0, 0.01);
-        this.addFloatProperty("contrast", "Contrast", 0.01, 0.01, 1.0, 0.01);
-        this.addBoolProperty("invert", "Invert", false);
+		this.addFloatProperty("contrast", "Contrast", 0.01, 0.01, 1.0, 0.01);
+		this.addBoolProperty("invert", "Invert", false);
 
 		const source = `
         vec4 process(vec2 uv)
@@ -41,14 +41,14 @@ export class HistogramSelect extends GpuDesignerNode {
 // {
 //     // Normalized pixel coordinates (from 0 to 1)
 //     vec2 uv = fragCoord/iResolution.xy;
-    
+
 //     vec3 col = vec3(uv.x);
-    
+
 //     float contrast = 0.01;
 //     float position = 0.7;
 //     vec3 diff = abs(col - vec3(position));
 //     diff = clamp(diff, 0.0, contrast);
-    
+
 //     vec3 result = diff * (1.0 / contrast);
 
 //     // Output to screen

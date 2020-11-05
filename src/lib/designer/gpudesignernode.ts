@@ -14,8 +14,7 @@ import {
 import { buildShaderProgram } from "./gl";
 import { Color } from "./color";
 import { Gradient } from "./gradient";
-import { DesignerNode } from './designernode';
-
+import { DesignerNode } from "./designernode";
 
 export class GpuDesignerNode extends DesignerNode {
 	tex: WebGLTexture;
@@ -23,12 +22,11 @@ export class GpuDesignerNode extends DesignerNode {
 	source: string; // shader code
 	shaderProgram: WebGLProgram;
 
-	public isCpu()
-	{
+	public isCpu() {
 		return false;
 	}
 
-	public render(context:NodeRenderContext) {
+	public render(context: NodeRenderContext) {
 		const inputs = context.inputs;
 		const gl = this.gl;
 

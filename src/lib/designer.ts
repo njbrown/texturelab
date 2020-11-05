@@ -19,15 +19,14 @@ import {
 	DesignerNodePropertyMap
 } from "./designer/designervariable";
 
-export class NodeRenderContext
-{
+export class NodeRenderContext {
 	canvas: HTMLCanvasElement;
 	gl: WebGLRenderingContext;
 	fbo: WebGLFramebuffer;
 	inputs: NodeInput[];
 
-	textureWidth:number;
-	textureHeight:number;
+	textureWidth: number;
+	textureHeight: number;
 
 	randomSeed: number;
 }
@@ -35,11 +34,10 @@ export class NodeRenderContext
 // keeps track of query object that tracks
 // node's processing time
 // https://www.khronos.org/registry/webgl/extensions/EXT_disjoint_timer_query_webgl2/
-export class NodeRenderTimer
-{
-	query:WebGLQuery;
-	ms:number;
-	node:DesignerNode;
+export class NodeRenderTimer {
+	query: WebGLQuery;
+	ms: number;
+	node: DesignerNode;
 }
 
 export class Designer {
@@ -68,8 +66,8 @@ export class Designer {
 
 	renderContext: NodeRenderContext;
 
-	renderTimers:NodeRenderTimer[];
-	queryExt:any;
+	renderTimers: NodeRenderTimer[];
+	queryExt: any;
 
 	// callbacks
 	onthumbnailgenerated: (DesignerNode, HTMLImageElement) => void;
@@ -93,10 +91,8 @@ export class Designer {
 		this.gl = this.canvas.getContext("webgl2");
 
 		let result = this.gl.getExtension("EXT_disjoint_timer_query_webgl2");
-		if (result)
-			console.log("TIMER QUERY SUPPORTED", result);
-		else
-			console.log("TIMER QUERY NOT SUPPORTED", result);
+		if (result) console.log("TIMER QUERY SUPPORTED", result);
+		else console.log("TIMER QUERY NOT SUPPORTED", result);
 		this.queryExt = result;
 
 		this.renderContext = new NodeRenderContext();
@@ -116,13 +112,15 @@ export class Designer {
 	// discards ones that arent ready
 	// this function should be called at the beginning
 	// of a render cycle
-	public calculateNodeProcessingTimes():NodeRenderTimer[]
-	{
+	public calculateNodeProcessingTimes(): NodeRenderTimer[] {
 		const gl = this.gl;
 
-		let completeTimers:NodeRenderTimer[] = [];
-		for(let timer of this.renderTimers) {
-			var available = gl.getQueryParameter(timer.query, gl.QUERY_RESULT_AVAILABLE);
+		let completeTimers: NodeRenderTimer[] = [];
+		for (let timer of this.renderTimers) {
+			var available = gl.getQueryParameter(
+				timer.query,
+				gl.QUERY_RESULT_AVAILABLE
+			);
 			var disjoint = gl.getParameter(this.queryExt.GPU_DISJOINT_EXT as GLenum);
 
 			if (available && !disjoint) {
@@ -130,8 +128,7 @@ export class Designer {
 				var timeElapsed = gl.getQueryParameter(timer.query, gl.QUERY_RESULT);
 				timer.ms = timeElapsed / (1000 * 1000);
 				completeTimers.push(timer);
-        	} else {
-
+			} else {
 			}
 		}
 
@@ -205,13 +202,11 @@ export class Designer {
 		}
 	}
 
-	updateRenderTimers()
-	{
-		if (!this.onnodetimeupdated)
-			return;
+	updateRenderTimers() {
+		if (!this.onnodetimeupdated) return;
 
 		let timers = this.calculateNodeProcessingTimes();
-		for(let timer of timers) {
+		for (let timer of timers) {
 			this.onnodetimeupdated(timer.node, timer.ms);
 		}
 	}
@@ -450,7 +445,7 @@ export class Designer {
 		context.textureHeight = this.height;
 
 		let dtInMs = 0;
-		if(node.isCpu()) {
+		if (node.isCpu()) {
 			let startTime = Date.now();
 
 			node.render(context);
@@ -458,7 +453,6 @@ export class Designer {
 			let endTime = Date.now();
 			dtInMs = endTime - startTime;
 		} else {
-		
 			let query = gl.createQuery();
 			gl.beginQuery(this.queryExt.TIME_ELAPSED_EXT, query);
 

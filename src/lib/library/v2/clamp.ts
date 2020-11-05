@@ -6,15 +6,15 @@ export class Clamp extends GpuDesignerNode {
 	public init() {
 		this.title = "Clamp";
 
-        this.addInput("inputImage");
-        
-        this.addFloatProperty("min", "Minimum", 0, 0, 1.0, 0.01);
-        this.addFloatProperty("max", "Maximum", 1, 0, 1.0, 0.01);
-        
-        this.addBoolProperty("clamp_r", "Clamp R Chanel", true);
-        this.addBoolProperty("clamp_g", "Clamp G Chanel", true);
-        this.addBoolProperty("clamp_b", "Clamp B Chanel", true);
-        this.addBoolProperty("clamp_a", "Clamp A Chanel", false);
+		this.addInput("inputImage");
+
+		this.addFloatProperty("min", "Minimum", 0, 0, 1.0, 0.01);
+		this.addFloatProperty("max", "Maximum", 1, 0, 1.0, 0.01);
+
+		this.addBoolProperty("clamp_r", "Clamp R Chanel", true);
+		this.addBoolProperty("clamp_g", "Clamp G Chanel", true);
+		this.addBoolProperty("clamp_b", "Clamp B Chanel", true);
+		this.addBoolProperty("clamp_a", "Clamp A Chanel", false);
 
 		const source = `
 

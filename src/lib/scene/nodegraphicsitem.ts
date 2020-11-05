@@ -23,7 +23,7 @@ export class NodeGraphicsItem extends GraphicsItem {
 	thumbnail!: HTMLImageElement;
 	imageCanvas: ImageCanvas;
 
-	processingTime:number;
+	processingTime: number;
 
 	hit: boolean;
 
@@ -134,8 +134,7 @@ export class NodeGraphicsItem extends GraphicsItem {
 		// processing time
 		ctx.beginPath();
 		let procTime = "calculating..";
-		if (this.processingTime >= 0)
-			procTime = this.processingTime+"ms";
+		if (this.processingTime >= 0) procTime = this.processingTime + "ms";
 
 		ctx.font = "bold 9px 'Open Sans'";
 		ctx.fillStyle = "rgb(255,255,255)";
@@ -157,7 +156,6 @@ export class NodeGraphicsItem extends GraphicsItem {
 			const textY = this.y - 12;
 			ctx.fillText(this.textureChannel.toUpperCase(), textX, textY);
 		}
-
 	}
 
 	public setPos(x: number, y: number) {

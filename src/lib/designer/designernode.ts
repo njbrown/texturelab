@@ -49,12 +49,9 @@ export class DesignerNode implements IPropertyHolder {
 		this.designer.requestUpdate(this);
 	}
 
-	public render(context:NodeRenderContext) {
+	public render(context: NodeRenderContext) {}
 
-	}
-
-	public isCpu()
-	{
+	public isCpu() {
 		return true;
 	}
 
@@ -95,9 +92,7 @@ export class DesignerNode implements IPropertyHolder {
 		this.init();
 	}
 
-	protected init() {
-
-	}
+	protected init() {}
 
 	// creates opengl texture for this node
 	// gets the height from the scene

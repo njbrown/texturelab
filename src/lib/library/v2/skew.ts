@@ -6,10 +6,7 @@ export class Skew extends GpuDesignerNode {
 
 		this.addInput("image");
 
-        this.addEnumProperty("axis", "Axis", [
-			"Horizontal",
-			"Vertical"
-		]);
+		this.addEnumProperty("axis", "Axis", ["Horizontal", "Vertical"]);
 		this.addFloatProperty("skew", "skew", 0.5, -1.0, 1.0, 0.01);
 		this.addFloatProperty("position", "Position", 0.5, 0.0, 1.0, 0.01);
 
@@ -52,13 +49,13 @@ export class Skew extends GpuDesignerNode {
 // {
 //     // Normalized pixel coordinates (from 0 to 1)
 //     vec2 uv = fragCoord/iResolution.xy;
-    
+
 //     float xSkew = mod(iTime, 2.0);
 //     float ySkew = 0.0;//mod(iTime, 2.0);
 //     mat3 skewMat = mat3(1.0, ySkew, 0.0,
 //                        	xSkew, 1.0, 0.0,
 //                        	0.0, 0.0, 1.0);
-    
+
 //     uv -= vec2(0.0, 0.5);
 //     uv = (skewMat * vec3(uv, 1.0)).xy;
 //     uv += vec2(0.0, 0.5);
