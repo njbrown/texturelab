@@ -83,7 +83,7 @@ export class NodeGraphicsItem extends GraphicsItem {
 
 		// background
 		ctx.beginPath();
-		ctx.fillStyle = "rgb(255, 50, 50)";
+		ctx.fillStyle = "rgb(0, 0, 0)";
 		ctx.rect(this.x, this.y, this.width, this.height);
 		ctx.fill();
 
