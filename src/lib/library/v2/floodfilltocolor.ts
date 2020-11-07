@@ -7,8 +7,6 @@ export class FloodFillToColor extends GpuDesignerNode {
 		this.addInput("floodfill");
 		this.addInput("color");
 
-		this.addFloatProperty("exponent", "Exponent", 1.0, 0.0, 10.0, 0.01);
-
         const source = `
         vec2 calcFloodFillOrigin(vec2 uv, vec4 pixelData)
         {

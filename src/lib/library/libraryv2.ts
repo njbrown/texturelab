@@ -44,6 +44,7 @@ import { Skew } from "./v2/skew";
 import { Bevel } from "./v2/bevel";
 import { FloodFill } from "./v2/floodfill";
 import { FloodFillToColor } from "./v2/floodfilltocolor";
+import { FloodFillToBBox } from "./v2/floodfilltobbox";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -100,6 +101,7 @@ export function createLibrary() {
 	lib.addNode("bevel", "Bevel", Bevel);
 	lib.addNode("floodfill", "Flood Fill", FloodFill);
 	lib.addNode("floodfilltocolor", "Flood Fill To Color", FloodFillToColor);
+	lib.addNode("floodfilltobbox", "Flood Fill To BBox", FloodFillToBBox);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
