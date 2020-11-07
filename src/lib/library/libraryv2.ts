@@ -43,6 +43,7 @@ import { HistogramSelect } from "./v2/histogramselect";
 import { Skew } from "./v2/skew";
 import { Bevel } from "./v2/bevel";
 import { FloodFill } from "./v2/floodfill";
+import { FloodFillToColor } from "./v2/floodfilltocolor";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -98,6 +99,7 @@ export function createLibrary() {
 	lib.addNode("skew", "Skew", Skew);
 	lib.addNode("bevel", "Bevel", Bevel);
 	lib.addNode("floodfill", "Flood Fill", FloodFill);
+	lib.addNode("floodfilltocolor", "Flood Fill To Color", FloodFillToColor);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
