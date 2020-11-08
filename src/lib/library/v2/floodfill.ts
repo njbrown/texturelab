@@ -3,6 +3,8 @@ import { FloatProperty } from "@/lib/designer/properties";
 import { DesignerNode } from "../../designer/designernode";
 
 // https://xjavascript.com/view/639466/read-pixels-in-webgltexture-rendering-webgl-to-texture
+// NOTE: THIS CREATES A HALF FLOAT TEXTURE, NOT UNSIGNED BYTE
+// more accuracy is needed for the output
 export class FloodFill extends DesignerNode {
 	// working pixels
 	pixels: Uint8Array;
@@ -37,7 +39,7 @@ export class FloodFill extends DesignerNode {
 		const height = this.designer.height;
 
 		let gridSize = width * height;
-		let gl = context.gl;
+		let gl = context.gl as WebGL2RenderingContext;
 		var pixels = this.pixels;
 
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this.readFbo);
@@ -59,11 +61,12 @@ export class FloodFill extends DesignerNode {
 
 		gl.bindTexture(gl.TEXTURE_2D, this.tex);
 
+		// https://www.khronos.org/registry/OpenGL-Refpages/es3.0/html/glTexImage2D.xhtml
 		const level = 0;
-		const internalFormat = gl.RGBA;
+		const internalFormat = gl.RGBA16F;
 		const border = 0;
 		const format = gl.RGBA;
-		const type = gl.UNSIGNED_BYTE;
+		const type = gl.FLOAT;
 		// const data = pixels;
 		gl.texImage2D(
 			gl.TEXTURE_2D,
@@ -78,8 +81,8 @@ export class FloodFill extends DesignerNode {
 		);
 
 		// set the filtering so we don't need mips
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 
@@ -150,7 +153,7 @@ class FloodFillGenerator {
 	visited: Array<boolean> = [];
 	width: number;
     height: number;
-    results: Uint8Array;
+    results: Float32Array;
 
 	constructor() {}
 
@@ -161,7 +164,7 @@ class FloodFillGenerator {
 		let visited = this.visited;
         visited.length = width * height;
         
-        this.results = new Uint8Array(width * height * 4);
+        this.results = new Float32Array(width * height * 4);
 	}
 
 	process(pixels: Uint8Array) {
@@ -278,7 +281,7 @@ class FloodFillGenerator {
 		}
 	}
 
-	renderOutput(results: Uint8Array) {
+	renderOutput(results: Float32Array) {
 		let width = this.width;
         let height = this.height;
         
@@ -290,12 +293,12 @@ class FloodFillGenerator {
         console.log("length: "+results.length);
 
 		for (let rect of this.rects) {
-			let sx = rect.width * (1.0 / width) * 255;
-			let sy = rect.height * (1.0 / height) * 255;
+			let sx = rect.width * (1.0 / width);// * 255;
+			let sy = rect.height * (1.0 / height);// * 255;
 
 			for (let pixel of rect.pixels) {
-				let u = ((pixel.x - rect.left) / rect.width) * 255;
-				let v = ((pixel.y - rect.top) / rect.height) * 255;
+				let u = ((pixel.x - rect.left) / rect.width);// * 255;
+				let v = ((pixel.y - rect.top) / rect.height);// * 255;
 
 				setColorAtPixel(results, width, height, pixel.x, pixel.y, u, v, sx, sy);
 				//setColorAtPixel(data, pixel.x, pixel.y, 255, 0, 0, 255);
@@ -323,7 +326,7 @@ function getColorAtPixel(imageData: ImageData, x: number, y: number) {
 }
 
 function setColorAtPixel(
-	data: Uint8Array,
+	data: Float32Array,
 	width: number,
 	height: number,
 	x: number,

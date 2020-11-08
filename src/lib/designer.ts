@@ -95,6 +95,15 @@ export class Designer {
 		else console.log("TIMER QUERY NOT SUPPORTED", result);
 		this.queryExt = result;
 
+		// floating point textures
+		result = this.gl.getExtension("EXT_color_buffer_float");
+		if(!result)
+			console.log("COLOR BUFFER FLOAT NOT SUPPORTED", result);
+
+		result = this.gl.getExtension("OES_texture_float_linear");
+		if(!result)
+		console.log("TEXTURE FLOAT LINEAR NOT SUPPORTED", result);
+
 		this.renderContext = new NodeRenderContext();
 
 		this.nodes = [];
