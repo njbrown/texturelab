@@ -46,6 +46,7 @@ import { FloodFill } from "./v2/floodfill";
 import { FloodFillToColor } from "./v2/floodfilltocolor";
 import { FloodFillToBBox } from "./v2/floodfilltobbox";
 import { FloodFillToRandomColor } from "./v2/floodfilltorandomcolor";
+import { FloodFillSampler } from "./v2/floodfillsampler";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -104,6 +105,7 @@ export function createLibrary() {
 	lib.addNode("floodfilltocolor", "Flood Fill To Color", FloodFillToColor);
 	lib.addNode("floodfilltobbox", "Flood Fill To BBox", FloodFillToBBox);
 	lib.addNode("floodfilltorandomcolor", "Flood Fill To Random Color", FloodFillToRandomColor);
+	lib.addNode("floodfillsampler", "Flood Fill Sampler", FloodFillSampler);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
