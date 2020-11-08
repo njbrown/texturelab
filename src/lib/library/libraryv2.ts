@@ -104,7 +104,11 @@ export function createLibrary() {
 	lib.addNode("floodfill", "Flood Fill", FloodFill);
 	lib.addNode("floodfilltocolor", "Flood Fill To Color", FloodFillToColor);
 	lib.addNode("floodfilltobbox", "Flood Fill To BBox", FloodFillToBBox);
-	lib.addNode("floodfilltorandomcolor", "Flood Fill To Random Color", FloodFillToRandomColor);
+	lib.addNode(
+		"floodfilltorandomcolor",
+		"Flood Fill To Random Color",
+		FloodFillToRandomColor
+	);
 	lib.addNode("floodfillsampler", "Flood Fill Sampler", FloodFillSampler);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 

@@ -4,9 +4,9 @@ export class FloodFillToBBox extends GpuDesignerNode {
 	public init() {
 		this.title = "Flood Fill To BBox";
 
-        this.addInput("floodfill");
-        
-        this.addEnumProperty("function", "Function", [
+		this.addInput("floodfill");
+
+		this.addEnumProperty("function", "Function", [
 			"max(x,y)",
 			"min(x,y)",
 			"x",
@@ -14,7 +14,7 @@ export class FloodFillToBBox extends GpuDesignerNode {
 			"length(x,y)"
 		]);
 
-        const source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             vec4 pixelData =  texture(floodfill, uv);

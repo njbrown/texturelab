@@ -6,7 +6,7 @@ export class FloodFillToRandomColor extends GpuDesignerNode {
 
 		this.addInput("floodfill");
 
-        const source = `
+		const source = `
         vec2 calcFloodFillOrigin(vec2 uv, vec4 pixelData)
         {
             //     pixelPos      box width       pixel uv to box

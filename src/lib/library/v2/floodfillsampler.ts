@@ -4,10 +4,10 @@ export class FloodFillSampler extends GpuDesignerNode {
 	public init() {
 		this.title = "Flood Fill Sampler";
 
-        this.addInput("floodfill");
-        this.addInput("image");
-        
-        // this.addEnumProperty("sizeMode", "sizeMode", [
+		this.addInput("floodfill");
+		this.addInput("image");
+
+		// this.addEnumProperty("sizeMode", "sizeMode", [
 		// 	"max(x,y)",
 		// 	"min(x,y)",
 		// 	"x",
@@ -15,7 +15,7 @@ export class FloodFillSampler extends GpuDesignerNode {
 		// 	"length(x,y)"
 		// ]);
 
-        const source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             vec4 pixelData = texture(floodfill, uv);

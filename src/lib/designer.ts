@@ -97,12 +97,10 @@ export class Designer {
 
 		// floating point textures
 		result = this.gl.getExtension("EXT_color_buffer_float");
-		if(!result)
-			console.log("COLOR BUFFER FLOAT NOT SUPPORTED", result);
+		if (!result) console.log("COLOR BUFFER FLOAT NOT SUPPORTED", result);
 
 		result = this.gl.getExtension("OES_texture_float_linear");
-		if(!result)
-		console.log("TEXTURE FLOAT LINEAR NOT SUPPORTED", result);
+		if (!result) console.log("TEXTURE FLOAT LINEAR NOT SUPPORTED", result);
 
 		this.renderContext = new NodeRenderContext();
 
@@ -137,7 +135,6 @@ export class Designer {
 				var timeElapsed = gl.getQueryParameter(timer.query, gl.QUERY_RESULT);
 				timer.ms = timeElapsed / (1000 * 1000);
 				completeTimers.push(timer);
-			} else {
 			}
 		}
 

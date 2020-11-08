@@ -8,8 +8,8 @@ import { DesignerNode } from "../../designer/designernode";
 export class FloodFill extends DesignerNode {
 	// working pixels
 	pixels: Uint8Array;
-    readFbo: WebGLFramebuffer;
-    gen:FloodFillGenerator;
+	readFbo: WebGLFramebuffer;
+	gen: FloodFillGenerator;
 
 	public init() {
 		this.title = "Flood Fill";
@@ -22,10 +22,10 @@ export class FloodFill extends DesignerNode {
 		this.pixels = new Uint8Array(width * height * 4);
 
 		// create framebuffer for reading pixels from input texture
-        this.readFbo = this.gl.createFramebuffer();
-        
-        this.gen = new FloodFillGenerator();
-        this.gen.init(width, height);
+		this.readFbo = this.gl.createFramebuffer();
+
+		this.gen = new FloodFillGenerator();
+		this.gen.init(width, height);
 	}
 
 	public render(context: NodeRenderContext) {
@@ -55,9 +55,9 @@ export class FloodFill extends DesignerNode {
 		} else {
 			alert("Bevel: unable to read from FBO");
 		}
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        
-        this.gen.process(pixels);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+		this.gen.process(pixels);
 
 		gl.bindTexture(gl.TEXTURE_2D, this.tex);
 
@@ -86,9 +86,9 @@ export class FloodFill extends DesignerNode {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 
-        gl.bindTexture(gl.TEXTURE_2D, null);
-        
-        console.log(this.gen.results);
+		gl.bindTexture(gl.TEXTURE_2D, null);
+
+		console.log(this.gen.results);
 	}
 }
 
@@ -152,8 +152,8 @@ class FloodFillGenerator {
 
 	visited: Array<boolean> = [];
 	width: number;
-    height: number;
-    results: Float32Array;
+	height: number;
+	results: Float32Array;
 
 	constructor() {}
 
@@ -162,9 +162,9 @@ class FloodFillGenerator {
 		this.height = height;
 
 		let visited = this.visited;
-        visited.length = width * height;
-        
-        this.results = new Float32Array(width * height * 4);
+		visited.length = width * height;
+
+		this.results = new Float32Array(width * height * 4);
 	}
 
 	process(pixels: Uint8Array) {
@@ -183,9 +183,9 @@ class FloodFillGenerator {
 
 				this.captureIsland(x, y, pixels, width, height, visited);
 			}
-        }
-        
-        this.renderOutput(this.results);
+		}
+
+		this.renderOutput(this.results);
 	}
 
 	captureIsland(
@@ -283,22 +283,21 @@ class FloodFillGenerator {
 
 	renderOutput(results: Float32Array) {
 		let width = this.width;
-        let height = this.height;
-        
-        // clear results first
-        for(let i = 0; i<results.length;i++)
-            results[i] = 0;
+		let height = this.height;
 
-        console.log(this.rects);
-        console.log("length: "+results.length);
+		// clear results first
+		for (let i = 0; i < results.length; i++) results[i] = 0;
+
+		console.log(this.rects);
+		console.log("length: " + results.length);
 
 		for (let rect of this.rects) {
-			let sx = rect.width * (1.0 / width);// * 255;
-			let sy = rect.height * (1.0 / height);// * 255;
+			let sx = rect.width * (1.0 / width); // * 255;
+			let sy = rect.height * (1.0 / height); // * 255;
 
 			for (let pixel of rect.pixels) {
-				let u = ((pixel.x - rect.left) / rect.width);// * 255;
-				let v = ((pixel.y - rect.top) / rect.height);// * 255;
+				let u = (pixel.x - rect.left) / rect.width; // * 255;
+				let v = (pixel.y - rect.top) / rect.height; // * 255;
 
 				setColorAtPixel(results, width, height, pixel.x, pixel.y, u, v, sx, sy);
 				//setColorAtPixel(data, pixel.x, pixel.y, 255, 0, 0, 255);
