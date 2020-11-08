@@ -45,6 +45,7 @@ import { Bevel } from "./v2/bevel";
 import { FloodFill } from "./v2/floodfill";
 import { FloodFillToColor } from "./v2/floodfilltocolor";
 import { FloodFillToBBox } from "./v2/floodfilltobbox";
+import { FloodFillToRandomColor } from "./v2/floodfilltorandomcolor";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -102,6 +103,7 @@ export function createLibrary() {
 	lib.addNode("floodfill", "Flood Fill", FloodFill);
 	lib.addNode("floodfilltocolor", "Flood Fill To Color", FloodFillToColor);
 	lib.addNode("floodfilltobbox", "Flood Fill To BBox", FloodFillToBBox);
+	lib.addNode("floodfilltorandomcolor", "Flood Fill To Random Color", FloodFillToRandomColor);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
