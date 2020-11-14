@@ -181,6 +181,7 @@ class FloodFillGenerator {
 		let width = this.width;
 		let height = this.height;
 
+		this.rects = [];
 		for (let y = 0; y < height; y++) {
 			for (let x = 0; x < width; x++) {
 				if (visited[y * width + x] == true) continue;
@@ -291,9 +292,6 @@ class FloodFillGenerator {
 
 		// clear results first
 		for (let i = 0; i < results.length; i++) results[i] = 0;
-
-		console.log(this.rects);
-		console.log("length: " + results.length);
 
 		for (let rect of this.rects) {
 			let sx = rect.width * (1.0 / width); // * 255;
