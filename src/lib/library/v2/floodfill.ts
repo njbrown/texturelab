@@ -2,12 +2,16 @@ import { NodeRenderContext } from "@/lib/designer";
 import { FloatProperty } from "@/lib/designer/properties";
 import { DesignerNode } from "../../designer/designernode";
 
+
+const VALUE_MAX = 15360.0;
+const ONE_OVER_VALUE_MAX = 1.0 / VALUE_MAX;
+
 // https://xjavascript.com/view/639466/read-pixels-in-webgltexture-rendering-webgl-to-texture
 // NOTE: THIS CREATES A HALF FLOAT TEXTURE, NOT UNSIGNED BYTE
 // more accuracy is needed for the output
 export class FloodFill extends DesignerNode {
 	// working pixels
-	pixels: Uint8Array;
+	pixels: Uint16Array;
 	readFbo: WebGLFramebuffer;
 	gen: FloodFillGenerator;
 
@@ -19,7 +23,7 @@ export class FloodFill extends DesignerNode {
 		const width = this.designer.width;
 		const height = this.designer.height;
 
-		this.pixels = new Uint8Array(width * height * 4);
+		this.pixels = new Uint16Array(width * height * 4);
 
 		// create framebuffer for reading pixels from input texture
 		this.readFbo = this.gl.createFramebuffer();
@@ -51,7 +55,7 @@ export class FloodFill extends DesignerNode {
 			0
 		);
 		if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE) {
-			gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+			gl.readPixels(0, 0, width, height, gl.RGBA, gl.HALF_FLOAT, pixels);
 		} else {
 			alert("Bevel: unable to read from FBO");
 		}
@@ -167,7 +171,7 @@ class FloodFillGenerator {
 		this.results = new Float32Array(width * height * 4);
 	}
 
-	process(pixels: Uint8Array) {
+	process(pixels: Uint16Array) {
 		let threshold = 0.1;
 
 		// allocate image of same size to track visited pixels
@@ -191,7 +195,7 @@ class FloodFillGenerator {
 	captureIsland(
 		x: number,
 		y: number,
-		pixels: Uint8Array,
+		pixels: Uint16Array,
 		width: number,
 		height: number,
 		visited: Array<boolean>
@@ -254,7 +258,7 @@ class FloodFillGenerator {
 	getIntensity(
 		x: number,
 		y: number,
-		data: Uint8Array,
+		data: Uint16Array,
 		width: number,
 		height: number
 	): number {
@@ -264,7 +268,7 @@ class FloodFillGenerator {
 		col += data[4 * (width * y + x) + 2];
 
 		//						average    map to 0.0 - 1.0
-		let intensity = col * (1.0 / 3.0) * (1.0 / 255);
+		let intensity = col * (1.0 / 3.0) * ONE_OVER_VALUE_MAX;
 
 		return intensity;
 	}

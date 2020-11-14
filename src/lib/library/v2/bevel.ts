@@ -12,7 +12,7 @@ export class Bevel extends DesignerNode {
 	gridOuter: Float64Array;
 
 	// working pixels
-	pixels: Uint8Array;
+	resultPixels: Float32Array;
 
 	readFbo: WebGLFramebuffer;
 
@@ -47,7 +47,7 @@ export class Bevel extends DesignerNode {
 		this.grid = new Float64Array(gridSize);
 		this.gridOuter = new Float64Array(gridSize);
 		this.gridInner = new Float64Array(gridSize);
-		this.pixels = new Uint8Array(width * height * 4);
+		this.resultPixels = new Float32Array(width * height * 4);
 
 		// create framebuffer for reading pixels from input texture
 		this.readFbo = this.gl.createFramebuffer();
@@ -67,8 +67,8 @@ export class Bevel extends DesignerNode {
 		const grid = this.grid;
 
 		let gridSize = width * height;
-		let gl = context.gl;
-		var pixels = new Uint8Array(width * height * 4);
+		let gl = context.gl as WebGL2RenderingContext;
+		var pixels = new Uint16Array(width * height * 4);
 
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this.readFbo);
 		gl.framebufferTexture2D(
@@ -79,21 +79,25 @@ export class Bevel extends DesignerNode {
 			0
 		);
 		if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE) {
-			gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+			gl.readPixels(0, 0, width, height, gl.RGBA, gl.HALF_FLOAT, pixels);
 		} else {
 			alert("Bevel: unable to read from FBO");
 		}
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		
+
+		// max value from each color component
+		const VALUE_MAX = 15360.0;
 
 		// copy data over from canvas data to grid
 		for (let i = 0; i < gridSize; i++) {
 			let col = 0;
-			col += 255 - pixels[i * 4 + 0];
-			col += 255 - pixels[i * 4 + 1];
-			col += 255 - pixels[i * 4 + 2];
+			col += VALUE_MAX - pixels[i * 4 + 0];
+			col += VALUE_MAX - pixels[i * 4 + 1];
+			col += VALUE_MAX - pixels[i * 4 + 2];
 
 			//grid[i] = (col * 0.3333) / 255;
-			let a = (col * 0.3333) / 255;
+			let a = (col * 0.3333) / VALUE_MAX;
 			//let a = 1.0 - (col * 0.3333) / 255; // invert
 			this.gridOuter[i] =
 				a === 1 ? 0 : a === 0 ? INF : Math.pow(Math.max(0, 0.5 - a), 2);
@@ -104,7 +108,7 @@ export class Bevel extends DesignerNode {
 		edt(this.gridOuter, width, height, this.f, this.v, this.z);
 		edt(this.gridInner, width, height, this.f, this.v, this.z);
 
-		let min = 255;
+		let min = 1.0;
 		let max = 0;
 		let radius = this.distanceProp.getValue();
 		let offset = 0.25;
@@ -113,9 +117,9 @@ export class Bevel extends DesignerNode {
 			// let col = grid[i];
 			let d = Math.sqrt(gridOuter[i]) - Math.sqrt(gridInner[i]);
 			//var col = 255 - 255 * (d / 50 + 0.25);
-			var col = 255 - 255 * (d / radius + offset);
+			var col = VALUE_MAX - VALUE_MAX * (d / radius + offset);
 			// clamp
-			col = Math.max(0, Math.min(255, col));
+			col = Math.max(0, Math.min(VALUE_MAX, col));
 
 			min = Math.min(min, col);
 			max = Math.max(max, col);
@@ -123,27 +127,28 @@ export class Bevel extends DesignerNode {
 		}
 
 		let range = max - min;
-		let scale = 255.0 / range;
+		let scale = 1.0 / range;
 		console.log(min, max, range, scale);
 
+		let resultPixels = this.resultPixels;
 		for (let i = 0; i < gridSize; i++) {
 			//let col = (grid[i] - min) * scale;
-			let col = 255 - (grid[i] - min) * scale; // de-invert
+			let col = 1.0 - (grid[i] - min) * scale; // de-invert
 
-			pixels[i * 4 + 0] = col;
-			pixels[i * 4 + 1] = col;
-			pixels[i * 4 + 2] = col;
-			pixels[i * 4 + 3] = 255;
+			resultPixels[i * 4 + 0] = col;
+			resultPixels[i * 4 + 1] = col;
+			resultPixels[i * 4 + 2] = col;
+			resultPixels[i * 4 + 3] = 1.0;
 		}
 
 		gl.bindTexture(gl.TEXTURE_2D, this.tex);
 
 		const level = 0;
-		const internalFormat = gl.RGBA;
+		const internalFormat = gl.RGBA16F;
 		const border = 0;
 		const format = gl.RGBA;
-		const type = gl.UNSIGNED_BYTE;
-		const data = pixels;
+		const type = gl.FLOAT;
+		const data = resultPixels;
 		gl.texImage2D(
 			gl.TEXTURE_2D,
 			level,
