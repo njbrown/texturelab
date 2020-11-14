@@ -225,7 +225,8 @@ export class GpuDesignerNode extends DesignerNode {
             
         void main() {
             initRandom();
-            fragColor = process(v_texCoord);
+			vec4 result = process(v_texCoord);
+			fragColor = clamp(result, 0.0, 1.0);
         }
 
         `;
