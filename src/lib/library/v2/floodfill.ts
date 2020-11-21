@@ -2,7 +2,6 @@ import { NodeRenderContext } from "@/lib/designer";
 import { FloatProperty } from "@/lib/designer/properties";
 import { DesignerNode } from "../../designer/designernode";
 
-
 const VALUE_MAX = 15360.0;
 const ONE_OVER_VALUE_MAX = 1.0 / VALUE_MAX;
 

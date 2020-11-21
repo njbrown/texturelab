@@ -80,12 +80,19 @@ export class Bevel extends DesignerNode {
 			0
 		);
 		if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE) {
-			gl.readPixels(0, 0, width, height, gl.RGBA, gl.HALF_FLOAT, this.readPixels);
+			gl.readPixels(
+				0,
+				0,
+				width,
+				height,
+				gl.RGBA,
+				gl.HALF_FLOAT,
+				this.readPixels
+			);
 		} else {
 			alert("Bevel: unable to read from FBO");
 		}
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-		
 
 		// max value from each color component
 		const VALUE_MAX = 15360.0;
