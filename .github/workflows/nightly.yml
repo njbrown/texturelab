@@ -79,24 +79,27 @@ jobs:
 
       - name: Announce windows build on Discord
         if: matrix.node-version == '14.x' && runner.os == 'Windows'
-        uses: fateyan/action-discord-notifier@v1.2.0
+        uses: appleboy/discord-action@master
         with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          message-title: New windows build available at https://texturelab-nightlies.s3.us-east-2.amazonaws.com/windows-${{ github.sha }}.zip
+          webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
+          webhook_token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
+          args: New windows build available at https://texturelab-nightlies.s3.us-east-2.amazonaws.com/windows-${{ github.sha }}.zip
 
       - name: Announce linux build on Discord
         if: matrix.node-version == '14.x' && runner.os == 'Linux'
         uses: fateyan/action-discord-notifier@v1.2.0
         with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          message-title: New linux build available at https://texturelab-nightlies.s3.us-east-2.amazonaws.com/linux-${{ github.sha }}.zip
+          webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
+          webhook_token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
+          args: New linux build available at https://texturelab-nightlies.s3.us-east-2.amazonaws.com/linux-${{ github.sha }}.zip
 
       - name: Announce macos build on Discord
         if: matrix.node-version == '14.x' && runner.os == 'macOS'
         uses: fateyan/action-discord-notifier@v1.2.0
         with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          message-title: New macos build available at https://texturelab-nightlies.s3.us-east-2.amazonaws.com/macos-${{ github.sha }}.zip
+          webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
+          webhook_token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
+          args: New macos build available at https://texturelab-nightlies.s3.us-east-2.amazonaws.com/macos-${{ github.sha }}.zip
 # Maybe there is some use for fragments in the future, leave this here as a reminder
 #     - name: Save build artifact linux
 #       uses: actions/upload-artifact@v2
