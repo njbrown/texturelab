@@ -87,7 +87,7 @@ jobs:
 
       - name: Announce linux build on Discord
         if: matrix.node-version == '14.x' && runner.os == 'Linux'
-        uses: fateyan/action-discord-notifier@v1.2.0
+        uses: appleboy/discord-action@master
         with:
           webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
           webhook_token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
@@ -95,7 +95,7 @@ jobs:
 
       - name: Announce macos build on Discord
         if: matrix.node-version == '14.x' && runner.os == 'macOS'
-        uses: fateyan/action-discord-notifier@v1.2.0
+        uses: appleboy/discord-action@master
         with:
           webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
           webhook_token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
