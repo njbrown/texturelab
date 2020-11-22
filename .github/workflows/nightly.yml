@@ -79,21 +79,21 @@ jobs:
 
       - name: Announce windows build on Discord
         if: matrix.node-version == '14.x' && runner.os == 'Windows'
-        uses: njbrown/action-discord-notifier@5576e859293797f678e6d47413f918242918c2ef
+        uses: njbrown/action-discord-notifier@master
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
           message-title: New windows build available at https://texturelab-nightlies.s3.us-east-2.amazonaws.com/windows-${{ github.sha }}.zip
 
       - name: Announce linux build on Discord
         if: matrix.node-version == '14.x' && runner.os == 'Linux'
-        uses: njbrown/action-discord-notifier@5576e859293797f678e6d47413f918242918c2ef
+        uses: njbrown/action-discord-notifier@master
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
           message-title: New linux build available at https://texturelab-nightlies.s3.us-east-2.amazonaws.com/linux-${{ github.sha }}.zip
 
       - name: Announce macos build on Discord
         if: matrix.node-version == '14.x' && runner.os == 'macOS'
-        uses: njbrown/action-discord-notifier@5576e859293797f678e6d47413f918242918c2ef
+        uses: njbrown/action-discord-notifier@master
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
           message-title: New macos build available at https://texturelab-nightlies.s3.us-east-2.amazonaws.com/macos-${{ github.sha }}.zip
