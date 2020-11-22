@@ -1,0 +1,115 @@
+name: Nightly build
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    env:
+      IDENTIFIER: ${{ github.sha }}
+    strategy:
+      matrix:
+        node-version: [14.x]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}   
+    steps:        
+    - name: Checkout source
+      uses: actions/checkout@master
+      with:
+        submodules: true
+
+    - name: Setup cache
+      id: yarn-cache-dir-path
+      run: echo "::set-output name=dir::$(yarn cache dir)"
+
+    - uses: actions/cache@master
+      id: yarn-cache
+      with:
+        path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@master
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Install dependencies and build
+      run: |
+        yarn install
+        yarn electron:build --publish=never
+        
+    - name: Zip and upload linux build to S3     
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-2
+    - name: Deploy static site to S3 bucket
+      if: matrix.node-version == '14.x' && runner.os == 'Linux'
+      run: |
+          7z a -tzip linux-$GITHUB_SHA.zip ./dist_electron/linux-unpacked/*
+          aws s3 cp ./linux-$GITHUB_SHA.zip s3://texturelab-nightlies
+    
+    - name: Zip and upload windows build to S3      
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-2
+    - name: Deploy static site to S3 bucket
+      if: matrix.node-version == '14.x' && runner.os == 'Windows'
+      run: |
+          7z a -tzip windows-$env:GITHUB_SHA.zip ./dist_electron/win-unpacked/*
+          aws s3 cp ./windows-$env:GITHUB_SHA.zip s3://texturelab-nightlies
+          
+    - name: Zip and upload macos build to S3      
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-2
+    - name: Deploy static site to S3 bucket
+      if: matrix.node-version == '14.x' && runner.os == 'macOS'
+      run: |
+          7z a -tzip macos-$GITHUB_SHA.zip ./dist_electron/mac/*
+          aws s3 cp ./macos-$GITHUB_SHA.zip s3://texturelab-nightlies
+          
+    - name: Announce windows build on Discord
+      if: matrix.node-version == '14.x' && runner.os == 'Windows'
+      uses: fateyan/action-discord-notifier@v1.2.0
+      with:
+        webhook: ${{ DISCORD_WEBHOOK }}
+        message-title: New windows build available at https://texturelab-nightlies.s3.us-east-2.amazonaws.com/windows-${{ github.sha }}.zip
+        
+    - name: Announce linux build on Discord
+      if: matrix.node-version == '14.x' && runner.os == 'Linux'
+      uses: fateyan/action-discord-notifier@v1.2.0
+      with:
+        webhook: ${{ DISCORD_WEBHOOK }}
+        message-title: New linux build available at https://texturelab-nightlies.s3.us-east-2.amazonaws.com/linux-${{ github.sha }}.zip
+        
+    - name: Announce macos build on Discord
+      if: matrix.node-version == '14.x' && runner.os == 'macOS'
+      uses: fateyan/action-discord-notifier@v1.2.0
+      with:
+        webhook: ${{ DISCORD_WEBHOOK }}
+        message-title: New macos build available at https://texturelab-nightlies.s3.us-east-2.amazonaws.com/macos-${{ github.sha }}.zip
+   
+# Maybe there is some use for fragments in the future, leave this here as a reminder
+#     - name: Save build artifact linux      
+#       uses: actions/upload-artifact@v2
+#       with:
+#         name: TextureLab-linux
+#         path: dist_electron/linux-unpacked
+#         retention-days: 7
+        
+#     - name: Save build artifact win
+#       if: matrix.node-version == '14.x' && runner.os == 'Windows'
+#       uses: actions/upload-artifact@v2
+#       with:
+#         name: TextureLab-windows
+#         path: dist_electron/win-unpacked
+#         retention-days: 7
