@@ -48,6 +48,8 @@ import { FloodFillToBBox } from "./v2/floodfilltobbox";
 import { FloodFillToRandomColor } from "./v2/floodfilltorandomcolor";
 import { FloodFillSampler } from "./v2/floodfillsampler";
 import { StripesNode } from "./v2/stripes";
+import { RgbaMerge } from "./v2/rgbamerge";
+import { RgbaShuffle } from "./v2/rgbashuffle";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -112,6 +114,8 @@ export function createLibrary() {
 	);
 	lib.addNode("floodfillsampler", "Flood Fill Sampler", FloodFillSampler);
 	lib.addNode("stripes", "Stripes", StripesNode);
+	lib.addNode("rgbamerge", "RGBA Merge", RgbaMerge);
+	lib.addNode("rgbashuffle", "RGBA Shuffle", RgbaShuffle);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
