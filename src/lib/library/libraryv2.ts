@@ -51,6 +51,7 @@ import { StripesNode } from "./v2/stripes";
 import { RgbaMerge } from "./v2/rgbamerge";
 import { RgbaShuffle } from "./v2/rgbashuffle";
 import { ExtractChannel } from "./v2/extractchannel";
+import { Grayscale } from "./v2/grayscale";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -118,6 +119,7 @@ export function createLibrary() {
 	lib.addNode("rgbamerge", "RGBA Merge", RgbaMerge);
 	lib.addNode("rgbashuffle", "RGBA Shuffle", RgbaShuffle);
 	lib.addNode("extractchannel", "Extract Channel", ExtractChannel);
+	lib.addNode("grayscale", "Grayscale", Grayscale);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
