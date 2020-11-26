@@ -50,6 +50,7 @@ import { FloodFillSampler } from "./v2/floodfillsampler";
 import { StripesNode } from "./v2/stripes";
 import { RgbaMerge } from "./v2/rgbamerge";
 import { RgbaShuffle } from "./v2/rgbashuffle";
+import { ExtractChannel } from "./v2/extractchannel";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -116,6 +117,7 @@ export function createLibrary() {
 	lib.addNode("stripes", "Stripes", StripesNode);
 	lib.addNode("rgbamerge", "RGBA Merge", RgbaMerge);
 	lib.addNode("rgbashuffle", "RGBA Shuffle", RgbaShuffle);
+	lib.addNode("extractchannel", "Extract Channel", ExtractChannel);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
