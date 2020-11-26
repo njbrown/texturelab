@@ -47,6 +47,7 @@ import { FloodFillToColor } from "./v2/floodfilltocolor";
 import { FloodFillToBBox } from "./v2/floodfilltobbox";
 import { FloodFillToRandomColor } from "./v2/floodfilltorandomcolor";
 import { FloodFillSampler } from "./v2/floodfillsampler";
+import { StripesNode } from "./v2/stripes";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -110,6 +111,7 @@ export function createLibrary() {
 		FloodFillToRandomColor
 	);
 	lib.addNode("floodfillsampler", "Flood Fill Sampler", FloodFillSampler);
+	lib.addNode("stripes", "Stripes", StripesNode);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;

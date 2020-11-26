@@ -17,7 +17,7 @@ export class WaveNode extends GpuDesignerNode {
             float fy = uv.y * 3.142 * 2.0 * float(prop_yfrequency);
             float wave = sin(fx + fy + prop_phase) * prop_amp;
 
-            // bring wave to raneg 0...1
+            // bring wave to range 0...1
             wave = wave * 0.5 + 0.5;
 
             return vec4(vec3(wave), 1.0);
