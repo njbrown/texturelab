@@ -46,6 +46,7 @@ import { FloodFill } from "./v2/floodfill";
 import { FloodFillToColor } from "./v2/floodfilltocolor";
 import { FloodFillToBBox } from "./v2/floodfilltobbox";
 import { FloodFillToRandomColor } from "./v2/floodfilltorandomcolor";
+import { FloodFillToRandomIntensity } from "./v2/floodfilltorandomintensity";
 import { FloodFillSampler } from "./v2/floodfillsampler";
 import { StripesNode } from "./v2/stripes";
 import { RgbaMerge } from "./v2/rgbamerge";
@@ -115,6 +116,11 @@ export function createLibrary() {
 		"floodfilltorandomcolor",
 		"Flood Fill To Random Color",
 		FloodFillToRandomColor
+	);
+	lib.addNode(
+		"floodfilltorandomintensity",
+		"Flood Fill To Random Intensity",
+		FloodFillToRandomIntensity
 	);
 	lib.addNode("floodfillsampler", "Flood Fill Sampler", FloodFillSampler);
 	lib.addNode("stripes", "Stripes", StripesNode);
