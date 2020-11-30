@@ -9,7 +9,7 @@ export class PolarToCartesian extends GpuDesignerNode {
 
         this.addInput("image");
 
-        this.addFloatProperty("angle_offset", "Sample Angle Offset", 0.0, 0, 360, 0.01);
+        this.addFloatProperty("angle_offset", "Sample Angle Offset", 0.0, 0, 360, 1);
 
         const source = `
         const float PI = 3.1415926538;

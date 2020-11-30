@@ -11,6 +11,7 @@ export class CartesianToPolar extends GpuDesignerNode {
 
         this.addFloatProperty("yscale", "Y Scale", 1.0, 0, 4.0, 0.01);
         this.addIntProperty("xtile", "X Tile", 2, 0, 5, 1);
+        this.addFloatProperty("angle_offset", "Angle Offset", 0.0, 0, 360, 1.0);
         // this.addBoolProperty("clamp", "Clamp", false);
 
         const source = `
@@ -22,6 +23,7 @@ export class CartesianToPolar extends GpuDesignerNode {
 
             float x = atan(dir.y, dir.x);
             x = (x + PI) / (PI * 2.0); // bring to range 0..1
+            x += (prop_angle_offset / 360.0);
             x = x * float(prop_xtile);
 
             vec4 col = texture(image, vec2(x, y));
