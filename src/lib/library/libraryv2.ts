@@ -57,6 +57,7 @@ import { InvertNormal } from "./v2/invertnormal";
 import { CapsuleNode } from "./v2/capsule";
 import { CartesianToPolar } from "./v2/cartesiantopolar";
 import { PolarToCartesian } from "./v2/polartocartesian";
+import { CombineNormals } from "./v2/combinenormals";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -134,6 +135,7 @@ export function createLibrary() {
 	lib.addNode("capsule", "Capsule", CapsuleNode);
 	lib.addNode("cartesiantopolar", "Cartesian to Polar", CartesianToPolar);
 	lib.addNode("polartocartesian", "Polar to Cartesian", PolarToCartesian);
+	lib.addNode("combinenormals", "Combine Normals", CombineNormals);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
