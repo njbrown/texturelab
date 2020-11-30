@@ -56,6 +56,7 @@ import { Grayscale } from "./v2/grayscale";
 import { InvertNormal } from "./v2/invertnormal";
 import { CapsuleNode } from "./v2/capsule";
 import { CartesianToPolar } from "./v2/cartesiantopolar";
+import { PolarToCartesian } from "./v2/polartocartesian";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -132,6 +133,7 @@ export function createLibrary() {
 	lib.addNode("invertnormal", "Invert Normal", InvertNormal);
 	lib.addNode("capsule", "Capsule", CapsuleNode);
 	lib.addNode("cartesiantopolar", "Cartesian to Polar", CartesianToPolar);
+	lib.addNode("polartocartesian", "Polar to Cartesian", PolarToCartesian);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;

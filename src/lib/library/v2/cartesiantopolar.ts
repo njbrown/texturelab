@@ -2,9 +2,10 @@ import { GpuDesignerNode } from "../../designer/gpudesignernode";
 import { Color } from "@/lib/designer/color";
 import { Gradient } from "@/lib/designer/gradient";
 
+// https://www.mathsisfun.com/polar-cartesian-coordinates.html
 export class CartesianToPolar extends GpuDesignerNode {
 	public init() {
-		this.title = "Grayscale";
+		this.title = "Cartesian To Polar";
 
         this.addInput("image");
 
