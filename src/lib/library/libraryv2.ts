@@ -58,6 +58,8 @@ import { CapsuleNode } from "./v2/capsule";
 import { CartesianToPolar } from "./v2/cartesiantopolar";
 import { PolarToCartesian } from "./v2/polartocartesian";
 import { CombineNormals } from "./v2/combinenormals";
+import { SoftFlower } from "./v2/softflower";
+import { Star } from "./v2/star";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -136,6 +138,8 @@ export function createLibrary() {
 	lib.addNode("cartesiantopolar", "Cartesian to Polar", CartesianToPolar);
 	lib.addNode("polartocartesian", "Polar to Cartesian", PolarToCartesian);
 	lib.addNode("combinenormals", "Combine Normals", CombineNormals);
+	lib.addNode("softflower", "Soft Flower", SoftFlower);
+	lib.addNode("star", "Star", Star);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
