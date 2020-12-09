@@ -6,7 +6,7 @@ import { LineCellNode } from "./v1/linecell";
 import { PolygonNode, CircleNode } from "./v1/shapes";
 import { BlendNode } from "./v1/blend";
 import { InvertNode } from "./v1/invert";
-import { WarpNode } from "./v1/warp";
+import { WarpNodeV2 } from "./v2/warpv2";
 import { ColorNode, ColorizeNode } from "./v1/color";
 import { SimplexNoiseNode } from "./v1/simplexnoise";
 import { MaskNode } from "./v1/mask";
@@ -75,7 +75,7 @@ export function createLibrary() {
 	lib.addNode("polygon", "Polygon", PolygonNode);
 	lib.addNode("blend", "Blend", BlendNode);
 	lib.addNode("invert", "Invert", InvertNode);
-	lib.addNode("warp", "Warp", WarpNode);
+	lib.addNode("warp", "Warp", WarpNodeV2);
 	lib.addNode("color", "Color", ColorNode);
 	lib.addNode("colorize", "Colorize", ColorizeNode);
 	lib.addNode("simplexnoise", "Simplex Noise", SimplexNoiseNode);
