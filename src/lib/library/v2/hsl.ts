@@ -13,12 +13,14 @@ export class Hsl extends GpuDesignerNode {
 
 		this.addFloatProperty("hue", "Hue Offset", 0.0, -0.5, 0.5, 0.01);
 		this.addFloatProperty("sat", "Saturation Offset", 0.0, -0.5, 0.5, 0.01);
-		this.addFloatProperty("lightness",
-								"Lightness Offset",
-								0.0,
-								-0.5, 
-								0.5, 
-								0.01);
+		this.addFloatProperty(
+			"lightness",
+			"Lightness Offset",
+			0.0,
+			-0.5,
+			0.5,
+			0.01
+		);
 
 		const source = `
 

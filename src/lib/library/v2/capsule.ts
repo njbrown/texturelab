@@ -8,8 +8,8 @@ export class CapsuleNode extends GpuDesignerNode {
 		this.addFloatProperty("radius", "Radius", 0.2, 0, 1.0, 0.01);
 		this.addFloatProperty("topRadius", "Top Radius", 0.0, 0.0, 0.5, 0.01);
 		this.addFloatProperty("bottomRadius", "Bottom Radius", 0.0, 0, 0.5, 0.01);
-        this.addFloatProperty("length", "Length", 0.7, 0, 2.0, 0.01);
-        this.addFloatProperty("gradient", "Gradient", 0, 0, 1.0, 0.01);
+		this.addFloatProperty("length", "Length", 0.7, 0, 2.0, 0.01);
+		this.addFloatProperty("gradient", "Gradient", 0, 0, 1.0, 0.01);
 
 		const source = `
         #define PI 3.14159265359

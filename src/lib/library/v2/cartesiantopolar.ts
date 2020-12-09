@@ -7,14 +7,14 @@ export class CartesianToPolar extends GpuDesignerNode {
 	public init() {
 		this.title = "Cartesian To Polar";
 
-        this.addInput("image");
+		this.addInput("image");
 
-        this.addFloatProperty("yscale", "Y Scale", 1.0, 0, 4.0, 0.01);
-        this.addIntProperty("xtile", "X Tile", 2, 0, 5, 1);
-        this.addFloatProperty("angle_offset", "Angle Offset", 0.0, 0, 360, 1.0);
-        // this.addBoolProperty("clamp", "Clamp", false);
+		this.addFloatProperty("yscale", "Y Scale", 1.0, 0, 4.0, 0.01);
+		this.addIntProperty("xtile", "X Tile", 2, 0, 5, 1);
+		this.addFloatProperty("angle_offset", "Angle Offset", 0.0, 0, 360, 1.0);
+		// this.addBoolProperty("clamp", "Clamp", false);
 
-        const source = `
+		const source = `
         const float PI = 3.142;
         vec4 process(vec2 uv)
         {

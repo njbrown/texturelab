@@ -4,8 +4,8 @@ export class FloodFillToRandomColor extends GpuDesignerNode {
 	public init() {
 		this.title = "Flood Fill To Random Color";
 
-        this.addInput("floodfill");
-        this.addIntProperty("variance", "Variance", 30, 0, 60, 1);
+		this.addInput("floodfill");
+		this.addIntProperty("variance", "Variance", 30, 0, 60, 1);
 
 		const source = `
         vec2 calcFloodFillOrigin(vec2 uv, vec4 pixelData)

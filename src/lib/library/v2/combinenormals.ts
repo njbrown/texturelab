@@ -12,11 +12,12 @@ export class CombineNormals extends GpuDesignerNode {
 		this.addInput("detail");
 		this.addInput("base");
 
-		let prop = this.addEnumProperty("technique","Technique",
-							["Linear Blending",
-							"Overlay Blending", 
-							"Whiteout",
-							"Detail Oriented"]);
+		let prop = this.addEnumProperty("technique", "Technique", [
+			"Linear Blending",
+			"Overlay Blending",
+			"Whiteout",
+			"Detail Oriented"
+		]);
 		prop.setValue(3);
 
 		const source = `
