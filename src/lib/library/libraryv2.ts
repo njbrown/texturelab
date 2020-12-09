@@ -61,6 +61,7 @@ import { CombineNormals } from "./v2/combinenormals";
 import { SoftFlower } from "./v2/softflower";
 import { Star } from "./v2/star";
 import { HslExtract } from "./v2/hslextract";
+import { Hsl } from "./v2/hsl";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -142,6 +143,7 @@ export function createLibrary() {
 	lib.addNode("softflower", "Soft Flower", SoftFlower);
 	lib.addNode("star", "Star", Star);
 	lib.addNode("hslextract", "HSL Extract", HslExtract);
+	lib.addNode("hsl", "HSL", Hsl);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
