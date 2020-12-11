@@ -1,5 +1,5 @@
 import { BrickGeneratorNode } from "./v1/brickgenerator";
-import { NormalMapNode, BetterWarpNode } from "./v1/normalmap";
+import { NormalMapV2 } from "./v2/normalmapv2";
 import { CellNode } from "./v1/cellnode";
 import { SolidCellNode } from "./v1/solidcell";
 import { LineCellNode } from "./v1/linecell";
@@ -67,7 +67,7 @@ export function createLibrary() {
 	const lib = new DesignerLibrary();
 	lib.versionName = "v2";
 	lib.addNode("brickgenerator", "Brick Generator", BrickGeneratorNode);
-	lib.addNode("normalmap", "Normal Map", NormalMapNode);
+	lib.addNode("normalmap", "Normal Map", NormalMapV2);
 	lib.addNode("cell", "Cell", CellNode);
 	lib.addNode("solidcell", "Solid Cell", SolidCellNode);
 	lib.addNode("linecell", "Line Cell", LineCellNode);
