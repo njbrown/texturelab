@@ -8,7 +8,7 @@ export class NormalMapV2 extends GpuDesignerNode {
 		this.addInput("height");
 
 		// this.addFloatProperty("strength", "Strength", 0.02, -0.02, 0.02, 0.00001);
-		this.addFloatProperty("strength", "Strength", 1, -3.0, 3.0, 0.1);
+		this.addFloatProperty("strength", "Strength", 1, -2.0, 2.0, 0.1);
 		this.addIntProperty("range", "Range", 1, 1, 20, 1);
 		this.addBoolProperty("res_ind", "Resolution Independent", false);
 
