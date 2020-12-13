@@ -12,6 +12,7 @@ export class DirectionalBlur extends GpuDesignerNode {
 		this.addFloatProperty("intensity", "Intensity", 1, 0, 10, 0.1);
 		this.addIntProperty("samples", "Samples", 50, 0, 100, 1);
 		this.addFloatProperty("angle", "Angle", 0, 0, 360, 1);
+		this.addFloatProperty("balance", "Balance", 0, -1.0, 1.0, 0.1);
 
 		const source = `
         #define pow2(x) (x * x)
@@ -36,7 +37,8 @@ export class DirectionalBlur extends GpuDesignerNode {
 
             float sigma = float(prop_samples) * 0.25;
             
-            for (int x = -prop_samples / 2; x < prop_samples / 2; ++x) {
+            int balanceFactor = int((float(prop_samples) / 2.0) * prop_balance);
+            for (int x = (-prop_samples / 2) + balanceFactor; x < (prop_samples / 2) + balanceFactor; ++x) {
                 offset = vec2(x, 0);
                 weight = gaussian(offset, sigma);
                 offset = buildRot(prop_angle) * offset;
