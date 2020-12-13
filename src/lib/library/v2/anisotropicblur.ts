@@ -5,7 +5,7 @@ import { GpuDesignerNode } from "../../designer/gpudesignernode";
 // https://stackoverflow.com/questions/2157920/why-define-pi-4atan1-d0
 export class AnisotropicBlur extends GpuDesignerNode {
 	public init() {
-		this.title = "Blur";
+		this.title = "Anisotropic Blur";
 
 		this.addInput("image");
 

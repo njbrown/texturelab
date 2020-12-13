@@ -5,7 +5,7 @@ import { GpuDesignerNode } from "../../designer/gpudesignernode";
 // https://stackoverflow.com/questions/2157920/why-define-pi-4atan1-d0
 export class DirectionalBlur extends GpuDesignerNode {
 	public init() {
-		this.title = "Directoinal Blur";
+		this.title = "Directional Blur";
 
 		this.addInput("image");
 
