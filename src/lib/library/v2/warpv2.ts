@@ -10,7 +10,7 @@ export class WarpNodeV2 extends GpuDesignerNode {
 		this.addFloatProperty("intensity", "Intensity", 0.1, -1.0, 1.0, 0.01);
 
 		// calculates normal, then warps uv by it
-        const source = `
+		const source = `
         vec2 calcSlope(vec2 uv)
         {
             vec3 sl = vec3(0.0,0.0,0.0);

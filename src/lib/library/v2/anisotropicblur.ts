@@ -11,8 +11,8 @@ export class AnisotropicBlur extends GpuDesignerNode {
 
 		this.addFloatProperty("intensity", "Intensity", 2, 0, 10, 0.1);
 		this.addFloatProperty("anisotropy", "Anisotropy", 0.7, 0, 1.0, 0.1);
-        this.addIntProperty("samples", "Samples", 50, 0, 100, 1);
-        this.addFloatProperty("angle", "Angle", 0, 0, 360, 1);
+		this.addIntProperty("samples", "Samples", 50, 0, 100, 1);
+		this.addFloatProperty("angle", "Angle", 0, 0, 360, 1);
 
 		const source = `
         #define pow2(x) (x * x)

@@ -12,7 +12,7 @@ export class NormalMapV2 extends GpuDesignerNode {
 		this.addIntProperty("range", "Range", 1, 1, 20, 1);
 		this.addBoolProperty("res_ind", "Resolution Independent", false);
 
-        const source = `
+		const source = `
         vec4 process(vec2 uv)
         {
             vec2 step = (vec2(1.0, 1.0) / _textureSize) * float(prop_range);
