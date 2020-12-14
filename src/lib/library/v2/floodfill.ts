@@ -105,6 +105,27 @@ class Vector {
 	}
 }
 
+class FloodFillPixel {
+	localX: number = 0;
+	localY: number = 0;
+
+	globalX: number = 0;
+	globalY: number = 0;
+
+	constructor(
+		localX: number,
+		localY: number,
+		globalX: number,
+		globalY: number
+	) {
+		this.localX = localX;
+		this.localY = localY;
+
+		this.globalX = globalX;
+		this.globalY = globalY;
+	}
+}
+
 class Box {
 	left: number = 0;
 	top: number = 0;
@@ -112,7 +133,7 @@ class Box {
 	bottom: number = 0;
 
 	// coordinates of captured pixels
-	pixels: Vector[] = [];
+	pixels: FloodFillPixel[] = [];
 
 	public expand(x: number, y: number) {
 		//console.log(this);
@@ -235,7 +256,9 @@ class FloodFillGenerator {
 			// ok it's a white enough pixel, add it's neighbors to the queue
 			// and expand the rect
 			rect.expand(globalPixel.x, globalPixel.y);
-			rect.pixels.push(pixel);
+			rect.pixels.push(
+				new FloodFillPixel(pixel.x, pixel.y, globalPixel.x, globalPixel.y)
+			);
 
 			queue.push(new Vector(globalPixel.x + 1, globalPixel.y + 0));
 			queue.push(new Vector(globalPixel.x - 1, globalPixel.y + 0));
@@ -297,10 +320,20 @@ class FloodFillGenerator {
 			let sy = rect.height * (1.0 / height); // * 255;
 
 			for (let pixel of rect.pixels) {
-				let u = (pixel.x - rect.left) / rect.width; // * 255;
-				let v = (pixel.y - rect.top) / rect.height; // * 255;
+				let u = (pixel.globalX - rect.left) / rect.width; // * 255;
+				let v = (pixel.globalY - rect.top) / rect.height; // * 255;
 
-				setColorAtPixel(results, width, height, pixel.x, pixel.y, u, v, sx, sy);
+				setColorAtPixel(
+					results,
+					width,
+					height,
+					pixel.localX,
+					pixel.localY,
+					u,
+					v,
+					sx,
+					sy
+				);
 				//setColorAtPixel(data, pixel.x, pixel.y, 255, 0, 0, 255);
 			}
 		}
