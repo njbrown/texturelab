@@ -5,7 +5,9 @@ export class FloodFillToColor extends GpuDesignerNode {
 		this.title = "Flood Fill To Color";
 
 		this.addInput("floodfill");
-		this.addInput("color");
+        this.addInput("color");
+        
+        this.addIntProperty("variance", "Variance", 30, 0, 60, 1);
 
 		const source = `
         vec2 calcFloodFillOrigin(vec2 uv, vec4 pixelData)
@@ -29,6 +31,11 @@ export class FloodFillToColor extends GpuDesignerNode {
                 return vec4(0.0, 0.0, 0.0, 1.0);
             vec2 center = calcFloodFillCenter(uv, pixelData);
 
+            // quantize center to remove minor innaccuracies
+            // the hash function is very sensitive to even small changes
+            float variance = float(prop_variance);
+            center = floor(center * variance) / variance;
+            
             vec4 color = texture(color, center);
 
             return color;
