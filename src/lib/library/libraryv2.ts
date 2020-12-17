@@ -48,6 +48,7 @@ import { FloodFillToBBox } from "./v2/floodfilltobbox";
 import { FloodFillToRandomColor } from "./v2/floodfilltorandomcolor";
 import { FloodFillToRandomIntensity } from "./v2/floodfilltorandomintensity";
 import { FloodFillSampler } from "./v2/floodfillsampler";
+import { FloodFillToGradient } from "./v2/floodfilltogradient";
 import { StripesNode } from "./v2/stripes";
 import { RgbaMerge } from "./v2/rgbamerge";
 import { RgbaShuffle } from "./v2/rgbashuffle";
@@ -132,6 +133,11 @@ export function createLibrary() {
 		FloodFillToRandomIntensity
 	);
 	lib.addNode("floodfillsampler", "Flood Fill Sampler", FloodFillSampler);
+	lib.addNode(
+		"floodfilltogradient",
+		"Flood Fill To Gradient",
+		FloodFillToGradient
+	);
 	lib.addNode("stripes", "Stripes", StripesNode);
 	lib.addNode("rgbamerge", "RGBA Merge", RgbaMerge);
 	lib.addNode("rgbashuffle", "RGBA Shuffle", RgbaShuffle);
