@@ -5,7 +5,7 @@ export class FloodFillToRandomColor extends GpuDesignerNode {
 		this.title = "Flood Fill To Random Color";
 
 		this.addInput("floodfill");
-		this.addIntProperty("variance", "Variance", 30, 0, 60, 1);
+		this.addIntProperty("precision", "Precision", 2, 1, 3, 1);
 
 		const source = `
         vec2 calcFloodFillOrigin(vec2 uv, vec4 pixelData)
@@ -17,6 +17,7 @@ export class FloodFillToRandomColor extends GpuDesignerNode {
         vec2 calcFloodFillCenter(vec2 uv, vec4 pixelData)
         {
             vec2 origin = calcFloodFillOrigin(uv, pixelData);
+            // this is the source of the lack of precision!!
             origin += pixelData.ba * vec2(0.5);
 
             return origin;
@@ -26,13 +27,19 @@ export class FloodFillToRandomColor extends GpuDesignerNode {
             return mod((value + upperBound - 1.0), upperBound);
         }
 
+        // https://forum.processing.org/two/discussion/13586/how-to-round-a-float-to-its-second-or-third-decimal
+        float floatRound(float number, int place) {
+            float rounder = 1.0 / float(place);
+            return number - mod(number, rounder);
+        }
+
         vec4 process(vec2 uv)
         {
             vec4 pixelData =  texture(floodfill, uv);
             if (pixelData.ba == vec2(0.0, 0.0))
                 return vec4(0.0, 0.0, 0.0, 1.0);
 
-            vec2 center = calcFloodFillCenter(uv, pixelData);
+            vec2 center = calcFloodFillOrigin(uv, pixelData);
 
             // convert to local
             center.x = wrapAround(center.x, 1.0);
@@ -40,8 +47,9 @@ export class FloodFillToRandomColor extends GpuDesignerNode {
 
             // quantize center to remove minor innaccuracies
             // the hash function is very sensitive to even small changes
-            float variance = float(prop_variance);
-            center = floor(center * variance) / variance;
+            int place = int(pow(float(10), float(prop_precision)));
+            center.x = floatRound(center.x, place);
+            center.y = floatRound(center.y, place);
             
             vec4 color = vec4(0.0, 0.0, 0.0, 1.0);
             color.r = _rand(center + (vec2(1) ) * vec2(0.01));
@@ -49,6 +57,7 @@ export class FloodFillToRandomColor extends GpuDesignerNode {
             color.b = _rand(center + (vec2(3) ) * vec2(0.01));
 
             return color;
+            //return vec4(center.x, center.y, 0.0, 1.0);
         }
         `;
 

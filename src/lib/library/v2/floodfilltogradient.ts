@@ -8,6 +8,7 @@ export class FloodFillToGradient extends GpuDesignerNode {
 
 		this.addFloatProperty("angle", "Angle", 0, 0, 360, 1);
 		this.addFloatProperty("variation", "Angle Variation", 0, 0, 1.0, 0.05);
+		this.addIntProperty("precision", "Precision", 2, 1, 3, 1);
 
 		const source = `
         vec2 calcFloodFillOrigin(vec2 uv, vec4 pixelData)
@@ -36,6 +37,16 @@ export class FloodFillToGradient extends GpuDesignerNode {
             return dot(x, dir) / dot(dir, dir);
         }
 
+        float wrapAround(float value, float upperBound) {
+            return mod((value + upperBound - 1.0), upperBound);
+        }
+
+        // https://forum.processing.org/two/discussion/13586/how-to-round-a-float-to-its-second-or-third-decimal
+        float floatRound(float number, int place) {
+            float rounder = 1.0 / float(place);
+            return number - mod(number, rounder);
+        }
+
         vec4 process(vec2 uv)
         {
             vec4 pixelData =  texture(floodfill, uv);
@@ -46,7 +57,14 @@ export class FloodFillToGradient extends GpuDesignerNode {
             vec2 origin = calcFloodFillOrigin(uv, pixelData);
             vec2 center = calcFloodFillCenter(uv, pixelData);
 
-            float rotRand = _rand(vec2(_seed) + center * vec2(0.01));
+            vec2 originSeed;
+            int place = int(pow(float(10), float(prop_precision)));
+            originSeed.x = wrapAround(origin.x, 1.0);
+            originSeed.y = wrapAround(origin.y, 1.0);
+            originSeed.x = floatRound(originSeed.x, place);
+            originSeed.y = floatRound(originSeed.y, place);
+
+            float rotRand = _rand(vec2(_seed) + originSeed * vec2(0.01));
             float addedRot = rotRand * 360.0 * prop_variation;
                 
             float radius = length(origin - center);
