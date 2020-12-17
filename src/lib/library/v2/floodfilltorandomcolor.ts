@@ -22,6 +22,10 @@ export class FloodFillToRandomColor extends GpuDesignerNode {
             return origin;
         }
 
+        float wrapAround(float value, float upperBound) {
+            return mod((value + upperBound - 1.0), upperBound);
+        }
+
         vec4 process(vec2 uv)
         {
             vec4 pixelData =  texture(floodfill, uv);
@@ -29,6 +33,10 @@ export class FloodFillToRandomColor extends GpuDesignerNode {
                 return vec4(0.0, 0.0, 0.0, 1.0);
 
             vec2 center = calcFloodFillCenter(uv, pixelData);
+
+            // convert to local
+            center.x = wrapAround(center.x, 1.0);
+            center.y = wrapAround(center.y, 1.0);
 
             // quantize center to remove minor innaccuracies
             // the hash function is very sensitive to even small changes
