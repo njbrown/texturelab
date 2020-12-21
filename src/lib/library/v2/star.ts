@@ -5,10 +5,11 @@ export class Star extends GpuDesignerNode {
 	public init() {
 		this.title = "Star";
 
-		this.addFloatProperty("radius", "Radius", 0.2, 0, 1.0, 0.01);
-		this.addIntProperty("sides", "Sides", 3, 0, 10, 1);
-		this.addFloatProperty("depth", "Depth", 1.0, 0, 1.0, 0.01);
-		this.addFloatProperty("gradient", "Gradient", 0.1, 0, 1.0, 0.01);
+		this.addFloatProperty("radius", "Radius", 0.2, 0, 0.5, 0.01);
+		this.addIntProperty("sides", "Sides", 5, 3, 20, 1);
+		this.addFloatProperty("depth", "Depth", 0.5, 0, 1.0, 0.01);
+		this.addBoolProperty("antialias", "Anti-Alias", true);
+		// this.addFloatProperty("gradient", "Gradient", 0.1, 0, 1.0, 0.01);
 
 		const source = `
         #define PI 3.14159265359
@@ -53,7 +54,13 @@ export class Star extends GpuDesignerNode {
 
             // d at 0 is the star
             //vec3 color = vec3(1.0-linearstep(1.0-prop_gradient, 1.0, d));
-            vec3 color = vec3(d);
+            vec3 color = vec3(1.0) - sign(d);
+
+            // anti-alias
+            if(prop_antialias) {
+
+                color = mix( color, vec3(1.0), 1.0-smoothstep(0.0,0.001,abs(d)) );
+            }
 
             return vec4(color, 1.0);
         }
