@@ -114,6 +114,16 @@ export class SplatNodeV2 extends GpuDesignerNode {
                 color = blend(color, sampleImage(sampleUV));
                 sampleUV = transformUV(uv, vec2(x,y) + vec2( 0.0, -1.0), r, vec2(1.0));
                 color = blend(color, sampleImage(sampleUV));
+
+                // sample 4 diagonal sides
+                sampleUV = transformUV(uv, vec2(x,y) + vec2(-1.0,  1.0), r, vec2(1.0));
+                color = blend(color, sampleImage(sampleUV));
+                sampleUV = transformUV(uv, vec2(x,y) + vec2( 1.0,  1.0), r, vec2(1.0));
+                color = blend(color, sampleImage(sampleUV));
+                sampleUV = transformUV(uv, vec2(x,y) + vec2( 1.0,  1.0), r, vec2(1.0));
+                color = blend(color, sampleImage(sampleUV));
+                sampleUV = transformUV(uv, vec2(x,y) + vec2( 1.0, -1.0), r, vec2(1.0));
+                color = blend(color, sampleImage(sampleUV));
             }
 
             //color = color / vec4(float(prop_count));
