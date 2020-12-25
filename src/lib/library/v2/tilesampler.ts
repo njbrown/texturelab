@@ -16,7 +16,12 @@ export class TileSampler extends GpuDesignerNode {
 		this.addFloatProperty("posRand", "Random Position", 0, 0, 1.0, 0.01);
 		this.addFloatProperty("intensityRand", "Random Intensity", 0, 0, 1.0, 0.01);
 		this.addFloatProperty("scale", "Scale", 1, 0, 4, 0.1);
-		this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.1);
+        this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.1);
+        
+        this.addEnumProperty("blendType", "Blend Type", [
+			"Max",
+			"Add"
+		]);
 
 		const source = `
 
@@ -63,6 +68,17 @@ export class TileSampler extends GpuDesignerNode {
             if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0)
                 return texture(image, uv);
             return vec4(0.0);
+        }
+
+        vec4 blend(vec4 colA, vec4 colB)
+        {
+            vec4 col = vec4(1.0);
+            if (prop_blendType==0) // max
+                col.rgb = max(colA.rgb, colB.rgb);
+            if (prop_blendType==1) // add
+                col.rgb = colA.rgb + colB.rgb;
+
+            return col;
         }
 
         // https://stackoverflow.com/questions/38986208/webgl-loop-index-cannot-be-compared-with-non-constant-expression
@@ -127,27 +143,27 @@ export class TileSampler extends GpuDesignerNode {
                     sy = mix(sy, randScale, prop_scaleRand);
 
                     vec2 sampleUV = transformUV(uv, vec2(x,y), r, vec2(sx, sy));
-                    color = max(color, sampleImage(image, sampleUV) * intens);
+                    color = blend(color, sampleImage(image, sampleUV) * intens);
 
-                    //sample 4 sides
+                    // sample 4 sides
                     sampleUV = transformUV(uv, vec2(x,y) + vec2(-1.0,  0.0), r, vec2(sx, sy));
-                    color = max(color, sampleImage(image, sampleUV) * intens);
+                    color = blend(color, sampleImage(image, sampleUV) * intens);
                     sampleUV = transformUV(uv, vec2(x,y) + vec2( 1.0,  0.0), r, vec2(sx, sy));
-                    color = max(color, sampleImage(image, sampleUV) * intens);
+                    color = blend(color, sampleImage(image, sampleUV) * intens);
                     sampleUV = transformUV(uv, vec2(x,y) + vec2( 0.0,  1.0), r, vec2(sx, sy));
-                    color = max(color, sampleImage(image, sampleUV) * intens);
+                    color = blend(color, sampleImage(image, sampleUV) * intens);
                     sampleUV = transformUV(uv, vec2(x,y) + vec2( 0.0, -1.0), r, vec2(sx, sy));
-                    color = max(color, sampleImage(image, sampleUV) * intens);
+                    color = blend(color, sampleImage(image, sampleUV) * intens);
 
-                    // todo: sample 4 diagonal sides
+                    // sample 4 diagonal sides
                     sampleUV = transformUV(uv, vec2(x,y) + vec2(-1.0,  1.0), r, vec2(sx, sy));
-                    color = max(color, sampleImage(image, sampleUV) * intens);
+                    color = blend(color, sampleImage(image, sampleUV) * intens);
                     sampleUV = transformUV(uv, vec2(x,y) + vec2( 1.0,  1.0), r, vec2(sx, sy));
-                    color = max(color, sampleImage(image, sampleUV) * intens);
+                    color = blend(color, sampleImage(image, sampleUV) * intens);
                     sampleUV = transformUV(uv, vec2(x,y) + vec2( 1.0,  1.0), r, vec2(sx, sy));
-                    color = max(color, sampleImage(image, sampleUV) * intens);
+                    color = blend(color, sampleImage(image, sampleUV) * intens);
                     sampleUV = transformUV(uv, vec2(x,y) + vec2( 1.0, -1.0), r, vec2(sx, sy));
-                    color = max(color, sampleImage(image, sampleUV) * intens);
+                    color = blend(color, sampleImage(image, sampleUV) * intens);
                 }
 
             return color;

@@ -6,7 +6,12 @@ export class SplatNodeV2 extends GpuDesignerNode {
 
 		this.addInput("image");
 
-		this.addIntProperty("count", "Count", 50, 0, 1000, 1);
+        this.addIntProperty("count", "Count", 50, 0, 1000, 1);
+        
+        this.addEnumProperty("blendType", "Blend Type", [
+			"Max",
+			"Add"
+		]);
 
 		const source = `
         // https://github.com/glslify/glsl-inverse/blob/master/index.glsl
@@ -71,6 +76,17 @@ export class SplatNodeV2 extends GpuDesignerNode {
             return vec4(0.0);
         }
 
+        vec4 blend(vec4 colA, vec4 colB)
+        {
+            vec4 col = vec4(1.0);
+            if (prop_blendType==0) // max
+                col.rgb = max(colA.rgb, colB.rgb);
+            if (prop_blendType==1) // add
+                col.rgb = colA.rgb + colB.rgb;
+
+            return col;
+        }
+
         const int MAX_ITER = 1000;
 
         // https://stackoverflow.com/questions/38986208/webgl-loop-index-cannot-be-compared-with-non-constant-expression
@@ -87,17 +103,17 @@ export class SplatNodeV2 extends GpuDesignerNode {
                 float r = randomFloatRange(i*15 + 3, 0.0, 360.0);
 
                 vec2 sampleUV = transformUV(uv, vec2(x,y), r, vec2(1.0));
-                color = max(color, sampleImage(sampleUV));
+                color = blend(color, sampleImage(sampleUV));
 
                 //sample 4 sides
                 sampleUV = transformUV(uv, vec2(x,y) + vec2(-1.0,  0.0), r, vec2(1.0));
-                color = max(color, sampleImage(sampleUV));
+                color = blend(color, sampleImage(sampleUV));
                 sampleUV = transformUV(uv, vec2(x,y) + vec2( 1.0,  0.0), r, vec2(1.0));
-                color = max(color, sampleImage(sampleUV));
+                color = blend(color, sampleImage(sampleUV));
                 sampleUV = transformUV(uv, vec2(x,y) + vec2( 0.0,  1.0), r, vec2(1.0));
-                color = max(color, sampleImage(sampleUV));
+                color = blend(color, sampleImage(sampleUV));
                 sampleUV = transformUV(uv, vec2(x,y) + vec2( 0.0, -1.0), r, vec2(1.0));
-                color = max(color, sampleImage(sampleUV));
+                color = blend(color, sampleImage(sampleUV));
             }
 
             //color = color / vec4(float(prop_count));

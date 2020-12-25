@@ -12,6 +12,11 @@ export class AdvanceSplatterV2 extends GpuDesignerNode {
 		this.addIntProperty("count", "Count", 50, 0, 1000, 1);
 		this.addFloatProperty("rot", "Rotation", 0, 0, 360, 0.1);
 
+        this.addEnumProperty("blendType", "Blend Type", [
+			"Max",
+			"Add"
+        ]);
+        
 		const source = `
         // https://github.com/glslify/glsl-inverse/blob/master/index.glsl
         // mat3 inverse(mat3 m) {
@@ -75,6 +80,17 @@ export class AdvanceSplatterV2 extends GpuDesignerNode {
             return vec4(0.0);
         }
 
+        vec4 blend(vec4 colA, vec4 colB)
+        {
+            vec4 col = vec4(1.0);
+            if (prop_blendType==0) // max
+                col.rgb = max(colA.rgb, colB.rgb);
+            if (prop_blendType==1) // add
+                col.rgb = colA.rgb + colB.rgb;
+
+            return col;
+        }
+
         const int MAX_ITER = 1000;
 
         // https://stackoverflow.com/questions/38986208/webgl-loop-index-cannot-be-compared-with-non-constant-expression
@@ -104,17 +120,17 @@ export class AdvanceSplatterV2 extends GpuDesignerNode {
                 }
 
                 vec2 sampleUV = transformUV(uv, vec2(x,y), r + prop_rot, vec2(s));
-                color = max(color, sampleImage(image, sampleUV));
+                color = blend(color, sampleImage(image, sampleUV));
 
                 //sample 4 sides
                 sampleUV = transformUV(uv, vec2(x,y) + vec2(-1.0,  0.0), r, vec2(1.0));
-                color = max(color, sampleImage(image, sampleUV));
+                color = blend(color, sampleImage(image, sampleUV));
                 sampleUV = transformUV(uv, vec2(x,y) + vec2( 1.0,  0.0), r, vec2(1.0));
-                color = max(color, sampleImage(image, sampleUV));
+                color = blend(color, sampleImage(image, sampleUV));
                 sampleUV = transformUV(uv, vec2(x,y) + vec2( 0.0,  1.0), r, vec2(1.0));
-                color = max(color, sampleImage(image, sampleUV));
+                color = blend(color, sampleImage(image, sampleUV));
                 sampleUV = transformUV(uv, vec2(x,y) + vec2( 0.0, -1.0), r, vec2(1.0));
-                color = max(color, sampleImage(image, sampleUV));
+                color = blend(color, sampleImage(image, sampleUV));
 
                 // todo: sample 4 diagonal sides
             }
