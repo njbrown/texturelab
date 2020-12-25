@@ -10,7 +10,7 @@ import { WarpNodeV2 } from "./v2/warpv2";
 import { ColorNode, ColorizeNode } from "./v1/color";
 import { SimplexNoiseNode } from "./v1/simplexnoise";
 import { MaskNode } from "./v1/mask";
-import { Transform2DNode } from "./v1/transform2d";
+import { Transform2DNodeV2 } from "./v2/transform2dv2";
 import { MapRangeNode } from "./v1/maprange";
 import { Perlin3DNode } from "./v1/perlin3d";
 import { HexagonNode } from "./v1/hexagon";
@@ -83,7 +83,7 @@ export function createLibrary() {
 	lib.addNode("colorize", "Colorize", ColorizeNode);
 	lib.addNode("simplexnoise", "Simplex Noise", SimplexNoiseNode);
 	lib.addNode("mask", "Mask", MaskNode);
-	lib.addNode("transform2d", "Transform2D", Transform2DNode);
+	lib.addNode("transform2d", "Transform2D", Transform2DNodeV2);
 	lib.addNode("maprange", "Map Range", MapRangeNode);
 	lib.addNode("splat", "Splat", SplatNodeV2);
 	lib.addNode("perlin3d", "Perlin 3D", Perlin3DNode);
