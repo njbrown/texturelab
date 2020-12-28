@@ -8,7 +8,7 @@ export class CapsuleNode extends GpuDesignerNode {
 		this.addFloatProperty("radius", "Radius", 0.2, 0, 1.0, 0.01);
 		this.addFloatProperty("topRadius", "Top Radius", 0.0, 0.0, 0.5, 0.01);
 		this.addFloatProperty("bottomRadius", "Bottom Radius", 0.0, 0, 0.5, 0.01);
-		this.addFloatProperty("length", "Length", 0.7, 0, 2.0, 0.01);
+		this.addFloatProperty("length", "Length", 0.3, 0, 2.0, 0.01);
 		this.addFloatProperty("gradient", "Gradient", 0, 0, 1.0, 0.01);
 
 		const source = `
@@ -40,7 +40,7 @@ export class CapsuleNode extends GpuDesignerNode {
             uv = uv *2.-1.;
             uv.y += prop_length * 0.5;
 
-            float d = sdUnevenCapsule(uv, prop_topRadius, prop_bottomRadius, prop_length);
+            float d = sdUnevenCapsule(uv, prop_bottomRadius, prop_topRadius, prop_length);
 
             vec3 color = vec3(1.0-linearstep(prop_radius-prop_gradient, prop_radius, d));
             //vec3 color = vec3(d);
