@@ -10,7 +10,12 @@ export class AdvanceSplatterV2 extends GpuDesignerNode {
 		this.addInput("intensity");
 
 		this.addIntProperty("count", "Count", 50, 0, 1000, 1);
-		this.addFloatProperty("rot", "Rotation", 0, 0, 360, 0.1);
+        this.addFloatProperty("rot", "Rotation", 0, 0, 360, 0.1);
+
+        this.addFloatProperty("intensityRand", "Random Intensity", 0, 0, 1.0, 0.01);
+
+        this.addFloatProperty("scale", "Scale", 1, 0, 4, 0.1);
+		this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.1);
 
         this.addEnumProperty("blendType", "Blend Type", [
 			"Max",
@@ -80,6 +85,37 @@ export class AdvanceSplatterV2 extends GpuDesignerNode {
             return vec4(0.0);
         }
 
+        float calcIntensity(int i, vec2 uv)
+		{
+			// intensity
+			float intens = 1.0;
+			// multiply by texture if available
+			if (intensity_connected) {
+				intens *= texture(intensity, uv).r;
+			}
+			// random intensity per tile
+			float randIntensity = randomFloatRange(i*17 + 8, 0.0, 1.0);
+
+			// lerp between random intensity and one by image ( or 1.0 )
+			intens = mix(intens, randIntensity, prop_intensityRand);
+
+			return intens;
+        }
+        
+        vec2 calcScale(int i, vec2 uv)
+		{
+			float s = prop_scale;
+			if (size_connected) {
+				s *= texture(size, uv).r;
+			}
+
+            float randScale = randomFloatRange(i*11 + 6, 0.0, 1.0);
+            
+			s = mix(s, randScale, prop_scaleRand);
+
+			return vec2(s);
+		}
+
         vec4 blend(vec4 colA, vec4 colB)
         {
             vec4 col = vec4(1.0);
@@ -105,7 +141,7 @@ export class AdvanceSplatterV2 extends GpuDesignerNode {
                 float x = randomFloatRange(i*10 + 1, -0.5, 0.5);
                 float y = randomFloatRange(i*13 + 2, -0.5, 0.5);
                 float r = randomFloatRange(i*15 + 3, 0.0, 360.0) + prop_rot;
-                float s = 1.0;
+                // float s = 1.0;
 
                 //vec2 center = transformUV(vec2(0.5, 0.5), vec2(x,y), r, vec2(1.0));
 
@@ -115,32 +151,36 @@ export class AdvanceSplatterV2 extends GpuDesignerNode {
                         continue;
                 }
 
-                if (size_connected) {
-                    s = s * texture(size, vec2(x,y) + vec2(0.5)).r;
-                }
+                // if (size_connected) {
+                //     s = s * texture(size, vec2(x,y) + vec2(0.5)).r;
+                // }
 
-                vec2 sampleUV = transformUV(uv, vec2(x,y), r, vec2(s));
-                color = blend(color, sampleImage(image, sampleUV));
+                vec2 s = calcScale(i, vec2(x,y) + vec2(0.5));
+
+                float intens = calcIntensity(i, vec2(x,y) + vec2(0.5));
+
+                vec2 sampleUV = transformUV(uv, vec2(x,y), r, s);
+                color = blend(color, sampleImage(image, sampleUV) * intens);
 
                 // sample 4 sides
-                sampleUV = transformUV(uv, vec2(x,y) + vec2(-1.0,  0.0), r, vec2(1.0));
-                color = blend(color, sampleImage(image, sampleUV));
-                sampleUV = transformUV(uv, vec2(x,y) + vec2( 1.0,  0.0), r, vec2(1.0));
-                color = blend(color, sampleImage(image, sampleUV));
-                sampleUV = transformUV(uv, vec2(x,y) + vec2( 0.0,  1.0), r, vec2(1.0));
-                color = blend(color, sampleImage(image, sampleUV));
-                sampleUV = transformUV(uv, vec2(x,y) + vec2( 0.0, -1.0), r, vec2(1.0));
-                color = blend(color, sampleImage(image, sampleUV));
+                sampleUV = transformUV(uv, vec2(x,y) + vec2(-1.0,  0.0), r, s);
+                color = blend(color, sampleImage(image, sampleUV) * intens);
+                sampleUV = transformUV(uv, vec2(x,y) + vec2( 1.0,  0.0), r, s);
+                color = blend(color, sampleImage(image, sampleUV) * intens);
+                sampleUV = transformUV(uv, vec2(x,y) + vec2( 0.0,  1.0), r, s);
+                color = blend(color, sampleImage(image, sampleUV) * intens);
+                sampleUV = transformUV(uv, vec2(x,y) + vec2( 0.0, -1.0), r, s);
+                color = blend(color, sampleImage(image, sampleUV) * intens);
 
                 // sample 4 diagonal sides
-                sampleUV = transformUV(uv, vec2(x,y) + vec2(-1.0,  1.0), r, vec2(1.0));
-                color = blend(color, sampleImage(image, sampleUV));
-                sampleUV = transformUV(uv, vec2(x,y) + vec2( 1.0,  1.0), r, vec2(1.0));
-                color = blend(color, sampleImage(image, sampleUV));
-                sampleUV = transformUV(uv, vec2(x,y) + vec2( 1.0,  1.0), r, vec2(1.0));
-                color = blend(color, sampleImage(image, sampleUV));
-                sampleUV = transformUV(uv, vec2(x,y) + vec2( 1.0, -1.0), r, vec2(1.0));
-                color = blend(color, sampleImage(image, sampleUV));
+                sampleUV = transformUV(uv, vec2(x,y) + vec2(-1.0,  1.0), r, s);
+                color = blend(color, sampleImage(image, sampleUV) * intens);
+                sampleUV = transformUV(uv, vec2(x,y) + vec2( 1.0,  1.0), r, s);
+                color = blend(color, sampleImage(image, sampleUV) * intens);
+                sampleUV = transformUV(uv, vec2(x,y) + vec2( 1.0,  1.0), r, s);
+                color = blend(color, sampleImage(image, sampleUV) * intens);
+                sampleUV = transformUV(uv, vec2(x,y) + vec2( 1.0, -1.0), r, s);
+                color = blend(color, sampleImage(image, sampleUV) * intens);
             }
 
             //color = color / vec4(float(prop_count));
