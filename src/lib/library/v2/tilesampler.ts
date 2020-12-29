@@ -8,6 +8,7 @@ export class TileSampler extends GpuDesignerNode {
 		this.addInput("mask");
 		this.addInput("size");
 		this.addInput("intensity");
+		this.addInput("vector");
 
 		this.addIntProperty("rows", "Row Count", 8, 0, 15, 1);
 		this.addIntProperty("columns", "Column Count", 8, 0, 15, 1);
@@ -17,6 +18,8 @@ export class TileSampler extends GpuDesignerNode {
 		this.addFloatProperty("intensityRand", "Random Intensity", 0, 0, 1.0, 0.01);
 		this.addFloatProperty("scale", "Scale", 1, 0, 4, 0.1);
         this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.1);
+
+        this.addFloatProperty("vector_influence", "Vector Rotation Influence", 1, 0, 1, 0.1);
         
         this.addEnumProperty("blendType", "Blend Type", [
 			"Max",
@@ -141,6 +144,12 @@ export class TileSampler extends GpuDesignerNode {
                     // lerp between random scale and one by image ( or 1.0 )
                     sx = mix(sx, randScale, prop_scaleRand);
                     sy = mix(sy, randScale, prop_scaleRand);
+
+                    // vector
+                    if (vector_connected) {
+                        vec2 dir = (texture(vector, vec2(x,y) + vec2(0.5)).rg - 0.5) * 2.0;
+                        r += degrees(atan(dir.x, dir.y)) * prop_vector_influence;
+                    }
 
                     vec2 sampleUV = transformUV(uv, vec2(x,y), r, vec2(sx, sy));
                     color = blend(color, sampleImage(image, sampleUV) * intens);
