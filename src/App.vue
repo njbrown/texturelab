@@ -257,6 +257,7 @@ import path from "path";
 import { IPropertyHolder } from "./lib/designer/properties";
 import { AddItemsAction } from "./lib/actions/additemsaction";
 import { UndoStack } from "./lib/undostack";
+import { unobserve } from "./unobserve";
 const electron = require("electron");
 const remote = electron.remote;
 const { dialog, app, BrowserWindow, Menu } = remote;
@@ -298,7 +299,7 @@ export default class App extends Vue {
 	constructor() {
 		super();
 
-		this.editor = new Editor();
+		this.editor = unobserve(new Editor());
 		this.library = null;
 
 		this.project = new Project();
@@ -476,14 +477,14 @@ export default class App extends Vue {
 		//this.designer = this.editor.designer;
 		this.editor.onnodeselected = node => {
 			//this.selectedNode = node;
-			this.propHolder = node;
+			this.propHolder = unobserve(node);
 		};
 		this.editor.oncommentselected = comment => {
-			this.propHolder = comment;
+			this.propHolder = unobserve(comment);
 			console.log("comment selected");
 		};
 		this.editor.onframeselected = frame => {
-			this.propHolder = frame;
+			this.propHolder = unobserve(frame);
 		};
 		// this.editor.onnavigationselected = nav => {
 		//   this.propHolder = nav;
@@ -599,7 +600,7 @@ export default class App extends Vue {
 		(this.$refs.preview2d as any).reset();
 
 		this.editor.createNewTexture();
-		this.library = this.editor.library;
+		this.library = unobserve(this.editor.library);
 
 		this.project.name = "New Texture";
 		this.project.path = null;
@@ -679,8 +680,8 @@ export default class App extends Vue {
 				this.resolution = 1024;
 				this.randomSeed = 32;
 
-				this.project = project;
-				this.library = this.editor.library;
+				this.project = unobserve(project);
+				this.library = unobserve(this.editor.library);
 			}
 		);
 	}
@@ -817,8 +818,8 @@ export default class App extends Vue {
 		this.randomSeed = 32;
 
 		project.path = null; // this ensures saving pops SaveAs dialog
-		this.project = project;
-		this.library = this.editor.library;
+		this.project = unobserve(project);
+		this.library = unobserve(this.editor.library);
 	}
 
 	setResolution(evt) {

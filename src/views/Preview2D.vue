@@ -23,6 +23,7 @@
 
 <script>
 import { DragZoom, DrawMode } from "./preview2d/previewcanvas2d";
+import { unobserve } from "../unobserve";
 const electron = require("electron");
 const remote = electron.remote;
 const { dialog, app, BrowserWindow, Menu } = remote;
@@ -56,11 +57,11 @@ export default {
 	},
 	methods: {
 		setEditor(editor) {
-			this.editor = editor;
+			this.editor = unobserve(editor);
 			let self = this;
 			editor.onpreviewnode = (node, image) => {
-				self.node = node;
-				self.image = image;
+				self.node = unobserve(node);
+				self.image = unobserve(image);
 
 				self.dragZoom.setImage(image);
 

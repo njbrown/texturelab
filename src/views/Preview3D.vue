@@ -27,6 +27,7 @@
 <script>
 import { View3D } from "@/lib/view3d";
 import { DesignerNode } from "@/lib/designer/designernode";
+import { unobserve } from "../unobserve";
 const electron = require("electron");
 const remote = electron.remote;
 const { dialog, app, BrowserWindow, Menu } = require("electron").remote;
@@ -48,7 +49,7 @@ export default {
 	},
 	methods: {
 		setEditor(editor) {
-			this.editor = editor;
+			this.editor = unobserve(editor);
 			let self = this;
 			// editor.onpreviewnode = (node, image) => {
 			//   self.node = node;
