@@ -9,7 +9,7 @@
 					type="range"
 					:min="prop.minValue"
 					:max="prop.maxValue"
-					:value="prop.value"
+					:value="this.val"
 					:step="prop.step"
 					@input="updateValue"
 					class="slider"
@@ -20,7 +20,7 @@
 			<div style="width:70px;">
 				<input
 					type="number"
-					:value="prop.value"
+					:value="this.val"
 					:step="prop.step"
 					@input="updateValue"
 					class="number"
@@ -54,6 +54,12 @@ export default class FloatPropertyView extends Vue {
 	propHolder: IPropertyHolder;
 
 	oldValue: number;
+	val:number = 0;
+
+	mounted()
+	{
+		this.val = this.prop.value;
+	}
 
 	@Emit()
 	propertyChanged() {
@@ -67,6 +73,7 @@ export default class FloatPropertyView extends Vue {
 
 	updateValue(evt) {
 		this.propHolder.setProperty(this.prop.name, evt.target.value);
+		this.val = evt.target.value;
 		this.propertyChanged();
 	}
 
