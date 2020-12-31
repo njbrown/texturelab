@@ -169,11 +169,12 @@ export class NodeGraphicsItem extends GraphicsItem {
 	}
 
 	public sortSockets() {
+		let socks = this.getInSockets();
+
 		// top and bottom padding for sockets
-		const pad = 10;
+		const pad = socks.length < 5 ? 10 : 0;
 
 		// sort in sockets
-		let socks = this.getInSockets();
 		let incr = (this.height - pad * 2) / socks.length;
 		let mid = incr / 2.0;
 		let i = 0;
