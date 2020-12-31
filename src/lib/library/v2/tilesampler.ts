@@ -15,7 +15,12 @@ export class TileSampler extends GpuDesignerNode {
 		this.addFloatProperty("rot", "Rotation", 0, 0, 360, 0.1);
 		this.addFloatProperty("rotRand", "Random Rotation", 0, 0, 1.0, 0.01);
 		this.addFloatProperty("posRand", "Random Position", 0, 0, 1.0, 0.01);
-		this.addFloatProperty("intensityRand", "Random Intensity", 0, 0, 1.0, 0.01);
+        this.addFloatProperty("intensityRand", "Random Intensity", 0, 0, 1.0, 0.01);
+        
+        this.addEnumProperty("sizeMode", "Size Mode", [
+			"Normal",
+			"Keep Aspect"
+		]);
 		this.addFloatProperty("scale", "Scale", 1, 0, 4, 0.1);
         this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.1);
 
@@ -84,6 +89,28 @@ export class TileSampler extends GpuDesignerNode {
             return col;
         }
 
+        vec2 calcScale()
+        {
+            float rowSpacing = 1.0 / float(prop_rows);
+            float colSpacing = 1.0 / float(prop_columns);
+
+            if (prop_sizeMode == 0)
+            {
+                return vec2(colSpacing, rowSpacing);
+            }
+            else if (prop_sizeMode == 1)
+            {   
+                return vec2(min(rowSpacing, colSpacing));
+            }
+            // else if (type == 2)
+            // {
+            //     // todo: absolute
+            //     // let user specify size
+            // }
+
+            return vec2(1.0);
+        }
+
         // https://stackoverflow.com/questions/38986208/webgl-loop-index-cannot-be-compared-with-non-constant-expression
         vec4 process(vec2 uv)
         {
@@ -113,10 +140,6 @@ export class TileSampler extends GpuDesignerNode {
 
                     float r = randomFloatRange(i*15 + 3, -180.0, 180.0) * prop_rotRand + prop_rot;
 
-                    // scale starts out as the size of the tiles in uv space (0.0 - 1.0)
-                    float sx = colSpacing * prop_scale;
-                    float sy = rowSpacing * prop_scale;
-
                     // intensity
                     float intens = 1.0;
                     // multiply by texture if available
@@ -133,6 +156,14 @@ export class TileSampler extends GpuDesignerNode {
                         if (mask < 0.001f)
                             continue;
                     }
+                    
+                    // scale starts out as the size of the tiles in uv space (0.0 - 1.0)
+                    //float sx = colSpacing * prop_scale;
+                    //float sy = rowSpacing * prop_scale;
+
+                    vec2 scale = calcScale();
+                    float sx = scale.x * prop_scale;
+                    float sy = scale.y * prop_scale;
 
                     if (size_connected) {
                         float s = texture(size, vec2(x,y) + vec2(0.5)).r;
