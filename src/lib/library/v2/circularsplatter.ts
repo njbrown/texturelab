@@ -9,7 +9,7 @@ export class CircularSplatter extends GpuDesignerNode {
 		this.addInput("size");
 		this.addInput("intensity");
 
-        this.addFloatProperty("radius", "Radius", 0.5, 0, 1.0, 0.01);
+        this.addFloatProperty("radius", "Radius", 0.3, 0, 1.0, 0.01);
 
 		this.addIntProperty("count", "Count", 10, 0, 50, 1);
         this.addIntProperty("rings", "Rings", 1, 0, 5, 1);
@@ -18,8 +18,9 @@ export class CircularSplatter extends GpuDesignerNode {
 
         this.addFloatProperty("intensityRand", "Random Intensity", 0, 0, 1.0, 0.01);
 
-        this.addFloatProperty("scale", "Scale", 0.1, 0, 4, 0.1);
-		this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.1);
+        this.addFloatProperty("inputSize", "Input Size", 0.1, 0, 1, 0.01);
+        this.addFloatProperty("scale", "Scale", 1, 0, 1, 0.01);
+		this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.01);
 
         this.addEnumProperty("blendType", "Blend Type", [
 			"Max",
@@ -88,7 +89,8 @@ export class CircularSplatter extends GpuDesignerNode {
 				intens *= texture(intensity, uv).r;
 			}
 			// random intensity per tile
-			float randIntensity = randomFloatRange(uv, 0.0, 1.0);
+			// float randIntensity = randomFloatRange(uv, 0.0, 1.0);
+			float randIntensity = randomFloatRange(i*13 + 9, 0.0, 1.0);
 
 			// lerp between random intensity and one by image ( or 1.0 )
 			intens = mix(intens, randIntensity, prop_intensityRand);
@@ -108,7 +110,7 @@ export class CircularSplatter extends GpuDesignerNode {
             
 			s = mix(s, randScale, prop_scaleRand);
 
-			return vec2(s);
+			return vec2(s) * prop_inputSize;
 		}
 
         vec4 blend(vec4 colA, vec4 colB)
@@ -154,9 +156,9 @@ export class CircularSplatter extends GpuDesignerNode {
                     //     s = s * texture(size, vec2(x,y) + vec2(0.5)).r;
                     // }
 
-                    vec2 s = calcScale(i * ring, vec2(x,y) + vec2(0.5));
+                    vec2 s = calcScale(ring * prop_count + i, vec2(x,y) + vec2(0.5));
 
-                    float intens = calcIntensity(i * ring, vec2(x,y) + vec2(0.5));
+                    float intens = calcIntensity(ring * prop_count + i, vec2(x,y) + vec2(0.5));
 
                     vec2 sampleUV = transformUV(uv, vec2(x,y), r, s);
                     color = blend(color, sampleImage(image, sampleUV) * intens);
