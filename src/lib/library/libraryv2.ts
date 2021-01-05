@@ -65,6 +65,7 @@ import { HslExtract } from "./v2/hslextract";
 import { Hsl } from "./v2/hsl";
 import { DirectionalBlur } from "./v2/directionalblur";
 import { AnisotropicBlur } from "./v2/anisotropicblur";
+import { CircularSplatter } from "./v2/circularsplatter";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -154,6 +155,7 @@ export function createLibrary() {
 	lib.addNode("hsl", "HSL", Hsl);
 	lib.addNode("directionalblur", "Directional Blur", DirectionalBlur);
 	lib.addNode("anisotropic", "Anisotropic Blur", AnisotropicBlur);
+	lib.addNode("circularsplatter", "Circular Splatter", CircularSplatter);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
