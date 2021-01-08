@@ -10,6 +10,10 @@ export class CircularSplatter extends GpuDesignerNode {
 		this.addInput("intensity");
 
         this.addFloatProperty("radius", "Radius", 0.3, 0, 1.0, 0.01);
+        this.addFloatProperty("spacing", "Spacing", 1.0, 0, 2.0, 0.01);
+        this.addFloatProperty("spiralInfluence", "Spiral Influence", 0.0, 0.0, 1.0, 0.01);
+        this.addBoolProperty("reverseSpiral","Reverse Spiral Direction", false);
+        // todo: invert spiral direction
 
 		this.addIntProperty("count", "Count", 10, 0, 50, 1);
         this.addIntProperty("rings", "Rings", 1, 0, 5, 1);
@@ -105,8 +109,8 @@ export class CircularSplatter extends GpuDesignerNode {
 				s *= texture(size, uv).r;
 			}
 
-            //float randScale = randomFloatRange(i*11 + 6, 0.0, 1.0);
-            float randScale = randomFloatRange(uv, 0.0, 1.0);
+            float randScale = randomFloatRange(i*11 + 6, 0.0, 1.0);
+            //float randScale = randomFloatRange(uv, 0.0, 1.0);
             
 			s = mix(s, randScale, prop_scaleRand);
 
@@ -137,24 +141,25 @@ export class CircularSplatter extends GpuDesignerNode {
                 float radius = prop_radius - spacing * float(ring);
                 for(int i = 0; i<prop_count; i++)
                 {
-                    float angle = angle_spacing * float(i);
+                    float spiralFactor = (angle_spacing * float(i)) / 360.0;
+                    if (prop_reverseSpiral)
+                        spiralFactor = 1.0 - spiralFactor;
+                        
+                    float angle = angle_spacing * prop_spacing * float(i);
 
-                    float x = cos(radians(angle)) * radius;
-                    float y = sin(radians(angle)) * radius;
+                    float finalRadius = mix(radius, radius * spiralFactor, prop_spiralInfluence);
+                    float x = cos(radians(angle)) * finalRadius;
+                    float y = sin(radians(angle)) * finalRadius;
                     float r = angle;
-                    // float s = 1.0;
 
-                    //vec2 center = transformUV(vec2(0.5, 0.5), vec2(x,y), r, vec2(1.0));
+                    vec2 randomId = vec2(cos(radians(angle)) * finalRadius,
+                                        sin(radians(angle)) * finalRadius);
 
                     if (mask_connected) {
                         float mask = texture(mask, vec2(x,y) + vec2(0.5)).r;
                         if (mask < 0.001f)
                             continue;
                     }
-
-                    // if (size_connected) {
-                    //     s = s * texture(size, vec2(x,y) + vec2(0.5)).r;
-                    // }
 
                     vec2 s = calcScale(ring * prop_count + i, vec2(x,y) + vec2(0.5));
 
