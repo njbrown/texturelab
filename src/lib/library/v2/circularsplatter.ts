@@ -13,7 +13,6 @@ export class CircularSplatter extends GpuDesignerNode {
         this.addFloatProperty("spacing", "Spacing", 1.0, 0, 2.0, 0.01);
         this.addFloatProperty("spiralInfluence", "Spiral Influence", 0.0, 0.0, 1.0, 0.01);
         this.addBoolProperty("reverseSpiral","Reverse Spiral Direction", false);
-        // todo: invert spiral direction
 
 		this.addIntProperty("count", "Count", 10, 0, 50, 1);
         this.addIntProperty("rings", "Rings", 1, 0, 5, 1);
@@ -22,8 +21,14 @@ export class CircularSplatter extends GpuDesignerNode {
         this.addFloatProperty("rot", "Rotation", 0, 0, 360, 0.1);
         this.addBoolProperty("pivotCenter","Pivot Orientation From Center", true);
 
+        // INTENSITY
         this.addFloatProperty("intensityRand", "Random Intensity", 0, 0, 1.0, 0.01);
+        this.addFloatProperty("intensityByRing", "Intensity By Ring", 0, 0, 1.0, 0.01);
+        this.addBoolProperty("invertIntensityByRing","Invert Intensity By Ring", true);
+        this.addFloatProperty("intensityByAngle", "Intensity By Angle", 0, 0, 1.0, 0.01);
+        this.addBoolProperty("invertIntensityByAngle","Invert Intensity By Angle", true);
 
+        // SCALE
         this.addFloatProperty("inputSize", "Input Size", 0.1, 0, 1, 0.01);
         this.addFloatProperty("scale", "Scale", 1, 0, 1, 0.01);
 		this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.01);
@@ -86,7 +91,7 @@ export class CircularSplatter extends GpuDesignerNode {
             return vec4(0.0);
         }
 
-        float calcIntensity(int i, vec2 uv, float radialFactor, float angleFactor)
+        float calcIntensity(int i, vec2 uv, float radialFactor, float invRadialFactor, float angleFactor)
 		{
 			// intensity
 			float intens = 1.0;
@@ -102,13 +107,27 @@ export class CircularSplatter extends GpuDesignerNode {
             intens = mix(intens, randIntensity, prop_intensityRand);
 
             // multiply by radial factor
+            float intensityRadialFactor = 1.0;
+            if (prop_invertIntensityByRing)
+                intensityRadialFactor = mix(1.0, invRadialFactor, prop_intensityByRing);
+            else
+                intensityRadialFactor = mix(1.0, radialFactor, prop_intensityByRing);
+
+            intens *= intensityRadialFactor;
 
             // multiply by angle factor
+            float intensityAngleFactor = 1.0;
+            if (prop_invertIntensityByAngle)
+                intensityAngleFactor = mix(1.0, (1.0 - angleFactor), prop_intensityByAngle);
+            else
+                intensityAngleFactor = mix(1.0, angleFactor, prop_intensityByAngle);
+
+            intens *= intensityAngleFactor;
 
 			return intens;
         }
         
-        vec2 calcScale(int i, vec2 uv, float radialFactor, float angleFactor)
+        vec2 calcScale(int i, vec2 uv, float radialFactor, float invRadialFactor, float angleFactor)
 		{
 			float s = prop_scale;
 			if (size_connected) {
@@ -151,7 +170,9 @@ export class CircularSplatter extends GpuDesignerNode {
                 float radius = prop_radius - spacing * float(ring);
                 for(int i = 0; i<prop_count; i++)
                 {
-                    float radialFactor = prop_rings <= 1 ? 0.0 : float(ring) / float(prop_rings - 1); // how close to the center are we
+                    float radialFactor = float(ring + 1) / float(prop_rings); // how close to the center are we
+                    float invRadialFactor = 1.0 - float(ring) / float(prop_rings);
+
                     float angleFactor = (angle_spacing * float(i)) / 360.0;
 
                     float spiralFactor = angleFactor;
@@ -178,9 +199,9 @@ export class CircularSplatter extends GpuDesignerNode {
                             continue;
                     }
 
-                    vec2 s = calcScale(ring * prop_count + i, vec2(x,y) + vec2(0.5), radialFactor, angleFactor);
+                    vec2 s = calcScale(ring * prop_count + i, vec2(x,y) + vec2(0.5), radialFactor, invRadialFactor, angleFactor);
 
-                    float intens = calcIntensity(ring * prop_count + i, vec2(x,y) + vec2(0.5), radialFactor, angleFactor);
+                    float intens = calcIntensity(ring * prop_count + i, vec2(x,y) + vec2(0.5), radialFactor, invRadialFactor, angleFactor);
 
                     vec2 sampleUV = transformUV(uv, vec2(x,y), r, s);
                     color = blend(color, sampleImage(image, sampleUV) * intens);
