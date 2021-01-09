@@ -9,16 +9,20 @@ export class CircularSplatter extends GpuDesignerNode {
 		this.addInput("size");
 		this.addInput("intensity");
 
+        this.addIntProperty("count", "Count", 10, 0, 50, 1);
+        this.addIntProperty("rings", "Rings", 1, 0, 5, 1);
+
         this.addFloatProperty("radius", "Radius", 0.3, 0, 1.0, 0.01);
         this.addFloatProperty("spacing", "Spacing", 1.0, 0, 2.0, 0.01);
         this.addFloatProperty("spiralInfluence", "Spiral Influence", 0.0, 0.0, 1.0, 0.01);
         this.addBoolProperty("reverseSpiral","Reverse Spiral Direction", false);
-
-		this.addIntProperty("count", "Count", 10, 0, 50, 1);
-        this.addIntProperty("rings", "Rings", 1, 0, 5, 1);
         
         // ROTATION
         this.addFloatProperty("rot", "Rotation", 0, 0, 360, 0.1);
+        this.addFloatProperty("rotRand", "Random Rotation", 0.0, 0.0, 1.0, 0.01);
+        this.addFloatProperty("ringRot", "Ring Rotation", 0, 0, 360, 0.1);
+        this.addFloatProperty("ringRotRand", "Ring Rotation Random", 0.0, 0.0, 1.0, 0.01);
+        this.addFloatProperty("ringRotOffset", "Ring Rotation Offset", 0.0, 0.0, 1.0, 0.01);
         this.addBoolProperty("pivotCenter","Pivot Orientation From Center", true);
 
         // INTENSITY
@@ -187,8 +191,13 @@ export class CircularSplatter extends GpuDesignerNode {
             for(int ring = 0; ring<prop_rings; ring++)
             {
                 float radius = prop_radius - spacing * float(ring);
+                float ringRandomAngle = mix(0.0, randomFloatRange(ring*27 + 9, 0.0, 360.0), prop_ringRotRand);
+
+
                 for(int i = 0; i<prop_count; i++)
                 {
+                    int ringId = ring * prop_count + i;
+
                     float radialFactor = float(ring + 1) / float(prop_rings); // how close to the center are we
                     float invRadialFactor = 1.0 - float(ring) / float(prop_rings);
 
@@ -198,7 +207,16 @@ export class CircularSplatter extends GpuDesignerNode {
                     if (prop_reverseSpiral)
                         spiralFactor = 1.0 - spiralFactor;
 
-                    float angle = angle_spacing * prop_spacing * float(i);
+                    // angle offset per ring
+                    float angleOffset = angle_spacing * prop_ringRotOffset * float(prop_rings - ring - 1);
+                    
+                    // todo: check the effects of prop_ringRot
+                    float angle = angle_spacing * 
+                                  prop_spacing * 
+                                  float(i) + 
+                                  prop_ringRot + 
+                                  ringRandomAngle + 
+                                  angleOffset;
 
                     float finalRadius = mix(radius, radius * spiralFactor, prop_spiralInfluence);
                     float x = cos(radians(angle)) * finalRadius;
@@ -209,6 +227,9 @@ export class CircularSplatter extends GpuDesignerNode {
                         r = 360.0 - angle + 90.0;
                     r += prop_rot;
 
+                    float randRot = mix(0.0, randomFloatRange(ringId*31 + 7, 0.0, 360.0), prop_rotRand);
+                    r += randRot;
+
                     vec2 randomId = vec2(cos(radians(angle)) * finalRadius,
                                         sin(radians(angle)) * finalRadius);
 
@@ -218,9 +239,9 @@ export class CircularSplatter extends GpuDesignerNode {
                             continue;
                     }
 
-                    vec2 s = calcScale(ring * prop_count + i, vec2(x,y) + vec2(0.5), radialFactor, invRadialFactor, angleFactor);
+                    vec2 s = calcScale(ringId, vec2(x,y) + vec2(0.5), radialFactor, invRadialFactor, angleFactor);
 
-                    float intens = calcIntensity(ring * prop_count + i, vec2(x,y) + vec2(0.5), radialFactor, invRadialFactor, angleFactor);
+                    float intens = calcIntensity(ringId, vec2(x,y) + vec2(0.5), radialFactor, invRadialFactor, angleFactor);
 
                     vec2 sampleUV = transformUV(uv, vec2(x,y), r, s);
                     color = blend(color, sampleImage(image, sampleUV) * intens);
