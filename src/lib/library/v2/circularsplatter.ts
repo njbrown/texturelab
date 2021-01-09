@@ -18,7 +18,9 @@ export class CircularSplatter extends GpuDesignerNode {
 		this.addIntProperty("count", "Count", 10, 0, 50, 1);
         this.addIntProperty("rings", "Rings", 1, 0, 5, 1);
         
+        // ROTATION
         this.addFloatProperty("rot", "Rotation", 0, 0, 360, 0.1);
+        this.addBoolProperty("pivotCenter","Pivot Orientation From Center", true);
 
         this.addFloatProperty("intensityRand", "Random Intensity", 0, 0, 1.0, 0.01);
 
@@ -161,8 +163,11 @@ export class CircularSplatter extends GpuDesignerNode {
                     float finalRadius = mix(radius, radius * spiralFactor, prop_spiralInfluence);
                     float x = cos(radians(angle)) * finalRadius;
                     float y = sin(radians(angle)) * finalRadius;
-                    float r = angle;
-                    r = 360.0 - angle + 90.0;
+                    float r = 0.0;
+                    
+                    if (prop_pivotCenter)
+                        r = 360.0 - angle + 90.0;
+                    r += prop_rot;
 
                     vec2 randomId = vec2(cos(radians(angle)) * finalRadius,
                                         sin(radians(angle)) * finalRadius);
