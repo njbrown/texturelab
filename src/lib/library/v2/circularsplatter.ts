@@ -31,7 +31,12 @@ export class CircularSplatter extends GpuDesignerNode {
         // SCALE
         this.addFloatProperty("inputSize", "Input Size", 0.1, 0, 1, 0.01);
         this.addFloatProperty("scale", "Scale", 1, 0, 1, 0.01);
-		this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.01);
+        this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.01);
+        
+        this.addFloatProperty("scaleByRing", "Scale By Ring", 0, 0, 1.0, 0.01);
+        this.addBoolProperty("invertScaleByRing","Scale Intensity By Ring", true);
+        this.addFloatProperty("scaleByAngle", "Scale By Angle", 0, 0, 1.0, 0.01);
+        this.addBoolProperty("invertScaleByAngle","Scale Intensity By Angle", true);
 
         this.addEnumProperty("blendType", "Blend Type", [
 			"Max",
@@ -140,8 +145,22 @@ export class CircularSplatter extends GpuDesignerNode {
             s = mix(s, randScale, prop_scaleRand);
             
             // multiply by radial factor
+            float scaleRadialFactor = 1.0;
+            if (prop_invertScaleByRing)
+                scaleRadialFactor = mix(1.0, invRadialFactor, prop_scaleByRing);
+            else
+                scaleRadialFactor = mix(1.0, radialFactor, prop_scaleByRing);
+
+            s *= scaleRadialFactor;
 
             // multiply by angle factor
+            float scaleAngleFactor = 1.0;
+            if (prop_invertScaleByAngle)
+                scaleAngleFactor = mix(1.0, (1.0 - angleFactor), prop_scaleByAngle);
+            else
+                scaleAngleFactor = mix(1.0, angleFactor, prop_scaleByAngle);
+
+            s *= scaleAngleFactor;
 
 			return vec2(s) * prop_inputSize;
 		}
