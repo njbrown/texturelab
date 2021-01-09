@@ -84,7 +84,7 @@ export class CircularSplatter extends GpuDesignerNode {
             return vec4(0.0);
         }
 
-        float calcIntensity(int i, vec2 uv)
+        float calcIntensity(int i, vec2 uv, float radialFactor, float angleFactor)
 		{
 			// intensity
 			float intens = 1.0;
@@ -97,12 +97,16 @@ export class CircularSplatter extends GpuDesignerNode {
 			float randIntensity = randomFloatRange(i*13 + 9, 0.0, 1.0);
 
 			// lerp between random intensity and one by image ( or 1.0 )
-			intens = mix(intens, randIntensity, prop_intensityRand);
+            intens = mix(intens, randIntensity, prop_intensityRand);
+
+            // multiply by radial factor
+
+            // multiply by angle factor
 
 			return intens;
         }
         
-        vec2 calcScale(int i, vec2 uv)
+        vec2 calcScale(int i, vec2 uv, float radialFactor, float angleFactor)
 		{
 			float s = prop_scale;
 			if (size_connected) {
@@ -112,7 +116,11 @@ export class CircularSplatter extends GpuDesignerNode {
             float randScale = randomFloatRange(i*11 + 6, 0.0, 1.0);
             //float randScale = randomFloatRange(uv, 0.0, 1.0);
             
-			s = mix(s, randScale, prop_scaleRand);
+            s = mix(s, randScale, prop_scaleRand);
+            
+            // multiply by radial factor
+
+            // multiply by angle factor
 
 			return vec2(s) * prop_inputSize;
 		}
@@ -141,16 +149,20 @@ export class CircularSplatter extends GpuDesignerNode {
                 float radius = prop_radius - spacing * float(ring);
                 for(int i = 0; i<prop_count; i++)
                 {
-                    float spiralFactor = (angle_spacing * float(i)) / 360.0;
+                    float radialFactor = prop_rings <= 1 ? 0.0 : float(ring) / float(prop_rings - 1); // how close to the center are we
+                    float angleFactor = (angle_spacing * float(i)) / 360.0;
+
+                    float spiralFactor = angleFactor;
                     if (prop_reverseSpiral)
                         spiralFactor = 1.0 - spiralFactor;
-                        
+
                     float angle = angle_spacing * prop_spacing * float(i);
 
                     float finalRadius = mix(radius, radius * spiralFactor, prop_spiralInfluence);
                     float x = cos(radians(angle)) * finalRadius;
                     float y = sin(radians(angle)) * finalRadius;
                     float r = angle;
+                    r = 360.0 - angle + 90.0;
 
                     vec2 randomId = vec2(cos(radians(angle)) * finalRadius,
                                         sin(radians(angle)) * finalRadius);
@@ -161,9 +173,9 @@ export class CircularSplatter extends GpuDesignerNode {
                             continue;
                     }
 
-                    vec2 s = calcScale(ring * prop_count + i, vec2(x,y) + vec2(0.5));
+                    vec2 s = calcScale(ring * prop_count + i, vec2(x,y) + vec2(0.5), radialFactor, angleFactor);
 
-                    float intens = calcIntensity(ring * prop_count + i, vec2(x,y) + vec2(0.5));
+                    float intens = calcIntensity(ring * prop_count + i, vec2(x,y) + vec2(0.5), radialFactor, angleFactor);
 
                     vec2 sampleUV = transformUV(uv, vec2(x,y), r, s);
                     color = blend(color, sampleImage(image, sampleUV) * intens);
