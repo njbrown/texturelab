@@ -82,7 +82,7 @@ export class GpuDesignerNode extends DesignerNode {
 		// pass seed
 		gl.uniform1f(
 			gl.getUniformLocation(this.shaderProgram, "_seed"),
-			this.designer.getRandomSeed()
+			this.randomSeed + this.designer.getRandomSeed()
 		);
 
 		// texture size
