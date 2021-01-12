@@ -7,6 +7,7 @@
 	>
 		<accordion header="Base Properties" v-if="isInstanceNode">
 			<texture-channel :node="getNode" :editor="editor" />
+			<random-seed :node="getNode" />
 		</accordion>
 		<accordion header="Properties">
 			<component
@@ -30,6 +31,7 @@ import BoolPropertyView from "@/components/properties/BoolProp.vue";
 import EnumPropertyView from "@/components/properties/EnumProp.vue";
 import ColorPropertyView from "@/components/properties/ColorProp.vue";
 import TextureChannelPropertyView from "@/components/properties/TextureChannelProp.vue";
+import RandomSeedPropertyView from "@/components/properties/RandomSeedProp.vue";
 import Accordion from "@/components/Accordion.vue";
 import { Editor } from "@/lib/editor";
 import { DesignerNode } from "@/lib/designer/designernode";
@@ -59,6 +61,7 @@ class PropHolder {
 		string: StringPropertyView,
 
 		textureChannel: TextureChannelPropertyView,
+		randomSeed: RandomSeedPropertyView,
 		Accordion
 	}
 })

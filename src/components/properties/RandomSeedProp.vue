@@ -1,25 +1,25 @@
 <template>
 	<div class="field">
 		<div>
-			<label>{{ prop.displayName }}</label>
+			<label>Random Seed</label>
 		</div>
 		<div class="input-holder">
-			<div style="width:85%; margin-right:10px">
+			<div style="width:100%; margin-right:10px;padding:0.4em;">
 				<input
 					type="range"
-					:min="prop.minValue"
-					:max="prop.maxValue"
-					:value="prop.value"
-					:step="prop.step"
+					:min="0"
+					:max="50"
+					:value="randomSeed"
+					:step="1"
 					@input="updateValue"
 					class="slider"
 				/>
 			</div>
-			<div style="width:15%">
+			<div style="width:70px;">
 				<input
 					type="number"
-					:value="prop.value"
-					:step="prop.step"
+					:value="randomSeed"
+					:step="1"
 					@input="updateValue"
 					class="number"
 				/>
@@ -35,24 +35,19 @@ import { DesignerNode } from "@/lib/designer/designernode";
 
 @Component
 export default class RandomSeedPropertyView extends Vue {
-	@Prop()
-	// FloatProperty
-	prop: any;
-
-	@Prop()
-	designer: Designer;
 
 	@Prop()
 	node: DesignerNode;
 
-	@Emit()
-	propertyChanged() {
-		return this.prop.name;
+	randomSeed:number = 0;
+
+	mounted() {
+		this.randomSeed = this.node.randomSeed;
 	}
 
 	updateValue(evt) {
-		this.node.setProperty(this.prop.name, evt.target.value);
-		this.propertyChanged();
+		this.node.setRandomSeed(evt.target.value);
+		this.randomSeed = evt.target.value;
 	}
 }
 </script>
@@ -72,10 +67,31 @@ export default class RandomSeedPropertyView extends Vue {
 }
 
 .number {
-	width: calc(100% - 4px - 1px);
-	border: solid gray 1px;
-	padding: 2px;
-	border-radius: 2px;
+	width: calc(100% - 1em - 1px);
+	border: solid transparent 1px;
+	border-radius: 4px;
+	position: relative;
+	outline: none;
+
+	background: #4e4e4e;
+	color: rgba(255, 255, 255, 0.8);
+	padding: 0.5em;
+}
+
+.number:focus {
+	border-color: dodgerblue;
+}
+
+.number::-webkit-inner-spin-button {
+	width: 1em;
+	border-left: 1px solid #bbb;
+	opacity: 1;
+	color: rgb(130, 130, 130);
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	cursor: pointer;
 }
 
 .input-holder {
@@ -88,7 +104,7 @@ export default class RandomSeedPropertyView extends Vue {
 	-webkit-appearance: none;
 	width: 100%;
 	height: 3px;
-	border-radius: 4px;
+	border-radius: 5px;
 	background-color: rgb(255, 255, 255, 0.7);
 	color: rgba(0, 0, 0);
 	outline: none;
@@ -99,21 +115,26 @@ export default class RandomSeedPropertyView extends Vue {
 .slider::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	appearance: none;
-	width: 15px;
-	height: 15px;
+	width: 17px;
+	height: 17px;
 	border-radius: 50%;
-	background: #fff -webkit-linear-gradient(transparent, rgba(0, 0, 0, 0.05));
-	cursor: pointer;
-	box-shadow: 0 1px 2px 0 rgba(34, 36, 38, 0.15),
-		0 0 0 1px rgba(34, 36, 38, 0.15) inset;
+	/* background: #fff -webkit-linear-gradient(transparent, rgba(0, 0, 0, 0.05)); */
+	background-color: rgb(51, 51, 51);
+	border: solid white 2px;
+	outline: solid rgb(51, 51, 51) 3px;
+	cursor: pointer !important;
+	/* box-shadow: 0 1px 2px 0 rgba(34, 36, 38, 0.15),
+    0 0 0 1px rgba(34, 36, 38, 0.15) inset; */
 }
 
 .slider::-moz-range-thumb {
 	width: 10px;
 	height: 10px;
 	border-radius: 50%;
-	background: #fff -webkit-linear-gradient(transparent, rgba(0, 0, 0, 0.05));
-	cursor: pointer;
+	background-color: rgb(51, 51, 51);
+	border: solid white 2px;
+	outline: solid rgb(51, 51, 51) 3px;
+	cursor: pointer !important;
 	box-shadow: 0 1px 2px 0 rgba(34, 36, 38, 0.15),
 		0 0 0 1px rgba(34, 36, 38, 0.15) inset;
 }
@@ -124,6 +145,9 @@ export default class RandomSeedPropertyView extends Vue {
 	width: 25px;
 	height: 25px;
 	border-radius: 50%;
+	background-color: rgb(51, 51, 51);
+	border: solid white 2px;
+	outline: solid rgb(51, 51, 51) 3px;
 }
 
 .slider::-ms-fill-lower {

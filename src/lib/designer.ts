@@ -722,6 +722,8 @@ export class Designer {
 			n["id"] = node.id;
 			n["typeName"] = node.typeName;
 			n["exportName"] = node.exportName;
+
+			n["randomSeed"] = node.randomSeed;
 			//n["inputs"] = node.inputs;// not needed imo
 
 			const props = {};
@@ -779,6 +781,8 @@ export class Designer {
 			const n = lib.create(node["typeName"]);
 			n.exportName = node["exportName"];
 			n.id = node["id"];
+
+			n.randomSeed = node["randomSeed"] || 0;
 
 			// add node to it's properties will be initialized
 			// todo: separate setting properties and inputs from setting shader in node
