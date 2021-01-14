@@ -10,6 +10,8 @@ const Observer = (new Vue()).$data
 // https://github.com/rpkilby/vue-nonreactive/blob/master/vue-nonreactive.js
 export function unobserve(obj):any {
     // unobserve pr
-    obj.__ob__ = new Observer({});
+    if(obj)
+        obj.__ob__ = new Observer({});
+    
     return obj;
 }
