@@ -19,6 +19,7 @@
 				@input="updateFromPicker"
 				v-if="displayPicker"
 				ref="sketch"
+				@mouseup="console.log('sketch mouse up!')"
 			/>
 		</span>
 	</div>

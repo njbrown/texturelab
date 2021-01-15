@@ -11,7 +11,7 @@
 				@change="onValue"
 			/> -->
 			<color-picker
-				:value="prop.value.toHex()"
+				:value="val"
 				@input="onInput"
 				@change="onValue"
 			/>
@@ -40,6 +40,7 @@ export default class ColorPropertyView extends Vue {
 	prop: any;
 
 	oldValue: string;
+	val:string = "";
 
 	@Prop()
 	designer: Designer;
@@ -51,6 +52,7 @@ export default class ColorPropertyView extends Vue {
 
 	mounted() {
 		this.oldValue = this.prop.value.toHex();
+		this.val = this.prop.value.toHex();
 	}
 
 	@Emit()
@@ -61,15 +63,17 @@ export default class ColorPropertyView extends Vue {
 	onInput(value) {
 		//console.log(value);
 		this.propHolder.setProperty(this.prop.name, value);
+		this.val = value;
 		//this.propertyChanged();
 	}
 
 	onValue(value) {
 		//let oldValue = this.prop.value.toHex();
 		this.propHolder.setProperty(this.prop.name, value);
+		this.val = this.prop.value.toHex();
 
 		let action = new PropertyChangeAction(
-			null,
+			()=>{this.undoUpdate();},
 			this.prop.name,
 			this.propHolder,
 			this.oldValue,
@@ -83,6 +87,13 @@ export default class ColorPropertyView extends Vue {
 
 		this.oldValue = this.prop.value.toHex();
 
+		this.propertyChanged();
+	}
+
+	// update called after undo action
+	undoUpdate() {
+		this.oldValue = this.val;
+		this.val = this.prop.value.toHex();
 		this.propertyChanged();
 	}
 
