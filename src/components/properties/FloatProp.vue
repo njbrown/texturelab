@@ -13,8 +13,8 @@
 					:step="prop.step"
 					@input="updateValue"
 					class="slider"
-					@focus="focus"
-					@blur="blur"
+					@mousedown="focus"
+					@mouseup="blur"
 				/>
 			</div>
 			<div style="width:70px;">
@@ -77,13 +77,20 @@ export default class FloatPropertyView extends Vue {
 		this.propertyChanged();
 	}
 
+	// update called after undo action
+	undoUpdate() {
+		this.oldValue = this.val;
+		this.val = this.prop.value;
+		this.propertyChanged();
+	}
+
 	focus() {
-		//console.log("focus");
+		console.log("focus");
 		this.oldValue = this.prop.value;
 	}
 
 	blur() {
-		//console.log("blur");
+		console.log("blur");
 		// let evt = {
 		// 	propName: this.prop.name,
 		// 	oldValue: this.oldValue,
@@ -91,12 +98,13 @@ export default class FloatPropertyView extends Vue {
 		// };
 		// this.propertyChangeCompleted(evt);
 		let action = new PropertyChangeAction(
-			null,
+			()=>{this.undoUpdate(); console.log("force updating ui");},
 			this.prop.name,
 			this.propHolder,
 			this.oldValue,
 			this.prop.value
 		);
+
 		UndoStack.current.push(action);
 	}
 }
