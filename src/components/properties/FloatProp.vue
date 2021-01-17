@@ -98,7 +98,7 @@ export default class FloatPropertyView extends Vue {
 		// };
 		// this.propertyChangeCompleted(evt);
 		let action = new PropertyChangeAction(
-			()=>{this.undoUpdate(); console.log("force updating ui");},
+			()=>{this.undoUpdate();},
 			this.prop.name,
 			this.propHolder,
 			this.oldValue,
