@@ -258,6 +258,8 @@ import { IPropertyHolder } from "./lib/designer/properties";
 import { AddItemsAction } from "./lib/actions/additemsaction";
 import { UndoStack } from "./lib/undostack";
 import { unobserve } from "./unobserve";
+import { IApp } from "./iapp";
+import { SetGlobalRandomSeedAction } from "./lib/actions/setglobalrandomseedaction";
 const electron = require("electron");
 const remote = electron.remote;
 const { dialog, app, BrowserWindow, Menu } = remote;
@@ -274,7 +276,7 @@ declare var __static: any;
 		preview3d: Preview3D
 	}
 })
-export default class App extends Vue {
+export default class App extends Vue implements IApp {
 	editor!: Editor;
 	library!: DesignerLibrary;
 	view3d!: View3D;
@@ -830,6 +832,8 @@ export default class App extends Vue {
 	}
 
 	setRandomSeed(evt) {
+		UndoStack.current.push(new SetGlobalRandomSeedAction(this, this.editor, this.randomSeed, evt.target.value));
+		
 		let seed = evt.target.value;
 		this.randomSeed = seed;
 		this.editor.designer.setRandomSeed(seed);
