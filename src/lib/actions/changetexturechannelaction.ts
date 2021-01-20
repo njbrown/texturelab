@@ -35,6 +35,7 @@ node2 might be null
 if channel2 is null then we just remove the channel
 */
 export class ChangeTextureChannelAction extends Action {
+	ui: () => void;
 	editor: Editor;
 	node1: string;
 	node2: string;
@@ -42,6 +43,7 @@ export class ChangeTextureChannelAction extends Action {
 	channel2: string;
 
 	constructor(
+		ui: () => void,
 		editor: Editor,
 		node1: string, // active node
 		channel1: string, // current channel
@@ -50,6 +52,7 @@ export class ChangeTextureChannelAction extends Action {
 	) {
 		super();
 
+		this.ui = ui;
 		this.editor = editor;
 		this.channel1 = channel1;
 		this.channel2 = channel2;
@@ -69,6 +72,8 @@ export class ChangeTextureChannelAction extends Action {
 			// reset displaced node
 			this.editor.assignNodeToTextureChannel(this.node2, this.channel2);
 		}
+
+		if (this.ui) this.ui();
 	}
 
 	redo() {
@@ -78,5 +83,7 @@ export class ChangeTextureChannelAction extends Action {
 		} else {
 			this.editor.assignNodeToTextureChannel(this.node1, this.channel2);
 		}
+
+		if (this.ui) this.ui();
 	}
 }

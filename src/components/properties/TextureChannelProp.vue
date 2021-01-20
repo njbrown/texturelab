@@ -1,7 +1,7 @@
 <template>
 	<div class="field">
 		<label>Texture Channel</label>
-		<div>
+		<div :key="key">
 			<select class="enum" @change="updateValue">
 				<option
 					v-for="(opt, index) in channelNames"
@@ -37,6 +37,7 @@ export default class TextureChannelPropertyView extends Vue {
 		"alpha"
 	];
 	channelIndex: number = 0;
+	key:number = 0;
 
 	@Prop()
 	editor: Editor;
@@ -45,6 +46,10 @@ export default class TextureChannelPropertyView extends Vue {
 	node: DesignerNode;
 
 	mounted() {
+		this.calculateChannelIndex();
+	}
+
+	calculateChannelIndex() {
 		this.channelIndex = 0;
 		for (let channelName in this.editor.textureChannels) {
 			if (this.editor.textureChannels[channelName] == null) continue;
@@ -53,6 +58,8 @@ export default class TextureChannelPropertyView extends Vue {
 				this.channelIndex = this.channelNames.indexOf(channelName);
 			}
 		}
+
+		this.key +=1 ;
 	}
 
 	updateValue(evt) {
@@ -77,6 +84,7 @@ export default class TextureChannelPropertyView extends Vue {
 		}
 
 		let action = new ChangeTextureChannelAction(
+			()=>this.calculateChannelIndex(),
 			this.editor,
 			node1,
 			channel1,
