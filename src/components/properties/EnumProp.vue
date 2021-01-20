@@ -7,7 +7,7 @@
 					v-for="(opt, index) in prop.values"
 					:value="index"
 					:key="index"
-					:selected="index == prop.index"
+					:selected="index == enumIndex"
 					>{{ opt }}</option
 				>
 			</select>
@@ -35,9 +35,15 @@ export default class EnumPropertyView extends Vue {
 	@Prop()
 	propHolder: IPropertyHolder;
 
+	enumIndex:number = 0;
+
 	@Emit()
 	propertyChanged() {
 		return this.prop.name;
+	}
+
+	mounted() {
+		this.enumIndex = this.prop.index;
 	}
 
 	updateValue(evt) {
@@ -46,13 +52,20 @@ export default class EnumPropertyView extends Vue {
 		this.propertyChanged();
 
 		let action = new PropertyChangeAction(
-			null,
+			()=>this.undoUpdate(),
 			this.prop.name,
 			this.propHolder,
 			oldVal,
 			evt.target.value
 		);
 		UndoStack.current.push(action);
+		this.enumIndex = this.prop.index;
+	}
+
+	// update called after undo action
+	undoUpdate() {
+		this.enumIndex = this.prop.index;
+		this.propertyChanged();
 	}
 }
 </script>
