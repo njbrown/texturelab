@@ -13,6 +13,8 @@
 					:step="1"
 					@input="updateValue"
 					class="slider"
+					@mousedown="focus"
+					@mouseup="blur"
 				/>
 			</div>
 			<div style="width:70px;">
@@ -22,6 +24,8 @@
 					:step="1"
 					@input="updateValue"
 					class="number"
+					@focus="focus"
+					@blur="blur"
 				/>
 			</div>
 		</div>
@@ -32,6 +36,8 @@
 import { Vue, Prop, Component, Emit } from "vue-property-decorator";
 import { Designer } from "@/lib/designer";
 import { DesignerNode } from "@/lib/designer/designernode";
+import { UndoStack } from "@/lib/undostack";
+import { SetNodeRandomSeedAction } from "@/lib/actions/setnoderandomseedaction";
 
 @Component
 export default class RandomSeedPropertyView extends Vue {
@@ -40,14 +46,39 @@ export default class RandomSeedPropertyView extends Vue {
 	node: DesignerNode;
 
 	randomSeed:number = 0;
+	oldValue:number = 0;
 
 	mounted() {
 		this.randomSeed = this.node.randomSeed;
+		this.oldValue = this.randomSeed;
 	}
 
 	updateValue(evt) {
 		this.node.setRandomSeed(evt.target.value);
 		this.randomSeed = evt.target.value;
+	}
+
+	// update called after undo action
+	undoUpdate() {
+		this.randomSeed = this.node.randomSeed;
+	}
+
+	focus() {
+		console.log("focus");
+		this.oldValue = this.randomSeed;
+	}
+
+	blur() {
+		console.log("blur");
+
+		let action = new SetNodeRandomSeedAction(
+			()=>{this.undoUpdate();},
+			this.node,
+			this.oldValue,
+			this.randomSeed
+		);
+
+		UndoStack.current.push(action);
 	}
 }
 </script>
