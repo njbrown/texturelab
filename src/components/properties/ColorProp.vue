@@ -3,15 +3,9 @@
 	<div class="field">
 		<label>{{ prop.displayName }}</label>
 		<div>
-			<!-- <input
-				class="color"
-				type="color"
-				:value="prop.value.toHex()"
-				@input="onInput"
-				@change="onValue"
-			/> -->
 			<color-picker
-				:value="val"
+				:key="key"
+				:color="val"
 				@input="onInput"
 				@change="onValue"
 			/>
@@ -36,11 +30,11 @@ import { UndoStack } from "@/lib/undostack";
 })
 export default class ColorPropertyView extends Vue {
 	@Prop()
-	// ColorProperty
 	prop: any;
 
 	oldValue: string;
-	val:string = "";
+	val:string = "#000000";
+	key:number = 0;
 
 	@Prop()
 	designer: Designer;
@@ -53,6 +47,7 @@ export default class ColorPropertyView extends Vue {
 	mounted() {
 		this.oldValue = this.prop.value.toHex();
 		this.val = this.prop.value.toHex();
+		this.key += 1;
 	}
 
 	@Emit()
@@ -61,10 +56,8 @@ export default class ColorPropertyView extends Vue {
 	}
 
 	onInput(value) {
-		//console.log(value);
 		this.propHolder.setProperty(this.prop.name, value);
 		this.val = value;
-		//this.propertyChanged();
 	}
 
 	onValue(value) {
@@ -81,10 +74,6 @@ export default class ColorPropertyView extends Vue {
 		);
 		UndoStack.current.push(action);
 
-		// console.log(
-		// 	"color change: " + this.oldValue + " > " + this.prop.value.toHex()
-		// );
-
 		this.oldValue = this.prop.value.toHex();
 
 		this.propertyChanged();
@@ -94,35 +83,9 @@ export default class ColorPropertyView extends Vue {
 	undoUpdate() {
 		this.oldValue = this.val;
 		this.val = this.prop.value.toHex();
+		this.key += 1;
 		this.propertyChanged();
 	}
-
-	// onInput(evt) {
-	// 	this.propHolder.setProperty(this.prop.name, evt.target.value);
-	// 	//this.propertyChanged();
-	// }
-
-	// onValue(evt) {
-	// 	//let oldValue = this.prop.value.toHex();
-	// 	this.propHolder.setProperty(this.prop.name, evt.target.value);
-
-	// 	let action = new PropertyChangeAction(
-	// 		null,
-	// 		this.prop.name,
-	// 		this.propHolder,
-	// 		this.oldValue,
-	// 		this.prop.value.toHex()
-	// 	);
-	// 	UndoStack.current.push(action);
-
-	// 	console.log(
-	// 		"color change: " + this.oldValue + " > " + this.prop.value.toHex()
-	// 	);
-
-	// 	this.oldValue = this.prop.value.toHex();
-
-	// 	this.propertyChanged();
-	// }
 }
 </script>
 

@@ -11,7 +11,7 @@
 			<span
 				ref="span"
 				class="color-ui"
-				:style="'background-color: ' + colorValue"
+				v-bind:style="styles"
 				@click="togglePicker()"
 			></span>
 			<sketch
@@ -68,13 +68,13 @@ import { Color } from "../lib/designer/color";
 })
 export default class ColorPicker extends Vue {
 	@Prop()
-	value: string;
+	color: string;
 
 	oldValue: string;
 
 	colors: any = {};
 
-	colorValue: string = "";
+	colorValue: string = "#000";
 	displayPicker: boolean = false;
 
 	// @Emit()
@@ -88,13 +88,24 @@ export default class ColorPicker extends Vue {
 	// }
 
 	mounted() {
-		this.setColor(this.value);
-		this.oldValue = this.value;
+		this.setColor(this.color);
+		this.oldValue = this.color;
 	}
 
 	setColor(color) {
 		//this.updateColors(color);
 		this.colorValue = color;
+		console.log("SET COLOR" + this.colorValue);
+	}
+
+	get styles()
+	{
+		console.log(this.colorValue);
+		return {
+			backgroundColor:this.colorValue,
+			border:"solid black 5px",
+			color:this.colorValue
+		}
 	}
 
 	// updateColors(color) {
