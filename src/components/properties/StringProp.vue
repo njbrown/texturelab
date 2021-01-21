@@ -66,13 +66,19 @@ export default class StringPropertyView extends Vue {
 
 	blur() {
 		let action = new PropertyChangeAction(
-			null,
+			()=>this.undoUpdate(),
 			this.prop.name,
 			this.propHolder,
 			this.oldValue,
 			this.prop.value
 		);
 		UndoStack.current.push(action);
+	}
+
+	// update called after undo action
+	undoUpdate() {
+		this.$forceUpdate();
+		this.propertyChanged();
 	}
 }
 </script>
