@@ -7,12 +7,17 @@ export class CellNode extends GpuDesignerNode {
 
 		this.addIntProperty("scale", "Scale", 5, 0, 256);
 		this.addBoolProperty("invert", "Invert", false);
-		this.addFloatProperty("entropy", "Entropy", 0, 0, 1, 0.01);
+		this.addFloatProperty("entropy", "Order", 0, 0, 1, 0.01);
 		this.addFloatProperty("intensity", "Intensity", 1, 0, 2, 0.01);
 
 		const source = `
         vec2 random2( vec2 p ) {
+            p += vec2(_seed);
             return fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);
+        }
+
+        float wrapAround(float value, float upperBound) {
+            return mod((value + upperBound - 1.0), upperBound);
         }
 
         vec4 process(vec2 uv)
@@ -28,7 +33,9 @@ export class CellNode extends GpuDesignerNode {
                 for (int x= -1; x <= 1; x++) {
                     vec2 neighbor = vec2(float(x),float(y));
                     // wraps around cells to make it seamless
-                    vec2 neighborCell = mod(i_st + neighbor, float(prop_scale));
+                    vec2 neighborCell = i_st + neighbor;
+                    neighborCell.x = wrapAround(neighborCell.x, float(prop_scale));
+                    neighborCell.y = wrapAround(neighborCell.y, float(prop_scale));
 
                     // Random position from current + neighbor place in the grid
                     vec2 point = random2(neighborCell);
