@@ -6,8 +6,8 @@ export class ValueNoise extends GpuDesignerNode {
 		this.title = "Value Noise";
 
 		this.addIntProperty("scale", "Scale", 100, 1, 1000, 1);
-		this.addIntProperty("scaleX", "Scale X", 100, 1, 1000, 1);
-		this.addIntProperty("scaleY", "Scale Y", 100, 1, 1000, 1);
+		this.addIntProperty("scaleX", "Scale X", 1, 1, 5, 1);
+		this.addIntProperty("scaleY", "Scale Y", 1, 1, 5, 1);
 
 		const source = `
         float wrapAround(float value, float upperBound) {
