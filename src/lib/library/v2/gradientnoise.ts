@@ -25,7 +25,7 @@ export class GradientNoise extends GpuDesignerNode {
             value.x = wrapAround(value.x, upperBounds.x);
             value.y = wrapAround(value.y, upperBounds.y);
 
-            return hash(value + vec2(_seed));
+            return -1.0 + 2.0 * hash22(value + vec2(_seed));
         }
 
         float noise( in vec2 p )
