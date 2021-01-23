@@ -67,6 +67,7 @@ import { DirectionalBlur } from "./v2/directionalblur";
 import { AnisotropicBlur } from "./v2/anisotropicblur";
 import { CircularSplatter } from "./v2/circularsplatter";
 import { ValueNoise } from "./v2/valuenoise";
+import { ValueNoiseFractalSum } from "./v2/valuenoisefractalsum";
 import { GradientNoise } from "./v2/gradientnoise";
 import { GradientNoiseFractalSum } from "./v2/gradientnoisefractalsum";
 import { SimplexNoiseV2 } from "./v2/simplexnoise";
@@ -163,6 +164,7 @@ export function createLibrary() {
 	lib.addNode("valuenoise", "Value Noise", ValueNoise);
 	lib.addNode("gradientnoise", "Gradient Noise", GradientNoise);
 	lib.addNode("gradientnoisefractalsum", "Gradient Noise Fractal Sum", GradientNoiseFractalSum);
+	lib.addNode("valuenoisefractalsum", "Value Noise Fractal Sum", ValueNoiseFractalSum);
 	//lib.addNode("simplexnoise", "Simplex Noise", SimplexNoiseV2);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
