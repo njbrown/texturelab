@@ -68,6 +68,7 @@ import { AnisotropicBlur } from "./v2/anisotropicblur";
 import { CircularSplatter } from "./v2/circularsplatter";
 import { ValueNoise } from "./v2/valuenoise";
 import { GradientNoise } from "./v2/gradientnoise";
+import { SimplexNoiseV2 } from "./v2/simplexnoise";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -160,6 +161,7 @@ export function createLibrary() {
 	lib.addNode("circularsplatter", "Circular Splatter", CircularSplatter);
 	lib.addNode("valuenoise", "Value Noise", ValueNoise);
 	lib.addNode("gradientnoise", "Gradient Noise", GradientNoise);
+	//lib.addNode("simplexnoise", "Simplex Noise", SimplexNoiseV2);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
 	return lib;
