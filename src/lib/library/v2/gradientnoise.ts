@@ -5,7 +5,7 @@ export class GradientNoise extends GpuDesignerNode {
 	public init() {
 		this.title = "Gradient Noise";
 
-		this.addIntProperty("scale", "Scale", 100, 1, 1000, 1);
+		this.addIntProperty("scale", "Scale", 20, 1, 1000, 1);
 		this.addIntProperty("scaleX", "Scale X", 1, 1, 5, 1);
 		this.addIntProperty("scaleY", "Scale Y", 1, 1, 5, 1);
 
