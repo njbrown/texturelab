@@ -67,7 +67,9 @@
 							<input
 								type="number"
 								:value="randomSeed"
-								@change="setRandomSeed"
+								@input="updateRandomSeed"
+								@blur="setRandomSeed"
+								@focus="captureRandomSeed"
 							/>
 						</div>
 						<canvas
@@ -292,6 +294,7 @@ export default class App extends Vue implements IApp {
 
 	resolution: number = 1024;
 	randomSeed: number = 32;
+	oldRandomSeed: number = 32;// for undo/redo purposes
 
 	mouseX: number = 0;
 	mouseY: number = 0;
@@ -831,12 +834,28 @@ export default class App extends Vue implements IApp {
 		this.editor.designer.setTextureSize(value, value);
 	}
 
-	setRandomSeed(evt) {
-		UndoStack.current.push(new SetGlobalRandomSeedAction(this, this.editor, this.randomSeed, evt.target.value));
-		
+	// called when the input is focused
+	captureRandomSeed(evt) {
+		this.oldRandomSeed = this.randomSeed
+	}
+
+	// called on input
+	updateRandomSeed(evt) {
 		let seed = evt.target.value;
 		this.randomSeed = seed;
 		this.editor.designer.setRandomSeed(seed);
+	}
+
+	// called when the input is blurred
+	setRandomSeed(evt) {
+		if (this.randomSeed == this.oldRandomSeed)
+			return;
+
+		UndoStack.current.push(new SetGlobalRandomSeedAction(this, this.editor, this.oldRandomSeed, this.randomSeed));
+		
+		// let seed = evt.target.value;
+		// this.randomSeed = seed;
+		this.editor.designer.setRandomSeed(this.randomSeed);
 	}
 }
 </script>
