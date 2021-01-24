@@ -8,7 +8,7 @@ export class ValueNoiseFractalSum extends GpuDesignerNode {
         this.addIntProperty("scale", "Scale", 8, 1, 100, 1);
         this.addIntProperty("layers", "Layers", 5, 1, 20, 1);
         this.addFloatProperty("gain", "Gain", 0.5, 0.1, 2, 0.1);
-        this.addFloatProperty("lacunarity", "Lacunarity", 0.5, 0.1, 2, 0.1);
+        this.addFloatProperty("lacunarity", "Lacunarity", 2.0, 0.1, 2, 0.1);
         
 
         const source = `
