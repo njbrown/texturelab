@@ -12,6 +12,11 @@ export class TileSampler extends GpuDesignerNode {
 
 		this.addIntProperty("rows", "Row Count", 8, 0, 15, 1);
 		this.addIntProperty("columns", "Column Count", 8, 0, 15, 1);
+
+		this.addFloatProperty("offset", "Offset", 0.5, 0, 1, 0.1);
+		this.addEnumProperty("offset_axis", "Offset Axis", ["X Axis", "Y Axis"]);
+		this.addIntProperty("offset_interval", "Offset Interval", 1, 1, 5, 1);
+
 		this.addFloatProperty("rot", "Rotation", 0, 0, 360, 0.1);
 		this.addFloatProperty("rotRand", "Random Rotation", 0, 0, 1.0, 0.01);
 		this.addFloatProperty("posRand", "Random Position", 0, 0, 1.0, 0.01);
@@ -138,6 +143,14 @@ export class TileSampler extends GpuDesignerNode {
                     vec2 randPos = normalize(vec2(randPosX, randPosY)) * prop_posRand;
                     x += randPos.x;
                     y += randPos.y;
+                    
+                    if (prop_offset_axis == 0) {
+                        if (r % prop_offset_interval == 0)
+                            x += colSpacing * prop_offset;
+                    } else {
+                        if (c % prop_offset_interval == 0)
+                            y += rowSpacing * prop_offset;
+                    }
 
                     float r = randomFloatRange(i*15 + 3, -180.0, 180.0) * prop_rotRand + prop_rot;
 
