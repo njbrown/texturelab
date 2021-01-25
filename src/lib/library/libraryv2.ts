@@ -71,6 +71,7 @@ import { ValueNoiseFractalSum } from "./v2/valuenoisefractalsum";
 import { GradientNoise } from "./v2/gradientnoise";
 import { GradientNoiseFractalSum } from "./v2/gradientnoisefractalsum";
 import { SimplexNoiseV2 } from "./v2/simplexnoise";
+import { DirectionalWarpNodeV2 } from "./v2/directionalwarpv2";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -99,7 +100,7 @@ export function createLibrary() {
 	lib.addNode("threshold", "Threshold", ThresholdNode);
 	lib.addNode("heightshift", "Height Shift", HeightShiftNode);
 	lib.addNode("checkerboard", "CheckerBoard", CheckerBoardNode);
-	lib.addNode("directionalwarp", "Directional Warp", DirectionalWarpNode);
+	lib.addNode("directionalwarp", "Directional Warp", DirectionalWarpNodeV2);
 	lib.addNode("mirror", "Mirror", MirrorNode);
 	lib.addNode(
 		"brightnesscontrast",
@@ -164,6 +165,7 @@ export function createLibrary() {
 	lib.addNode("valuenoise", "Value Noise", ValueNoise);
 	lib.addNode("gradientnoise", "Gradient Noise", GradientNoise);
 	lib.addNode("gradientnoisefractalsum", "Gradient Noise Fractal Sum", GradientNoiseFractalSum);
+	lib.addNode("valuenoisefractalsum", "Value Noise Fractal Sum", ValueNoiseFractalSum);
 	lib.addNode("valuenoisefractalsum", "Value Noise Fractal Sum", ValueNoiseFractalSum);
 	//lib.addNode("simplexnoise", "Simplex Noise", SimplexNoiseV2);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
