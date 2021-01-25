@@ -33,8 +33,8 @@ export default class ColorPropertyView extends Vue {
 	prop: any;
 
 	oldValue: string;
-	val:string = "#000000";
-	key:number = 0;
+	val: string = "#000000";
+	key: number = 0;
 
 	@Prop()
 	designer: Designer;
@@ -66,7 +66,9 @@ export default class ColorPropertyView extends Vue {
 		this.val = this.prop.value.toHex();
 
 		let action = new PropertyChangeAction(
-			()=>{this.undoUpdate();},
+			() => {
+				this.undoUpdate();
+			},
 			this.prop.name,
 			this.propHolder,
 			this.oldValue,

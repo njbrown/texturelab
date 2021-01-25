@@ -2,7 +2,9 @@
 	<div class="field">
 		<label>{{ prop.displayName }}</label>
 		<div>
-			<button class="bool" @click="toggleValue()">{{ val ? "True" : "False" }}</button>
+			<button class="bool" @click="toggleValue()">
+				{{ val ? "True" : "False" }}
+			</button>
 		</div>
 	</div>
 </template>
@@ -28,7 +30,7 @@ export default class BoolPropertyView extends Vue {
 	@Prop()
 	propHolder: IPropertyHolder;
 
-	val:boolean = false;
+	val: boolean = false;
 
 	@Emit()
 	propertyChanged() {
@@ -61,7 +63,9 @@ export default class BoolPropertyView extends Vue {
 		//this.propertyChangeCompleted(evt);
 
 		let action = new PropertyChangeAction(
-			()=>{this.undoUpdate();},
+			() => {
+				this.undoUpdate();
+			},
 			this.prop.name,
 			this.propHolder,
 			oldValue,

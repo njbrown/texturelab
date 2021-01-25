@@ -41,12 +41,11 @@ import { SetNodeRandomSeedAction } from "@/lib/actions/setnoderandomseedaction";
 
 @Component
 export default class RandomSeedPropertyView extends Vue {
-
 	@Prop()
 	node: DesignerNode;
 
-	randomSeed:number = 0;
-	oldValue:number = 0;
+	randomSeed: number = 0;
+	oldValue: number = 0;
 
 	mounted() {
 		this.randomSeed = this.node.randomSeed;
@@ -72,7 +71,9 @@ export default class RandomSeedPropertyView extends Vue {
 		console.log("blur");
 
 		let action = new SetNodeRandomSeedAction(
-			()=>{this.undoUpdate();},
+			() => {
+				this.undoUpdate();
+			},
 			this.node,
 			this.oldValue,
 			this.randomSeed

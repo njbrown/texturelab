@@ -15,21 +15,22 @@ export class TileSampler extends GpuDesignerNode {
 		this.addFloatProperty("rot", "Rotation", 0, 0, 360, 0.1);
 		this.addFloatProperty("rotRand", "Random Rotation", 0, 0, 1.0, 0.01);
 		this.addFloatProperty("posRand", "Random Position", 0, 0, 1.0, 0.01);
-        this.addFloatProperty("intensityRand", "Random Intensity", 0, 0, 1.0, 0.01);
-        
-        this.addEnumProperty("sizeMode", "Size Mode", [
-			"Normal",
-			"Keep Aspect"
-		]);
-		this.addFloatProperty("scale", "Scale", 1, 0, 4, 0.1);
-        this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.1);
+		this.addFloatProperty("intensityRand", "Random Intensity", 0, 0, 1.0, 0.01);
 
-        this.addFloatProperty("vector_influence", "Vector Rotation Influence", 1, 0, 1, 0.1);
-        
-        this.addEnumProperty("blendType", "Blend Type", [
-			"Max",
-			"Add"
-		]);
+		this.addEnumProperty("sizeMode", "Size Mode", ["Normal", "Keep Aspect"]);
+		this.addFloatProperty("scale", "Scale", 1, 0, 4, 0.1);
+		this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.1);
+
+		this.addFloatProperty(
+			"vector_influence",
+			"Vector Rotation Influence",
+			1,
+			0,
+			1,
+			0.1
+		);
+
+		this.addEnumProperty("blendType", "Blend Type", ["Max", "Add"]);
 
 		const source = `
 

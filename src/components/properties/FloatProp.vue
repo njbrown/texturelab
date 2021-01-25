@@ -54,10 +54,9 @@ export default class FloatPropertyView extends Vue {
 	propHolder: IPropertyHolder;
 
 	oldValue: number;
-	val:number = 0;
+	val: number = 0;
 
-	mounted()
-	{
+	mounted() {
 		this.val = this.prop.value;
 	}
 
@@ -98,7 +97,9 @@ export default class FloatPropertyView extends Vue {
 		// };
 		// this.propertyChangeCompleted(evt);
 		let action = new PropertyChangeAction(
-			()=>{this.undoUpdate();},
+			() => {
+				this.undoUpdate();
+			},
 			this.prop.name,
 			this.propHolder,
 			this.oldValue,

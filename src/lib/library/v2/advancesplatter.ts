@@ -10,18 +10,15 @@ export class AdvanceSplatterV2 extends GpuDesignerNode {
 		this.addInput("intensity");
 
 		this.addIntProperty("count", "Count", 50, 0, 1000, 1);
-        this.addFloatProperty("rot", "Rotation", 0, 0, 360, 0.1);
+		this.addFloatProperty("rot", "Rotation", 0, 0, 360, 0.1);
 
-        this.addFloatProperty("intensityRand", "Random Intensity", 0, 0, 1.0, 0.01);
+		this.addFloatProperty("intensityRand", "Random Intensity", 0, 0, 1.0, 0.01);
 
-        this.addFloatProperty("scale", "Scale", 1, 0, 4, 0.1);
+		this.addFloatProperty("scale", "Scale", 1, 0, 4, 0.1);
 		this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.1);
 
-        this.addEnumProperty("blendType", "Blend Type", [
-			"Max",
-			"Add"
-        ]);
-        
+		this.addEnumProperty("blendType", "Blend Type", ["Max", "Add"]);
+
 		const source = `
         // https://github.com/glslify/glsl-inverse/blob/master/index.glsl
         // mat3 inverse(mat3 m) {

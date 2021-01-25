@@ -70,7 +70,7 @@ export enum DisplayChannel {
 }
 
 export class Editor {
-	static active:Editor;
+	static active: Editor;
 
 	canvas: HTMLCanvasElement;
 

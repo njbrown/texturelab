@@ -164,9 +164,21 @@ export function createLibrary() {
 	lib.addNode("circularsplatter", "Circular Splatter", CircularSplatter);
 	lib.addNode("valuenoise", "Value Noise", ValueNoise);
 	lib.addNode("gradientnoise", "Gradient Noise", GradientNoise);
-	lib.addNode("gradientnoisefractalsum", "Gradient Noise Fractal Sum", GradientNoiseFractalSum);
-	lib.addNode("valuenoisefractalsum", "Value Noise Fractal Sum", ValueNoiseFractalSum);
-	lib.addNode("valuenoisefractalsum", "Value Noise Fractal Sum", ValueNoiseFractalSum);
+	lib.addNode(
+		"gradientnoisefractalsum",
+		"Gradient Noise Fractal Sum",
+		GradientNoiseFractalSum
+	);
+	lib.addNode(
+		"valuenoisefractalsum",
+		"Value Noise Fractal Sum",
+		ValueNoiseFractalSum
+	);
+	lib.addNode(
+		"valuenoisefractalsum",
+		"Value Noise Fractal Sum",
+		ValueNoiseFractalSum
+	);
 	//lib.addNode("simplexnoise", "Simplex Noise", SimplexNoiseV2);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 

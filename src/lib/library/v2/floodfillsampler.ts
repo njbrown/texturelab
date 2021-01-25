@@ -17,7 +17,7 @@ export class FloodFillSampler extends GpuDesignerNode {
 		this.addFloatProperty("intensityRand", "Random Intensity", 0, 0, 1.0, 0.01);
 		this.addFloatProperty("scale", "Scale", 1, 0, 4, 0.1);
 		this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.1);
-		
+
 		this.addIntProperty("precision", "Precision", 2, 1, 3, 1);
 
 		this.addColorProperty("bg", "Background Color", new Color());

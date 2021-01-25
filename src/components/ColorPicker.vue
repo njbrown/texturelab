@@ -98,14 +98,13 @@ export default class ColorPicker extends Vue {
 		console.log("SET COLOR" + this.colorValue);
 	}
 
-	get styles()
-	{
+	get styles() {
 		console.log(this.colorValue);
 		return {
-			backgroundColor:this.colorValue,
-			border:"solid black 5px",
-			color:this.colorValue
-		}
+			backgroundColor: this.colorValue,
+			border: "solid black 5px",
+			color: this.colorValue
+		};
 	}
 
 	// updateColors(color) {

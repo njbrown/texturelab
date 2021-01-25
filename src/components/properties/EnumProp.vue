@@ -35,7 +35,7 @@ export default class EnumPropertyView extends Vue {
 	@Prop()
 	propHolder: IPropertyHolder;
 
-	enumIndex:number = 0;
+	enumIndex: number = 0;
 
 	@Emit()
 	propertyChanged() {
@@ -52,7 +52,7 @@ export default class EnumPropertyView extends Vue {
 		this.propertyChanged();
 
 		let action = new PropertyChangeAction(
-			()=>this.undoUpdate(),
+			() => this.undoUpdate(),
 			this.prop.name,
 			this.propHolder,
 			oldVal,

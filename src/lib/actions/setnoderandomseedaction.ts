@@ -7,7 +7,12 @@ export class SetNodeRandomSeedAction extends Action {
 	oldSeed: number;
 	newSeed: number;
 
-	constructor(ui: () => void, node: DesignerNode, oldSeed: number, newSeed: number) {
+	constructor(
+		ui: () => void,
+		node: DesignerNode,
+		oldSeed: number,
+		newSeed: number
+	) {
 		super();
 
 		this.ui = ui;

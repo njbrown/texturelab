@@ -9,9 +9,9 @@ export class SetGlobalRandomSeedAction extends Action {
 	editor: Editor;
 	oldSeed: number;
 	newSeed: number;
-	app:IApp;
+	app: IApp;
 
-	constructor(app:IApp, editor: Editor, oldSeed: number, newSeed: number) {
+	constructor(app: IApp, editor: Editor, oldSeed: number, newSeed: number) {
 		super();
 
 		this.app = app;

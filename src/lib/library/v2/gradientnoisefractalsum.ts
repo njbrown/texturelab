@@ -5,13 +5,12 @@ export class GradientNoiseFractalSum extends GpuDesignerNode {
 	public init() {
 		this.title = "Gradient Noise Fractal Sum";
 
-        this.addIntProperty("scale", "Scale", 8, 1, 100, 1);
-        this.addIntProperty("layers", "Layers", 5, 1, 20, 1);
-        this.addFloatProperty("gain", "Gain", 0.5, 0.1, 2, 0.1);
-        this.addFloatProperty("lacunarity", "Lacunarity", 2.0, 0.1, 2, 0.1);
-        
+		this.addIntProperty("scale", "Scale", 8, 1, 100, 1);
+		this.addIntProperty("layers", "Layers", 5, 1, 20, 1);
+		this.addFloatProperty("gain", "Gain", 0.5, 0.1, 2, 0.1);
+		this.addFloatProperty("lacunarity", "Lacunarity", 2.0, 0.1, 2, 0.1);
 
-        const source = `
+		const source = `
         vec2 hash( vec2 x )  // replace this by something better
         {
             const vec2 k = vec2( 0.3183099, 0.3678794 );

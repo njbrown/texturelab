@@ -30,7 +30,7 @@ export class DesignerNode implements IPropertyHolder {
 	public designer: Designer;
 	exportName: string;
 
-	randomSeed:number = 0;
+	randomSeed: number = 0;
 
 	inputs: string[] = [];
 	properties: Property[] = [];
@@ -51,7 +51,7 @@ export class DesignerNode implements IPropertyHolder {
 		this.designer.requestUpdate(this);
 	}
 
-	setRandomSeed(seed:number) {
+	setRandomSeed(seed: number) {
 		this.randomSeed = seed;
 		this.requestUpdate();
 	}

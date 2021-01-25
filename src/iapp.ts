@@ -1,4 +1,3 @@
-export interface IApp
-{
-    randomSeed:number;
+export interface IApp {
+	randomSeed: number;
 }

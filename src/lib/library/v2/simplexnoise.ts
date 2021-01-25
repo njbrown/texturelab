@@ -10,7 +10,7 @@ export class SimplexNoiseV2 extends GpuDesignerNode {
 		this.addIntProperty("scaleX", "Scale X", 1, 1, 5, 1);
 		this.addIntProperty("scaleY", "Scale Y", 1, 1, 5, 1);
 
-        const source = `
+		const source = `
         vec2 hash( vec2 x )  // replace this by something better
         {
             const vec2 k = vec2( 0.3183099, 0.3678794 );

@@ -6,12 +6,9 @@ export class SplatNodeV2 extends GpuDesignerNode {
 
 		this.addInput("image");
 
-        this.addIntProperty("count", "Count", 50, 0, 1000, 1);
-        
-        this.addEnumProperty("blendType", "Blend Type", [
-			"Max",
-			"Add"
-		]);
+		this.addIntProperty("count", "Count", 50, 0, 1000, 1);
+
+		this.addEnumProperty("blendType", "Blend Type", ["Max", "Add"]);
 
 		const source = `
         // https://github.com/glslify/glsl-inverse/blob/master/index.glsl

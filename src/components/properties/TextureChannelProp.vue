@@ -37,7 +37,7 @@ export default class TextureChannelPropertyView extends Vue {
 		"alpha"
 	];
 	channelIndex: number = 0;
-	key:number = 0;
+	key: number = 0;
 
 	@Prop()
 	editor: Editor;
@@ -59,7 +59,7 @@ export default class TextureChannelPropertyView extends Vue {
 			}
 		}
 
-		this.key +=1 ;
+		this.key += 1;
 	}
 
 	updateValue(evt) {
@@ -84,7 +84,7 @@ export default class TextureChannelPropertyView extends Vue {
 		}
 
 		let action = new ChangeTextureChannelAction(
-			()=>this.calculateChannelIndex(),
+			() => this.calculateChannelIndex(),
 			this.editor,
 			node1,
 			channel1,

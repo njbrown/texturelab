@@ -66,7 +66,7 @@ export default class StringPropertyView extends Vue {
 
 	blur() {
 		let action = new PropertyChangeAction(
-			()=>this.undoUpdate(),
+			() => this.undoUpdate(),
 			this.prop.name,
 			this.propHolder,
 			this.oldValue,

@@ -15,7 +15,7 @@ export class UndoStack {
 
 	// this tracks the last clean state
 	savedState: number = -1;
-	cleanStatusChanged: (isClean:boolean) => void = null;
+	cleanStatusChanged: (isClean: boolean) => void = null;
 
 	constructor() {
 		this.pointer = -1;
