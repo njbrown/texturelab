@@ -46,7 +46,7 @@ export class CircleNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Circle";
 
-		this.addFloatProperty("radius", "Radius", 0.5, 0, 1, 0.01);
+		this.addFloatProperty("radius", "Radius", 0.4, 0, 1, 0.01);
 		this.addEnumProperty("color_gen", "Color Generation", [
 			"Flat",
 			"Linear",
