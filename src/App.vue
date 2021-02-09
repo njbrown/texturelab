@@ -299,7 +299,7 @@ export default class App extends Vue implements IApp {
 	mouseX: number = 0;
 	mouseY: number = 0;
 
-	version: string = "0.1.0";
+	version: string = "0.3.0";
 
 	constructor() {
 		super();
