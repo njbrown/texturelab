@@ -291,9 +291,9 @@ export class GradientWidget {
 			input.type = "color";
 			input.value = hitHandle.gradientPoint.color.toHex();
 			input.onchange = function(ev: Event) {
-				console.log("onchange");
-				console.log(ev);
-				console.log(hitHandle);
+				// console.log("onchange");
+				// console.log(ev);
+				// console.log(hitHandle);
 				hitHandle.gradientPoint.color = Color.parse(input.value);
 				self.redrawCanvas();
 				//self.hitHandle = null;
@@ -302,8 +302,8 @@ export class GradientWidget {
 			};
 
 			input.oninput = (ev: Event) => {
-				console.log(evt);
-				console.log("oninput");
+				// console.log(evt);
+				// console.log("oninput");
 
 				hitHandle.gradientPoint.color = Color.parse(input.value);
 				self.redrawCanvas();

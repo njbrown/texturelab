@@ -16,7 +16,7 @@ export class ImageCanvas {
 			if (this.canvas.width != src.width) this.canvas.width = src.width;
 			if (this.canvas.height != src.height) this.canvas.height = src.height;
 		}
-		console.log("copying from " + src.width + " to " + this.canvas.width);
+		//console.log("copying from " + src.width + " to " + this.canvas.width);
 		this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 		this.context.drawImage(src, 0, 0, this.canvas.width, this.canvas.height);
 	}

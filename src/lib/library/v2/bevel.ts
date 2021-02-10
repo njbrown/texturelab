@@ -137,7 +137,7 @@ export class Bevel extends DesignerNode {
 
 		let range = max - min;
 		let scale = 1.0 / range;
-		console.log(min, max, range, scale);
+		// console.log(min, max, range, scale);
 
 		let resultPixels = this.resultPixels;
 		for (let i = 0; i < gridSize; i++) {

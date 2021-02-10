@@ -173,8 +173,8 @@ export class SocketGraphicsItem extends GraphicsItem {
 			this.hitSocket = this.getConnection(0).socketA; // insockets should only have one connection
 			// store connection for removal as well
 			this.hitConnection = this.getConnection(0);
-			console.log("hit connection");
-			console.log(this.hitConnection);
+			// console.log("hit connection");
+			// console.log(this.hitConnection);
 		} else this.hitSocket = this;
 	}
 
@@ -188,7 +188,6 @@ export class SocketGraphicsItem extends GraphicsItem {
 	}
 
 	public mouseUp(evt: MouseUpEvent) {
-		console.log("mouse up!!");
 		const mouseX = evt.globalX;
 		const mouseY = evt.globalY;
 

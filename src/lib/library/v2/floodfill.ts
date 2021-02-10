@@ -91,7 +91,7 @@ export class FloodFill extends DesignerNode {
 
 		gl.bindTexture(gl.TEXTURE_2D, null);
 
-		console.log(this.gen.results);
+		// console.log(this.gen.results);
 	}
 }
 

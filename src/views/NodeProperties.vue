@@ -83,7 +83,6 @@ export default class NodePropertiesView extends Vue implements IProperyUi {
 	// like moving a slider
 	// or typing text
 	propertyChangeCompleted(evt: PropertyChangeComplete) {
-		console.log("property change!");
 
 		// let action = new PropertyChangeAction(
 		// 	this,

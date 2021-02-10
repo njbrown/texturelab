@@ -105,7 +105,6 @@ export default class LibraryMenu extends Vue {
 		this.selectedItem = null;
 
 		let el = this.$refs.menu as HTMLElement;
-		console.log(x + " " + y);
 
 		el.style.left = x + "px";
 		el.style.top = y + "px";
@@ -115,7 +114,6 @@ export default class LibraryMenu extends Vue {
 
 		//
 		window.setTimeout(x => {
-			console.log(this.$refs["search"] as HTMLInputElement);
 			(this.$refs["search"] as HTMLInputElement).focus();
 		}, 0);
 	}

@@ -91,7 +91,6 @@ export default class TextureChannelPropertyView extends Vue {
 			node2,
 			channel2
 		);
-		console.log(action);
 		UndoStack.current.push(action);
 	}
 }

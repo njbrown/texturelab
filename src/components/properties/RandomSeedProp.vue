@@ -63,13 +63,10 @@ export default class RandomSeedPropertyView extends Vue {
 	}
 
 	focus() {
-		console.log("focus");
 		this.oldValue = this.randomSeed;
 	}
 
 	blur() {
-		console.log("blur");
-
 		let action = new SetNodeRandomSeedAction(
 			() => {
 				this.undoUpdate();

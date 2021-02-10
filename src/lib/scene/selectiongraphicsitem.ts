@@ -274,8 +274,6 @@ export class SelectionGraphicsItem extends GraphicsItem {
 			newPosList
 		);
 
-		console.log(action);
-
 		UndoStack.current.push(action);
 	}
 }

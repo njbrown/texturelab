@@ -763,7 +763,7 @@ export class Designer {
 			}
 			v["linkedProperties"] = nodeIds;
 			variables.push(v);
-			console.log(v);
+			// console.log(v);
 		}
 
 		const data = {};
@@ -774,7 +774,7 @@ export class Designer {
 	}
 
 	static load(data: any, lib: DesignerLibrary): Designer {
-		console.log(data);
+		// console.log(data);
 		const d = new Designer();
 		const nodes = data["nodes"];
 		for (const node of nodes) {

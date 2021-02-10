@@ -3,7 +3,6 @@ import { GpuDesignerNode } from "../../designer/gpudesignernode";
 export class TestGradientNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Gradient Node";
-		console.log("goodbye from inside gradient node");
 
 		const source = `
         vec4 process(vec2 uv)

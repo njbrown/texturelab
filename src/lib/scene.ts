@@ -181,7 +181,6 @@ export class NodeScene {
 				// focus copy element
 				self.copyElement.focus();
 				self.copyElement.select();
-				console.log("focus");
 			} else {
 				self.hasFocus = false;
 			}
@@ -217,7 +216,7 @@ export class NodeScene {
 				}
 			}
 
-			console.log(evt.key.length);
+			//console.log(evt.key.length);
 		};
 		window.addEventListener("keydown", self._keyDown, true);
 		// canvas.addEventListener("mousewheel", function(evt: WheelEvent) {
@@ -231,7 +230,6 @@ export class NodeScene {
 		this._copyEvent = evt => {
 			if (self.hasFocus && evt.target == self.copyElement) {
 				// alert("copying selection");
-				console.log(evt.target);
 				evt.preventDefault();
 
 				self.onCopy(evt);
@@ -242,7 +240,6 @@ export class NodeScene {
 		this._cutEvent = evt => {
 			if (self.hasFocus && evt.target == self.copyElement) {
 				// alert("cutting selection");
-				console.log(evt.target);
 				evt.preventDefault();
 
 				self.onCut(evt);
@@ -260,7 +257,6 @@ export class NodeScene {
 				self.copyElement.value = " ";
 
 				self.onPaste(evt);
-				console.log(self);
 			}
 		};
 		document.addEventListener("paste", this._pasteEvent);

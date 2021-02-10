@@ -29,7 +29,6 @@ export class UndoStack {
 		this.stack.splice(this.pointer);
 
 		this.stack.push(action);
-		console.log(action);
 
 		if (isClean != this.isClean() && this.cleanStatusChanged) {
 			this.cleanStatusChanged(this.isClean());

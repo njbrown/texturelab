@@ -486,7 +486,6 @@ export default class App extends Vue implements IApp {
 		};
 		this.editor.oncommentselected = comment => {
 			this.propHolder = unobserve(comment);
-			console.log("comment selected");
 		};
 		this.editor.onframeselected = frame => {
 			this.propHolder = unobserve(frame);
@@ -522,7 +521,7 @@ export default class App extends Vue implements IApp {
 
 		// properly resize GL
 		window.addEventListener("resize", () => {
-			console.log(this.$refs.GL);
+			//console.log(this.$refs.GL);
 		});
 	}
 
@@ -554,7 +553,7 @@ export default class App extends Vue implements IApp {
 		// ensure mouse is in canvas bounds
 		//if (this.$refs.canvas.offset)
 		let lib = this.$refs.libraryMenu as any;
-		console.log("show menu");
+
 		if (lib.show == false) lib.showModal(this.mouseX, this.mouseY);
 	}
 
@@ -595,7 +594,6 @@ export default class App extends Vue implements IApp {
 	}
 
 	resizeCanvas() {
-		console.log("resize!");
 	}
 
 	newProject() {
@@ -618,7 +616,7 @@ export default class App extends Vue implements IApp {
 
 	saveProject(saveAs: boolean = false) {
 		var data = this.editor.save();
-		console.log(data);
+		// console.log(data);
 		this.project.data = data;
 		this.project.data["appVersion"] = this.version;
 
@@ -668,7 +666,7 @@ export default class App extends Vue implements IApp {
 				let path = paths[0];
 
 				let project = ProjectManager.load(path);
-				console.log(project);
+				// console.log(project);
 
 				// ensure library exists
 				let libName = project.data["libraryVersion"];
@@ -745,8 +743,6 @@ export default class App extends Vue implements IApp {
 					return;
 				}
 
-				console.log(path);
-
 				let zip = await unityZipExport(
 					this.editor,
 					this.project.name.replace(".texture", "")
@@ -778,8 +774,6 @@ export default class App extends Vue implements IApp {
 					return;
 				}
 
-				console.log(path);
-
 				let zip = await zipExport(
 					this.editor,
 					this.project.name.replace(".texture", "")
@@ -805,7 +799,7 @@ export default class App extends Vue implements IApp {
 
 	_openSample(path: string) {
 		let project = ProjectManager.load(path);
-		console.log(project);
+		// console.log(project);
 
 		// ensure library exists
 		let libName = project.data["libraryVersion"];

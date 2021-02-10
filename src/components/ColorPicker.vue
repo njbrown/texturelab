@@ -148,7 +148,7 @@ export default class ColorPicker extends Vue {
 		this.displayPicker ? this.hidePicker() : this.showPicker();
 	}
 	updateFromPicker(color) {
-		console.log(color);
+		//console.log(color);
 		this.colors = color;
 		this.colorValue = color.hex;
 	}

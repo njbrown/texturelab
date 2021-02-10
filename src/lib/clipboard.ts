@@ -105,7 +105,6 @@ export class ItemClipboard {
 		data.libraryVersion = library.getVersionName();
 
 		const json = JSON.stringify(data);
-		console.log(data);
 
 		clipboard.setData("json/nodes", json);
 	}
@@ -182,7 +181,6 @@ export class ItemClipboard {
 		const nodeIdMap = {};
 		// add them to designer then add them to scene
 		for (const n of data.nodes) {
-			console.log(n.typeName);
 			const dNode = library.create(n.typeName);
 
 			// add to designer
@@ -219,7 +217,6 @@ export class ItemClipboard {
 
 		// add connections
 		for (const c of data.connections) {
-			console.log(c);
 			// map to ids of new nodes
 			const leftId = nodeIdMap[c.leftNodeId];
 			const rightId = nodeIdMap[c.rightNodeId];

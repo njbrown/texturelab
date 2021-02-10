@@ -267,7 +267,6 @@ export class Editor {
 		// figure out why this doesnt work before adding addNode:
 		node.setProperty("color", new Color(1, 1, 1, 1));
 		nodeView.setCenter(800, offset + spacing * 0);
-		console.log(nodeView);
 		this.assignNodeToTextureChannel(nodeView.id, "albedo");
 
 		// normal
@@ -308,7 +307,6 @@ export class Editor {
 
 		// refresh everything
 		this.designer.invalidateAllNodes();
-		console.log("default scene setup");
 	}
 
 	set2DPreview(preview2D: HTMLCanvasElement) {
@@ -555,7 +553,6 @@ export class Editor {
 		};
 
 		this.graph.onlibrarymenu = function() {
-			console.log(self.onlibrarymenu);
 			if (self.onlibrarymenu != null) {
 				self.onlibrarymenu();
 			}
@@ -822,7 +819,7 @@ export class Editor {
 
 			for (const channelName in e.textureChannels) {
 				if (!e.textureChannels.hasOwnProperty(channelName)) continue;
-				console.log(e);
+				// console.log(e);
 				const node = this.graph.getNodeById(e.textureChannels[channelName]);
 				if (node) this.assignNodeToTextureChannel(node.id, channelName);
 			}

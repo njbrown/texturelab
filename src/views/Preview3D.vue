@@ -79,7 +79,7 @@ export default {
 		},
 		setShape(evt) {
 			// todo: set 3d model
-			console.log("set model: ", evt.target.value);
+			// console.log("set model: ", evt.target.value);
 			if (evt.target.value !== "load") this.view3d.setModel(evt.target.value);
 			else {
 				dialog.showOpenDialog(
@@ -102,7 +102,6 @@ export default {
 		},
 		setTiling(evt) {
 			// todo: set 3d model
-			console.log("set repeat: ", evt.target.value);
 			this.view3d.setRepeat(parseInt(evt.target.value));
 		},
 		reset() {

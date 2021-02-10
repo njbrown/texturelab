@@ -134,7 +134,6 @@ export class DragZoom {
 			evt.preventDefault();
 		});
 		canvas.addEventListener("resize", function(evt: MouseEvent) {
-			console.log("2d canvas resized");
 		});
 
 		this.drawMode = DrawMode.Single;

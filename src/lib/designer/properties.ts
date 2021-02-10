@@ -219,11 +219,11 @@ export class ColorProperty extends Property {
 
 	public setValue(val: any) {
 		// todo: validate
-		console.log("got color: " + val);
+		//console.log("got color: " + val);
 		if (val instanceof Color) this.value = val;
 		else if (typeof val == "string") this.value = Color.parse(val);
 		else if (typeof val == "object") {
-			console.log("setting value", val);
+			//console.log("setting value", val);
 			const value = new Color();
 			value.r = val.r || 0;
 			value.g = val.g || 0;
@@ -297,7 +297,7 @@ export class GradientProperty extends Property {
 	}
 
 	public setValue(val: any) {
-		console.log("setting gradient value");
+		//console.log("setting gradient value");
 		this.value = Gradient.parse(val);
 	}
 
@@ -312,7 +312,7 @@ export class GradientProperty extends Property {
 	}
 
 	public copyValuesFrom(prop: GradientProperty) {
-		console.log("copy value from gradient");
+		//console.log("copy value from gradient");
 		this.setValue(prop.value.clone());
 	}
 }
