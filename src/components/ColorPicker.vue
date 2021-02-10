@@ -19,7 +19,6 @@
 				@input="updateFromPicker"
 				v-if="displayPicker"
 				ref="sketch"
-				@mouseup="console.log('sketch mouse up!')"
 			/>
 		</span>
 	</div>
@@ -95,15 +94,16 @@ export default class ColorPicker extends Vue {
 	setColor(color) {
 		//this.updateColors(color);
 		this.colorValue = color;
-		console.log("SET COLOR" + this.colorValue);
+		this.colors = {
+			hex:color,
+			a:1
+		}
+		// console.log("SET COLOR" + this.colorValue);
 	}
 
 	get styles() {
-		console.log(this.colorValue);
 		return {
-			backgroundColor: this.colorValue,
-			border: "solid black 5px",
-			color: this.colorValue
+			backgroundColor: this.colorValue
 		};
 	}
 
@@ -148,6 +148,7 @@ export default class ColorPicker extends Vue {
 		this.displayPicker ? this.hidePicker() : this.showPicker();
 	}
 	updateFromPicker(color) {
+		console.log(color);
 		this.colors = color;
 		this.colorValue = color.hex;
 	}
