@@ -11,7 +11,7 @@ import { NodeGraphicsItem } from "./scene/nodegraphicsitem";
 import { SocketType } from "./scene/socketgraphicsitem";
 import { ImageCanvas } from "./designer/imagecanvas";
 
-import { createLibrary as createV1Library } from "@/lib/library/libraryv1";
+import { createLibrary, createLibrary as createV1Library } from "@/lib/library/libraryv1";
 import { createLibrary as createV2Library } from "@/lib/library/libraryv2";
 import { Color } from "./designer/color";
 import { CommentGraphicsItem } from "./scene/commentgraphicsitem";
@@ -785,8 +785,15 @@ export class Editor {
 		if (!data["libraryVersion"]) {
 			library = createV2Library();
 		} else {
-			// library = this.createLibrary(data["libraryVersion"]);
-			library = createV2Library();
+			let libVer = data["libraryVersion"];
+			if (libVer === "v0")
+				library = createLibrary();
+			if (libVer === "v1") // silently load v1 textures as v2
+				library = createV2Library();
+			else if (libVer === "v2")
+				library = createV2Library();
+			else
+				console.error(`Invalid library version ${libVer}, project might not load properly`);
 		}
 		// load scene
 		const d = Designer.load(data, library);
@@ -798,6 +805,7 @@ export class Editor {
 
 		//this.designer = d;
 		//this.graph = g;
+		this.library = library;
 		this.setDesigner(d);
 		this.setScene(g);
 
@@ -843,8 +851,8 @@ export class Editor {
 			textureChannels: textureChannels
 		};
 
-		//data["libraryVersion"] = this.library.getVersionName();
-		data["libraryVersion"] = "v1";
+		data["libraryVersion"] = this.library.getVersionName();
+		//data["libraryVersion"] = "v1";
 
 		return data;
 	}

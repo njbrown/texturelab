@@ -93,7 +93,7 @@
 							:node="this.propHolder"
 						/>
 					</gl-component>
-					<gl-component title="Library" :closable="false">
+					<gl-component :title="`Library ${libraryVersionString}`" :closable="false">
 						<library-view
 							:editor="this.editor"
 							:library="this.library"
@@ -239,7 +239,7 @@ import LibraryView from "@/views/Library.vue";
 import LibraryMenu from "@/components/LibraryMenu.vue";
 import { Editor } from "@/lib/editor";
 import { View3D } from "@/lib/view3d";
-import { createLibrary as createV1Library } from "@/lib/library/libraryv1";
+import { createLibrary as createV2Library } from "@/lib/library/libraryv2";
 import NodePropertiesView from "./views/NodeProperties.vue";
 import Preview2D from "./views/Preview2D.vue";
 import Preview3D from "./views/Preview3D.vue";
@@ -305,7 +305,7 @@ export default class App extends Vue implements IApp {
 		super();
 
 		this.editor = unobserve(new Editor());
-		this.library = null;
+		this.library = createV2Library();
 
 		this.project = new Project();
 	}
@@ -549,6 +549,11 @@ export default class App extends Vue implements IApp {
 		this.isMenuSetup = true;
 	}
 
+	get libraryVersionString()
+	{
+		return this.library == null?"":`(${this.library.versionName})`;
+	}
+
 	showLibraryMenu() {
 		// ensure mouse is in canvas bounds
 		//if (this.$refs.canvas.offset)
@@ -670,7 +675,7 @@ export default class App extends Vue implements IApp {
 
 				// ensure library exists
 				let libName = project.data["libraryVersion"];
-				let libraries = ["v0", "v1"];
+				let libraries = ["v0", "v1", "v2"];
 				if (libraries.indexOf(libName) == -1) {
 					alert(
 						`Project contains unknown library version '${libName}'. It must have been created with a new version of TextureLab`
@@ -803,7 +808,7 @@ export default class App extends Vue implements IApp {
 
 		// ensure library exists
 		let libName = project.data["libraryVersion"];
-		let libraries = ["v0", "v1"];
+		let libraries = ["v0", "v1", "v2"];
 		if (libraries.indexOf(libName) == -1) {
 			alert(
 				`Project contains unknown library version '${libName}'. It must have been created with a new version of TextureLab`
