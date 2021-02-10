@@ -63,7 +63,7 @@
 								<option value="2048">Resolution: 2048x2048</option>
 								<option value="4096">Resolution: 4096x4096</option>
 							</select>
-							<span>RandomSeed:</span>
+							<span class="no-select">RandomSeed:</span>
 							<input
 								type="number"
 								:value="randomSeed"
