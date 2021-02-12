@@ -8,6 +8,11 @@ module.exports = {
 			},
 			chainWebpackRendererProcess: config => {
 				config.plugins.delete("uglify");
+			},
+			builderOptions:{
+				win:{
+					icon:"build/icons/icon512x512.png"
+				}
 			}
 		}
 	}
