@@ -12,6 +12,12 @@ module.exports = {
 			builderOptions:{
 				win:{
 					icon:"build/icons/win/icon.ico"
+				},
+				linux:{
+					icon:"build/icons/png/512x512.png"
+				},
+				mac:{
+					icon:"build/icons/mac/icon.icns"
 				}
 			}
 		}
