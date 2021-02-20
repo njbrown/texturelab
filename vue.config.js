@@ -11,7 +11,7 @@ module.exports = {
 			},
 			builderOptions:{
 				win:{
-					icon:"build/icons/icon512x512.png"
+					icon:"build/icons/win/icon.ico"
 				}
 			}
 		}
