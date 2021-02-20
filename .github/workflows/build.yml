@@ -42,4 +42,5 @@ jobs:
     - name: Install dependencies and build
       run: |
         yarn install
+        yarn buildicons
         yarn electron:build --publish=never
