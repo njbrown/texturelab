@@ -1,5 +1,6 @@
 import { Color } from "./color";
 import { Gradient } from "./gradient";
+import { Image } from "./image";
 
 // for use in code after build
 export enum PropertyType {
@@ -9,7 +10,8 @@ export enum PropertyType {
 	Color = "color",
 	Enum = "enum",
 	String = "string",
-	Gradient = "gradient"
+	Gradient = "gradient",
+	Image = "image"
 }
 
 export class Property {
@@ -314,5 +316,39 @@ export class GradientProperty extends Property {
 	public copyValuesFrom(prop: GradientProperty) {
 		//console.log("copy value from gradient");
 		this.setValue(prop.value.clone());
+	}
+}
+
+export class ImageProperty extends Property {
+	value: Image;
+	public constructor(
+		name: string,
+		displayName: string,
+		value: Image = null
+	) {
+		super();
+		this.name = name;
+		this.displayName = displayName;
+		this.value = value;
+		this.type = PropertyType.Image;
+	}
+
+	public getValue(): any {
+		return this.value;
+	}
+
+	public setValue(val: any) {
+		// todo: validate
+		this.value = val;
+	}
+
+	public clone(): Property {
+		const prop = new ImageProperty(this.name, this.displayName, this.value.clone());
+
+		return prop;
+	}
+
+	public copyValuesFrom(prop: ImageProperty) {
+		this.value = prop.value.clone();
 	}
 }
