@@ -9,11 +9,13 @@ import {
 	ColorProperty,
 	StringProperty,
 	GradientProperty,
-	IPropertyHolder
+	IPropertyHolder,
+	ImageProperty
 } from "./properties";
 import { buildShaderProgram } from "./gl";
 import { Color } from "./color";
 import { Gradient } from "./gradient";
+import { Image } from "./image";
 
 export class NodeInput {
 	public node: DesignerNode;
@@ -229,6 +231,17 @@ export class DesignerNode implements IPropertyHolder {
 		defaultVal: Gradient
 	): GradientProperty {
 		const prop = new GradientProperty(id, displayName, defaultVal);
+
+		this.properties.push(prop);
+		return prop;
+	}
+
+	addImageProperty(
+		id: string,
+		displayName: string,
+		defaultVal: Image
+	): ImageProperty {
+		const prop = new ImageProperty(id, displayName, defaultVal);
 
 		this.properties.push(prop);
 		return prop;
