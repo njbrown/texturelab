@@ -9,16 +9,29 @@ export class Image
                 canvasSource: CanvasImageSource,
                 width:number,
                 height:number){
+        
+        if (canvasSource != null) {
+            let canvas = document.createElement('canvas') as HTMLCanvasElement;
+            canvas.width = width;
+            canvas.height = height;
+        
+            let ctx = canvas.getContext("2d");
+            ctx.drawImage(canvasSource, 0, 0);
 
-        let canvas = document.createElement('canvas') as HTMLCanvasElement;
-        canvas.width = width;
-        canvas.height = height;
-
-        let ctx = canvas.getContext("2d");
-        ctx.drawImage(canvasSource, 0, 0);
-
-        this.canvas = canvas;
+            this.canvas = canvas;
+        }
+        
         this.path = path;
+    }
+
+    get isEmpty()
+    {
+        return this.canvas == null;
+    }
+
+    static empty(): Image
+    {
+        return new Image(null, null, 0, 0);
     }
 
     static load(path:string): Image
