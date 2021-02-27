@@ -16,7 +16,7 @@ export class ImageNode extends DesignerNode {
 		this.canvas.height = this.designer.height;
 
 		let ctx = this.canvas.getContext("2d");
-		ctx.fillStyle = "rgb(0,0,0)";
+		ctx.fillStyle = "rgb(0,255,0)";
 		ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
 		this.imageProp = this.addImageProperty("image", "Image", Image.empty());
@@ -27,6 +27,10 @@ export class ImageNode extends DesignerNode {
 
 		this.canvas.width = this.designer.width;
 		this.canvas.height = this.designer.height;
+
+		let ctx = this.canvas.getContext("2d");
+		ctx.fillStyle = "rgb(0,255,0)";
+		ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
 		//todo: render image to canvas
 		// stretch image if must

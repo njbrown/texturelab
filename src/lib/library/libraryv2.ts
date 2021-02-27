@@ -72,6 +72,7 @@ import { GradientNoise } from "./v2/gradientnoise";
 import { GradientNoiseFractalSum } from "./v2/gradientnoisefractalsum";
 import { SimplexNoiseV2 } from "./v2/simplexnoise";
 import { DirectionalWarpNodeV2 } from "./v2/directionalwarpv2";
+import { ImageNode } from "./v2/imagenode";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -179,6 +180,7 @@ export function createLibrary() {
 		"Value Noise Fractal Sum",
 		ValueNoiseFractalSum
 	);
+	lib.addNode("image", "Image", ImageNode);
 	//lib.addNode("simplexnoise", "Simplex Noise", SimplexNoiseV2);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
 
