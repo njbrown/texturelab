@@ -38,6 +38,7 @@ import { DesignerNode } from "@/lib/designer/designernode";
 import { Property, IPropertyHolder } from "@/lib/designer/properties";
 import GradientPropertyView from "@/components/properties/GradientProp.vue";
 import StringPropertyView from "@/components/properties/StringProp.vue";
+import ImagePropertyView from "@/components/properties/ImageProp.vue";
 import {
 	IProperyUi,
 	PropertyChangeComplete
@@ -52,13 +53,14 @@ class PropHolder {
 
 @Component({
 	components: {
-		float: FloatPropertyView,
-		int: FloatPropertyView,
-		bool: BoolPropertyView,
-		enum: EnumPropertyView,
-		color: ColorPropertyView,
-		gradient: GradientPropertyView,
-		string: StringPropertyView,
+		floatView: FloatPropertyView,
+		intView: FloatPropertyView,
+		boolView: BoolPropertyView,
+		enumView: EnumPropertyView,
+		colorView: ColorPropertyView,
+		gradientView: GradientPropertyView,
+		stringView: StringPropertyView,
+		imageView: ImagePropertyView,
 
 		textureChannel: TextureChannelPropertyView,
 		randomSeed: RandomSeedPropertyView,
@@ -102,9 +104,13 @@ export default class NodePropertiesView extends Vue implements IProperyUi {
 	get properties(): PropHolder[] {
 		let props: PropHolder[] = this.node.properties.map(prop => {
 			//let name: string = "";
+			console.log(prop.type);
+
+			// note: gotta transform nodes because some names like "image" are
+			// built-in and arent compatible with the :is directive
 			return {
 				prop: prop,
-				componentName: prop.type
+				componentName: prop.type+"View"
 			};
 		});
 

@@ -78,7 +78,22 @@ app.on("ready", async () => {
 			console.error("Vue Devtools failed to install:", e.toString());
 		}
 	}
-	createWindow();
+	
+	// needed for image files to work
+	// https://github.com/electron/electron/issues/23393
+	protocol.registerFileProtocol('image', (request, callback) => {
+		const url = request.url.replace('image://', '')
+
+		try {
+		  return callback(url)
+		}
+		catch (error) {
+		  console.error(error)
+		  return callback("");
+		}
+	  })
+
+	  createWindow();
 });
 
 // Exit cleanly on request from parent process in development mode.

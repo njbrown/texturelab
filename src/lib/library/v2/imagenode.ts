@@ -31,6 +31,8 @@ export class ImageNode extends DesignerNode {
 		let ctx = this.canvas.getContext("2d");
 		ctx.fillStyle = "rgb(0,255,0)";
 		ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+		if (this.imageProp.value && !this.imageProp.value.isEmpty)
+			ctx.drawImage(this.imageProp.value.canvas, 0, 0, this.canvas.width, this.canvas.height);
 
 		//todo: render image to canvas
 		// stretch image if must
