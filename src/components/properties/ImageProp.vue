@@ -4,7 +4,7 @@
 			<label>{{ prop.displayName }}</label>
 		</div>
 		<div class="input-holder">
-			<canvas @click="loadImage()" width="200" height="200" ref="canvas" />
+			<canvas @click="loadImage()" width="150" height="150" ref="canvas" />
 			<div style="">
 				<button @click="loadImage()">load</button>
 				<button @click="reloadImage()">reload</button>
@@ -46,6 +46,7 @@ export default class ImagePropertyView extends Vue {
 
 	mounted() {
 		this.val = this.prop.value;
+		this.renderImageToCanvas();
 	}
 
 	@Emit()
@@ -77,7 +78,21 @@ export default class ImagePropertyView extends Vue {
 
 				img.onload = ()=>{
 					console.log("image loaded");
-					let image = new Image(path, img, img.width, img.height);
+
+					// flip image
+					let canvas = document.createElement("canvas");
+					canvas.width = img.width;
+					canvas.height = img.height;
+					let ctx = canvas.getContext("2d");
+					ctx.save();
+					ctx.translate(0, img.height);
+					ctx.scale(1, -1);
+					ctx.drawImage(img, 0, 0, img.width, img.height);
+					ctx.restore();
+
+					// create image object
+					// let image = new Image(path, img, img.width, img.height);
+					let image = new Image(path, canvas, canvas.width, canvas.height);
 					this.val = image;
 					this.propHolder.setProperty(this.prop.name, image);
 					this.renderImageToCanvas();
@@ -106,7 +121,12 @@ export default class ImagePropertyView extends Vue {
 			let ctx = (this.$refs.canvas as HTMLCanvasElement).getContext("2d");
 
 			let c = this.val.canvas;
-			ctx.drawImage(this.val.canvas, 0, 0,this.canvas.width, this.canvas.height);
+			
+			ctx.save();
+			ctx.translate(0, this.canvas.height);
+			ctx.scale(1, -1);
+			ctx.drawImage(c, 0, 0,this.canvas.width, this.canvas.height);
+			ctx.restore();
 			
 		});
 	}
