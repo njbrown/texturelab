@@ -52,9 +52,9 @@ export class FloodFillToRandomColor extends GpuDesignerNode {
             center.y = floatRound(center.y, place);
             
             vec4 color = vec4(0.0, 0.0, 0.0, 1.0);
-            color.r = _rand(center + (vec2(1) ) * vec2(0.01));
-            color.g = _rand(center + (vec2(2) ) * vec2(0.01));
-            color.b = _rand(center + (vec2(3) ) * vec2(0.01));
+            color.r = _rand(vec2(_seed) + center + (vec2(1) ) * vec2(0.01));
+            color.g = _rand(vec2(_seed) + center + (vec2(2) ) * vec2(0.01));
+            color.b = _rand(vec2(_seed) + center + (vec2(3) ) * vec2(0.01));
 
             return color;
             //return vec4(center.x, center.y, 0.0, 1.0);
