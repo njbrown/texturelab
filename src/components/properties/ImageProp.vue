@@ -118,6 +118,9 @@ export default class ImagePropertyView extends Vue {
 			if (this.val == null)
 				return;
 
+			if (this.val.isEmpty)
+				return;
+
 			let ctx = (this.$refs.canvas as HTMLCanvasElement).getContext("2d");
 
 			let c = this.val.canvas;
