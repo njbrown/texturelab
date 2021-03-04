@@ -85,6 +85,7 @@ export default class ImagePropertyView extends Vue {
 					canvas.height = img.height;
 					let ctx = canvas.getContext("2d");
 					ctx.save();
+					ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 					ctx.translate(0, img.height);
 					ctx.scale(1, -1);
 					ctx.drawImage(img, 0, 0, img.width, img.height);
@@ -126,6 +127,7 @@ export default class ImagePropertyView extends Vue {
 			let c = this.val.canvas;
 			
 			ctx.save();
+			ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 			ctx.translate(0, this.canvas.height);
 			ctx.scale(1, -1);
 			ctx.drawImage(c, 0, 0,this.canvas.width, this.canvas.height);

@@ -29,18 +29,16 @@ export class ImageNode extends DesignerNode {
 		this.canvas.height = this.designer.height;
 
 		let ctx = this.canvas.getContext("2d");
-		ctx.fillStyle = "rgb(0,255,0)";
-		ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+		// ctx.fillStyle = "rgb(0,255,0)";
+		// ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+		ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 		if (this.imageProp.value && !this.imageProp.value.isEmpty)
 			ctx.drawImage(this.imageProp.value.canvas, 0, 0, this.canvas.width, this.canvas.height);
-
-		//todo: render image to canvas
-		// stretch image if must
 
 		gl.bindTexture(gl.TEXTURE_2D, this.tex);
 
 		const level = 0;
-		const internalFormat = gl.RGBA;
+		const internalFormat = gl.RGBA16F;
 		const border = 0;
 		const format = gl.RGBA;
 		const type = gl.UNSIGNED_BYTE;
