@@ -51,7 +51,7 @@ export class FloodFillToRandomIntensity extends GpuDesignerNode {
             center.y = floatRound(center.y, place);
             
             vec4 color = vec4(0.0, 0.0, 0.0, 1.0);
-            color.rgb = vec3(_rand(center + (vec2(1) ) * vec2(0.01)));
+            color.rgb = vec3(_rand(vec2(_seed) + center + (vec2(1) ) * vec2(0.01)));
 
             return color;
         }
