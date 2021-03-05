@@ -340,8 +340,10 @@ export class ImageProperty extends Property {
 	// todo: pass callback for when value update is complete
 	public setValue(val: any, completeCallback:()=>void = null) {
 		// todo: validate
-		if (val instanceof Image)
+		if (val instanceof Image) {
 			this.value = val;
+			completeCallback();
+		}
 		else {
 			let image = Image.empty();
 			image.deserialize(val, completeCallback);
