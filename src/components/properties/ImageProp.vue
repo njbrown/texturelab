@@ -72,6 +72,9 @@ export default class ImagePropertyView extends Vue {
 				defaultPath: "image"
 			},
 			(paths, bookmarks) => {
+				if (paths || paths.length == 0)
+					return;
+
 				let path = "image://"+paths[0];
 
 				let img:HTMLImageElement = document.createElement("img") as HTMLImageElement;
@@ -109,12 +112,20 @@ export default class ImagePropertyView extends Vue {
 	}
 
 	removeImage() {
-		
+		let image = Image.empty();
+		this.val = image;
+		this.propHolder.setProperty(this.prop.name, image);
+		this.renderImageToCanvas();
 	}
 
 	renderImageToCanvas() {
 		requestAnimationFrame(()=>{
 			console.log(this);
+
+			let ctx = (this.$refs.canvas as HTMLCanvasElement).getContext("2d");
+			let c = this.val.canvas;
+			ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+			
 
 			if (this.val == null)
 				return;
@@ -122,12 +133,8 @@ export default class ImagePropertyView extends Vue {
 			if (this.val.isEmpty)
 				return;
 
-			let ctx = (this.$refs.canvas as HTMLCanvasElement).getContext("2d");
-
-			let c = this.val.canvas;
 			
 			ctx.save();
-			ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 			ctx.translate(0, this.canvas.height);
 			ctx.scale(1, -1);
 			ctx.drawImage(c, 0, 0,this.canvas.width, this.canvas.height);
