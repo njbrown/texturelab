@@ -23,6 +23,7 @@ import { PropertyChangeComplete } from "./ipropertyui";
 import { UndoStack } from "@/lib/undostack";
 import { PropertyChangeAction } from "@/lib/actions/propertychangeaction";
 import { Image } from "@/lib/designer/image";
+import * as fs from "fs";
 
 const electron = require("electron");
 const remote = electron.remote;
@@ -72,43 +73,60 @@ export default class ImagePropertyView extends Vue {
 				defaultPath: "image"
 			},
 			(paths, bookmarks) => {
-				if (paths || paths.length == 0)
+				if (!paths || paths.length == 0)
 					return;
-
-				let path = "image://"+paths[0];
-
-				let img:HTMLImageElement = document.createElement("img") as HTMLImageElement;
-
-				img.onload = ()=>{
-					console.log("image loaded");
-
-					// flip image
-					let canvas = document.createElement("canvas");
-					canvas.width = img.width;
-					canvas.height = img.height;
-					let ctx = canvas.getContext("2d");
-					ctx.save();
-					ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-					ctx.translate(0, img.height);
-					ctx.scale(1, -1);
-					ctx.drawImage(img, 0, 0, img.width, img.height);
-					ctx.restore();
-
-					// create image object
-					// let image = new Image(path, img, img.width, img.height);
-					let image = new Image(path, canvas, canvas.width, canvas.height);
-					this.val = image;
-					this.propHolder.setProperty(this.prop.name, image);
-					this.renderImageToCanvas();
-				}
 				
-				img.src = path;
+				this.loadImageFromPath(paths[0]);
 			}
 		);
 	}
 
 	reloadImage() {
+		let path = null;
+		if (this.val && this.val.path) {
+			path = this.val.path;
+		}
+
+		if (path === null) {
+			return;
+		}
+
+		if (fs.existsSync(path)) {
+			this.loadImageFromPath(path);
+		} else {
+			alert("Image file doesn't exist: '"+path+"'");
+		}
+	}
+
+	private loadImageFromPath(filePath:string)
+	{
+		let path = "image://"+filePath;
+		let img:HTMLImageElement = document.createElement("img") as HTMLImageElement;
+
+		img.onload = ()=>{
+			console.log("image loaded");
+
+			// flip image
+			let canvas = document.createElement("canvas");
+			canvas.width = img.width;
+			canvas.height = img.height;
+			let ctx = canvas.getContext("2d");
+			ctx.save();
+			ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+			ctx.translate(0, img.height);
+			ctx.scale(1, -1);
+			ctx.drawImage(img, 0, 0, img.width, img.height);
+			ctx.restore();
+
+			// create image object
+			// let image = new Image(path, img, img.width, img.height);
+			let image = new Image(filePath, canvas, canvas.width, canvas.height);
+			this.val = image;
+			this.propHolder.setProperty(this.prop.name, image);
+			this.renderImageToCanvas();
+		}
 		
+		img.src = path;
 	}
 
 	removeImage() {
