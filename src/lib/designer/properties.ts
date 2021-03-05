@@ -24,7 +24,7 @@ export class Property {
 		return null;
 	}
 
-	public setValue(val: any) {}
+	public setValue(val: any, completeCallback:()=>void = null) {}
 
 	public clone(): Property {
 		return null;
@@ -337,9 +337,16 @@ export class ImageProperty extends Property {
 		return this.value;
 	}
 
-	public setValue(val: any) {
+	// todo: pass callback for when value update is complete
+	public setValue(val: any, completeCallback:()=>void = null) {
 		// todo: validate
-		this.value = val;
+		if (val instanceof Image)
+			this.value = val;
+		else {
+			let image = Image.empty();
+			image.deserialize(val, completeCallback);
+			this.value = image;
+		}
 	}
 
 	public clone(): Property {

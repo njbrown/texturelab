@@ -27,16 +27,23 @@ export class ImageNode extends DesignerNode {
 
 		this.canvas.width = this.designer.width;
 		this.canvas.height = this.designer.height;
+		console.log(this.designer.width);
+		console.log(this.designer.height);
 
 		let ctx = this.canvas.getContext("2d");
+		
 		// ctx.fillStyle = "rgb(0,255,0)";
 		// ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+		
 		ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-		if (this.imageProp.value && !this.imageProp.value.isEmpty)
+		if (this.imageProp.value && !this.imageProp.value.isEmpty) {
 			ctx.drawImage(this.imageProp.value.canvas, 0, 0, this.canvas.width, this.canvas.height);
+			console.log("drawing image");
+		}
 
 		gl.bindTexture(gl.TEXTURE_2D, this.tex);
 
+		//todo: this throws an error, manually convert to float texture
 		const level = 0;
 		const internalFormat = gl.RGBA16F;
 		const border = 0;

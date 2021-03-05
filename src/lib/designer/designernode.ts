@@ -10,7 +10,8 @@ import {
 	StringProperty,
 	GradientProperty,
 	IPropertyHolder,
-	ImageProperty
+	ImageProperty,
+	PropertyType
 } from "./properties";
 import { buildShaderProgram } from "./gl";
 import { Color } from "./color";
@@ -78,8 +79,15 @@ export class DesignerNode implements IPropertyHolder {
 		});
 
 		if (prop) {
-			prop.setValue(value);
-			this.requestUpdate();
+			if (prop.type == PropertyType.Image) {
+				prop.setValue(value, ()=>{
+					this.requestUpdate();
+				});
+			} else {
+				prop.setValue(value);
+				this.requestUpdate();
+			}
+			
 		}
 
 		// for (let prop of this.properties) {

@@ -3,6 +3,7 @@ import { DesignerNodeConn } from "./designer/designerconnection";
 import { DesignerLibrary } from "./designer/library";
 import { Guid } from "./utils";
 import { ImageCanvas } from "./designer/imagecanvas";
+import { Image } from "./designer/image";
 import { buildShaderProgram } from "./designer/gl";
 import {
 	IntProperty,
@@ -10,7 +11,8 @@ import {
 	BoolProperty,
 	EnumProperty,
 	ColorProperty,
-	Property
+	Property,
+	PropertyType
 } from "./designer/properties";
 import { Color } from "./designer/color";
 import {
@@ -728,7 +730,13 @@ export class Designer {
 
 			const props = {};
 			for (const prop of node.properties) {
-				props[prop.name] = prop.getValue();
+				if (prop.type == PropertyType.Image) {
+					// serialize texture as png
+					let imageData = (prop.getValue() as Image).serialize();
+					props[prop.name] = imageData;
+				} else {
+					props[prop.name] = prop.getValue();
+				}
 			}
 			n["properties"] = props;
 
