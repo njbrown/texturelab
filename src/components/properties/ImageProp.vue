@@ -5,10 +5,16 @@
 		</div>
 		<div class="input-holder">
 			<canvas @click="loadImage()" width="150" height="150" ref="canvas" />
-			<div style="">
-				<button @click="loadImage()">load</button>
-				<button @click="reloadImage()">reload</button>
-				<button @click="removeImage()">remove</button>
+			<div class="image-buttons">
+				<button class="image-button load-button" @click="loadImage()">
+					load
+				</button>
+				<button class="image-button reload-button" @click="reloadImage()">
+					reload
+				</button>
+				<button class="image-button remove-button" @click="removeImage()">
+					remove
+				</button>
 			</div>
 		</div>
 	</div>
@@ -203,104 +209,37 @@ export default class ImagePropertyView extends Vue {
 	padding-left: 0;
 }
 
-.number {
-	width: calc(100% - 1em - 1px);
-	border: solid transparent 1px;
-	border-radius: 4px;
-	position: relative;
-	outline: none;
-
-	background: #4e4e4e;
-	color: rgba(255, 255, 255, 0.8);
-	padding: 0.5em;
-}
-
-.number:focus {
-	border-color: dodgerblue;
-}
-
-.number::-webkit-inner-spin-button {
-	width: 1em;
-	border-left: 1px solid #bbb;
-	opacity: 1;
-	color: rgb(130, 130, 130);
-	position: absolute;
-	top: 0;
-	right: 0;
-	bottom: 0;
-	cursor: pointer;
+.texture-options {
+	background: #e0e0e0;
+	border-radius: 3px;
+	margin-bottom: 1em !important;
+	padding: 1em;
 }
 
 .input-holder {
 	display: flex;
 }
 
-/* https://www.w3schools.com/howto/howto_js_rangeslider.asp */
-/* http://jsfiddle.net/brenna/f4uq9edL/?utm_source=website&utm_medium=embed&utm_campaign=f4uq9edL */
-.slider {
-	-webkit-appearance: none;
-	width: 100%;
-	height: 3px;
-	border-radius: 5px;
-	background-color: rgb(255, 255, 255, 0.7);
-	color: rgba(0, 0, 0);
-	outline: none;
-	-webkit-transition: 0.2s;
-	transition: opacity 0.2s;
+.image-buttons {
+	display: flex;
+	flex-direction: column;
+	margin-left: 5px;
 }
 
-.slider::-webkit-slider-thumb {
-	-webkit-appearance: none;
-	appearance: none;
-	width: 17px;
-	height: 17px;
-	border-radius: 50%;
-	/* background: #fff -webkit-linear-gradient(transparent, rgba(0, 0, 0, 0.05)); */
-	background-color: rgb(51, 51, 51);
-	border: solid white 2px;
-	outline: solid rgb(51, 51, 51) 3px;
-	cursor: pointer !important;
-	/* box-shadow: 0 1px 2px 0 rgba(34, 36, 38, 0.15),
-    0 0 0 1px rgba(34, 36, 38, 0.15) inset; */
+.image-button {
+	width: 48px;
+	height: 48px;
+	margin: 1px;
+	box-sizing: border-box;
+	background: #222;
+	border: none;
+	color: white;
+	padding: 0;
+	cursor: pointer;
+	border-radius: 4px;
 }
 
-.slider::-moz-range-thumb {
-	width: 10px;
-	height: 10px;
-	border-radius: 50%;
-	background-color: rgb(51, 51, 51);
-	border: solid white 2px;
-	outline: solid rgb(51, 51, 51) 3px;
-	cursor: pointer !important;
-	box-shadow: 0 1px 2px 0 rgba(34, 36, 38, 0.15),
-		0 0 0 1px rgba(34, 36, 38, 0.15) inset;
-}
-
-.slider::-ms-thumb {
-	min-height: 20px;
-	transform: scale(1) !important;
-	width: 25px;
-	height: 25px;
-	border-radius: 50%;
-	background-color: rgb(51, 51, 51);
-	border: solid white 2px;
-	outline: solid rgb(51, 51, 51) 3px;
-}
-
-.slider::-ms-fill-lower {
-	background: #777;
-	border-radius: 10px;
-}
-
-.slider::-ms-fill-upper {
-	background: #ddd;
-	border-radius: 10px;
-}
-
-.texture-options {
-	background: #e0e0e0;
-	border-radius: 3px;
-	margin-bottom: 1em !important;
-	padding: 1em;
+.image-button:hover {
+	background: rgb(88, 88, 88);
 }
 </style>
