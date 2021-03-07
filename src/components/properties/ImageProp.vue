@@ -40,8 +40,8 @@ export default class ImagePropertyView extends Vue {
 	@Prop()
 	propHolder: IPropertyHolder;
 
-	@Ref('canvas')
-	canvas: HTMLCanvasElement
+	@Ref("canvas")
+	canvas: HTMLCanvasElement;
 
 	val: Image = null;
 
@@ -60,6 +60,11 @@ export default class ImagePropertyView extends Vue {
 		return evt;
 	}
 
+	undoUpdate() {
+		this.val = this.prop.value;
+		this.renderImageToCanvas();
+	}
+
 	loadImage() {
 		dialog.showOpenDialog(
 			remote.getCurrentWindow(),
@@ -73,9 +78,8 @@ export default class ImagePropertyView extends Vue {
 				defaultPath: "image"
 			},
 			(paths, bookmarks) => {
-				if (!paths || paths.length == 0)
-					return;
-				
+				if (!paths || paths.length == 0) return;
+
 				this.loadImageFromPath(paths[0]);
 			}
 		);
@@ -94,16 +98,17 @@ export default class ImagePropertyView extends Vue {
 		if (fs.existsSync(path)) {
 			this.loadImageFromPath(path);
 		} else {
-			alert("Image file doesn't exist: '"+path+"'");
+			alert("Image file doesn't exist: '" + path + "'");
 		}
 	}
 
-	private loadImageFromPath(filePath:string)
-	{
-		let path = "image://"+filePath;
-		let img:HTMLImageElement = document.createElement("img") as HTMLImageElement;
+	private loadImageFromPath(filePath: string) {
+		let path = "image://" + filePath;
+		let img: HTMLImageElement = document.createElement(
+			"img"
+		) as HTMLImageElement;
 
-		img.onload = ()=>{
+		img.onload = () => {
 			console.log("image loaded");
 
 			// flip image
@@ -121,43 +126,64 @@ export default class ImagePropertyView extends Vue {
 			// create image object
 			// let image = new Image(path, img, img.width, img.height);
 			let image = new Image(filePath, canvas, canvas.width, canvas.height);
+
+			let action = new PropertyChangeAction(
+				() => {
+					this.undoUpdate();
+				},
+				this.prop.name,
+				this.propHolder,
+				this.val,
+				image
+			);
+			UndoStack.current.push(action);
+
 			this.val = image;
 			this.propHolder.setProperty(this.prop.name, image);
 			this.renderImageToCanvas();
-		}
-		
+		};
+
 		img.src = path;
 	}
 
 	removeImage() {
 		let image = Image.empty();
+
+		let action = new PropertyChangeAction(
+			() => {
+				this.undoUpdate();
+			},
+			this.prop.name,
+			this.propHolder,
+			this.val,
+			image
+		);
+		UndoStack.current.push(action);
+
 		this.val = image;
 		this.propHolder.setProperty(this.prop.name, image);
 		this.renderImageToCanvas();
 	}
 
 	renderImageToCanvas() {
-		requestAnimationFrame(()=>{
+		requestAnimationFrame(() => {
 			console.log(this);
+
+			if (!this.$refs.canvas) return;
 
 			let ctx = (this.$refs.canvas as HTMLCanvasElement).getContext("2d");
 			let c = this.val.canvas;
 			ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-			
 
-			if (this.val == null)
-				return;
+			if (this.val == null) return;
 
-			if (this.val.isEmpty)
-				return;
+			if (this.val.isEmpty) return;
 
-			
 			ctx.save();
 			ctx.translate(0, this.canvas.height);
 			ctx.scale(1, -1);
-			ctx.drawImage(c, 0, 0,this.canvas.width, this.canvas.height);
+			ctx.drawImage(c, 0, 0, this.canvas.width, this.canvas.height);
 			ctx.restore();
-			
 		});
 	}
 }
