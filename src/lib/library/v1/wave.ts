@@ -4,8 +4,8 @@ export class WaveNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Wave";
 
-		this.addIntProperty("xfrequency", "X Frequency", 1, 0, 20, 0.01);
-		this.addIntProperty("yfrequency", "Y Frequency", 0, 0, 20, 0.01);
+		this.addIntProperty("xfrequency", "X Frequency", 1, 0, 20, 1);
+		this.addIntProperty("yfrequency", "Y Frequency", 0, 0, 20, 1);
 		this.addFloatProperty("phase", "Phase Offset", 0.0, 0.0, 3.142, 0.01);
 		this.addFloatProperty("amp", "Amplitude", 0.5, 0.0, 1.0, 0.01);
 

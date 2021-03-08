@@ -6,7 +6,7 @@ export class Quantize extends GpuDesignerNode {
 
 		this.addInput("image");
 
-		this.addIntProperty("steps", "Steps", 12, 2, 256, 1);
+		this.addIntProperty("steps", "Steps", 12, 2, 20, 1);
 
 		const source = `
         vec4 process(vec2 uv)

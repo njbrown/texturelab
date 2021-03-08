@@ -6,7 +6,7 @@ export class SoftFlower extends GpuDesignerNode {
 		this.title = "Soft Flower";
 
 		this.addFloatProperty("radius", "Radius", 0.2, 0, 1.0, 0.01);
-		this.addIntProperty("sides", "Sides", 3, 0, 10, 1);
+		this.addIntProperty("sides", "Sides", 6, 0, 10, 1);
 		this.addFloatProperty("depth", "Depth", 1.0, 0, 1.0, 0.01);
 		this.addFloatProperty("gradient", "Gradient", 0.1, 0, 1.0, 0.01);
 

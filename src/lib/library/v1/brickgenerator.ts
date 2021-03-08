@@ -84,7 +84,7 @@ export class BrickGeneratorNode extends GpuDesignerNode {
 
         vec4 process(vec2 uv)
         {
-            vec2 tileSize = vec2(prop_rows, prop_columns);
+            vec2 tileSize = vec2(prop_columns, prop_rows);
             float offset = prop_offset;
 
             //vec2 pos = uv * vec2(5);

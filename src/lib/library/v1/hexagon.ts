@@ -4,7 +4,7 @@ export class HexagonNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Hexagon";
 
-		this.addFloatProperty("scaleX", "X Scale", 2, 1, 32, 1);
+		this.addFloatProperty("scaleX", "X Scale", 3, 1, 32, 1);
 		this.addFloatProperty("scaleY", "Y Scale", 2, 1, 32, 1);
 		this.addFloatProperty("margin", "Margin", 0.9, 0.0, 1.0, 0.01);
 		this.addFloatProperty("gradient", "Gradient", 0, 0, 1.0, 0.01);
