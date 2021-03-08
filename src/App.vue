@@ -93,7 +93,10 @@
 							:node="this.propHolder"
 						/>
 					</gl-component>
-					<gl-component :title="`Library ${libraryVersionString}`" :closable="false">
+					<gl-component
+						:title="`Library ${libraryVersionString}`"
+						:closable="false"
+					>
 						<library-view
 							:editor="this.editor"
 							:library="this.library"
@@ -549,9 +552,8 @@ export default class App extends Vue implements IApp {
 		this.isMenuSetup = true;
 	}
 
-	get libraryVersionString()
-	{
-		return this.library == null?"":`(${this.library.versionName})`;
+	get libraryVersionString() {
+		return this.library == null ? "" : `(${this.library.versionName})`;
 	}
 
 	showLibraryMenu() {
@@ -598,8 +600,7 @@ export default class App extends Vue implements IApp {
 		}
 	}
 
-	resizeCanvas() {
-	}
+	resizeCanvas() {}
 
 	newProject() {
 		// reset states of all components
@@ -639,7 +640,8 @@ export default class App extends Vue implements IApp {
 					defaultPath: "material.texture"
 				},
 				path => {
-					//console.log(path);
+					if (!path) return;
+
 					if (!path.endsWith(".texture")) path += ".texture";
 
 					this.project.name = path.replace(/^.*[\\/]/, "");
@@ -668,6 +670,8 @@ export default class App extends Vue implements IApp {
 				defaultPath: "material"
 			},
 			(paths, bookmarks) => {
+				if (!paths) return;
+
 				let path = paths[0];
 
 				let project = ProjectManager.load(path);
