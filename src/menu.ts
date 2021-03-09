@@ -26,6 +26,7 @@ export enum MenuCommands {
 	ExamplesGrenade = "samples_2",
 	ExamplesScrews = "samples_3",
 	ExamplesWoodenPlanks = "samples_4",
+	StoneGrass = "samples_5",
 
 	HelpTutorials = "help_tutorials",
 	HelpAbout = "help_about",
@@ -145,6 +146,12 @@ export function setupMenu() {
 						focusedWindow.webContents.send(
 							MenuCommands.ExamplesGoldLinesMarbleTiles
 						);
+					}
+				},
+				{
+					label: "StoneGrass",
+					click: (item, focusedWindow) => {
+						focusedWindow.webContents.send(MenuCommands.StoneGrass);
 					}
 				},
 				{
