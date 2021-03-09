@@ -26,8 +26,15 @@ const titleBar = new Titlebar({
 	shadow: true
 });
 
-new Vue({
+let app = new Vue({
 	router,
 	store,
-	render: h => h(App)
-}).$mount("#app");
+	render: h =>
+		h(App, {
+			props: {
+				titleBar: titleBar
+			}
+		})
+});
+
+app.$mount("#app");

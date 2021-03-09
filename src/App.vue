@@ -289,6 +289,9 @@ export default class App extends Vue implements IApp {
 	selectedNode: DesignerNode = null;
 	propHolder: IPropertyHolder = null;
 
+	@Prop()
+	titleBar: Titlebar;
+
 	//designer!: Designer;
 
 	project: Project;
@@ -606,6 +609,11 @@ export default class App extends Vue implements IApp {
 
 	resizeCanvas() {}
 
+	setWindowTitle(newTitle: string) {
+		document.title = newTitle;
+		this.titleBar.updateTitle();
+	}
+
 	newProject() {
 		// reset states of all components
 		// load default scene
@@ -621,7 +629,7 @@ export default class App extends Vue implements IApp {
 		this.resolution = 1024;
 		this.randomSeed = 32;
 
-		// todo: set title
+		this.setWindowTitle("Untitled Project");
 	}
 
 	saveProject(saveAs: boolean = false) {
@@ -652,7 +660,7 @@ export default class App extends Vue implements IApp {
 					this.project.path = path;
 
 					ProjectManager.save(path, this.project);
-					remote.getCurrentWindow().setTitle(this.project.name);
+					this.setWindowTitle(this.project.name);
 				}
 			);
 		} else {
@@ -691,13 +699,14 @@ export default class App extends Vue implements IApp {
 					return;
 				}
 
-				remote.getCurrentWindow().setTitle(project.name);
 				this.editor.load(project.data);
 				this.resolution = 1024;
 				this.randomSeed = 32;
 
 				this.project = unobserve(project);
 				this.library = unobserve(this.editor.library);
+
+				this.setWindowTitle(project.name);
 			}
 		);
 	}
@@ -824,7 +833,6 @@ export default class App extends Vue implements IApp {
 			return;
 		}
 
-		remote.getCurrentWindow().setTitle(project.name);
 		this.editor.load(project.data);
 		this.resolution = 1024;
 		this.randomSeed = 32;
@@ -832,6 +840,7 @@ export default class App extends Vue implements IApp {
 		project.path = null; // this ensures saving pops SaveAs dialog
 		this.project = unobserve(project);
 		this.library = unobserve(this.editor.library);
+		this.setWindowTitle(project.name);
 	}
 
 	setResolution(evt) {
