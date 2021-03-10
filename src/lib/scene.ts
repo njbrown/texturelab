@@ -274,7 +274,7 @@ export class NodeScene {
 	}
 
 	dispose() {
-		alert("disposed!");
+		// alert("disposed!");
 		this.canvas.removeEventListener("mousemove", this._mouseMove);
 		this.canvas.removeEventListener("mousedown", this._mouseDown);
 		this.canvas.removeEventListener("mouseup", this._mouseUp);
