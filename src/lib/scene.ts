@@ -643,7 +643,7 @@ export class NodeScene {
 
 	// mouse events
 	onMouseDown(evt: MouseEvent) {
-		console.log("mouse dwn!");
+		// console.log("mouse dwn!");
 		//todo: look at double event calling
 		const pos = this.getScenePos(evt);
 		const mouseX = pos.x;
