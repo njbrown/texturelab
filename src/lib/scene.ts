@@ -274,9 +274,9 @@ export class NodeScene {
 	}
 
 	dispose() {
-		//alert("disposed!");
+		alert("disposed!");
 		this.canvas.removeEventListener("mousemove", this._mouseMove);
-		this.canvas.removeEventListener("mouedown", this._mouseDown);
+		this.canvas.removeEventListener("mousedown", this._mouseDown);
 		this.canvas.removeEventListener("mouseup", this._mouseUp);
 		window.removeEventListener("click", this._mouseClick);
 		window.removeEventListener("keydown", this._keyDown);
@@ -285,6 +285,19 @@ export class NodeScene {
 		document.removeEventListener("paste", this._pasteEvent);
 		// this.copyElement.removeEventListener("copy", this._copyEvent);
 		// this.copyElement.removeEventListener("paste", this._copyEvent);
+
+		this.canvas = null;
+		this.context = null;
+		this.view = null;
+		this.contextExtra = null;
+		this.frames = [];
+		this.comments = [];
+		this.nodes = [];
+		this.conns = [];
+		this.navigations = [];
+		this.selectionRect = null;
+		this.selectedItems = [];
+		this.hitItem = null;
 	}
 
 	setSelectedItems(items: GraphicsItem[], createSelection = false) {
@@ -630,6 +643,7 @@ export class NodeScene {
 
 	// mouse events
 	onMouseDown(evt: MouseEvent) {
+		console.log("mouse dwn!");
 		//todo: look at double event calling
 		const pos = this.getScenePos(evt);
 		const mouseX = pos.x;
