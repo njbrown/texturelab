@@ -44,7 +44,7 @@ export default {
 		};
 	},
 	mounted() {
-		this.view3d = new View3D();
+		this.view3d = unobserve(new View3D());
 		this.view3d.setCanvas(this.$refs.canvas);
 	},
 	methods: {
