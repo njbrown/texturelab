@@ -365,6 +365,26 @@ export default class App extends Vue implements IApp {
 			}
 		);
 
+		electron.ipcRenderer.on(MenuCommands.StylizedGrass, async (evt, arg) => {
+			this.openExample("Grass.texture");
+		});
+
+		electron.ipcRenderer.on(MenuCommands.Copper, async (evt, arg) => {
+			this.openExample("Copper.texture");
+		});
+
+		electron.ipcRenderer.on(MenuCommands.FoilGasket, async (evt, arg) => {
+			this.openExample("FoilGasket.texture");
+		});
+
+		electron.ipcRenderer.on(MenuCommands.Sand, async (evt, arg) => {
+			this.openExample("Sand.texture");
+		});
+
+		electron.ipcRenderer.on(MenuCommands.YellowTiles, async (evt, arg) => {
+			this.openExample("YellowTiles.texture");
+		});
+
 		electron.ipcRenderer.on(MenuCommands.StoneGrass, async (evt, arg) => {
 			this.openExample("GrassyRock.texture");
 		});

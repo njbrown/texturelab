@@ -27,6 +27,11 @@ export enum MenuCommands {
 	ExamplesScrews = "samples_3",
 	ExamplesWoodenPlanks = "samples_4",
 	StoneGrass = "samples_5",
+	Copper = "samples_6",
+	FoilGasket = "samples_7",
+	StylizedGrass = "samples_8",
+	Sand = "samples_9",
+	YellowTiles = "samples_10",
 
 	HelpTutorials = "help_tutorials",
 	HelpAbout = "help_about",
@@ -149,9 +154,40 @@ export function setupMenu() {
 					}
 				},
 				{
+					label: "Stylized Grass",
+					click: (item, focusedWindow) => {
+						focusedWindow.webContents.send(MenuCommands.StylizedGrass);
+					}
+				},
+				,
+				{
 					label: "StoneGrass",
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.StoneGrass);
+					}
+				},
+				{
+					label: "Sand",
+					click: (item, focusedWindow) => {
+						focusedWindow.webContents.send(MenuCommands.Sand);
+					}
+				},
+				{
+					label: "Foil Gasket",
+					click: (item, focusedWindow) => {
+						focusedWindow.webContents.send(MenuCommands.FoilGasket);
+					}
+				},
+				{
+					label: "Copper",
+					click: (item, focusedWindow) => {
+						focusedWindow.webContents.send(MenuCommands.Copper);
+					}
+				},
+				{
+					label: "Yellow Tiles",
+					click: (item, focusedWindow) => {
+						focusedWindow.webContents.send(MenuCommands.YellowTiles);
 					}
 				},
 				{
