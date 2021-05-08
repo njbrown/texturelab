@@ -3,8 +3,8 @@
 import { app, protocol, BrowserWindow } from "electron";
 import {
 	createProtocol,
-	installVueDevtools
 } from "vue-cli-plugin-electron-builder/lib";
+import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import { setupMenu } from "./menu";
 const isDevelopment = process.env.NODE_ENV !== "production";
 
@@ -73,7 +73,7 @@ app.on("ready", async () => {
 	if (isDevelopment && !process.env.IS_TEST) {
 		// Install Vue Devtools
 		try {
-			await installVueDevtools();
+			await installExtension(VUEJS_DEVTOOLS);
 		} catch (e) {
 			console.error("Vue Devtools failed to install:", e.toString());
 		}
