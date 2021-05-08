@@ -52,6 +52,7 @@
 		"babel-core": "7.0.0-bridge.0",
 		"babel-eslint": "^10.0.1",
 		"electron": "^5.0.0",
+		"electron-devtools-installer": "^3.2.0",
 		"electron-icon-builder": "^2.0.1",
 		"eslint": "^5.16.0",
 		"eslint-plugin-vue": "^5.0.0",
