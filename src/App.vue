@@ -135,6 +135,10 @@ body {
 	-webkit-user-drag: none;
 	-webkit-app-region: no-drag;
 }
+
+.no-drag {
+  -webkit-user-drag: none;
+}
 </style>
 <style scoped>
 .topbar {
