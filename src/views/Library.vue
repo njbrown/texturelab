@@ -28,7 +28,7 @@
 					<img
 						v-if="imageExists(item.name)"
 						v-bind:src="calcImagePath(item.name)"
-						class="thumbnail"
+						class="thumbnail no-drag"
 					/>
 					<div v-else class="thumbnail" />
 					<!-- <span class="thumbnail"></span> -->
