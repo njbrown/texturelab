@@ -73,6 +73,7 @@ import { GradientNoiseFractalSum } from "./v2/gradientnoisefractalsum";
 import { SimplexNoiseV2 } from "./v2/simplexnoise";
 import { DirectionalWarpNodeV2 } from "./v2/directionalwarpv2";
 import { ImageNode } from "./v2/imagenode";
+import { Crop } from "./v2/crop";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -120,6 +121,7 @@ export function createLibrary() {
 	lib.addNode("tilesampler", "Tile Sampler", TileSampler);
 	lib.addNode("gradientdynamic", "Gradient Dynamic", GradientDynamic);
 	lib.addNode("clamp", "Clamp", Clamp);
+	lib.addNode("crop", "Crop", Crop);
 	lib.addNode("pow", "Pow", Pow);
 	lib.addNode("quantize", "Quantize", Quantize);
 	lib.addNode("histogramshift", "Histogram Shift", HistogramShift);
