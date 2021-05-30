@@ -199,7 +199,7 @@ export class NodeGraphicsItem extends GraphicsItem {
 	}
 
 	getInSockets() {
-		const array = [];
+		const array: SocketGraphicsItem[] = [];
 		for (const sock of this.sockets) {
 			if (sock.socketType == SocketType.In) array.push(sock);
 		}
@@ -219,7 +219,7 @@ export class NodeGraphicsItem extends GraphicsItem {
 	}
 
 	getOutSockets() {
-		const array = [];
+		const array: SocketGraphicsItem[] = [];
 		for (const sock of this.sockets) {
 			if (sock.socketType == SocketType.Out) array.push(sock);
 		}
