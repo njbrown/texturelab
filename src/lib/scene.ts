@@ -449,8 +449,47 @@ export class NodeScene {
 		return null;
 	}
 
-	//todo: integrity check
+	/**
+	 * Checks if adding a hypothetical connection, the graph would remain to be a directed acyclic graph (DAG).
+	 *
+	 * Note: This method assumes the graph is a DAG prior to calling this method,
+	 *       it could return true if the graph wasn't to begin with.
+	 *
+	 * @param leftNode left node of the new connection
+	 * @param rightNode right node of the new connection
+	 * @returns 
+	 */
+	remainsDAG(leftNode: NodeGraphicsItem, rightNode: NodeGraphicsItem) {
+		let checked = new Set();
+		checked.add(leftNode);
+
+		let expanding = [rightNode];
+		while (expanding.length > 0) {
+			let nodeA = expanding.pop();
+
+			for (let socket of nodeA.getOutSockets()) {
+				for (let conn of socket.conns) {
+					let nodeB = conn.socketB.node;
+
+					if (checked.has(nodeB)) {
+						return false;
+					} else {
+						expanding.push(nodeB);
+					}
+				}
+			}
+		}
+
+		return true;
+	}
+
 	addConnection(con: ConnectionGraphicsItem) {
+		// Check if this connection is allowed.
+		if (!this.remainsDAG(con.socketA.node, con.socketB.node)) {
+			alert("Cyclic connections are not allowed.");
+			return;
+		}
+
 		this.conns.push(con);
 
 		// link the sockets
