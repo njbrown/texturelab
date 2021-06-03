@@ -16,12 +16,12 @@ export class Crop extends GpuDesignerNode {
 
 		const source = `
 		
-		bool is_fg(float x, float min_x, float max_x)
+		bool is_fg(float val, float min_val, float max_val)
 		{
-			if (min_x <= max_x) {
-				return min_x <= x && x <= max_x;
+			if (min_val <= max_val) {
+				return min_val <= val && val <= max_val;
 			} else {
-				return x <= max_x || min_x <= x;
+				return val <= max_val || min_val <= val;
 			}
 		}
 
