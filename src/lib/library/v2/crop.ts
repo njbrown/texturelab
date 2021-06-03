@@ -14,20 +14,26 @@ export class Crop extends GpuDesignerNode {
 
 		this.addColorProperty("bg", "Background Color", new Color());
 
+		this.addBoolProperty("clamp", "Clamp", false);
+		this.addBoolProperty("clamp_x", "Clamp X", false);
+		this.addBoolProperty("clamp_y", "Clamp Y", false);
+
 		const source = `
 		
-		bool is_fg(float val, float min_val, float max_val)
+		bool is_fg(float val, float min_val, float max_val, bool clamp)
 		{
 			if (min_val <= max_val) {
 				return min_val <= val && val <= max_val;
 			} else {
+				if (clamp) return false;
+
 				return val <= max_val || min_val <= val;
 			}
 		}
 
 		vec4 process(vec2 uv)
 		{
-			if (is_fg(uv.x, prop_min_x, prop_max_x) && is_fg(uv.y, prop_min_y, prop_max_y))
+			if (is_fg(uv.x, prop_min_x, prop_max_x, prop_clamp || prop_clamp_x) && is_fg(uv.y, prop_min_y, prop_max_y, prop_clamp || prop_clamp_y))
 			{
 				return texture(image, uv);
 			} else {
