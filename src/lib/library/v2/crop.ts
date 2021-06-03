@@ -7,10 +7,10 @@ export class Crop extends GpuDesignerNode {
 
 		this.addInput("image");
 
-		this.addFloatProperty("min_x", "Min X", 0.0, 0, 1, 0.01);
-		this.addFloatProperty("min_y", "Min Y", 0.0, 0, 1, 0.01);
-		this.addFloatProperty("max_x", "Max X", 1.0, 0, 1, 0.01);
-		this.addFloatProperty("max_y", "Max Y", 1.0, 0, 1, 0.01);
+		this.addFloatProperty("min_x", "X Start", 0.0, 0, 1, 0.01);
+		this.addFloatProperty("max_x", "X End", 1.0, 0, 1, 0.01);
+		this.addFloatProperty("min_y", "Y Start", 0.0, 0, 1, 0.01);
+		this.addFloatProperty("max_y", "Y End", 1.0, 0, 1, 0.01);
 
 		this.addColorProperty("bg", "Background Color", new Color());
 
