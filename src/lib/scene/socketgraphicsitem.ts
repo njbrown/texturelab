@@ -196,6 +196,30 @@ export class SocketGraphicsItem extends GraphicsItem {
 		const actions: ConnectionSwitchAction[] = [];
 
 		if (this.hitSocket) {
+			// if potential cycle in graph is found, cancel connection action quietly
+			const closeSock: SocketGraphicsItem = this.scene.getHitSocket(
+				mouseX,
+				mouseY
+			);
+
+			// this can only happen when forming a new connection so no need to check
+			// for other conditions (existing connection being removed, etc...)
+			// this means this socket type should be SocketType.Out and the other
+			// should be SocketType.In
+			if (
+				closeSock &&
+				this.socketType == SocketType.Out &&
+				closeSock.socketType == SocketType.In
+			) {
+				if (!this.scene.remainsDAG(this.node, closeSock.node)) {
+					this.hit = false;
+					this.hitSocket = null;
+					this.hitConnection = null;
+
+					return;
+				}
+			}
+
 			// remove previous connection
 			// this block creates a new connection regardless of the outcome
 			if (this.hitConnection) {
@@ -212,11 +236,6 @@ export class SocketGraphicsItem extends GraphicsItem {
 
 				this.hitConnection = null;
 			}
-
-			const closeSock: SocketGraphicsItem = this.scene.getHitSocket(
-				mouseX,
-				mouseY
-			);
 
 			if (
 				closeSock &&

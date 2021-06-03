@@ -457,7 +457,7 @@ export class NodeScene {
 	 *
 	 * @param leftNode left node of the new connection
 	 * @param rightNode right node of the new connection
-	 * @returns 
+	 * @returns
 	 */
 	remainsDAG(leftNode: NodeGraphicsItem, rightNode: NodeGraphicsItem) {
 		let checked = new Set();
@@ -484,12 +484,6 @@ export class NodeScene {
 	}
 
 	addConnection(con: ConnectionGraphicsItem) {
-		// Check if this connection is allowed.
-		if (!this.remainsDAG(con.socketA.node, con.socketB.node)) {
-			alert("Cyclic connections are not allowed.");
-			return;
-		}
-
 		this.conns.push(con);
 
 		// link the sockets
