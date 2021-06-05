@@ -202,22 +202,25 @@ export class SocketGraphicsItem extends GraphicsItem {
 				mouseY
 			);
 
+			// check if a cyclical connection is about to be added,
 			// this can only happen when forming a new connection so no need to check
 			// for other conditions (existing connection being removed, etc...)
-			// this means this socket type should be SocketType.Out and the other
-			// should be SocketType.In
+			//
+			// this means one socket has to be SocketType.Out and the other should be SocketType.In
 			if (
 				closeSock &&
-				this.socketType == SocketType.Out &&
-				closeSock.socketType == SocketType.In
+				(
+					(this.socketType == SocketType.Out && closeSock.socketType == SocketType.In
+						&& !this.scene.remainsDAG(this.node, closeSock.node)) ||
+					(this.socketType == SocketType.In && closeSock.socketType == SocketType.Out
+						&& !this.scene.remainsDAG(closeSock.node, this.node))
+				)
 			) {
-				if (!this.scene.remainsDAG(this.node, closeSock.node)) {
-					this.hit = false;
-					this.hitSocket = null;
-					this.hitConnection = null;
+				this.hit = false;
+				this.hitSocket = null;
+				this.hitConnection = null;
 
-					return;
-				}
+				return;
 			}
 
 			// remove previous connection

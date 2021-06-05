@@ -452,11 +452,8 @@ export class NodeScene {
 	/**
 	 * Checks if adding a hypothetical connection, the graph would remain to be a directed acyclic graph (DAG).
 	 *
-	 * Note: This method assumes the graph is a DAG prior to calling this method,
-	 *       it could return true if the graph wasn't to begin with.
-	 *
-	 * @param leftNode left node of the new connection
-	 * @param rightNode right node of the new connection
+	 * @param leftNode input node of the new connection
+	 * @param rightNode output node of the new connection
 	 * @returns
 	 */
 	remainsDAG(leftNode: NodeGraphicsItem, rightNode: NodeGraphicsItem) {
@@ -475,6 +472,7 @@ export class NodeScene {
 						return false;
 					} else {
 						expanding.push(nodeB);
+						checked.add(nodeA);
 					}
 				}
 			}
