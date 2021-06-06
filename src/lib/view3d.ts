@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
+import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader";
 import { OrbitControls } from "three-orbitcontrols-ts";
 import { DesignerNode } from "./designer/designernode";
 import { ImageCanvas } from "./designer/imagecanvas";
@@ -7,6 +8,7 @@ import { SphereGeometry } from "./geometry/sphere";
 import { CylinderGeometry } from "./geometry/cylinder";
 import { PlaneGeometry } from "./geometry/plane";
 import path from "path";
+import { DataTexture } from "three";
 
 // https://www.bostonbiomotion.com/
 // https://blog.subvertallmedia.com/2018/06/25/three-js-imports.html
@@ -65,8 +67,9 @@ export class View3D {
 
 		this.setupOrbitControls(el);
 		this.setupLighting();
-		this.cubeMap = this.loadEnv();
-		this.material.envMap = this.cubeMap;
+		// this.cubeMap = this.loadEnv();
+		// this.material.envMap = this.cubeMap;
+		this.loadEnvEquirect();
 
 		//const geometry = new THREE.SphereGeometry(1, 64, 64);
 		this.model = new THREE.Mesh(this.sphereGeom, this.material);
@@ -125,7 +128,7 @@ export class View3D {
 		object3d.name = "Fill light";
 		container.add(object3d);
 
-		this.scene.add(container);
+		// this.scene.add(container);
 	}
 
 	setupOrbitControls(el: HTMLElement) {
@@ -420,5 +423,34 @@ export class View3D {
 		]);
 
 		return envMap;
+	}
+
+	// load equirect
+
+	loadEnvEquirect() {
+		const hdrPath =
+			(process.env.NODE_ENV == "production" ? "file://" : "") +
+			path.join(
+				process.env.BASE_URL,
+				"assets/env/christmas/christmas_photo_studio_01_1k.hdr"
+			);
+
+		new RGBELoader()
+			.setDataType(THREE.UnsignedByteType)
+			.load(hdrPath, (texture: DataTexture) => {
+				//console.log( texture );
+
+				const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+				pmremGenerator.compileEquirectangularShader();
+
+				const evtRT = pmremGenerator.fromEquirectangular(texture);
+				const tex = evtRT.texture;
+				tex.minFilter = THREE.LinearFilter;
+				tex.magFilter = THREE.LinearFilter;
+				// tex.needsUpdate = true;
+
+				this.material.envMap = evtRT.texture;
+				this.material.needsUpdate = true;
+			});
 	}
 }
