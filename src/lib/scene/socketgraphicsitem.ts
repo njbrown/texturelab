@@ -207,20 +207,29 @@ export class SocketGraphicsItem extends GraphicsItem {
 			// for other conditions (existing connection being removed, etc...)
 			//
 			// this means one socket has to be SocketType.Out and the other should be SocketType.In
-			if (
-				closeSock &&
-				(
-					(this.socketType == SocketType.Out && closeSock.socketType == SocketType.In
-						&& !this.scene.remainsDAG(this.node, closeSock.node)) ||
-					(this.socketType == SocketType.In && closeSock.socketType == SocketType.Out
-						&& !this.scene.remainsDAG(closeSock.node, this.node))
-				)
-			) {
-				this.hit = false;
-				this.hitSocket = null;
-				this.hitConnection = null;
+			let remainsDAG = false;
 
-				return;
+			if (closeSock) {
+				if (
+					this.socketType == SocketType.Out &&
+					closeSock.socketType == SocketType.In
+				)
+					remainsDAG =
+						this.scene.remainsDAG(this.node, closeSock.node) || remainsDAG;
+				else if (
+					this.socketType == SocketType.In &&
+					closeSock.socketType == SocketType.Out
+				)
+					remainsDAG =
+						this.scene.remainsDAG(closeSock.node, this.node) || remainsDAG;
+
+				if (!remainsDAG) {
+					this.hit = false;
+					this.hitSocket = null;
+					this.hitConnection = null;
+
+					return;
+				}
 			}
 
 			// remove previous connection
