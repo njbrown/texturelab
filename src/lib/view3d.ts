@@ -404,7 +404,8 @@ export class View3D {
 			side: THREE.DoubleSide
 		});
 
-		this.material.envMap = this.cubeMap;
+		// this.material.envMap = this.cubeMap;
+		this.loadEnvEquirect();
 
 		(this.model as THREE.Mesh).material = this.material;
 	}
