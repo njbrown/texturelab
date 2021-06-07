@@ -105,6 +105,8 @@ export class View3D {
 		renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 		renderer.setSize(el.width, el.height);
 
+		renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
 		this.renderer = renderer;
 	}
 
@@ -432,7 +434,8 @@ export class View3D {
 			(process.env.NODE_ENV == "production" ? "file://" : "") +
 			path.join(
 				process.env.BASE_URL,
-				"assets/env/christmas/christmas_photo_studio_01_1k.hdr"
+				"assets/env/wide_street_01_1k.hdr"
+				// "assets/env/christmas/christmas_photo_studio_01_1k.hdr"
 			);
 
 		new RGBELoader()
