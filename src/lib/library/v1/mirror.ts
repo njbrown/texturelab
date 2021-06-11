@@ -24,17 +24,17 @@ export class MirrorNode extends GpuDesignerNode {
                     uv.x = prop_offset - (uv.x - prop_offset);
 
             // right to left
-            if (prop_mode == 1)
+            else if (prop_mode == 1)
                 if (uv.x < prop_offset)
                     uv.x = prop_offset + (prop_offset - uv.x);      
 
             // bottom to top
-            if (prop_mode == 2)
+            else if (prop_mode == 2)
                 if (uv.y < prop_offset)
                     uv.y = prop_offset + (prop_offset - uv.y);
 
             // top to bottom
-            if (prop_mode == 3)
+            else if (prop_mode == 3)
                 if (uv.y > prop_offset)
                     uv.y = prop_offset - (uv.y - prop_offset);
         

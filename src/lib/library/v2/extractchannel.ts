@@ -22,10 +22,10 @@ export class ExtractChannel extends GpuDesignerNode {
 		float getChannel(vec4 inputData, int mode)
 		{
 			if (mode == 0) return inputData.r;
-			if (mode == 1) return inputData.g;
-			if (mode == 2) return inputData.b;
-			if (mode == 3) return inputData.a;
-			if (mode == 4) {
+			else if (mode == 1) return inputData.g;
+			else if (mode == 2) return inputData.b;
+			else if (mode == 3) return inputData.a;
+			else if (mode == 4) {
 				return (inputData.r + inputData.g + inputData.b) * 0.3333333;
 			}
 
