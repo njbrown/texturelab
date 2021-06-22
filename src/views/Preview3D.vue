@@ -13,6 +13,9 @@
 				<option value="load">Load..</option>
 			</select>
 
+			<button class="enum right" @click="toggleMenu">
+				O
+			</button>
 			<select class="enum right" @change="setTiling">
 				<option value="1" selected>Tiling: 1x</option>
 				<option value="2">Tiling: 2x</option>
@@ -20,7 +23,12 @@
 				<option value="4">Tiling: 4x</option>
 			</select>
 		</div>
-		<canvas id="_3dpreview" ref="canvas" style="display:block;"></canvas>
+		<div style="display:flex; flex-direction:row;height:100%;">
+			<canvas id="_3dpreview" ref="canvas" style="display:block;"></canvas>
+			<div v-if="showMenu" style="display:flex;width:50%;">
+				3d options go here
+			</div>
+		</div>
 	</div>
 </template>
 
@@ -40,7 +48,8 @@ export default {
 	// },
 	data() {
 		return {
-			view3d: null
+			view3d: null,
+			showMenu: false
 		};
 	},
 	mounted() {
@@ -71,7 +80,7 @@ export default {
 			};
 		},
 		resize(width, height) {
-			fitCanvasToContainer(this.$refs.canvas);
+			fitCanvasToContainer(this.$refs.canvas, this.showMenu);
 
 			// repaint
 			if (this.view3d)
@@ -104,6 +113,18 @@ export default {
 			// todo: set 3d model
 			this.view3d.setRepeat(parseInt(evt.target.value));
 		},
+		toggleMenu() {
+			console.log("toggle menu");
+			this.showMenu = !this.showMenu;
+
+			// recalc after render
+			this.$nextTick(() => {
+				fitCanvasToContainer(this.$refs.canvas, this.showMenu);
+
+				if (this.view3d)
+					this.view3d.resize(this.$refs.canvas.width, this.$refs.canvas.height);
+			});
+		},
 		reset() {
 			// clear all textures
 			// reset camera position
@@ -113,9 +134,11 @@ export default {
 };
 
 //https://stackoverflow.com/questions/10214873/make-canvas-as-wide-and-as-high-as-parent
-function fitCanvasToContainer(canvas) {
+function fitCanvasToContainer(canvas, showMenu) {
 	// Make it visually fill the positioned parent
-	canvas.style.width = "100%";
+	if (showMenu) canvas.style.width = "50%";
+	else canvas.style.width = "100%";
+
 	// 1em is the size of the top bar
 	canvas.style.height = "calc(100% - 2em)";
 	// ...then set the internal size to match
