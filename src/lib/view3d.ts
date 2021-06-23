@@ -41,6 +41,7 @@ export class View3D {
 		}
 	);
 	private cubeMap: THREE.CubeTexture;
+	private skyPath: string = "assets/env/wide_street_01_1k.hdr";
 
 	private model: THREE.Object3D;
 	private controls: OrbitControls;
@@ -52,6 +53,11 @@ export class View3D {
 	private cubeGeom = new THREE.BoxGeometry();
 	private planeGeom = new PlaneGeometry(2, 2, 100, 100);
 	private cylinderGeom = new CylinderGeometry(0.5, 0.5, 1, 64, 64, true);
+
+	setSkyPath(path: string) {
+		this.skyPath = path;
+		this.loadEnvEquirect();
+	}
 
 	setCanvas(el: HTMLCanvasElement) {
 		this.setupRenderer(el);
@@ -431,18 +437,23 @@ export class View3D {
 	// load equirect
 
 	loadEnvEquirect() {
+		const skyPath = this.skyPath;
+
 		const hdrPath =
 			(process.env.NODE_ENV == "production" ? "file://" : "") +
 			path.join(
 				process.env.BASE_URL,
-				"assets/env/wide_street_01_1k.hdr"
+				// "assets/env/wide_street_01_1k.hdr"
 				// "assets/env/christmas/christmas_photo_studio_01_1k.hdr"
+				skyPath
 			);
 
 		new RGBELoader()
 			.setDataType(THREE.UnsignedByteType)
 			.load(hdrPath, (texture: DataTexture) => {
-				//console.log( texture );
+				// skyPath could have changed between setting the texture and it
+				// actually loading, this check is there for that
+				if (skyPath !== this.skyPath) return;
 
 				const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
 				pmremGenerator.compileEquirectangularShader();
@@ -455,6 +466,8 @@ export class View3D {
 
 				this.material.envMap = evtRT.texture;
 				this.material.needsUpdate = true;
+
+				this.scene.background = evtRT.texture;
 			});
 	}
 }
