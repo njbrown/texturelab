@@ -197,7 +197,6 @@ export default class LibraryView extends Vue {
 	}
 
 	calcImagePath(node: string) {
-		//return `./assets/nodes/${node}.png`;
 		if (process.env.NODE_ENV == "production")
 			return (
 				"file://" + path.join(process.env.BASE_URL, `assets/nodes/${node}.png`)
@@ -205,8 +204,7 @@ export default class LibraryView extends Vue {
 		return path.join(process.env.BASE_URL, `assets/nodes/${node}.png`);
 	}
 
-	mounted() {
-	}
+	mounted() {}
 }
 </script>
 
