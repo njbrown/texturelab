@@ -246,6 +246,9 @@ export default class LibraryView extends Vue {
 .node-list {
 	overflow-y: scroll;
 	flex: 1 1 auto;
+
+	font-size: 12px;
+	font-weight: bold;
 }
 
 .search-container {
