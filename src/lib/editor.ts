@@ -11,7 +11,10 @@ import { NodeGraphicsItem } from "./scene/nodegraphicsitem";
 import { SocketType } from "./scene/socketgraphicsitem";
 import { ImageCanvas } from "./designer/imagecanvas";
 
-import { createLibrary, createLibrary as createV1Library } from "@/lib/library/libraryv1";
+import {
+	createLibrary,
+	createLibrary as createV1Library
+} from "@/lib/library/libraryv1";
 import { createLibrary as createV2Library } from "@/lib/library/libraryv2";
 import { Color } from "./designer/color";
 import { CommentGraphicsItem } from "./scene/commentgraphicsitem";
@@ -400,8 +403,13 @@ export class Editor {
 		// cleanup previous graph
 		if (this.graph) this.graph.dispose();
 
-		this.undoStack = new UndoStack();
-		UndoStack.current = this.undoStack;
+		// this.undoStack = new UndoStack();
+		this.undoStack.clear();
+
+		// this shouldnt be here
+		// assignment of current undo redo stack should be controlled
+		// by App
+		// UndoStack.current = this.undoStack;
 
 		this.graph = scene;
 
@@ -786,14 +794,15 @@ export class Editor {
 			library = createV2Library();
 		} else {
 			let libVer = data["libraryVersion"];
-			if (libVer === "v0")
-				library = createLibrary();
-			if (libVer === "v1") // silently load v1 textures as v2
+			if (libVer === "v0") library = createLibrary();
+			if (libVer === "v1")
+				// silently load v1 textures as v2
 				library = createV2Library();
-			else if (libVer === "v2")
-				library = createV2Library();
+			else if (libVer === "v2") library = createV2Library();
 			else
-				console.error(`Invalid library version ${libVer}, project might not load properly`);
+				console.error(
+					`Invalid library version ${libVer}, project might not load properly`
+				);
 		}
 		// load scene
 		const d = Designer.load(data, library);

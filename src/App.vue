@@ -137,7 +137,7 @@ body {
 }
 
 .no-drag {
-  -webkit-user-drag: none;
+	-webkit-user-drag: none;
 }
 </style>
 <style scoped>
@@ -539,6 +539,14 @@ export default class App extends Vue implements IApp {
 		//this.editor.set3DScene(scene3D);
 		(this.$refs.preview3d as any).setEditor(this.editor);
 
+		UndoStack.current = this.editor.undoStack;
+
+		// listen for changes in undo stack
+		UndoStack.current.cleanStatusChanged = isClean => {
+			if (isClean) this.setWindowTitle(this.project.name);
+			else this.setWindowTitle("*" + this.project.name);
+		};
+
 		//this.editor.createNewTexture();
 		this.newProject();
 
@@ -647,13 +655,14 @@ export default class App extends Vue implements IApp {
 		this.editor.createNewTexture();
 		this.library = unobserve(this.editor.library);
 
-		this.project.name = "New Texture";
+		this.project.name = "Untitled Project";
 		this.project.path = null;
 
 		this.resolution = 1024;
 		this.randomSeed = 32;
 
-		this.setWindowTitle("Untitled Project");
+		this.setWindowTitle(this.project.name);
+		UndoStack.current.clear();
 	}
 
 	saveProject(saveAs: boolean = false) {
@@ -685,10 +694,12 @@ export default class App extends Vue implements IApp {
 
 					ProjectManager.save(path, this.project);
 					this.setWindowTitle(this.project.name);
+					UndoStack.current.setClean();
 				}
 			);
 		} else {
 			ProjectManager.save(this.project.path, this.project);
+			UndoStack.current.setClean();
 		}
 	}
 
@@ -731,6 +742,8 @@ export default class App extends Vue implements IApp {
 				this.library = unobserve(this.editor.library);
 
 				this.setWindowTitle(project.name);
+
+				UndoStack.current.clear();
 			}
 		);
 	}
@@ -865,6 +878,8 @@ export default class App extends Vue implements IApp {
 		this.project = unobserve(project);
 		this.library = unobserve(this.editor.library);
 		this.setWindowTitle(project.name);
+
+		UndoStack.current.clear();
 	}
 
 	setResolution(evt) {
