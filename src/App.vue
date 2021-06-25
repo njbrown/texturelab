@@ -20,11 +20,12 @@
 			ref="GL"
 		>
 			<gl-row>
-				<gl-col width="25">
+				<gl-col width="30">
 					<gl-component
 						title="2D View"
 						class="test-component"
 						:closable="false"
+						height="40"
 					>
 						<!-- <canvas width="100" height="100" id="_2dview" /> -->
 						<preview2d ref="preview2d" />
@@ -34,13 +35,14 @@
 						title="3D View"
 						class="test-component"
 						:closable="false"
+						height="60"
 					>
 						<!-- <canvas width="100" height="100" id="_3dview" /> -->
 						<preview3d ref="preview3d" />
 					</gl-component>
 				</gl-col>
 
-				<gl-col width="55" ref="canvas">
+				<gl-col width="50" ref="canvas">
 					<gl-component title="Editor" class="test-component" :closable="false">
 						<library-menu
 							:editor="this.editor"
