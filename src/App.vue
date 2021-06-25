@@ -979,16 +979,41 @@ export default class App extends Vue implements IApp {
 			return;
 		}
 
-		this.editor.load(project.data);
-		this.resolution = 1024;
-		this.randomSeed = 32;
+		const openProject = () => {
+			this.editor.load(project.data);
+			this.resolution = 1024;
+			this.randomSeed = 32;
 
-		project.path = null; // this ensures saving pops SaveAs dialog
-		this.project = unobserve(project);
-		this.library = unobserve(this.editor.library);
-		this.setWindowTitle(project.name);
+			project.path = null; // this ensures saving pops SaveAs dialog
+			this.project = unobserve(project);
+			this.library = unobserve(this.editor.library);
+			this.setWindowTitle(project.name);
 
-		UndoStack.current.clear();
+			UndoStack.current.clear();
+		};
+
+		if (!UndoStack.current.isClean()) {
+			const action = dialog.showMessageBox(null, {
+				message: "You have unsaved changes. Do you want to save them?",
+				buttons: ["Yes", "No", "Cancel"]
+			});
+
+			// canceled
+			if (action == 2) {
+				return;
+			}
+
+			if (action == 1) {
+				openProject();
+			}
+
+			// yes, save scene
+			if (action == 0) {
+				this.saveProject(false, () => openProject());
+			}
+		} else {
+			openProject();
+		}
 	}
 
 	setResolution(evt) {
