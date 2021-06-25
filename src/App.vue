@@ -647,25 +647,53 @@ export default class App extends Vue implements IApp {
 	}
 
 	newProject() {
-		// reset states of all components
-		// load default scene
-		(this.$refs.preview3d as any).reset();
-		(this.$refs.preview2d as any).reset();
+		let action = 0;
 
-		this.editor.createNewTexture();
-		this.library = unobserve(this.editor.library);
+		const newProject = () => {
+			// reset states of all components
+			// load default scene
+			(this.$refs.preview3d as any).reset();
+			(this.$refs.preview2d as any).reset();
 
-		this.project.name = "Untitled Project";
-		this.project.path = null;
+			this.editor.createNewTexture();
+			this.library = unobserve(this.editor.library);
 
-		this.resolution = 1024;
-		this.randomSeed = 32;
+			this.project.name = "Untitled Project";
+			this.project.path = null;
 
-		this.setWindowTitle(this.project.name);
-		UndoStack.current.clear();
+			this.resolution = 1024;
+			this.randomSeed = 32;
+
+			this.setWindowTitle(this.project.name);
+			UndoStack.current.clear();
+		};
+
+		if (!UndoStack.current.isClean()) {
+			action = dialog.showMessageBox(null, {
+				message: "You have unsaved changes. Do you want to save them?",
+				buttons: ["Yes", "No", "Cancel"]
+			});
+
+			// canceled
+			if (action == 2) {
+				return;
+			}
+
+			if (action == 1) {
+				newProject();
+			}
+
+			// yes, save scene
+			if (action == 0) {
+				this.saveProject(false, () => newProject());
+				console.log("saved project");
+			}
+		} else {
+			newProject();
+		}
 	}
 
-	saveProject(saveAs: boolean = false) {
+	saveProject(saveAs: boolean = false, onSuccess: () => void = null) {
 		var data = this.editor.save();
 		// console.log(data);
 		this.project.data = data;
@@ -695,6 +723,8 @@ export default class App extends Vue implements IApp {
 					ProjectManager.save(path, this.project);
 					this.setWindowTitle(this.project.name);
 					UndoStack.current.setClean();
+
+					if (onSuccess) onSuccess();
 				}
 			);
 		} else {
