@@ -79,6 +79,7 @@ export class UndoStack {
 
 	setClean() {
 		this.savedState = this.pointer;
+		this.cleanStatusChanged(true);
 	}
 
 	isClean() {
