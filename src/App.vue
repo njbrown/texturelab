@@ -79,6 +79,7 @@
 							height="400"
 							id="editor"
 							ondragover="event.preventDefault()"
+							:ondrop="handleFileDropInEditor"
 						/>
 					</gl-component>
 					<!-- <gl-component title="Library" height="30" :closable="false">
@@ -433,84 +434,92 @@ export default class App extends Vue implements IApp {
 		canv.ondrop = evt => {
 			evt.preventDefault();
 
-			var itemJson = evt.dataTransfer.getData("text/plain");
-			let item = JSON.parse(itemJson);
-			let rect = canv.getBoundingClientRect();
-			var pos = this.editor.graph.view.canvasToSceneXY(
-				evt.clientX - rect.left,
-				evt.clientY - rect.top
-			);
+			console.log("ondrop");
+			console.log(evt.dataTransfer.items);
+			console.log(evt.dataTransfer.files);
 
-			let action: AddItemsAction = null;
-
-			if (item.type == "node") {
-				let nodeName = item.name;
-
-				let dnode = this.library.create(nodeName);
-				// let n = this.editor.addNode(
-				// 	dnode,
-				// 	evt.clientX - rect.left,
-				// 	evt.clientY - rect.top
-				// );
-				let n = this.editor.addNode(dnode);
-				n.setCenter(pos.x, pos.y);
-
-				action = new AddItemsAction(
-					this.editor.graph,
-					this.editor.designer,
-					[],
-					[],
-					[],
-					[],
-					[n],
-					[dnode]
+			if (evt.dataTransfer.files.length > 0) {
+				this.handleFileDropInEditor(evt.dataTransfer.files);
+			} else {
+				var itemJson = evt.dataTransfer.getData("text/plain");
+				let item = JSON.parse(itemJson);
+				let rect = canv.getBoundingClientRect();
+				var pos = this.editor.graph.view.canvasToSceneXY(
+					evt.clientX - rect.left,
+					evt.clientY - rect.top
 				);
-			} else if (item.type == "comment") {
-				let d = this.editor.createComment();
-				d.setCenter(pos.x, pos.y);
 
-				action = new AddItemsAction(
-					this.editor.graph,
-					this.editor.designer,
-					[],
-					[d],
-					[],
-					[],
-					[],
-					[]
-				);
-			} else if (item.type == "frame") {
-				let d = this.editor.createFrame();
-				d.setCenter(pos.x, pos.y);
+				let action: AddItemsAction = null;
 
-				action = new AddItemsAction(
-					this.editor.graph,
-					this.editor.designer,
-					[d],
-					[],
-					[],
-					[],
-					[],
-					[]
-				);
-			} else if (item.type == "navigation") {
-				let d = this.editor.createNavigation();
-				d.setCenter(pos.x, pos.y);
+				if (item.type == "node") {
+					let nodeName = item.name;
 
-				action = new AddItemsAction(
-					this.editor.graph,
-					this.editor.designer,
-					[],
-					[],
-					[d],
-					[],
-					[],
-					[]
-				);
-			}
+					let dnode = this.library.create(nodeName);
+					// let n = this.editor.addNode(
+					// 	dnode,
+					// 	evt.clientX - rect.left,
+					// 	evt.clientY - rect.top
+					// );
+					let n = this.editor.addNode(dnode);
+					n.setCenter(pos.x, pos.y);
 
-			if (action != null) {
-				UndoStack.current.push(action);
+					action = new AddItemsAction(
+						this.editor.graph,
+						this.editor.designer,
+						[],
+						[],
+						[],
+						[],
+						[n],
+						[dnode]
+					);
+				} else if (item.type == "comment") {
+					let d = this.editor.createComment();
+					d.setCenter(pos.x, pos.y);
+
+					action = new AddItemsAction(
+						this.editor.graph,
+						this.editor.designer,
+						[],
+						[d],
+						[],
+						[],
+						[],
+						[]
+					);
+				} else if (item.type == "frame") {
+					let d = this.editor.createFrame();
+					d.setCenter(pos.x, pos.y);
+
+					action = new AddItemsAction(
+						this.editor.graph,
+						this.editor.designer,
+						[d],
+						[],
+						[],
+						[],
+						[],
+						[]
+					);
+				} else if (item.type == "navigation") {
+					let d = this.editor.createNavigation();
+					d.setCenter(pos.x, pos.y);
+
+					action = new AddItemsAction(
+						this.editor.graph,
+						this.editor.designer,
+						[],
+						[],
+						[d],
+						[],
+						[],
+						[]
+					);
+				}
+
+				if (action != null) {
+					UndoStack.current.push(action);
+				}
 			}
 		};
 		this.editor.setSceneCanvas(canv);
@@ -703,6 +712,66 @@ export default class App extends Vue implements IApp {
 			}
 		} else {
 			closeWindow();
+		}
+	}
+
+	handleFileDropInEditor(files: FileList) {
+		// todo: handle image drop differently
+		// for now, only handle file drop
+		const file = files[0];
+		if (file.path.endsWith(".texture")) {
+			const openProject = () => {
+				// reset states of all components
+				// load default scene
+				(this.$refs.preview3d as any).reset();
+				(this.$refs.preview2d as any).reset();
+
+				let project = ProjectManager.load(file.path);
+
+				// ensure library exists
+				let libName = project.data["libraryVersion"];
+				let libraries = ["v0", "v1", "v2"];
+				if (libraries.indexOf(libName) == -1) {
+					alert(
+						`Project contains unknown library version '${libName}'. It must have been created with a new version of TextureLab`
+					);
+					return;
+				}
+
+				this.editor.load(project.data);
+				this.resolution = 1024;
+				this.randomSeed = 32;
+
+				this.project = unobserve(project);
+				this.library = unobserve(this.editor.library);
+
+				this.setWindowTitle(project.name);
+
+				UndoStack.current.clear();
+			};
+
+			if (!UndoStack.current.isClean()) {
+				const action = dialog.showMessageBox(null, {
+					message: "You have unsaved changes. Do you want to save them?",
+					buttons: ["Yes", "No", "Cancel"]
+				});
+
+				// canceled
+				if (action == 2) {
+					return;
+				}
+
+				if (action == 1) {
+					openProject();
+				}
+
+				// yes, save scene
+				if (action == 0) {
+					this.saveProject(false, () => openProject());
+				}
+			} else {
+				openProject();
+			}
 		}
 	}
 
