@@ -14,7 +14,7 @@
   <a href="https://njbrown.itch.io/texturelab">DOWNLOAD AT ITCH.IO</a> | <a href="https://discord.gg/975NdQPsSc" >JOIN OUR DISCORD SERVER</a>
 </p>
 
-![TextureLab](https://i.imgur.com/VBXk0zP.png)
+![Screenshot](https://user-images.githubusercontent.com/1708550/123368911-4ceb9f00-d542-11eb-87b5-b0fc3ea3cc3d.png)
 
 ## Building
 
