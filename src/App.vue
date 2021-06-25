@@ -647,8 +647,6 @@ export default class App extends Vue implements IApp {
 	}
 
 	newProject() {
-		let action = 0;
-
 		const newProject = () => {
 			// reset states of all components
 			// load default scene
@@ -669,7 +667,7 @@ export default class App extends Vue implements IApp {
 		};
 
 		if (!UndoStack.current.isClean()) {
-			action = dialog.showMessageBox(null, {
+			const action = dialog.showMessageBox(null, {
 				message: "You have unsaved changes. Do you want to save them?",
 				buttons: ["Yes", "No", "Cancel"]
 			});
@@ -686,7 +684,6 @@ export default class App extends Vue implements IApp {
 			// yes, save scene
 			if (action == 0) {
 				this.saveProject(false, () => newProject());
-				console.log("saved project");
 			}
 		} else {
 			newProject();
@@ -734,48 +731,72 @@ export default class App extends Vue implements IApp {
 	}
 
 	openProject() {
-		// ask if current project should be saved
-		dialog.showOpenDialog(
-			remote.getCurrentWindow(),
-			{
-				filters: [
-					{
-						name: "TextureLab Texture",
-						extensions: ["texture"]
+		const openProject = () => {
+			dialog.showOpenDialog(
+				remote.getCurrentWindow(),
+				{
+					filters: [
+						{
+							name: "TextureLab Texture",
+							extensions: ["texture"]
+						}
+					],
+					defaultPath: "material"
+				},
+				(paths, bookmarks) => {
+					if (!paths) return;
+
+					let path = paths[0];
+
+					let project = ProjectManager.load(path);
+					// console.log(project);
+
+					// ensure library exists
+					let libName = project.data["libraryVersion"];
+					let libraries = ["v0", "v1", "v2"];
+					if (libraries.indexOf(libName) == -1) {
+						alert(
+							`Project contains unknown library version '${libName}'. It must have been created with a new version of TextureLab`
+						);
+						return;
 					}
-				],
-				defaultPath: "material"
-			},
-			(paths, bookmarks) => {
-				if (!paths) return;
 
-				let path = paths[0];
+					this.editor.load(project.data);
+					this.resolution = 1024;
+					this.randomSeed = 32;
 
-				let project = ProjectManager.load(path);
-				// console.log(project);
+					this.project = unobserve(project);
+					this.library = unobserve(this.editor.library);
 
-				// ensure library exists
-				let libName = project.data["libraryVersion"];
-				let libraries = ["v0", "v1", "v2"];
-				if (libraries.indexOf(libName) == -1) {
-					alert(
-						`Project contains unknown library version '${libName}'. It must have been created with a new version of TextureLab`
-					);
-					return;
+					this.setWindowTitle(project.name);
+
+					UndoStack.current.clear();
 				}
+			);
+		};
 
-				this.editor.load(project.data);
-				this.resolution = 1024;
-				this.randomSeed = 32;
+		if (!UndoStack.current.isClean()) {
+			const action = dialog.showMessageBox(null, {
+				message: "You have unsaved changes. Do you want to save them?",
+				buttons: ["Yes", "No", "Cancel"]
+			});
 
-				this.project = unobserve(project);
-				this.library = unobserve(this.editor.library);
-
-				this.setWindowTitle(project.name);
-
-				UndoStack.current.clear();
+			// canceled
+			if (action == 2) {
+				return;
 			}
-		);
+
+			if (action == 1) {
+				openProject();
+			}
+
+			// yes, save scene
+			if (action == 0) {
+				this.saveProject(false, () => openProject());
+			}
+		} else {
+			openProject();
+		}
 	}
 
 	loadSample(name: string) {}
