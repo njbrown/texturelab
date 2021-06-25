@@ -547,6 +547,26 @@ export default class App extends Vue implements IApp {
 			else this.setWindowTitle("*" + this.project.name);
 		};
 
+		// handle quit event
+		window.onbeforeunload = (e: BeforeUnloadEvent) => {
+			console.log(e);
+			e.returnValue = false;
+
+			// this.$nextTick(() => {
+			// 	this.handleSaveBeforeQuit(e);
+			// });
+
+			setTimeout(() => {
+				this.handleSaveBeforeQuit(e);
+			}, 0);
+
+			// this.handleSaveBeforeQuit(e);
+			// alert("Should i save?");
+			// console.log(e);
+
+			// remote.getCurrentWindow().close();
+		};
+
 		//this.editor.createNewTexture();
 		this.newProject();
 
@@ -644,6 +664,44 @@ export default class App extends Vue implements IApp {
 	setWindowTitle(newTitle: string) {
 		document.title = newTitle;
 		this.titleBar.updateTitle();
+	}
+
+	handleSaveBeforeQuit(e: BeforeUnloadEvent) {
+		// close browser without check
+		const closeWindow = () => {
+			window.onbeforeunload = null;
+			window.close();
+			// this.$nextTick(() => {
+			// 	window.onbeforeunload = null;
+			// 	window.close();
+			// 	//remote.getCurrentWindow().close();
+			// });
+		};
+
+		if (!UndoStack.current.isClean()) {
+			const action = dialog.showMessageBox({
+				message: "You have unsaved changes. Do you want to save them?",
+				buttons: ["Yes", "No", "Cancel"]
+			});
+
+			// canceled
+			if (action == 2) {
+				e.returnValue = false;
+				return;
+			}
+
+			if (action == 1) {
+				closeWindow();
+			}
+
+			// yes, save scene
+			if (action == 0) {
+				e.returnValue = false;
+				this.saveProject(false, () => closeWindow());
+			}
+		} else {
+			closeWindow();
+		}
 	}
 
 	newProject() {

@@ -1,10 +1,8 @@
 "use strict";
 
-import { app, protocol, BrowserWindow } from "electron";
-import {
-	createProtocol,
-} from "vue-cli-plugin-electron-builder/lib";
-import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
+import { app, protocol, BrowserWindow, ipcMain } from "electron";
+import { createProtocol } from "vue-cli-plugin-electron-builder/lib";
+import installExtension, { VUEJS_DEVTOOLS } from "electron-devtools-installer";
 import { setupMenu } from "./menu";
 const isDevelopment = process.env.NODE_ENV !== "production";
 
@@ -78,22 +76,21 @@ app.on("ready", async () => {
 			console.error("Vue Devtools failed to install:", e.toString());
 		}
 	}
-	
+
 	// needed for image files to work
 	// https://github.com/electron/electron/issues/23393
-	protocol.registerFileProtocol('image', (request, callback) => {
-		const url = request.url.replace('image://', '')
+	protocol.registerFileProtocol("image", (request, callback) => {
+		const url = request.url.replace("image://", "");
 
 		try {
-		  return callback(url)
+			return callback(url);
+		} catch (error) {
+			console.error(error);
+			return callback("");
 		}
-		catch (error) {
-		  console.error(error)
-		  return callback("");
-		}
-	  })
+	});
 
-	  createWindow();
+	createWindow();
 });
 
 // Exit cleanly on request from parent process in development mode.
