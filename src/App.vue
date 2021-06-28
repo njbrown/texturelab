@@ -690,7 +690,7 @@ export default class App extends Vue implements IApp {
 		};
 
 		if (!UndoStack.current.isClean()) {
-			const action = dialog.showMessageBox({
+			const action = dialog.showMessageBoxSync({
 				message: "You have unsaved changes. Do you want to save them?",
 				buttons: ["Yes", "No", "Cancel"]
 			});
@@ -751,7 +751,7 @@ export default class App extends Vue implements IApp {
 			};
 
 			if (!UndoStack.current.isClean()) {
-				const action = dialog.showMessageBox(null, {
+				const action = dialog.showMessageBoxSync(null, {
 					message: "You have unsaved changes. Do you want to save them?",
 					buttons: ["Yes", "No", "Cancel"]
 				});
@@ -796,7 +796,7 @@ export default class App extends Vue implements IApp {
 		};
 
 		if (!UndoStack.current.isClean()) {
-			const action = dialog.showMessageBox(null, {
+			const action = dialog.showMessageBoxSync(null, {
 				message: "You have unsaved changes. Do you want to save them?",
 				buttons: ["Yes", "No", "Cancel"]
 			});
@@ -905,7 +905,7 @@ export default class App extends Vue implements IApp {
 		};
 
 		if (!UndoStack.current.isClean()) {
-			const action = dialog.showMessageBox(null, {
+			const action = dialog.showMessageBoxSync(null, {
 				message: "You have unsaved changes. Do you want to save them?",
 				buttons: ["Yes", "No", "Cancel"]
 			});
@@ -1064,7 +1064,7 @@ export default class App extends Vue implements IApp {
 		};
 
 		if (!UndoStack.current.isClean()) {
-			const action = dialog.showMessageBox(null, {
+			const action = dialog.showMessageBoxSync(null, {
 				message: "You have unsaved changes. Do you want to save them?",
 				buttons: ["Yes", "No", "Cancel"]
 			});
