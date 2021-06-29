@@ -827,32 +827,28 @@ export default class App extends Vue implements IApp {
 
 		// if project has no name then it hasnt been saved yet
 		if (this.project.path == null || saveAs) {
-			dialog.showSaveDialog(
-				remote.getCurrentWindow(),
-				{
-					filters: [
-						{
-							name: "TextureLab Texture",
-							extensions: ["texture"]
-						}
-					],
-					defaultPath: "material.texture"
-				},
-				path => {
-					if (!path) return;
+			let path = dialog.showSaveDialogSync(remote.getCurrentWindow(), {
+				filters: [
+					{
+						name: "TextureLab Texture",
+						extensions: ["texture"]
+					}
+				],
+				defaultPath: "material.texture"
+			});
 
-					if (!path.endsWith(".texture")) path += ".texture";
+			if (!path) return;
 
-					this.project.name = path.replace(/^.*[\\/]/, "");
-					this.project.path = path;
+			if (!path.endsWith(".texture")) path += ".texture";
 
-					ProjectManager.save(path, this.project);
-					this.setWindowTitle(this.project.name);
-					UndoStack.current.setClean();
+			this.project.name = path.replace(/^.*[\\/]/, "");
+			this.project.path = path;
 
-					if (onSuccess) onSuccess();
-				}
-			);
+			ProjectManager.save(path, this.project);
+			this.setWindowTitle(this.project.name);
+			UndoStack.current.setClean();
+
+			if (onSuccess) onSuccess();
 		} else {
 			ProjectManager.save(this.project.path, this.project);
 			UndoStack.current.setClean();
@@ -861,47 +857,43 @@ export default class App extends Vue implements IApp {
 
 	openProject() {
 		const openProject = () => {
-			dialog.showOpenDialog(
-				remote.getCurrentWindow(),
-				{
-					filters: [
-						{
-							name: "TextureLab Texture",
-							extensions: ["texture"]
-						}
-					],
-					defaultPath: "material"
-				},
-				(paths, bookmarks) => {
-					if (!paths) return;
-
-					let path = paths[0];
-
-					let project = ProjectManager.load(path);
-					// console.log(project);
-
-					// ensure library exists
-					let libName = project.data["libraryVersion"];
-					let libraries = ["v0", "v1", "v2"];
-					if (libraries.indexOf(libName) == -1) {
-						alert(
-							`Project contains unknown library version '${libName}'. It must have been created with a new version of TextureLab`
-						);
-						return;
+			let paths = dialog.showOpenDialogSync(remote.getCurrentWindow(), {
+				filters: [
+					{
+						name: "TextureLab Texture",
+						extensions: ["texture"]
 					}
+				],
+				defaultPath: "material"
+			});
 
-					this.editor.load(project.data);
-					this.resolution = 1024;
-					this.randomSeed = 32;
+			if (!paths) return;
 
-					this.project = unobserve(project);
-					this.library = unobserve(this.editor.library);
+			let path = paths[0];
 
-					this.setWindowTitle(project.name);
+			let project = ProjectManager.load(path);
+			// console.log(project);
 
-					UndoStack.current.clear();
-				}
-			);
+			// ensure library exists
+			let libName = project.data["libraryVersion"];
+			let libraries = ["v0", "v1", "v2"];
+			if (libraries.indexOf(libName) == -1) {
+				alert(
+					`Project contains unknown library version '${libName}'. It must have been created with a new version of TextureLab`
+				);
+				return;
+			}
+
+			this.editor.load(project.data);
+			this.resolution = 1024;
+			this.randomSeed = 32;
+
+			this.project = unobserve(project);
+			this.library = unobserve(this.editor.library);
+
+			this.setWindowTitle(project.name);
+
+			UndoStack.current.clear();
 		};
 
 		if (!UndoStack.current.isClean()) {
@@ -936,92 +928,80 @@ export default class App extends Vue implements IApp {
 			this.project.name.replace(".texture", "")
 		);
 		//console.log(buffer);
-		dialog.showSaveDialog(
-			remote.getCurrentWindow(),
-			{
-				filters: [
-					{
-						name: "Unity Package",
-						extensions: ["unitypackage"]
-					}
-				],
-				defaultPath:
-					(this.project.name
-						? this.project.name.replace(".texture", "")
-						: "material") + ".unitypackage"
-			},
-			path => {
-				if (!path) return;
+		let path = dialog.showSaveDialogSync(remote.getCurrentWindow(), {
+			filters: [
+				{
+					name: "Unity Package",
+					extensions: ["unitypackage"]
+				}
+			],
+			defaultPath:
+				(this.project.name
+					? this.project.name.replace(".texture", "")
+					: "material") + ".unitypackage"
+		});
 
-				fs.writeFile(path, buffer, function(err) {
-					if (err) alert("Error exporting texture: " + err);
-				});
+		if (!path) return;
 
-				remote.shell.showItemInFolder(path);
-			}
-		);
+		fs.writeFile(path, buffer, function(err) {
+			if (err) alert("Error exporting texture: " + err);
+		});
+
+		remote.shell.showItemInFolder(path);
 	}
 
-	exportUnityZip() {
-		dialog.showSaveDialog(
-			remote.getCurrentWindow(),
-			{
-				filters: [
-					{
-						name: "Zip File",
-						extensions: ["zip"]
-					}
-				],
-				defaultPath:
-					(this.project.name
-						? this.project.name.replace(".texture", "")
-						: "material") + ".zip"
-			},
-			async path => {
-				if (!path) {
-					return;
+	async exportUnityZip() {
+		let path = dialog.showSaveDialogSync(remote.getCurrentWindow(), {
+			filters: [
+				{
+					name: "Zip File",
+					extensions: ["zip"]
 				}
+			],
+			defaultPath:
+				(this.project.name
+					? this.project.name.replace(".texture", "")
+					: "material") + ".zip"
+		});
 
-				let zip = await unityZipExport(
-					this.editor,
-					this.project.name.replace(".texture", "")
-				);
+		if (!path) {
+			return;
+		}
 
-				zip.writeZip(path);
-				remote.shell.showItemInFolder(path);
-			}
+		let zip = await unityZipExport(
+			this.editor,
+			this.project.name.replace(".texture", "")
 		);
+
+		zip.writeZip(path);
+		remote.shell.showItemInFolder(path);
 	}
 
-	exportZip() {
-		dialog.showSaveDialog(
-			remote.getCurrentWindow(),
-			{
-				filters: [
-					{
-						name: "Zip File",
-						extensions: ["zip"]
-					}
-				],
-				defaultPath:
-					(this.project.name
-						? this.project.name.replace(".texture", "")
-						: "material") + ".zip"
-			},
-			async path => {
-				if (!path) {
-					return;
+	async exportZip() {
+		let path = dialog.showSaveDialogSync(remote.getCurrentWindow(), {
+			filters: [
+				{
+					name: "Zip File",
+					extensions: ["zip"]
 				}
+			],
+			defaultPath:
+				(this.project.name
+					? this.project.name.replace(".texture", "")
+					: "material") + ".zip"
+		});
 
-				let zip = await zipExport(
-					this.editor,
-					this.project.name.replace(".texture", "")
-				);
+		if (!path) {
+			return;
+		}
 
-				zip.writeZip(path);
-				remote.shell.showItemInFolder(path);
-			}
+		let zip = await zipExport(
+			this.editor,
+			this.project.name.replace(".texture", "")
 		);
+
+		zip.writeZip(path);
+		remote.shell.showItemInFolder(path);
 	}
 
 	showTutorials() {}
