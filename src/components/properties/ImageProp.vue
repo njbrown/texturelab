@@ -72,23 +72,19 @@ export default class ImagePropertyView extends Vue {
 	}
 
 	loadImage() {
-		dialog.showOpenDialog(
-			remote.getCurrentWindow(),
-			{
-				filters: [
-					{
-						name: "Supported Images",
-						extensions: ["png", "jpg"]
-					}
-				],
-				defaultPath: "image"
-			},
-			(paths, bookmarks) => {
-				if (!paths || paths.length == 0) return;
+		let paths = dialog.showOpenDialogSync(remote.getCurrentWindow(), {
+			filters: [
+				{
+					name: "Supported Images",
+					extensions: ["png", "jpg"]
+				}
+			],
+			defaultPath: "image"
+		});
 
-				this.loadImageFromPath(paths[0]);
-			}
-		);
+		if (!paths || paths.length == 0) return;
+
+		this.loadImageFromPath(paths[0]);
 	}
 
 	reloadImage() {
