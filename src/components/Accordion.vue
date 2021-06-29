@@ -38,6 +38,7 @@ export default class Accordion extends Vue {
 
 	collapse() {
 		this.showContents = !this.showContents;
+		this.$emit("collapseStateChanged", this.showContents);
 	}
 
 	get isCollapsed() {

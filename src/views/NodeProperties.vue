@@ -37,6 +37,10 @@
 				v-for="(group, groupIndex) in this.groups"
 				:header="group.title"
 				:key="'group' + groupIndex"
+				:collapsed="group.collapsed"
+				@collapseStateChanged="
+					state => onGroupCollapseChange(group.title, state)
+				"
 			>
 				<component
 					v-for="(p, index) in group.props"
@@ -77,6 +81,7 @@ import {
 	PropertyChangeComplete
 } from "../components/properties/ipropertyui";
 import { UndoStack } from "@/lib/undostack";
+import { PropGroupCache } from "@/utils/propgroupcache";
 import { PropertyChangeAction } from "@/lib/actions/propertychangeaction";
 
 class PropGroup {
@@ -187,12 +192,31 @@ export default class NodePropertiesView extends Vue implements IProperyUi {
 				};
 			});
 
+			// eval collapse state
+			let collapseState = true;
+			if (this.node instanceof DesignerNode) {
+				collapseState = PropGroupCache.getCollapseState(
+					(this.node as DesignerNode).typeName,
+					group.name,
+					true
+				);
+			}
+
 			return {
 				title: group.name,
 				props: props,
-				collapsed: false
+				collapsed: collapseState
 			};
 		});
+	}
+
+	onGroupCollapseChange(groupName: string, state: boolean) {
+		console.log("collapse state: " + state);
+		PropGroupCache.setCollapseState(
+			(this.node as DesignerNode).typeName,
+			groupName,
+			state
+		);
 	}
 
 	get isInstanceNode() {
