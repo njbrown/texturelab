@@ -14,17 +14,29 @@ export enum PropertyType {
 	Image = "image"
 }
 
+export class PropertyGroup {
+	name: string = "";
+	properties: Property[] = [];
+
+	add(prop: Property) {
+		this.properties.push(prop);
+		prop.group = this;
+	}
+}
+
 export class Property {
 	public name: string;
 	public displayName: string;
 	public type: string;
+
+	public group: PropertyGroup;
 
 	// to be overriden
 	public getValue(): any {
 		return null;
 	}
 
-	public setValue(val: any, completeCallback:()=>void = null) {}
+	public setValue(val: any, completeCallback: () => void = null) {}
 
 	public clone(): Property {
 		return null;
@@ -321,11 +333,7 @@ export class GradientProperty extends Property {
 
 export class ImageProperty extends Property {
 	value: Image;
-	public constructor(
-		name: string,
-		displayName: string,
-		value: Image = null
-	) {
+	public constructor(name: string, displayName: string, value: Image = null) {
 		super();
 		this.name = name;
 		this.displayName = displayName;
@@ -338,13 +346,12 @@ export class ImageProperty extends Property {
 	}
 
 	// todo: pass callback for when value update is complete
-	public setValue(val: any, completeCallback:()=>void = null) {
+	public setValue(val: any, completeCallback: () => void = null) {
 		// todo: validate
 		if (val instanceof Image) {
 			this.value = val;
 			completeCallback();
-		}
-		else {
+		} else {
 			let image = Image.empty();
 			image.deserialize(val, completeCallback);
 			this.value = image;
@@ -352,7 +359,11 @@ export class ImageProperty extends Property {
 	}
 
 	public clone(): Property {
-		const prop = new ImageProperty(this.name, this.displayName, this.value.clone());
+		const prop = new ImageProperty(
+			this.name,
+			this.displayName,
+			this.value.clone()
+		);
 
 		return prop;
 	}

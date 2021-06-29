@@ -11,7 +11,8 @@ import {
 	GradientProperty,
 	IPropertyHolder,
 	ImageProperty,
-	PropertyType
+	PropertyType,
+	PropertyGroup
 } from "./properties";
 import { buildShaderProgram } from "./gl";
 import { Color } from "./color";
@@ -37,6 +38,7 @@ export class DesignerNode implements IPropertyHolder {
 
 	inputs: string[] = [];
 	properties: Property[] = [];
+	propGroups: PropertyGroup[] = [];
 
 	// tells scene to update the texture next frame
 	needsUpdate = true;
@@ -80,14 +82,13 @@ export class DesignerNode implements IPropertyHolder {
 
 		if (prop) {
 			if (prop.type == PropertyType.Image) {
-				prop.setValue(value, ()=>{
+				prop.setValue(value, () => {
 					this.requestUpdate();
 				});
 			} else {
 				prop.setValue(value);
 				this.requestUpdate();
 			}
-			
 		}
 
 		// for (let prop of this.properties) {
@@ -152,6 +153,14 @@ export class DesignerNode implements IPropertyHolder {
 		gl.bindTexture(gl.TEXTURE_2D, null);
 
 		this.tex = tex;
+	}
+
+	createGroup(name: string): PropertyGroup {
+		const group = new PropertyGroup();
+		group.name = name;
+		this.propGroups.push(group);
+
+		return group;
 	}
 
 	// PROPERTY FUNCTIONS
