@@ -6,7 +6,7 @@ import { NodeRenderContext } from "@/lib/designer";
 import { ImageProperty } from "@/lib/designer/properties";
 
 export class ImageNode extends DesignerNode {
-	canvas:HTMLCanvasElement;
+	canvas: HTMLCanvasElement;
 	imageProp: ImageProperty;
 	public init() {
 		this.title = "Image";
@@ -22,7 +22,7 @@ export class ImageNode extends DesignerNode {
 		this.imageProp = this.addImageProperty("image", "Image", Image.empty());
 	}
 
-    public render(context: NodeRenderContext) {
+	public render(context: NodeRenderContext) {
 		let gl = context.gl as WebGL2RenderingContext;
 
 		this.canvas.width = this.designer.width;
@@ -31,13 +31,19 @@ export class ImageNode extends DesignerNode {
 		console.log(this.designer.height);
 
 		let ctx = this.canvas.getContext("2d");
-		
+
 		// ctx.fillStyle = "rgb(0,255,0)";
 		// ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-		
+
 		ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 		if (this.imageProp.value && !this.imageProp.value.isEmpty) {
-			ctx.drawImage(this.imageProp.value.canvas, 0, 0, this.canvas.width, this.canvas.height);
+			ctx.drawImage(
+				this.imageProp.value.canvas,
+				0,
+				0,
+				this.canvas.width,
+				this.canvas.height
+			);
 			console.log("drawing image");
 		}
 
@@ -69,5 +75,5 @@ export class ImageNode extends DesignerNode {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 
 		gl.bindTexture(gl.TEXTURE_2D, null);
-    }
+	}
 }

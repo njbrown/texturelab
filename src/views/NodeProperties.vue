@@ -85,7 +85,6 @@ export default class NodePropertiesView extends Vue implements IProperyUi {
 	// like moving a slider
 	// or typing text
 	propertyChangeCompleted(evt: PropertyChangeComplete) {
-
 		// let action = new PropertyChangeAction(
 		// 	this,
 		// 	evt.propName,
@@ -110,7 +109,7 @@ export default class NodePropertiesView extends Vue implements IProperyUi {
 			// built-in and arent compatible with the :is directive
 			return {
 				prop: prop,
-				componentName: prop.type+"View"
+				componentName: prop.type + "View"
 			};
 		});
 

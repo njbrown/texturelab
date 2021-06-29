@@ -9,15 +9,15 @@ module.exports = {
 			chainWebpackRendererProcess: config => {
 				config.plugins.delete("uglify");
 			},
-			builderOptions:{
-				win:{
-					icon:"build/icons/win/icon.ico"
+			builderOptions: {
+				win: {
+					icon: "build/icons/win/icon.ico"
 				},
-				linux:{
-					icon:"build/icons/png/512x512.png"
+				linux: {
+					icon: "build/icons/png/512x512.png"
 				},
-				mac:{
-					icon:"build/icons/mac/icon.icns"
+				mac: {
+					icon: "build/icons/mac/icon.icns"
 				}
 			}
 		}

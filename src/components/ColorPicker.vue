@@ -95,9 +95,9 @@ export default class ColorPicker extends Vue {
 		//this.updateColors(color);
 		this.colorValue = color;
 		this.colors = {
-			hex:color,
-			a:1
-		}
+			hex: color,
+			a: 1
+		};
 		// console.log("SET COLOR" + this.colorValue);
 	}
 

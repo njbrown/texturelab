@@ -133,8 +133,7 @@ export class DragZoom {
 		canvas.addEventListener("contextmenu", function(evt: MouseEvent) {
 			evt.preventDefault();
 		});
-		canvas.addEventListener("resize", function(evt: MouseEvent) {
-		});
+		canvas.addEventListener("resize", function(evt: MouseEvent) {});
 
 		this.drawMode = DrawMode.Single;
 
