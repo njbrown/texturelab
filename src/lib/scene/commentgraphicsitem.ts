@@ -10,6 +10,7 @@ import { Color } from "../designer/color";
 import {
 	IPropertyHolder,
 	Property,
+	PropertyGroup,
 	StringProperty
 } from "../designer/properties";
 import { MoveItemsAction } from "../actions/moveItemsaction";
@@ -47,6 +48,7 @@ export class CommentGraphicsItem extends GraphicsItem
 
 		this.setText("comment");
 	}
+	propertyGroups: PropertyGroup[];
 
 	properties: Property[] = [];
 	setProperty(name: string, value: any) {

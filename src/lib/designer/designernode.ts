@@ -38,7 +38,7 @@ export class DesignerNode implements IPropertyHolder {
 
 	inputs: string[] = [];
 	properties: Property[] = [];
-	propGroups: PropertyGroup[] = [];
+	propertyGroups: PropertyGroup[] = [];
 
 	// tells scene to update the texture next frame
 	needsUpdate = true;
@@ -158,7 +158,7 @@ export class DesignerNode implements IPropertyHolder {
 	createGroup(name: string): PropertyGroup {
 		const group = new PropertyGroup();
 		group.name = name;
-		this.propGroups.push(group);
+		this.propertyGroups.push(group);
 
 		return group;
 	}

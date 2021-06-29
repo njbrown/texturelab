@@ -13,7 +13,8 @@ import {
 	IPropertyHolder,
 	Property,
 	StringProperty,
-	BoolProperty
+	BoolProperty,
+	PropertyGroup
 } from "../designer/properties";
 import { MoveItemsAction } from "../actions/moveItemsaction";
 import { UndoStack } from "../undostack";
@@ -101,6 +102,7 @@ export class FrameGraphicsItem extends GraphicsItem implements IPropertyHolder {
 		this.properties.push(this.showTitleProp);
 		this.properties.push(this.descrProp);
 	}
+	propertyGroups: PropertyGroup[];
 	properties: Property[] = [];
 	setProperty(name: string, value: any) {
 		if (name == "title") {

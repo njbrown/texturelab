@@ -9,7 +9,7 @@
 			<texture-channel :node="getNode" :editor="editor" />
 			<random-seed :node="getNode" />
 		</accordion>
-		<accordion header="Properties">
+		<!-- <accordion header="Properties">
 			<component
 				v-for="(p, index) in this.properties"
 				:is="p.componentName"
@@ -20,6 +20,35 @@
 				@property-change-completed="propertyChangeCompleted"
 				:key="index"
 			></component>
+		</accordion> -->
+
+		<accordion header="Properties">
+			<component
+				v-for="(p, index) in this.singleProperties"
+				:is="p.componentName"
+				:prop="p.prop"
+				:propHolder="node"
+				:editor="editor"
+				@propertyChanged="propertyChanged"
+				@property-change-completed="propertyChangeCompleted"
+				:key="index"
+			></component>
+			<accordion
+				v-for="(group, groupIndex) in this.groups"
+				:header="group.title"
+				:key="'group' + groupIndex"
+			>
+				<component
+					v-for="(p, index) in group.props"
+					:is="p.componentName"
+					:prop="p.prop"
+					:propHolder="node"
+					:editor="editor"
+					@propertyChanged="propertyChanged"
+					@property-change-completed="propertyChangeCompleted"
+					:key="'prop' + /* (this.groups.length * groupIndex) +*/ index"
+				></component>
+			</accordion>
 		</accordion>
 	</form>
 </template>
@@ -35,7 +64,11 @@ import RandomSeedPropertyView from "@/components/properties/RandomSeedProp.vue";
 import Accordion from "@/components/Accordion.vue";
 import { Editor } from "@/lib/editor";
 import { DesignerNode } from "@/lib/designer/designernode";
-import { Property, IPropertyHolder } from "@/lib/designer/properties";
+import {
+	Property,
+	IPropertyHolder,
+	PropertyGroup
+} from "@/lib/designer/properties";
 import GradientPropertyView from "@/components/properties/GradientProp.vue";
 import StringPropertyView from "@/components/properties/StringProp.vue";
 import ImagePropertyView from "@/components/properties/ImageProp.vue";
@@ -45,6 +78,12 @@ import {
 } from "../components/properties/ipropertyui";
 import { UndoStack } from "@/lib/undostack";
 import { PropertyChangeAction } from "@/lib/actions/propertychangeaction";
+
+class PropGroup {
+	title: string;
+	props: PropHolder[];
+	collapsed: boolean;
+}
 
 class PropHolder {
 	prop: Property;
@@ -115,6 +154,45 @@ export default class NodePropertiesView extends Vue implements IProperyUi {
 
 		//console.log(props);
 		return props;
+	}
+
+	get singleProperties(): PropHolder[] {
+		const singles = this.node.properties.filter(prop => {
+			return prop.group == null;
+		});
+
+		let props: PropHolder[] = singles.map(prop => {
+			// note: gotta transform nodes because some names like "image" are
+			// built-in and arent compatible with the :is directive
+			return {
+				prop: prop,
+				componentName: prop.type + "View"
+			};
+		});
+
+		//console.log(props);
+		return props;
+	}
+
+	get groups(): PropGroup[] {
+		if (!this.node.propertyGroups) return [];
+
+		return this.node.propertyGroups.map((group: PropertyGroup) => {
+			const props: PropHolder[] = group.properties.map(prop => {
+				// note: gotta transform nodes because some names like "image" are
+				// built-in and arent compatible with the :is directive
+				return {
+					prop: prop,
+					componentName: prop.type + "View"
+				};
+			});
+
+			return {
+				title: group.name,
+				props: props,
+				collapsed: false
+			};
+		});
 	}
 
 	get isInstanceNode() {

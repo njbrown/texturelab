@@ -45,6 +45,7 @@ export class Property {
 
 export interface IPropertyHolder {
 	properties: Property[];
+	propertyGroups: PropertyGroup[];
 	setProperty(name: string, value: any);
 }
 
