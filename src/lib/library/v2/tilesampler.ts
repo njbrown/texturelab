@@ -10,32 +10,58 @@ export class TileSampler extends GpuDesignerNode {
 		this.addInput("intensity");
 		this.addInput("vector");
 
+		this.addEnumProperty("blendType", "Blend Type", ["Max", "Add"]);
+
 		this.addIntProperty("rows", "Row Count", 8, 0, 15, 1);
 		this.addIntProperty("columns", "Column Count", 8, 0, 15, 1);
 
-		this.addFloatProperty("offset", "Offset", 0.5, 0, 1, 0.1);
-		this.addEnumProperty("offset_axis", "Offset Axis", ["X Axis", "Y Axis"]);
-		this.addIntProperty("offset_interval", "Offset Interval", 1, 1, 5, 1);
-
-		this.addFloatProperty("rot", "Rotation", 0, 0, 360, 0.1);
-		this.addFloatProperty("rotRand", "Random Rotation", 0, 0, 1.0, 0.01);
-		this.addFloatProperty("posRand", "Random Position", 0, 0, 1.0, 0.01);
-		this.addFloatProperty("intensityRand", "Random Intensity", 0, 0, 1.0, 0.01);
-
-		this.addEnumProperty("sizeMode", "Size Mode", ["Normal", "Keep Aspect"]);
-		this.addFloatProperty("scale", "Scale", 1, 0, 4, 0.1);
-		this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.1);
-
-		this.addFloatProperty(
-			"vector_influence",
-			"Vector Rotation Influence",
-			1,
-			0,
-			1,
-			0.1
+		const posProps = this.createGroup("Position");
+		posProps.add(this.addFloatProperty("offset", "Offset", 0.5, 0, 1, 0.1));
+		posProps.add(
+			this.addEnumProperty("offset_axis", "Offset Axis", ["X Axis", "Y Axis"])
+		);
+		posProps.add(
+			this.addIntProperty("offset_interval", "Offset Interval", 1, 1, 5, 1)
 		);
 
-		this.addEnumProperty("blendType", "Blend Type", ["Max", "Add"]);
+		const rotProps = this.createGroup("Rotation");
+		rotProps.add(this.addFloatProperty("rot", "Rotation", 0, 0, 360, 0.1));
+		rotProps.add(
+			this.addFloatProperty("rotRand", "Random Rotation", 0, 0, 1.0, 0.01)
+		);
+		rotProps.add(
+			this.addFloatProperty("posRand", "Random Position", 0, 0, 1.0, 0.01)
+		);
+		rotProps.add(
+			this.addFloatProperty(
+				"intensityRand",
+				"Random Intensity",
+				0,
+				0,
+				1.0,
+				0.01
+			)
+		);
+
+		rotProps.add(
+			this.addFloatProperty(
+				"vector_influence",
+				"Vector Rotation Influence",
+				1,
+				0,
+				1,
+				0.1
+			)
+		);
+
+		const scaleProps = this.createGroup("Scale");
+		scaleProps.add(
+			this.addEnumProperty("sizeMode", "Size Mode", ["Normal", "Keep Aspect"])
+		);
+		scaleProps.add(this.addFloatProperty("scale", "Scale", 1, 0, 4, 0.1));
+		scaleProps.add(
+			this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.1)
+		);
 
 		const source = `
 
