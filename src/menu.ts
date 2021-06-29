@@ -159,7 +159,6 @@ export function setupMenu() {
 						focusedWindow.webContents.send(MenuCommands.StylizedGrass);
 					}
 				},
-				,
 				{
 					label: "StoneGrass",
 					click: (item, focusedWindow) => {
