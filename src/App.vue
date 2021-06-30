@@ -273,7 +273,7 @@ import { unobserve } from "./unobserve";
 import { IApp } from "./iapp";
 import { SetGlobalRandomSeedAction } from "./lib/actions/setglobalrandomseedaction";
 const electron = require("electron");
-const remote = electron.remote;
+const remote = require("@electron/remote");
 const { dialog, app, BrowserWindow, Menu } = remote;
 
 declare var __static: any;

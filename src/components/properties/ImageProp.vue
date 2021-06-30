@@ -32,7 +32,7 @@ import { Image } from "@/lib/designer/image";
 import * as fs from "fs";
 
 const electron = require("electron");
-const remote = electron.remote;
+const remote = require("@electron/remote");
 const { dialog, app, BrowserWindow, Menu } = remote;
 
 @Component

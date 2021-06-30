@@ -82,9 +82,9 @@ import { View3D } from "@/lib/view3d";
 import { DesignerNode } from "@/lib/designer/designernode";
 import { unobserve } from "../unobserve";
 const electron = require("electron");
-const remote = electron.remote;
+const remote = require("@electron/remote");
 import path from "path";
-const { dialog, app, BrowserWindow, Menu } = require("electron").remote;
+const { dialog, app, BrowserWindow, Menu } = remote;
 
 export default {
 	// props: {

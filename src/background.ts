@@ -4,6 +4,9 @@ import { app, protocol, BrowserWindow, ipcMain } from "electron";
 import { createProtocol } from "vue-cli-plugin-electron-builder/lib";
 import installExtension, { VUEJS_DEVTOOLS } from "electron-devtools-installer";
 import { setupMenu } from "./menu";
+
+require("@electron/remote/main").initialize();
+
 const isDevelopment = process.env.NODE_ENV !== "production";
 
 app.commandLine.appendSwitch("--disable-seccomp-filter-sandbox");

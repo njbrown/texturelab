@@ -25,7 +25,7 @@
 import { DragZoom, DrawMode } from "./preview2d/previewcanvas2d";
 import { unobserve } from "../unobserve";
 const electron = require("electron");
-const remote = electron.remote;
+const remote = require("@electron/remote");
 const { dialog, app, BrowserWindow, Menu } = remote;
 import fs from "fs";
 var nativeImage = electron.nativeImage;
