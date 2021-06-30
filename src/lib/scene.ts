@@ -279,7 +279,7 @@ export class NodeScene {
 		this.canvas.removeEventListener("mousedown", this._mouseDown);
 		this.canvas.removeEventListener("mouseup", this._mouseUp);
 		window.removeEventListener("click", this._mouseClick);
-		window.removeEventListener("keydown", this._keyDown);
+		window.removeEventListener("keydown", this._keyDown, true);
 		this.canvas.removeEventListener("contextmenu", this._contextMenu);
 		document.removeEventListener("copy", this._copyEvent);
 		document.removeEventListener("paste", this._pasteEvent);
