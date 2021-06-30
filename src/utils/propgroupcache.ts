@@ -11,6 +11,8 @@ export class PropGroupCache {
 		Map<string, boolean>
 	>();
 
+	static scrollLevels: Map<string, number> = new Map<string, number>();
+
 	static getCollapseState(
 		nodeType: string,
 		groupName: string,
@@ -41,5 +43,16 @@ export class PropGroupCache {
 		nodeStates.set(groupName, val);
 
 		states.set(nodeType, nodeStates);
+	}
+
+	static setScrollLevel(nodeName: string, level: number) {
+		PropGroupCache.scrollLevels.set(nodeName, level);
+	}
+
+	static getScrollLevel(nodeName: string, defaultLevel: number): number {
+		if (PropGroupCache.scrollLevels.has(nodeName))
+			return PropGroupCache.scrollLevels.get(nodeName);
+
+		return defaultLevel;
 	}
 }

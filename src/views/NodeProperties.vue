@@ -4,6 +4,7 @@
 		@submit.prevent="cancelSubmit"
 		:key="node.id"
 		v-if="node != null"
+		ref="form"
 	>
 		<accordion header="Base Properties" v-if="isInstanceNode">
 			<texture-channel :node="getNode" :editor="editor" />
@@ -58,7 +59,7 @@
 </template>
 
 <script lang="ts">
-import { Vue, Model, Prop, Component } from "vue-property-decorator";
+import { Vue, Model, Prop, Component, Watch } from "vue-property-decorator";
 import FloatPropertyView from "@/components/properties/FloatProp.vue";
 import BoolPropertyView from "@/components/properties/BoolProp.vue";
 import EnumPropertyView from "@/components/properties/EnumProp.vue";
@@ -117,6 +118,38 @@ export default class NodePropertiesView extends Vue implements IProperyUi {
 
 	@Prop()
 	editor: Editor;
+
+	mounted() {
+		this.setupScrollPos();
+	}
+
+	@Watch("node")
+	setupScrollPos() {
+		console.log("watched node changed!");
+
+		this.$nextTick(() => {
+			const container = (this.$refs.form as Element).parentNode as Element;
+			container.addEventListener("scroll", this.handleScroll);
+
+			if (this.node instanceof DesignerNode) {
+				const level = PropGroupCache.getScrollLevel(
+					(this.node as DesignerNode).typeName,
+					0
+				);
+				console.log(PropGroupCache.scrollLevels);
+				console.log("node changed - " + level);
+				container.scrollTo(0, level);
+				//container.scrollTop = level;
+			}
+			// container.scrollTo(0, 100);
+		});
+	}
+
+	beforeUpdate() {
+		console.log("before update");
+		const container = (this.$refs.form as Element).parentNode as Element;
+		container.removeEventListener("scroll", this.handleScroll);
+	}
 
 	propertyChanged(propName: string) {
 		// if (this.editor.onnodepropertychanged)
@@ -225,6 +258,32 @@ export default class NodePropertiesView extends Vue implements IProperyUi {
 
 	get getNode(): DesignerNode {
 		return this.node as DesignerNode;
+	}
+
+	handleScroll(evt) {
+		// console.log(evt);
+		// console.log(evt.target.scrollTop);
+		if (this.node instanceof DesignerNode) {
+			console.log(
+				"scroll top: " +
+					(this.node as DesignerNode).typeName +
+					" - " +
+					evt.target.scrollTop
+			);
+			PropGroupCache.setScrollLevel(
+				(this.node as DesignerNode).typeName,
+				evt.target.scrollTop
+			);
+			console.log(
+				"scroll top (read back): " +
+					(this.node as DesignerNode).typeName +
+					" - " +
+					PropGroupCache.getScrollLevel(
+						(this.node as DesignerNode).typeName,
+						evt.target.scrollTop
+					)
+			);
+		}
 	}
 
 	refresh() {
