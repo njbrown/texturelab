@@ -1,16 +1,12 @@
 scssdir=scss;
 cssdir=css;
 
-blue="$(tput setaf 4)"
 lblue="$(tput setaf 12)"
 yellow="$(tput setaf 3)"
 lyellow="$(tput setaf 11)"
-red="$(tput setaf 1)"
 lred="$(tput setaf 9)"
-magenta="$(tput setaf 5)"
-underline="$(tput smul)"
+purple="$(tput setaf 129)"
 bold="$(tput bold)"
-marked="$(tput smso)"
 clear="$(tput rmul)$(tput rmso)$(tput sgr0)$(tput setaf 7)"
   
 function log() {
@@ -24,7 +20,7 @@ function log() {
 }
 
 function print_help() {
-    echo "$bold${magenta}Texturelab$clear SCSS Compiler Script";
+    echo "$bold${purple}Texturelab$clear SCSS Compiler Script";
     echo "";
     echo "This script compiles all .scss files into .css files and can continuously watch for changes. For more information read the README.md.";
     echo "";
