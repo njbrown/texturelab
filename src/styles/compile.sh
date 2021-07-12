@@ -11,11 +11,11 @@ clear="$(tput rmul)$(tput rmso)$(tput sgr0)$(tput setaf 7)"
   
 function log() {
     if [[ $1 == "inf" ]]; then
-        echo -e "${lblue}Info: $2" $clear
+        echo -e $lblue  "Info: "          "$2" $clear
     elif [[ $1 == "wrn" ]]; then
-        echo -e $yellow"Warn:" $lyellow "$2" $clear
+        echo -e $yellow "Warn: " $lyellow "$2" $clear
     elif [[ $1 == "err" ]]; then
-        echo -e $lred"Err : " $white "$2" $clear
+        echo -e $lred   "Err : " $white   "$2" $clear
     fi
 }
 
@@ -37,7 +37,7 @@ function print_help() {
 function check_exit_code() {
     exit_code=$?
     if (( $exit_code == 127 )); then
-        log wrn "You do not have the Dart Sass commandline tools installed or they are not available in the PATH";
+        log err "You do not have the Dart Sass commandline tools installed or they are not available in the PATH";
         log inf "To install Dart Sass run:"
         log inf "   choco install sass          - windows"
         log inf "   brew install sass/sass/sass - mac/linux"
