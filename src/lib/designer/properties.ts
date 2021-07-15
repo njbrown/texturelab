@@ -17,6 +17,7 @@ export enum PropertyType {
 export class PropertyGroup {
 	name: string = "";
 	properties: Property[] = [];
+	collapsed: boolean = true;
 
 	add(prop: Property) {
 		this.properties.push(prop);
