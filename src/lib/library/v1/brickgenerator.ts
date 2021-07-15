@@ -4,20 +4,36 @@ export class BrickGeneratorNode extends GpuDesignerNode {
 	public init() {
 		this.title = "Brick Generator";
 
+		this.addFloatProperty("rows", "Rows", 6, 1, 20, 1);
+		this.addFloatProperty("columns", "Columns", 6, 1, 20, 1);
+
 		this.addFloatProperty("offset", "Offset", 0.5, 0, 1, 0.1);
 
 		// brick size
-		this.addFloatProperty("brickWidth", "Brick Width", 0.9, 0, 1, 0.01);
-		this.addFloatProperty("brickHeight", "Brick Height", 0.9, 0, 1, 0.01);
+		const sizeProps = this.createGroup("Size");
+		sizeProps.collapsed = false;
+		sizeProps.add(
+			this.addFloatProperty("brickWidth", "Brick Width", 0.9, 0, 1, 0.01)
+		);
+		sizeProps.add(
+			this.addFloatProperty("brickHeight", "Brick Height", 0.9, 0, 1, 0.01)
+		);
 
 		// height
-		this.addFloatProperty("heightMin", "Height Min", 0.0, 0, 1, 0.05);
-		this.addFloatProperty("heightMax", "Height Max", 1.0, 0, 1, 0.05);
-		this.addFloatProperty("heightBalance", "Height Balance", 1.0, 0, 1, 0.05);
-		this.addFloatProperty("heightVariance", "Height Variance", 0, 0, 1, 0.05);
-
-		this.addFloatProperty("rows", "Rows", 6, 1, 20, 1);
-		this.addFloatProperty("columns", "Columns", 6, 1, 20, 1);
+		const heightProps = this.createGroup("Height");
+		heightProps.collapsed = false;
+		heightProps.add(
+			this.addFloatProperty("heightMin", "Height Min", 0.0, 0, 1, 0.05)
+		);
+		heightProps.add(
+			this.addFloatProperty("heightMax", "Height Max", 1.0, 0, 1, 0.05)
+		);
+		heightProps.add(
+			this.addFloatProperty("heightBalance", "Height Balance", 1.0, 0, 1, 0.05)
+		);
+		heightProps.add(
+			this.addFloatProperty("heightVariance", "Height Variance", 0, 0, 1, 0.05)
+		);
 
 		const source = `
         //vec2 brickSize = vec2(prop_brickWidth, prop_brickHeight);
