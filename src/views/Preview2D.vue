@@ -86,43 +86,37 @@ export default {
 			ctx.drawImage(this.image, 0, 0, canvas.width, canvas.height);
 		},
 		saveTexture() {
-			// todo: save image as png
-			//console.log(this.hasImage);
 			if (!this.hasImage) return;
 
-			dialog.showSaveDialog(
-				remote.getCurrentWindow(),
-				{
-					filters: [
-						{
-							name: "PNG",
-							extensions: ["png"]
-						}
-					],
-					defaultPath: "image"
-				},
-				path => {
-					if (!path) return;
+			let path = dialog.showSaveDialogSync(remote.getCurrentWindow(), {
+				filters: [
+					{
+						name: "PNG",
+						extensions: ["png"]
+					}
+				],
+				defaultPath: "image"
+			});
 
-					let img = this.dragZoom.image;
-					let canvas = document.createElement("canvas");
-					canvas.width = img.width;
-					canvas.height = img.height;
-					let ctx = canvas.getContext("2d");
-					ctx.drawImage(img, 0, 0);
+			if (!path) return;
 
-					// Get the DataUrl from the Canvas
-					// https://github.com/mattdesl/electron-canvas-to-buffer/blob/master/index.js
-					const url = canvas.toDataURL("image/png", 1);
-					const nativeImage = electron.nativeImage.createFromDataURL(url);
-					const buffer = nativeImage.toPNG();
+			let img = this.dragZoom.image;
+			let canvas = document.createElement("canvas");
+			canvas.width = img.width;
+			canvas.height = img.height;
+			let ctx = canvas.getContext("2d");
+			ctx.drawImage(img, 0, 0);
 
-					fs.writeFile(path, buffer, function(err) {
-						//console.log(err);
-						if (err) alert("Error saving image: " + err);
-					});
-				}
-			);
+			// Get the DataUrl from the Canvas
+			// https://github.com/mattdesl/electron-canvas-to-buffer/blob/master/index.js
+			const url = canvas.toDataURL("image/png", 1);
+			const nativeImage = electron.nativeImage.createFromDataURL(url);
+			const buffer = nativeImage.toPNG();
+
+			fs.writeFile(path, buffer, function(err) {
+				//console.log(err);
+				if (err) alert("Error saving image: " + err);
+			});
 		},
 		toggleNineTexures() {
 			// todo: display nine textures instead of one to show tiling
