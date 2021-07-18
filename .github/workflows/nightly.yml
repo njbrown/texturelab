@@ -40,6 +40,8 @@ jobs:
         run: |
           yarn install
           yarn electron:build --publish=never
+        env:
+          VUE_APP_SENTRY_DNS: ${{ secrets.SENTRY_DNS }}
 
       - name: Zip and upload linux build to S3
         uses: aws-actions/configure-aws-credentials@v1
