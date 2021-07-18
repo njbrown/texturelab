@@ -18,6 +18,7 @@
 	"main": "background.js",
 	"dependencies": {
 		"@electron/remote": "^1.2.0",
+		"@sentry/electron": "^2.5.1",
 		"adm-zip": "^0.4.16",
 		"boxicons": "^2.0.5",
 		"core-js": "^2.6.5",
