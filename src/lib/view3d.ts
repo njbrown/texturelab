@@ -416,6 +416,10 @@ export class View3D {
 		(this.model as THREE.Mesh).material = this.material;
 	}
 
+	setToneMappingExposure(exposure: number) {
+		this.renderer.toneMappingExposure = exposure;
+	}
+
 	loadEnv() {
 		//var path = '/images/cube/Bridge2/';
 		const basePath =

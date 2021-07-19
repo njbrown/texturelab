@@ -6,11 +6,16 @@ import "../public/css/scrollbar.css";
 import "./utils/inspectelement";
 import "boxicons/css/boxicons.css";
 require("typeface-open-sans");
+import * as Sentry from "@sentry/electron";
 
 // https://github.com/EmbeddedEnterprises/ng6-golden-layout/blob/master/README.md
 import * as $ from "jquery";
 (<any>window).$ = $;
 (<any>window).JQuery = $;
+
+if (process.env.VUE_APP_SENTRY_DNS) {
+	Sentry.init({ dsn: process.env.VUE_APP_SENTRY_DNS });
+}
 
 import App from "./App.vue";
 import router from "./router";

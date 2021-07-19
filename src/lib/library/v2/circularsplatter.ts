@@ -12,6 +12,8 @@ export class CircularSplatter extends GpuDesignerNode {
 		this.addIntProperty("count", "Count", 10, 0, 50, 1);
 		this.addIntProperty("rings", "Rings", 1, 0, 5, 1);
 
+		this.addEnumProperty("blendType", "Blend Type", ["Max", "Add"]);
+
 		this.addFloatProperty("radius", "Radius", 0.3, 0, 1.0, 0.01);
 		this.addFloatProperty("spacing", "Spacing", 1.0, 0, 2.0, 0.01);
 		this.addFloatProperty(
@@ -25,71 +27,114 @@ export class CircularSplatter extends GpuDesignerNode {
 		this.addBoolProperty("reverseSpiral", "Reverse Spiral Direction", false);
 
 		// ROTATION
-		this.addFloatProperty("rot", "Rotation", 0, 0, 360, 0.1);
-		this.addFloatProperty("rotRand", "Random Rotation", 0.0, 0.0, 1.0, 0.01);
-		this.addFloatProperty("ringRot", "Ring Rotation", 0, 0, 360, 0.1);
-		this.addFloatProperty(
-			"ringRotRand",
-			"Ring Rotation Random",
-			0.0,
-			0.0,
-			1.0,
-			0.01
+		const rotProp = this.createGroup("Rotation");
+		rotProp.collapsed = false;
+		rotProp.add(this.addFloatProperty("rot", "Rotation", 0, 0, 360, 0.1));
+		rotProp.add(
+			this.addFloatProperty("rotRand", "Random Rotation", 0.0, 0.0, 1.0, 0.01)
 		);
-		this.addFloatProperty(
-			"ringRotOffset",
-			"Ring Rotation Offset",
-			0.0,
-			0.0,
-			1.0,
-			0.01
+		rotProp.add(
+			this.addFloatProperty("ringRot", "Ring Rotation", 0, 0, 360, 0.1)
 		);
-		this.addBoolProperty("pivotCenter", "Pivot Orientation From Center", true);
+		rotProp.add(
+			this.addFloatProperty(
+				"ringRotRand",
+				"Ring Rotation Random",
+				0.0,
+				0.0,
+				1.0,
+				0.01
+			)
+		);
+		rotProp.add(
+			this.addFloatProperty(
+				"ringRotOffset",
+				"Ring Rotation Offset",
+				0.0,
+				0.0,
+				1.0,
+				0.01
+			)
+		);
+		rotProp.add(
+			this.addBoolProperty("pivotCenter", "Pivot Orientation From Center", true)
+		);
 
 		// INTENSITY
-		this.addFloatProperty("intensityRand", "Random Intensity", 0, 0, 1.0, 0.01);
-		this.addFloatProperty(
-			"intensityByRing",
-			"Intensity By Ring",
-			0,
-			0,
-			1.0,
-			0.01
+		const intensityProp = this.createGroup("Intensity");
+		intensityProp.collapsed = false;
+		intensityProp.add(
+			this.addFloatProperty(
+				"intensityRand",
+				"Random Intensity",
+				0,
+				0,
+				1.0,
+				0.01
+			)
 		);
-		this.addBoolProperty(
-			"invertIntensityByRing",
-			"Invert Intensity By Ring",
-			true
+		intensityProp.add(
+			this.addFloatProperty(
+				"intensityByRing",
+				"Intensity By Ring",
+				0,
+				0,
+				1.0,
+				0.01
+			)
 		);
-		this.addFloatProperty(
-			"intensityByAngle",
-			"Intensity By Angle",
-			0,
-			0,
-			1.0,
-			0.01
+		intensityProp.add(
+			this.addBoolProperty(
+				"invertIntensityByRing",
+				"Invert Intensity By Ring",
+				true
+			)
 		);
-		this.addBoolProperty(
-			"invertIntensityByAngle",
-			"Invert Intensity By Angle",
-			true
+		intensityProp.add(
+			this.addFloatProperty(
+				"intensityByAngle",
+				"Intensity By Angle",
+				0,
+				0,
+				1.0,
+				0.01
+			)
+		);
+		intensityProp.add(
+			this.addBoolProperty(
+				"invertIntensityByAngle",
+				"Invert Intensity By Angle",
+				true
+			)
 		);
 
 		// SCALE
-		this.addFloatProperty("inputSize", "Input Size", 0.1, 0, 1, 0.01);
-		this.addFloatProperty("scale", "Scale", 1, 0, 1, 0.01);
-		this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.01);
-
-		this.addFloatProperty("scaleByRing", "Scale By Ring", 0, 0, 1.0, 0.01);
-		this.addBoolProperty("invertScaleByRing", "Scale Intensity By Ring", true);
-		this.addFloatProperty("scaleByAngle", "Scale By Angle", 0, 0, 1.0, 0.01);
-		this.addBoolProperty(
-			"invertScaleByAngle",
-			"Scale Intensity By Angle",
-			true
+		const scaleProp = this.createGroup("Scale");
+		scaleProp.collapsed = false;
+		scaleProp.add(
+			this.addFloatProperty("inputSize", "Input Size", 0.1, 0, 1, 0.01)
+		);
+		scaleProp.add(this.addFloatProperty("scale", "Scale", 1, 0, 1, 0.01));
+		scaleProp.add(
+			this.addFloatProperty("scaleRand", "Scale random", 0, 0, 1, 0.01)
 		);
 
-		this.addEnumProperty("blendType", "Blend Type", ["Max", "Add"]);
+		scaleProp.add(
+			this.addFloatProperty("scaleByRing", "Scale By Ring", 0, 0, 1.0, 0.01)
+		);
+		scaleProp.add(
+			this.addBoolProperty("invertScaleByRing", "Scale Intensity By Ring", true)
+		);
+		scaleProp.add(
+			this.addFloatProperty("scaleByAngle", "Scale By Angle", 0, 0, 1.0, 0.01)
+		);
+		scaleProp.add(
+			this.addBoolProperty(
+				"invertScaleByAngle",
+				"Scale Intensity By Angle",
+				true
+			)
+		);
 
 		const source = `
         mat3 transMat(vec2 t)

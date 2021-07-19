@@ -110,7 +110,64 @@ export default {
 					name: "Christmas Studio",
 					thumbnail: "assets/env/christmas/christmas_studio_thumbnail.png",
 					path: "assets/env/christmas/christmas_photo_studio_01_1k.hdr"
+				},
+				{
+					id: "cave_wall",
+					name: "Cave Wall",
+					thumbnail: "assets/env/cave_wall/cave_wall.jpg",
+					path: "assets/env/cave_wall/cave_wall_1k.hdr"
+				},
+				{
+					id: "dresden_station_night",
+					name: "Dresden Station",
+					thumbnail:
+						"assets/env/dresden_station_night/dresden_station_night.jpg",
+					path: "assets/env/dresden_station_night/dresden_station_night_1k.hdr"
+				},
+				{
+					id: "hansaplatz",
+					name: "Hansaplatz",
+					thumbnail: "assets/env/hansaplatz/hansaplatz.jpg",
+					path: "assets/env/hansaplatz/hansaplatz_1k.hdr"
+				},
+				{
+					id: "kloppenheim_05",
+					name: "Kloppenheim",
+					thumbnail: "assets/env/kloppenheim_05/kloppenheim_05.jpg",
+					path: "assets/env/kloppenheim_05/kloppenheim_05_1k.hdr"
+				},
+				{
+					id: "modern_buildings_night",
+					name: "Modern Buildings",
+					thumbnail:
+						"assets/env/modern_buildings_night/modern_buildings_night.jpg",
+					path:
+						"assets/env/modern_buildings_night/modern_buildings_night_1k.hdr"
+				},
+				{
+					id: "snowy_park_01",
+					name: "Snowy Park",
+					thumbnail: "assets/env/snowy_park_01/snowy_park_01.jpg",
+					path: "assets/env/snowy_park_01/snowy_park_01_1k.hdr"
+				},
+				{
+					id: "spruit_sunrise",
+					name: "Spruit Sunrise",
+					thumbnail: "assets/env/spruit_sunrise/spruit_sunrise.jpg",
+					path: "assets/env/spruit_sunrise/spruit_sunrise_1k.hdr"
+				},
+				{
+					id: "studio_small_07",
+					name: "Small Studio",
+					thumbnail: "assets/env/studio_small_07/studio_small_07.jpg",
+					path: "assets/env/studio_small_07/studio_small_07_1k.hdr"
 				}
+				// {
+				// 	id: "cave_wall",
+				// 	name: "Cave Wall",
+				// 	thumbnail: "assets/env//.jpg",
+				// 	path: "assets/env//_1k.hdr"
+				// }
 			]
 		};
 	},

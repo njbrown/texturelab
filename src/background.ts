@@ -4,6 +4,11 @@ import { app, protocol, BrowserWindow, ipcMain } from "electron";
 import { createProtocol } from "vue-cli-plugin-electron-builder/lib";
 import installExtension, { VUEJS_DEVTOOLS } from "electron-devtools-installer";
 import { setupMenu } from "./menu";
+import * as Sentry from "@sentry/electron";
+
+if (process.env.VUE_APP_SENTRY_DNS) {
+	Sentry.init({ dsn: process.env.VUE_APP_SENTRY_DNS });
+}
 
 require("@electron/remote/main").initialize();
 
