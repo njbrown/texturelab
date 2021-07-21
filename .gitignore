@@ -20,6 +20,10 @@ yarn-error.log*
 *.sln
 *.sw?
 
-#Electron-builder output
+# SCSS compiler output
+src/styles/css/*.css
+src/styles/css/*.map
+
+# Electron-builder output
 /dist_electron
 /build/icons
