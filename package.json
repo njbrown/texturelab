@@ -38,6 +38,7 @@
 		"vuex": "^3.0.1"
 	},
 	"devDependencies": {
+		"@sentry/webpack-plugin": "^1.16.0",
 		"@types/jest": "^23.1.4",
 		"@types/jquery": "^3.3.30",
 		"@types/three": "^0.103.2",
