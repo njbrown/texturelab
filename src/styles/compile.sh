@@ -1,5 +1,7 @@
-scssdir=scss;
-cssdir=css;
+scriptdir=$(dirname "$BASH_SOURCE");
+
+scssdir=$scriptdir/scss;
+cssdir=$scriptdir/css;
 
 lblue="$(tput setaf 12)"
 yellow="$(tput setaf 3)"
@@ -8,7 +10,7 @@ lred="$(tput setaf 9)"
 purple="$(tput setaf 129)"
 bold="$(tput bold)"
 clear="$(tput rmul)$(tput rmso)$(tput sgr0)$(tput setaf 7)"
-  
+
 function log() {
     if [[ $1 == "inf" ]]; then
         echo -e $lblue  "Info: "          "$2" $clear
@@ -55,11 +57,11 @@ else
         print_help;
     elif [ $1 == "-c" ] || [ $1 == "--compile" ]; then
         log inf "compiling scss . . .";
-        sass $scssdir:$cssdir --color --no-source-map;
+        sass $scssdir:$cssdir --color;
         check_exit_code;
     elif [ $1 == "-w" ] || [ $1 == "--watch" ]; then
         log inf "watching scss . . ."
-        sass $scssdir:$cssdir --color --no-source-map --watch;
+        sass $scssdir:$cssdir --color --watch;
     else
         log err "$1 is not an option"
     fi
