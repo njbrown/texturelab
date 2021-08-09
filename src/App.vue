@@ -275,6 +275,7 @@ import { SetGlobalRandomSeedAction } from "./lib/actions/setglobalrandomseedacti
 const electron = require("electron");
 const remote = require("@electron/remote");
 const { dialog, app, BrowserWindow, Menu } = remote;
+import pkg from "../package.json";
 
 declare var __static: any;
 
@@ -312,7 +313,7 @@ export default class App extends Vue implements IApp {
 	mouseX: number = 0;
 	mouseY: number = 0;
 
-	version: string = "0.3.0";
+	version: string = pkg.version;
 
 	constructor() {
 		super();
@@ -691,6 +692,7 @@ export default class App extends Vue implements IApp {
 
 		if (!UndoStack.current.isClean()) {
 			const action = dialog.showMessageBoxSync({
+				title: "Save Changes?",
 				message: "You have unsaved changes. Do you want to save them?",
 				buttons: ["Yes", "No", "Cancel"]
 			});
@@ -752,6 +754,7 @@ export default class App extends Vue implements IApp {
 
 			if (!UndoStack.current.isClean()) {
 				const action = dialog.showMessageBoxSync(null, {
+					title: "Save Changes?",
 					message: "You have unsaved changes. Do you want to save them?",
 					buttons: ["Yes", "No", "Cancel"]
 				});
@@ -797,6 +800,7 @@ export default class App extends Vue implements IApp {
 
 		if (!UndoStack.current.isClean()) {
 			const action = dialog.showMessageBoxSync(null, {
+				title: "Save Changes?",
 				message: "You have unsaved changes. Do you want to save them?",
 				buttons: ["Yes", "No", "Cancel"]
 			});
@@ -898,6 +902,7 @@ export default class App extends Vue implements IApp {
 
 		if (!UndoStack.current.isClean()) {
 			const action = dialog.showMessageBoxSync(null, {
+				title: "Save Changes?",
 				message: "You have unsaved changes. Do you want to save them?",
 				buttons: ["Yes", "No", "Cancel"]
 			});
@@ -1045,6 +1050,7 @@ export default class App extends Vue implements IApp {
 
 		if (!UndoStack.current.isClean()) {
 			const action = dialog.showMessageBoxSync(null, {
+				title: "Save Changes?",
 				message: "You have unsaved changes. Do you want to save them?",
 				buttons: ["Yes", "No", "Cancel"]
 			});

@@ -468,7 +468,10 @@ export class NodeScene {
 				for (let conn of socket.conns) {
 					let nodeB = conn.socketB.node;
 
-					if (checked.has(nodeB)) {
+					// if (checked.has(nodeB)) {
+					// if left node is hit, this means making
+					// the connection will cause a cycle
+					if (nodeB === leftNode) {
 						return false;
 					} else {
 						expanding.push(nodeB);

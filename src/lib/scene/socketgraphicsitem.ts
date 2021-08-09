@@ -211,17 +211,19 @@ export class SocketGraphicsItem extends GraphicsItem {
 
 			if (closeSock) {
 				if (
-					this.socketType == SocketType.Out &&
+					this.hitSocket.socketType == SocketType.Out &&
 					closeSock.socketType == SocketType.In
 				)
 					remainsDAG =
-						this.scene.remainsDAG(this.node, closeSock.node) || remainsDAG;
+						this.scene.remainsDAG(this.hitSocket.node, closeSock.node) ||
+						remainsDAG;
 				else if (
-					this.socketType == SocketType.In &&
+					this.hitSocket.socketType == SocketType.In &&
 					closeSock.socketType == SocketType.Out
 				)
 					remainsDAG =
-						this.scene.remainsDAG(closeSock.node, this.node) || remainsDAG;
+						this.scene.remainsDAG(closeSock.node, this.hitSocket.node) ||
+						remainsDAG;
 
 				if (!remainsDAG) {
 					this.hit = false;

@@ -19,6 +19,9 @@ export class Bevel extends DesignerNode {
 
 	distanceProp: FloatProperty;
 
+	width: number;
+	height: number;
+
 	public init() {
 		this.title = "Bevel";
 
@@ -33,8 +36,17 @@ export class Bevel extends DesignerNode {
 			0.01
 		);
 
+		this.initArrays();
+
+		// create framebuffer for reading pixels from input texture
+		this.readFbo = this.gl.createFramebuffer();
+	}
+
+	private initArrays() {
 		const width = this.designer.width;
 		const height = this.designer.height;
+		this.width = width;
+		this.height = height;
 
 		let size = Math.max(width, height);
 
@@ -50,9 +62,6 @@ export class Bevel extends DesignerNode {
 		this.gridInner = new Float64Array(gridSize);
 		this.resultPixels = new Float32Array(width * height * 4);
 		this.readPixels = new Uint16Array(width * height * 4);
-
-		// create framebuffer for reading pixels from input texture
-		this.readFbo = this.gl.createFramebuffer();
 	}
 
 	public render(context: NodeRenderContext) {
@@ -61,6 +70,16 @@ export class Bevel extends DesignerNode {
 		if (inputs.length == 0) return;
 
 		let inputTexture = inputs[0].node.tex;
+
+		if (
+			this.designer.width != this.width ||
+			this.designer.height != this.height
+		) {
+			// this.width = this.designer.width;
+			// this.height = this.designer.height;
+
+			this.initArrays();
+		}
 
 		const width = this.designer.width;
 		const height = this.designer.height;

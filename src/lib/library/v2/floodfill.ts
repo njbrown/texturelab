@@ -14,6 +14,10 @@ export class FloodFill extends DesignerNode {
 	readFbo: WebGLFramebuffer;
 	gen: FloodFillGenerator;
 
+	// stores the size to detect resolution change
+	width: number;
+	height: number;
+
 	public init() {
 		this.title = "Flood Fill";
 
@@ -21,6 +25,8 @@ export class FloodFill extends DesignerNode {
 
 		const width = this.designer.width;
 		const height = this.designer.height;
+		this.width = width;
+		this.height = height;
 
 		this.pixels = new Uint16Array(width * height * 4);
 
@@ -37,6 +43,19 @@ export class FloodFill extends DesignerNode {
 		if (inputs.length == 0) return;
 
 		let inputTexture = inputs[0].node.tex;
+
+		if (
+			this.designer.width != this.width ||
+			this.designer.height != this.height
+		) {
+			this.width = this.designer.width;
+			this.height = this.designer.height;
+
+			this.pixels = new Uint16Array(this.width * this.height * 4);
+
+			this.gen = new FloodFillGenerator();
+			this.gen.init(this.width, this.height);
+		}
 
 		const width = this.designer.width;
 		const height = this.designer.height;
