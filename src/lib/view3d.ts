@@ -368,6 +368,21 @@ export class View3D {
 			mat.displacementMap.repeat.set(repeat, repeat);
 			mat.displacementMap.needsUpdate = true;
 		}
+
+		if (mat.alphaMap) {
+			mat.alphaMap.repeat.set(repeat, repeat);
+			mat.alphaMap.needsUpdate = true;
+		}
+
+		if (mat.emissiveMap) {
+			mat.emissiveMap.repeat.set(repeat, repeat);
+			mat.emissiveMap.needsUpdate = true;
+		}
+
+		if (mat.aoMap) {
+			mat.aoMap.repeat.set(repeat, repeat);
+			mat.aoMap.needsUpdate = true;
+		}
 	}
 
 	setModel(modelName: string) {
