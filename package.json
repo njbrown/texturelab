@@ -19,6 +19,7 @@
 	"dependencies": {
 		"@electron/remote": "^1.2.0",
 		"@sentry/electron": "^2.5.1",
+		"@types/sharp": "^0.29.2",
 		"adm-zip": "^0.4.16",
 		"boxicons": "^2.0.5",
 		"core-js": "^2.6.5",
@@ -26,6 +27,7 @@
 		"dedent-js": "^1.0.1",
 		"element-resize-detector": "^1.1.15",
 		"jquery": "^3.5.0",
+		"sharp": "^0.29.1",
 		"three": "^0.118.3",
 		"three-orbitcontrols-ts": "git+https://git@github.com/nicolaspanel/three-orbitcontrols-ts.git",
 		"typeface-open-sans": "^0.0.75",
