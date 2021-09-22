@@ -6,6 +6,20 @@ export class OutputNode extends GpuDesignerNode {
 		this.title = "Output";
 
 		this.addInput("image");
+		this.addStringProperty("name", "Output Name");
+		this.addEnumProperty("components", "Components", [
+			"RGBA",
+			"RGB",
+			"R",
+			"G",
+			"B",
+			"A"
+		]);
+
+		this.addEnumProperty("precision", "Precision", [
+			"8 Bits Per Component",
+			"16 Bits Per Component"
+		]);
 		this.addColorProperty("color", "Default Color", new Color());
 
 		const source = `
