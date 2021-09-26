@@ -60,6 +60,10 @@ export class DesignerNode implements IPropertyHolder {
 		return null;
 	}
 
+	getTextureData(): ArrayBuffer {
+		return null;
+	}
+
 	setRandomSeed(seed: number) {
 		this.randomSeed = seed;
 		this.requestUpdate();

@@ -20,6 +20,90 @@ export function createTexture(
 	return texture;
 }
 
+export enum TextureDataType {
+	Uint8,
+	Uint16,
+	Float16,
+	Float32
+}
+
+export function createTextureWithType(
+	gl: WebGL2RenderingContext,
+	dataType: TextureDataType,
+	width: number,
+	height: number
+): WebGLTexture {
+	const texture = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+
+	// Set the parameters so we can render any size image.
+	//gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	//gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+	// Upload the image into the texture.
+	switch (dataType) {
+		case TextureDataType.Uint8:
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, null);
+			gl.texImage2D(
+				gl.TEXTURE_2D,
+				0,
+				gl.RGBA8,
+				width,
+				height,
+				0,
+				gl.RGBA,
+				gl.UNSIGNED_BYTE,
+				null
+			);
+			break;
+		case TextureDataType.Uint16:
+			gl.texImage2D(
+				gl.TEXTURE_2D,
+				0,
+				gl.RGBA16UI,
+				width,
+				height,
+				0,
+				gl.RGBA_INTEGER,
+				gl.UNSIGNED_SHORT,
+				null
+			);
+			break;
+		case TextureDataType.Float16:
+			gl.texImage2D(
+				gl.TEXTURE_2D,
+				0,
+				gl.RGBA16F,
+				width,
+				height,
+				0,
+				gl.RGBA,
+				gl.FLOAT,
+				null
+			);
+			break;
+		case TextureDataType.Float32:
+			gl.texImage2D(
+				gl.TEXTURE_2D,
+				0,
+				gl.RGBA32F,
+				width,
+				height,
+				0,
+				gl.RGBA,
+				gl.FLOAT,
+				null
+			);
+			break;
+	}
+
+	return texture;
+}
+
 export function getShaderSource(id) {
 	const shaderScript = document.getElementById(id);
 	if (!shaderScript) {
