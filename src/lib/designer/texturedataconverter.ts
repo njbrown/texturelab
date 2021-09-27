@@ -52,8 +52,9 @@ export class TextureDataConverter {
 		);
 
 		gl.viewport(0, 0, width, height);
-
-		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		gl.disable(gl.DEPTH_TEST);
+		gl.clearColor(0, 0, 0, 1);
+		gl.clear(gl.COLOR_BUFFER_BIT);
 
 		// bind shader
 		gl.useProgram(this.shaderProgram);
@@ -117,7 +118,16 @@ export class TextureDataConverter {
 		}
 
 		if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE) {
-			gl.readPixels(0, 0, width, height, gl.RGBA, dataType, arrayBufferView);
+			gl.readPixels(
+				0,
+				0,
+				width,
+				height,
+				gl.RGBA,
+				readDataType,
+				arrayBufferView
+			);
+
 			// todo: check for errors in this operation
 			// gl.readPixels(
 			// 	0,
@@ -133,6 +143,7 @@ export class TextureDataConverter {
 		}
 
 		// cleanup
+		gl.enable(gl.DEPTH_TEST);
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
 		return arrayBuffer;
@@ -211,6 +222,8 @@ export class TextureDataConverter {
             v_texCoord = a_texCoord;
         }`;
 
+		// https://stackoverflow.com/questions/51101023/render-to-16bits-unsigned-integer-2d-texture-in-webgl2
+		// https://stackoverflow.com/questions/27509285/how-to-render-to-a-unsigned-integer-format
 		let fragSource = `#version 300 es
         precision highp float;
         in vec2 v_texCoord;
@@ -219,13 +232,15 @@ export class TextureDataConverter {
         // uniform vec2 _textureSize;
         uniform bool flipY;
 
+        // out uvec4 fragColor;
         out vec4 fragColor;
             
         void main() {
-            initRandom();
             vec2 texCoords = vec2(v_texCoord.x, flipY? 1.0 - v_texCoord.y:v_texCoord.y);
-			vec4 result = texture(tex, v_texCoord);
-			fragColor = result;
+			vec4 result = texture(tex, texCoords);
+			// fragColor = uvec4(65535.0, 65535.0, 0, 65535.0);
+			fragColor = vec4(result);
+			// fragColor = vec4(1.0, 0.0, 0.0, 1.0);
         }
 
         `;

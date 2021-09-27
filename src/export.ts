@@ -11,6 +11,8 @@ import {
 	setFloat16,
 	hfround
 } from "@petamoriken/float16";
+import { TextureDataConverter } from "./lib/designer/texturedataconverter";
+import { TextureDataType } from "./lib/designer/gl";
 
 export enum ImageFileType {
 	Png = "png",
@@ -59,6 +61,8 @@ export class ExportSettings {
 
 export class Exporter {
 	async export(editor: Editor, settings: ExportSettings) {
+		const designer = editor.designer;
+		const conv = new TextureDataConverter(editor.designer.gl);
 		// sample config
 
 		// assume the settings have all the nodes listen already
@@ -69,9 +73,18 @@ export class Exporter {
 			if (!editor.textureChannels.has(channelName)) continue;
 
 			const channelNode = editor.textureChannels.get(channelName);
-			const pixelData = channelNode.getPixelData();
+			// const pixelData = channelNode.getPixelData();
+			const pixelData = conv.getData(
+				channelNode.tex,
+				designer.width,
+				designer.height,
+				TextureDataType.Uint16,
+				true
+			);
 
-			convertRange(pixelData);
+			// too expensive
+			// convertRange(pixelData);
+
 			// console.log(pixelData);
 			// console.log(floatData);
 			// for (let i = 0; i < 20; i++) {
@@ -97,7 +110,7 @@ export class Exporter {
 
 				// FAST-PNG
 				const bytes = encode({
-					data: pixelData,
+					data: new Uint16Array(pixelData),
 					width: editor.designer.width,
 					height: editor.designer.height,
 					depth: 16,

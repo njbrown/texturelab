@@ -104,6 +104,9 @@ export class Designer {
 		result = this.gl.getExtension("OES_texture_float_linear");
 		if (!result) console.log("TEXTURE FLOAT LINEAR NOT SUPPORTED", result);
 
+		result = this.gl.getExtension("EXT_texture_norm16");
+		if (!result) console.log("TEXTURE NORM16 NOT SUPPORTED", result);
+
 		this.renderContext = new NodeRenderContext();
 
 		this.nodes = [];
