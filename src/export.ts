@@ -1,7 +1,7 @@
 import jimp from "jimp";
 import sharp from "sharp";
 import { Editor } from "./lib/editor";
-import { encode } from "fast-png";
+import { BitDepth, encode } from "fast-png";
 import fs from "fs";
 import { PNG } from "pngjs";
 import {
@@ -11,8 +11,13 @@ import {
 	setFloat16,
 	hfround
 } from "@petamoriken/float16";
-import { TextureDataConverter } from "./lib/designer/texturedataconverter";
+import {
+	TextureComponents,
+	TextureDataConverter
+} from "./lib/designer/texturedataconverter";
 import { TextureDataType } from "./lib/designer/gl";
+import { DesignerNode } from "./lib/designer/designernode";
+import { Designer } from "./lib/designer";
 
 export enum ImageFileType {
 	Png = "png",
@@ -69,16 +74,28 @@ export class Exporter {
 		// settings is the source of truth
 		console.log(editor.textureChannels);
 
-		for (const channelName of settings.textureSettings.keys()) {
-			if (!editor.textureChannels.has(channelName)) continue;
+		const exportNodes = this.gatherExportNodes(designer, editor);
+		console.log(exportNodes);
 
-			const channelNode = editor.textureChannels.get(channelName);
+		for (const node of exportNodes) {
+			const channelNode = node.node;
+
 			// const pixelData = channelNode.getPixelData();
+			// const pixelData = conv.getData(
+			// 	channelNode.node.tex,
+			// 	designer.width,
+			// 	designer.height,
+			// 	TextureDataType.Uint16,
+			// 	TextureComponents.RGBA,
+			// 	true
+			// );
+
 			const pixelData = conv.getData(
 				channelNode.tex,
 				designer.width,
 				designer.height,
-				TextureDataType.Uint16,
+				node.dataType,
+				node.components,
 				true
 			);
 
@@ -92,53 +109,16 @@ export class Exporter {
 			// }
 
 			const exportPath =
-				"C:/Users/Nicolas Brown/Desktop/export-" + channelName + ".png";
+				"C:/Users/Nicolas Brown/Desktop/export-" + node.name + ".png";
 			console.log("exporting to: " + exportPath);
 
-			try {
-				// await sharp(pixelData, {
-				// 	raw: {
-				// 		width: editor.designer.width,
-				// 		height: editor.designer.height,
-				// 		channels: 4
-				// 	}
-				// })
-				// 	// .pipelineColourspace("rgb")
-				// 	// .toColorspace("rgb")
-				// 	.png({})
-				// 	.toFile(exportPath);
-
-				// FAST-PNG
-				const bytes = encode({
-					data: new Uint16Array(pixelData),
-					width: editor.designer.width,
-					height: editor.designer.height,
-					depth: 16,
-					channels: 4
-				});
-
-				fs.writeFile(exportPath, bytes, function(err) {
-					if (err) alert("Error exporting texture: " + err);
-				});
-
-				// PNGJS
-				// https://github.com/lukeapage/pngjs/blob/master/examples/16bit_write.js
-				// let png = new PNG({
-				// 	width: editor.designer.width,
-				// 	height: editor.designer.height,
-				// 	inputColorType: 6,
-				// 	colorType: 6,
-				// 	bitDepth: 16,
-				// 	inputHasAlpha: true
-				// });
-
-				// png.data = Buffer.from(pixelData);
-				// png.gamma = 1;
-				// png.pack().pipe(fs.createWriteStream(exportPath));
-			} catch (error) {
-				console.log("error saving file");
-				console.log(error);
-			}
+			exportNodeAsPng(
+				node,
+				pixelData,
+				designer.width,
+				designer.height,
+				exportPath
+			);
 
 			// const imgCanvas = editor.getChannelCanvasImage(channelName);
 			// if (imgCanvas) {
@@ -150,6 +130,146 @@ export class Exporter {
 
 		// const image = await jimp.read("");
 	}
+
+	// returns all nodes ready for export with their data
+	// todo: use display channel if no name property specified
+	gatherExportNodes(designer: Designer, editor: Editor) {
+		// gather all export nodes
+		// let exportNodes = [];
+
+		let nodes = designer.nodes.filter(x => x.typeName === "output");
+
+		let exportNodes: ExportNode[] = [];
+
+		for (const node of nodes) {
+			let exportNode = new ExportNode();
+
+			exportNode.node = node;
+			for (const prop of node.properties) {
+				if (prop.name === "name") {
+					exportNode.name = prop.getValue();
+				}
+				if (prop.name === "precision") {
+					const precision = prop.getValue() as number;
+
+					// 0 -> 8bits
+					// 1 -> 16bits
+					if (precision === 0) exportNode.dataType = TextureDataType.Uint8;
+					if (precision === 1) exportNode.dataType = TextureDataType.Uint16;
+				}
+				if (prop.name === "components") {
+					const components = prop.getValue() as number;
+
+					// 0 -> RGBA
+					// 1 -> RGB
+					// 2 -> R
+					// 3 -> G
+					// 4 -> B
+					// 5 -> A
+					if (components === 0) exportNode.components = TextureComponents.RGBA;
+					if (components === 1) exportNode.components = TextureComponents.RGB;
+					if (components === 2) exportNode.components = TextureComponents.R;
+					if (components === 3) exportNode.components = TextureComponents.G;
+					if (components === 4) exportNode.components = TextureComponents.B;
+					if (components === 5) exportNode.components = TextureComponents.A;
+				}
+			}
+
+			if (!exportNode.name || exportNode.name === "") {
+				exportNode.name = getChannelNameForNode(exportNode.node, editor);
+			}
+
+			exportNodes.push(exportNode);
+		}
+
+		return exportNodes;
+	}
+}
+
+function getChannelNameForNode(node: DesignerNode, editor: Editor) {
+	const channels = editor.textureChannels;
+	// slow.
+	// create dictionary with nodeId as key instead
+	for (const key of channels.keys()) {
+		if (channels.get(key) === node) return key;
+	}
+
+	return "";
+}
+
+function exportNodeAsPng(
+	node: ExportNode,
+	pixelData: ArrayBuffer,
+	width: number,
+	height: number,
+	exportPath: string
+) {
+	try {
+		let bitDepth: BitDepth = 8;
+		if (node.dataType === TextureDataType.Uint16) bitDepth = 16;
+
+		let channels: number = 4;
+		// if (node.components === TextureComponents.RGBA) channels = 4;
+		if (node.components === TextureComponents.RGB) channels = 3;
+		if (
+			node.components === TextureComponents.R ||
+			node.components === TextureComponents.G ||
+			node.components === TextureComponents.B ||
+			node.components === TextureComponents.A
+		)
+			channels = 1;
+
+		// FAST-PNG
+		const bytes = encode({
+			data:
+				bitDepth == 8 ? new Uint8Array(pixelData) : new Uint16Array(pixelData),
+			width: width,
+			height: height,
+			depth: bitDepth,
+			channels: channels
+		});
+
+		fs.writeFile(exportPath, bytes, function(err) {
+			if (err) alert("Error exporting texture: " + err);
+		});
+
+		// await sharp(pixelData, {
+		// 	raw: {
+		// 		width: editor.designer.width,
+		// 		height: editor.designer.height,
+		// 		channels: 4
+		// 	}
+		// })
+		// 	// .pipelineColourspace("rgb")
+		// 	// .toColorspace("rgb")
+		// 	.png({})
+		// 	.toFile(exportPath);
+
+		// PNGJS
+		// https://github.com/lukeapage/pngjs/blob/master/examples/16bit_write.js
+		// let png = new PNG({
+		// 	width: editor.designer.width,
+		// 	height: editor.designer.height,
+		// 	inputColorType: 6,
+		// 	colorType: 6,
+		// 	bitDepth: 16,
+		// 	inputHasAlpha: true
+		// });
+
+		// png.data = Buffer.from(pixelData);
+		// png.gamma = 1;
+		// png.pack().pipe(fs.createWriteStream(exportPath));
+	} catch (error) {
+		console.log("error saving file");
+		console.log(error);
+	}
+}
+
+class ExportNode {
+	node: DesignerNode;
+	components: TextureComponents = TextureComponents.RGBA;
+	dataType: TextureDataType = TextureDataType.Uint8;
+	name: string = "";
 }
 
 function convertRange(data: Uint16Array) {
@@ -162,3 +282,8 @@ function convertRange(data: Uint16Array) {
 		data[i] = floatData[i] * UINT_MAX;
 	}
 }
+
+// class PixelDataConverter
+// {
+// 	public static rgbaTo
+// }

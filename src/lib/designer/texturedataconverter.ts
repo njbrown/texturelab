@@ -5,6 +5,15 @@ import {
 	TextureDataType
 } from "./gl";
 
+export enum TextureComponents {
+	RGBA = "RGBA",
+	RGB = "RGB",
+	R = "R",
+	G = "G",
+	B = "B",
+	A = "A"
+}
+
 // to be used mainly to extract pixels from textures
 // to the needed format for export
 export class TextureDataConverter {
@@ -28,6 +37,7 @@ export class TextureDataConverter {
 		width: number,
 		height: number,
 		dataType: TextureDataType,
+		components: TextureComponents = TextureComponents.RGBA,
 		flipY: boolean = false
 	): ArrayBuffer {
 		const gl = this.gl;
