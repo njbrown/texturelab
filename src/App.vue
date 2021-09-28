@@ -1025,8 +1025,8 @@ export default class App extends Vue implements IApp {
 		settings.outputType = OutputType.Folder;
 
 		// zip export
-		settings.outputPath = "C:/Users/Nicolas Brown/Desktop/test.zip";
-		settings.outputType = OutputType.Zip;
+		// settings.outputPath = "C:/Users/Nicolas Brown/Desktop/test.zip";
+		// settings.outputType = OutputType.Zip;
 
 		// settings.textureSettings.set("albedo", {
 		// 	channelName: "albedo",

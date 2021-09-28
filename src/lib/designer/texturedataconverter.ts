@@ -43,16 +43,15 @@ export class TextureDataConverter {
 		const gl = this.gl;
 
 		// create textures based on specified data type
-		this.texture = createTextureWithType(
-			this.gl,
-			TextureDataType.Uint16,
-			width,
-			height
-		);
+		this.texture = createTextureWithType(this.gl, dataType, width, height);
 
 		// set fbo and bind newly created texture
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this.readFbo);
 		gl.activeTexture(gl.TEXTURE0);
+
+		// NOTE: texture must be in the RGBA format
+		// spec doesn't mandate any other format being supported
+		// https://www.html5gamedevs.com/topic/38191-how-to-use-webgl2-rgb-texture-format/
 		gl.framebufferTexture2D(
 			gl.FRAMEBUFFER,
 			gl.COLOR_ATTACHMENT0,
@@ -80,6 +79,34 @@ export class TextureDataConverter {
 			flipY ? 1 : 0
 		);
 
+		// determine which channels the source comes from
+		// 0 - all
+		// 1 - red
+		// 2 - green
+		// 3 - blue
+		// 4 - alpha
+		let outputChannel: number = 0;
+
+		switch (components) {
+			case TextureComponents.R:
+				outputChannel = 1;
+				break;
+			case TextureComponents.G:
+				outputChannel = 2;
+				break;
+			case TextureComponents.B:
+				outputChannel = 3;
+				break;
+			case TextureComponents.A:
+				outputChannel = 4;
+				break;
+		}
+
+		gl.uniform1i(
+			gl.getUniformLocation(this.shaderProgram, "channel"),
+			outputChannel
+		);
+
 		// render texure to fbo
 		const posLoc = gl.getAttribLocation(this.shaderProgram, "a_pos");
 		const texCoordLoc = gl.getAttribLocation(this.shaderProgram, "a_texCoord");
@@ -104,39 +131,54 @@ export class TextureDataConverter {
 		let arrayBufferView: ArrayBufferView = null;
 		let arrayBuffer: ArrayBuffer = null;
 
+		let format: number = gl.RGBA;
+		let numComponents: number = 4;
+
+		// commented this out since the format has to be
+		// RGBA. Any other format and WebGL throws an error
+		// switch (components) {
+		// 	case TextureComponents.RGBA:
+		// 		numComponents = 4;
+		// 		format = gl.RGBA;
+		// 		break;
+		// 	case TextureComponents.RGB:
+		// 		numComponents = 3;
+		// 		format = gl.RGB;
+		// 		break;
+		// 	case TextureComponents.R:
+		// 	case TextureComponents.G:
+		// 	case TextureComponents.B:
+		// 	case TextureComponents.A:
+		// 		numComponents = 1;
+		// 		format = gl.RED;
+		// 		break;
+		// }
+
 		switch (dataType) {
 			case TextureDataType.Uint8:
 				readDataType = gl.UNSIGNED_BYTE;
-				arrayBuffer = new ArrayBuffer(width * height * 4 * 1);
+				arrayBuffer = new ArrayBuffer(width * height * numComponents * 1);
 				arrayBufferView = new Uint8Array(arrayBuffer);
 				break;
 			case TextureDataType.Uint16:
 				readDataType = gl.UNSIGNED_SHORT;
-				arrayBuffer = new ArrayBuffer(width * height * 4 * 2);
+				arrayBuffer = new ArrayBuffer(width * height * numComponents * 2);
 				arrayBufferView = new Uint16Array(arrayBuffer);
 				break;
 			case TextureDataType.Float16:
 				readDataType = gl.HALF_FLOAT;
-				arrayBuffer = new ArrayBuffer(width * height * 4 * 2);
+				arrayBuffer = new ArrayBuffer(width * height * numComponents * 2);
 				arrayBufferView = new Uint16Array(arrayBuffer);
 				break;
 			case TextureDataType.Float32:
 				readDataType = gl.FLOAT;
-				arrayBuffer = new ArrayBuffer(width * height * 4 * 4);
+				arrayBuffer = new ArrayBuffer(width * height * numComponents * 4);
 				arrayBufferView = new Float32Array(arrayBuffer);
 				break;
 		}
 
 		if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE) {
-			gl.readPixels(
-				0,
-				0,
-				width,
-				height,
-				gl.RGBA,
-				readDataType,
-				arrayBufferView
-			);
+			gl.readPixels(0, 0, width, height, format, readDataType, arrayBufferView);
 
 			// todo: check for errors in this operation
 			// gl.readPixels(
@@ -155,6 +197,9 @@ export class TextureDataConverter {
 		// cleanup
 		gl.enable(gl.DEPTH_TEST);
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+		// convert buffer to required format
+		// currently only supports uint8 and uint16
 
 		return arrayBuffer;
 	}
@@ -242,14 +287,38 @@ export class TextureDataConverter {
         // uniform vec2 _textureSize;
         uniform bool flipY;
 
+		uniform int channel;
+
         // out uvec4 fragColor;
         out vec4 fragColor;
             
         void main() {
             vec2 texCoords = vec2(v_texCoord.x, flipY? 1.0 - v_texCoord.y:v_texCoord.y);
 			vec4 result = texture(tex, texCoords);
-			// fragColor = uvec4(65535.0, 65535.0, 0, 65535.0);
-			fragColor = vec4(result);
+
+			// determine which channels to extract if any
+			switch(channel){
+				// 0 - do nothing
+
+				// red
+				case 1:
+					result = vec4(result.r);
+					break;
+				// green
+				case 2:
+					result = vec4(result.g);
+					break;
+				// blue
+				case 3:
+					result = vec4(result.b);
+					break;
+				// alpha
+				case 4:
+					result = vec4(result.a);
+					break;
+			}
+
+			fragColor = result;
 			// fragColor = vec4(1.0, 0.0, 0.0, 1.0);
         }
 

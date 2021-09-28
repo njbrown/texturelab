@@ -27,6 +27,7 @@ export enum TextureDataType {
 	Float32
 }
 
+// assumes all textures are RGBA
 export function createTextureWithType(
 	gl: WebGL2RenderingContext,
 	dataType: TextureDataType,
@@ -37,6 +38,17 @@ export function createTextureWithType(
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 
 	let ext = gl.getExtension("EXT_texture_norm16");
+
+	// format of data being passed to GPU
+	// let internalFormat: number = gl.RGBA;
+	// let type: number = gl.UNSIGNED_BYTE;
+
+	// // format and components the texture should actually store
+	// let format: number = gl.RGBA8;
+
+	// webgl has a guide for the combination of these
+	// properties(internalFormat, format, type)
+	// https://www.khronos.org/files/webgl20-reference-guide.pdf
 
 	// Upload the image into the texture.
 	switch (dataType) {
@@ -106,6 +118,18 @@ export function createTextureWithType(
 			);
 			break;
 	}
+
+	// gl.texImage2D(
+	// 	gl.TEXTURE_2D,
+	// 	0,
+	// 	internalFormat,
+	// 	width,
+	// 	height,
+	// 	0,
+	// 	format,
+	// 	type,
+	// 	null
+	// );
 
 	// Set the parameters so we can render any size image.
 	//gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
