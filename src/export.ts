@@ -18,6 +18,9 @@ import {
 import { TextureDataType } from "./lib/designer/gl";
 import { DesignerNode } from "./lib/designer/designernode";
 import { Designer } from "./lib/designer";
+import AdmZip from "adm-zip";
+import path from "path";
+import electron from "electron";
 
 export enum ImageFileType {
 	Png = "png",
@@ -77,6 +80,8 @@ export class Exporter {
 		const exportNodes = this.gatherExportNodes(designer, editor);
 		console.log(exportNodes);
 
+		let files: Map<string, ArrayBuffer> = new Map<string, ArrayBuffer>();
+
 		for (const node of exportNodes) {
 			const channelNode = node.node;
 
@@ -108,17 +113,25 @@ export class Exporter {
 			// 	console.log(floatData[i]);
 			// }
 
-			const exportPath =
-				"C:/Users/Nicolas Brown/Desktop/export-" + node.name + ".png";
-			console.log("exporting to: " + exportPath);
+			// const exportPath =
+			// 	"C:/Users/Nicolas Brown/Desktop/export-" + node.name + ".png";
+			// console.log("exporting to: " + exportPath);
 
-			exportNodeAsPng(
+			const fileData = exportNodeAsPng(
 				node,
 				pixelData,
 				designer.width,
-				designer.height,
-				exportPath
+				designer.height
 			);
+
+			files.set(node.name + ".png", fileData);
+
+			// write to file if folder mode
+			// fs.writeFile(exportPath, bytes, function(err) {
+			// 	if (err) alert("Error exporting texture: " + err);
+			// });
+
+			// write to zip otherwise
 
 			// const imgCanvas = editor.getChannelCanvasImage(channelName);
 			// if (imgCanvas) {
@@ -127,6 +140,15 @@ export class Exporter {
 			// 	//todo: get raw image data from gpu in floating point
 			// }
 		}
+
+		if (settings.outputType == OutputType.Folder) {
+			exportFilesToFolder(files, settings.outputPath);
+		} else {
+			exportFilesToZip(files, settings.outputPath);
+			electron.remote.shell.showItemInFolder(settings.outputPath);
+		}
+
+		// export them
 
 		// const image = await jimp.read("");
 	}
@@ -201,9 +223,8 @@ function exportNodeAsPng(
 	node: ExportNode,
 	pixelData: ArrayBuffer,
 	width: number,
-	height: number,
-	exportPath: string
-) {
+	height: number
+): ArrayBuffer {
 	try {
 		let bitDepth: BitDepth = 8;
 		if (node.dataType === TextureDataType.Uint16) bitDepth = 16;
@@ -229,9 +250,11 @@ function exportNodeAsPng(
 			channels: channels
 		});
 
-		fs.writeFile(exportPath, bytes, function(err) {
-			if (err) alert("Error exporting texture: " + err);
-		});
+		return bytes.buffer;
+
+		// fs.writeFile(exportPath, bytes, function(err) {
+		// 	if (err) alert("Error exporting texture: " + err);
+		// });
 
 		// await sharp(pixelData, {
 		// 	raw: {
@@ -270,6 +293,34 @@ class ExportNode {
 	components: TextureComponents = TextureComponents.RGBA;
 	dataType: TextureDataType = TextureDataType.Uint8;
 	name: string = "";
+}
+
+function exportFilesToFolder(
+	files: Map<string, ArrayBuffer>,
+	folderPath: string
+) {
+	for (let fileName of files.keys()) {
+		const exportPath = path.join(folderPath, fileName);
+		const bytes = files.get(fileName);
+
+		fs.writeFile(exportPath, new Uint8Array(bytes), function(err) {
+			if (err) alert("Error exporting texture: " + err);
+		});
+	}
+}
+function exportFilesToZip(
+	files: Map<string, ArrayBuffer>,
+	zipFilePath: string
+) {
+	const zip = new AdmZip();
+
+	for (let fileName of files.keys()) {
+		const bytes = files.get(fileName);
+		console.log(bytes);
+		zip.addFile(fileName, Buffer.from(bytes));
+	}
+
+	zip.writeZip(zipFilePath);
 }
 
 function convertRange(data: Uint16Array) {

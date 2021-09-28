@@ -277,7 +277,13 @@ const electron = require("electron");
 const remote = require("@electron/remote");
 const { dialog, app, BrowserWindow, Menu } = remote;
 import pkg from "../package.json";
-import { ColorSpace, Exporter, ExportSettings, ImageFileType } from "./export";
+import {
+	ColorSpace,
+	Exporter,
+	ExportSettings,
+	ImageFileType,
+	OutputType
+} from "./export";
 
 declare var __static: any;
 
@@ -1014,19 +1020,27 @@ export default class App extends Vue implements IApp {
 	async exportTextures() {
 		const settings = new ExportSettings();
 
-		settings.textureSettings.set("albedo", {
-			channelName: "albedo",
-			colorSpace: ColorSpace.sRGB,
-			fileType: ImageFileType.Png,
-			transforms: []
-		});
+		// folder export
+		settings.outputPath = "C:/Users/Nicolas Brown/Desktop/test";
+		settings.outputType = OutputType.Folder;
 
-		settings.textureSettings.set("normal", {
-			channelName: "normal",
-			colorSpace: ColorSpace.sRGB,
-			fileType: ImageFileType.Png,
-			transforms: []
-		});
+		// zip export
+		settings.outputPath = "C:/Users/Nicolas Brown/Desktop/test.zip";
+		settings.outputType = OutputType.Zip;
+
+		// settings.textureSettings.set("albedo", {
+		// 	channelName: "albedo",
+		// 	colorSpace: ColorSpace.sRGB,
+		// 	fileType: ImageFileType.Png,
+		// 	transforms: []
+		// });
+
+		// settings.textureSettings.set("normal", {
+		// 	channelName: "normal",
+		// 	colorSpace: ColorSpace.sRGB,
+		// 	fileType: ImageFileType.Png,
+		// 	transforms: []
+		// });
 
 		const exporter = new Exporter();
 		await exporter.export(this.editor, settings);
