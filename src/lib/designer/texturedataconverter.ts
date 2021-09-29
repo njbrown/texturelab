@@ -201,6 +201,31 @@ export class TextureDataConverter {
 		// convert buffer to required format
 		// currently only supports uint8 and uint16
 
+		if (dataType === TextureDataType.Uint8) {
+			if (components === TextureComponents.RGB) {
+				arrayBuffer = rgbaToRgbUint8(arrayBuffer, width, height);
+			} else if (
+				components === TextureComponents.R ||
+				components === TextureComponents.G ||
+				components === TextureComponents.B ||
+				components === TextureComponents.A
+			) {
+				arrayBuffer = rgbaToRUint8(arrayBuffer, width, height);
+			}
+		} else if (dataType === TextureDataType.Uint16) {
+			if (components === TextureComponents.RGB) {
+				arrayBuffer = rgbaToRgbUint16(arrayBuffer, width, height);
+			}
+			if (
+				components === TextureComponents.R ||
+				components === TextureComponents.G ||
+				components === TextureComponents.B ||
+				components === TextureComponents.A
+			) {
+				arrayBuffer = rgbaToRUint16(arrayBuffer, width, height);
+			}
+		}
+
 		return arrayBuffer;
 	}
 
@@ -326,4 +351,76 @@ export class TextureDataConverter {
 
 		this.shaderProgram = buildShaderProgram(this.gl, vertSource, fragSource);
 	}
+}
+
+function rgbaToRgbUint8(
+	buffer: ArrayBuffer,
+	width: number,
+	height: number
+): ArrayBuffer {
+	const totalPixels = width * height;
+	const numComponents = 3;
+	const inputArray: Uint8Array = new Uint8Array(buffer);
+	const outputArray: Uint8Array = new Uint8Array(totalPixels * numComponents);
+
+	for (let i = 0; i < totalPixels; i++) {
+		outputArray[i * numComponents + 0] = inputArray[i * 4 + 0];
+		outputArray[i * numComponents + 1] = inputArray[i * 4 + 1];
+		outputArray[i * numComponents + 2] = inputArray[i * 4 + 2];
+	}
+
+	return outputArray.buffer;
+}
+
+function rgbaToRUint8(
+	buffer: ArrayBuffer,
+	width: number,
+	height: number
+): ArrayBuffer {
+	const totalPixels = width * height;
+	const numComponents = 1;
+	const inputArray: Uint8Array = new Uint8Array(buffer);
+	const outputArray: Uint8Array = new Uint8Array(totalPixels * numComponents);
+
+	for (let i = 0; i < totalPixels; i++) {
+		outputArray[i * numComponents] = inputArray[i * 4];
+	}
+
+	return outputArray.buffer;
+}
+
+function rgbaToRgbUint16(
+	buffer: ArrayBuffer,
+	width: number,
+	height: number
+): ArrayBuffer {
+	const totalPixels = width * height;
+	const numComponents = 3;
+	const inputArray: Uint16Array = new Uint16Array(buffer);
+	const outputArray: Uint16Array = new Uint16Array(totalPixels * numComponents);
+
+	for (let i = 0; i < totalPixels; i++) {
+		outputArray[i * numComponents + 0] = inputArray[i * 4 + 0];
+		outputArray[i * numComponents + 1] = inputArray[i * 4 + 1];
+		outputArray[i * numComponents + 2] = inputArray[i * 4 + 2];
+	}
+
+	return outputArray.buffer;
+}
+
+function rgbaToRUint16(
+	buffer: ArrayBuffer,
+	width: number,
+	height: number
+): ArrayBuffer {
+	const totalPixels = width * height;
+	const numComponents = 1;
+	const inputArray: Uint16Array = new Uint16Array(buffer);
+	const outputArray: Uint16Array = new Uint16Array(totalPixels * numComponents);
+
+	for (let i = 0; i < totalPixels; i++) {
+		outputArray[i * numComponents] = inputArray[i * 4];
+	}
+
+	return outputArray.buffer;
 }
