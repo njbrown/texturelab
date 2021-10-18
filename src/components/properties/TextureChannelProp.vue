@@ -51,10 +51,10 @@ export default class TextureChannelPropertyView extends Vue {
 
 	calculateChannelIndex() {
 		this.channelIndex = 0;
-		for (let channelName in this.editor.textureChannels) {
-			if (this.editor.textureChannels[channelName] == null) continue;
+		for (let channelName of this.editor.textureChannels.keys()) {
+			if (this.editor.textureChannels.get(channelName) == null) continue;
 
-			if (this.editor.textureChannels[channelName].id == this.node.id) {
+			if (this.editor.textureChannels.get(channelName).id == this.node.id) {
 				this.channelIndex = this.channelNames.indexOf(channelName);
 			}
 		}
@@ -73,8 +73,8 @@ export default class TextureChannelPropertyView extends Vue {
 
 		let nodeView = this.editor.graph.getNodeById(this.node.id);
 		let channel1 = nodeView.textureChannel;
-		if (this.editor.textureChannels.hasOwnProperty(channelName))
-			node2 = this.editor.textureChannels[channelName].id;
+		if (this.editor.textureChannels.has(channelName))
+			node2 = this.editor.textureChannels.get(channelName).id;
 		let node1 = this.node.id;
 
 		if (index != 0) {

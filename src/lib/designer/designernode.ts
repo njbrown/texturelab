@@ -56,6 +56,14 @@ export class DesignerNode implements IPropertyHolder {
 		this.designer.requestUpdate(this);
 	}
 
+	getPixelData(): Uint16Array {
+		return null;
+	}
+
+	getTextureData(): ArrayBuffer {
+		return null;
+	}
+
 	setRandomSeed(seed: number) {
 		this.randomSeed = seed;
 		this.requestUpdate();

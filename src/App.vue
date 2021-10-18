@@ -10,6 +10,14 @@
 
 			<a class="right button" href="#" @click="exportUnity()">Unity Export</a>
 			<a class="right button" href="#" @click="exportZip()">Zip Export</a>
+			<span class="right">
+				<a class="export export-left" href="#" @click="exportTextures()"
+					>Export</a
+				>
+				<a class="export export-right" href="#" @click="exportTextures()"
+					><i class="bx bx-cog" style="font-size:1.4rem !important;"></i
+				></a>
+			</span>
 		</div>
 		<golden-layout
 			class="container"
@@ -166,6 +174,33 @@ body {
 	margin-right: 0.5em;
 }
 
+.export-left {
+	border-radius: 2px 0 0px 2px;
+	background: #666;
+	padding: 0.5em 0.5em 0.5em 1em;
+	text-decoration: none;
+	color: white;
+	display: flex;
+	vertical-align: middle;
+	float: left;
+}
+
+.export-right {
+	border-radius: 0px 2px 2px 0;
+	background: #666;
+	padding: 0.5em 1em 0.5em 0.5em;
+	text-decoration: none;
+	color: white;
+	display: flex;
+	vertical-align: middle;
+	float: left;
+	margin-right: 0.5em;
+}
+
+.export:hover {
+	background: #999;
+}
+
 .button:hover {
 	background: #999;
 }
@@ -276,6 +311,13 @@ const electron = require("electron");
 const remote = require("@electron/remote");
 const { dialog, app, BrowserWindow, Menu } = remote;
 import pkg from "../package.json";
+import {
+	ColorSpace,
+	Exporter,
+	ExportSettings,
+	ImageFileType,
+	OutputType
+} from "./export";
 
 declare var __static: any;
 
@@ -1007,6 +1049,35 @@ export default class App extends Vue implements IApp {
 
 		zip.writeZip(path);
 		remote.shell.showItemInFolder(path);
+	}
+
+	async exportTextures() {
+		const settings = new ExportSettings();
+
+		// folder export
+		settings.outputPath = "C:/Users/Nicolas Brown/Desktop/test";
+		settings.outputType = OutputType.Folder;
+
+		// zip export
+		// settings.outputPath = "C:/Users/Nicolas Brown/Desktop/test.zip";
+		// settings.outputType = OutputType.Zip;
+
+		// settings.textureSettings.set("albedo", {
+		// 	channelName: "albedo",
+		// 	colorSpace: ColorSpace.sRGB,
+		// 	fileType: ImageFileType.Png,
+		// 	transforms: []
+		// });
+
+		// settings.textureSettings.set("normal", {
+		// 	channelName: "normal",
+		// 	colorSpace: ColorSpace.sRGB,
+		// 	fileType: ImageFileType.Png,
+		// 	transforms: []
+		// });
+
+		const exporter = new Exporter();
+		await exporter.export(this.editor, settings);
 	}
 
 	showTutorials() {}

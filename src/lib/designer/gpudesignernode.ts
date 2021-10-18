@@ -17,13 +17,50 @@ import { Gradient } from "./gradient";
 import { DesignerNode } from "./designernode";
 
 export class GpuDesignerNode extends DesignerNode {
-	tex: WebGLTexture;
+	// tex: WebGLTexture;
+	readFbo: WebGLFramebuffer;
 	//program:WebGLShader;
 	source: string; // shader code
 	shaderProgram: WebGLProgram;
 
 	public isCpu() {
 		return false;
+	}
+
+	// https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/readPixels
+	// returns copy of data
+	getPixelData(): Uint16Array {
+		const gl = this.gl as WebGL2RenderingContext;
+		const width = this.designer.width;
+		const height = this.designer.height;
+		const data = new Uint16Array(width * height * 4);
+
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this.readFbo);
+		gl.framebufferTexture2D(
+			gl.FRAMEBUFFER,
+			gl.COLOR_ATTACHMENT0,
+			gl.TEXTURE_2D,
+			this.tex,
+			0
+		);
+		if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE) {
+			gl.readPixels(0, 0, width, height, gl.RGBA, gl.HALF_FLOAT, data);
+			// todo: check for errors in this operation
+			// gl.readPixels(
+			// 	0,
+			// 	0,
+			// 	this.designer.width,
+			// 	this.designer.height,
+			// 	gl.RGBA,
+			// 	gl.HALF_FLOAT,
+			// 	data
+			// );
+		} else {
+			alert("getPixelData: unable to read from FBO");
+		}
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+		return data;
 	}
 
 	public render(context: NodeRenderContext) {
@@ -189,6 +226,8 @@ export class GpuDesignerNode extends DesignerNode {
 	public _init() {
 		//this.inputs = new Array();
 		//this.properties = new Array();
+
+		this.readFbo = this.gl.createFramebuffer();
 		this.createTexture();
 
 		this.init();

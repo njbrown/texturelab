@@ -100,7 +100,7 @@ export class Editor {
 	onpreviewnode?: (item: DesignerNode, image: HTMLCanvasElement) => void;
 	onlibrarymenu?: () => void;
 
-	textureChannels = {};
+	textureChannels: Map<string, DesignerNode> = new Map<string, DesignerNode>();
 	ontexturechannelcleared?: (
 		imageCanvas: ImageCanvas,
 		channelName: string
@@ -131,15 +131,15 @@ export class Editor {
 	assignNodeToTextureChannel(nodeId: string, channelName: string) {
 		// only one node can be assigned to a channel
 		if (
-			this.textureChannels.hasOwnProperty(channelName) &&
-			this.textureChannels[channelName]
+			this.textureChannels.has(channelName) &&
+			this.textureChannels.get(channelName)
 		) {
 			// remove label from node view
-			const oldNode = this.textureChannels[channelName] as DesignerNode;
+			const oldNode = this.textureChannels.get(channelName);
 			const nodeView = this.graph.getNodeById(oldNode.id);
 			nodeView.clearTextureChannel();
 			//this.textureChannels[channelName] = null;
-			delete this.textureChannels[channelName];
+			this.textureChannels.delete(channelName);
 
 			if (this.ontexturechannelcleared) {
 				this.ontexturechannelcleared(null, channelName);
@@ -150,7 +150,7 @@ export class Editor {
 		nodeView.setTextureChannel(channelName);
 
 		const newNode = this.designer.getNodeById(nodeId);
-		this.textureChannels[channelName] = newNode;
+		this.textureChannels.set(channelName, newNode);
 
 		// notify 3d view
 		if (this.ontexturechannelcleared) {
@@ -160,18 +160,18 @@ export class Editor {
 
 	clearTextureChannel(nodeId: string) {
 		// eval which channel has this node assigned
-		for (const channelName in this.textureChannels) {
-			const node = this.textureChannels[channelName];
+		for (const channelName of this.textureChannels.keys()) {
+			const node = this.textureChannels.get(channelName);
 
 			if (node.id == nodeId) {
-				const oldNode = this.textureChannels[channelName] as DesignerNode;
+				const oldNode = this.textureChannels.get(channelName);
 				const nodeView = this.graph.getNodeById(oldNode.id);
 
 				// if this function is called when a node is deleted
 				// nodeView will be null
 				if (nodeView) nodeView.clearTextureChannel();
 
-				delete this.textureChannels[channelName];
+				this.textureChannels.delete(channelName);
 
 				if (this.ontexturechannelcleared) {
 					this.ontexturechannelcleared(null, channelName);
@@ -194,12 +194,12 @@ export class Editor {
 	}
 
 	hasTextureChannel(channelName: string) {
-		return this.textureChannels.hasOwnProperty(channelName);
+		return this.textureChannels.has(channelName);
 	}
 
 	clearTextureChannels() {
-		for (const channelName in this.textureChannels) {
-			const node = this.textureChannels[channelName];
+		for (const channelName of this.textureChannels.keys()) {
+			const node = this.textureChannels.get(channelName);
 
 			this.clearTextureChannel(node.id);
 		}
@@ -208,7 +208,7 @@ export class Editor {
 	getChannelCanvasImage(channelName: string) {
 		if (this.hasTextureChannel(channelName)) {
 			//console.log(this.textureChannels[channelName]);
-			const dnodeId = this.textureChannels[channelName].id;
+			const dnodeId = this.textureChannels.get(channelName).id;
 			const nodeView = this.graph.getNodeById(dnodeId);
 			//console.log(nodeView)
 			//console.log(this.graph)
@@ -851,8 +851,8 @@ export class Editor {
 		data["scene"] = this.graph.save();
 
 		const textureChannels = {};
-		for (const channelName in this.textureChannels) {
-			textureChannels[channelName] = this.textureChannels[channelName].id;
+		for (const channelName of this.textureChannels.keys()) {
+			textureChannels[channelName] = this.textureChannels.get(channelName).id;
 		}
 
 		data["editor"] = {
