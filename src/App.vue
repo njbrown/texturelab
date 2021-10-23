@@ -44,13 +44,25 @@
 				<div class="modal__content">
 					<span>Destination:</span><br />
 					<div>
-						<!-- <span>C:/Users/Nicolas Brown/Documents/bricks</span> -->
 						<span>{{ exportDestination }}</span
-						><button @click="chooseExportDestination()">...</button>
+						><button
+							v-if="exportDestination"
+							@click="chooseExportDestination()"
+						>
+							...
+						</button>
+						<button v-else @click="chooseExportDestination()">
+							Choose Folder
+						</button>
 					</div>
 					<div>
 						<span>Pattern:</span><br />
 						<input v-model="exportPattern" />
+					</div>
+					<div>
+						<button @click="exportTextures()">
+							Export
+						</button>
 					</div>
 				</div>
 			</vue-final-modal>
@@ -1182,6 +1194,16 @@ export default class App extends Vue implements IApp {
 
 		const exporter = new Exporter();
 		await exporter.export(this.editor, settings);
+
+		this.$toast.open({
+			message: "Textures exported successfully!",
+			type: "default",
+			duration: 3000,
+			onClick: () => {
+				// open folder
+				shell.openPath(settings.outputPath);
+			}
+		});
 	}
 
 	showTutorials() {}

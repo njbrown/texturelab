@@ -8,6 +8,11 @@ import "boxicons/css/boxicons.css";
 require("typeface-open-sans");
 import * as Sentry from "@sentry/electron";
 
+// toast
+import VueToast from "vue-toast-notification";
+//import 'vue-toast-notification/dist/theme-default.css';
+import "vue-toast-notification/dist/theme-sugar.css";
+
 // https://github.com/EmbeddedEnterprises/ng6-golden-layout/blob/master/README.md
 import * as $ from "jquery";
 (<any>window).$ = $;
@@ -23,6 +28,7 @@ import store from "./store";
 
 Vue.config.productionTip = false;
 Vue.use(vgl);
+Vue.use(VueToast);
 
 import { Titlebar, Color } from "custom-electron-titlebar";
 const titleBar = new Titlebar({
