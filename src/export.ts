@@ -57,12 +57,12 @@ export class ExportTextureSettings {
 // can have multiple settings and presets
 export class ExportSettings {
 	name: string = "";
-	filePattern: string = "${channel}.${fileType}";
-	textureSettings: Map<string, ExportTextureSettings> = new Map<
-		string,
-		ExportTextureSettings
-	>();
-	enabled: boolean = true;
+	filePattern: string = "{project}_{file}";
+	// textureSettings: Map<string, ExportTextureSettings> = new Map<
+	// 	string,
+	// 	ExportTextureSettings
+	// >();
+	// enabled: boolean = true;
 	outputType: OutputType = OutputType.Zip;
 	outputPath: string = "";
 }
@@ -151,6 +151,10 @@ export class Exporter {
 		// export them
 
 		// const image = await jimp.read("");
+	}
+
+	calculateFileName(fileName: string, project: string): string {
+		return null;
 	}
 
 	// returns all nodes ready for export with their data

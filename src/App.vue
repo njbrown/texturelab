@@ -14,10 +14,46 @@
 				<a class="export export-left" href="#" @click="exportTextures()"
 					>Export</a
 				>
-				<a class="export export-right" href="#" @click="exportTextures()"
+				<a class="export export-right" href="#" @click="showExportMenu()"
 					><i class="bx bx-cog" style="font-size:1.4rem !important;"></i
 				></a>
 			</span>
+		</div>
+		<div>
+			<!-- <vue-final-modal v-model="exportMenuVisible">
+				<div style="padding:10em; background:white;width:40vw;">
+					Hello this is the export modal
+				</div>
+			</vue-final-modal> -->
+			<vue-final-modal
+				v-model="exportMenuVisible"
+				classes="modal-container"
+				content-class="modal-content"
+			>
+				<button class="modal__close" @click="hideExportMenu()">
+					<i class="bx bx-x" style="font-size:1.4rem !important;"></i>
+				</button>
+				<span class="modal__title">Export Settings</span>
+				<!-- <div>
+					<span>Output Type</span>
+					<select>
+						<option value="zip">Zip</option>
+						<option value="folder">Folder</option>
+					</select>
+				</div> -->
+				<div class="modal__content">
+					<span>Destination:</span><br />
+					<div>
+						<!-- <span>C:/Users/Nicolas Brown/Documents/bricks</span> -->
+						<span>{{ exportDestination }}</span
+						><button @click="chooseExportDestination()">...</button>
+					</div>
+					<div>
+						<span>Pattern:</span><br />
+						<input v-model="exportPattern" />
+					</div>
+				</div>
+			</vue-final-modal>
 		</div>
 		<golden-layout
 			class="container"
@@ -276,6 +312,42 @@ body {
 }
 </style>
 
+<style scoped>
+::v-deep .modal-container {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-width: 50vw;
+}
+::v-deep .modal-content {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	margin: 0 1rem;
+	padding: 1rem;
+	border: 1px solid #e2e8f0;
+	border-radius: 0.25rem;
+	background: #fff;
+}
+.modal__title {
+	margin: 0 2rem 0 0;
+	font-size: 1.5rem;
+	font-weight: 700;
+}
+.modal__close {
+	position: absolute;
+	top: 0.5rem;
+	right: 0.5rem;
+}
+</style>
+
+<style scoped>
+.dark-mode div::v-deep .modal-content {
+	border-color: #2d3748;
+	background-color: #1a202c;
+}
+</style>
+
 <script lang="ts">
 // https://www.sitepoint.com/class-based-vue-js-typescript/
 import { Component, Prop, Vue, Watch, Model } from "vue-property-decorator";
@@ -318,8 +390,11 @@ import {
 	ImageFileType,
 	OutputType
 } from "./export";
+import VfmPlugin from "vue-final-modal";
 
 declare var __static: any;
+
+Vue.use(VfmPlugin);
 
 @Component({
 	components: {
@@ -356,6 +431,10 @@ export default class App extends Vue implements IApp {
 	mouseY: number = 0;
 
 	version: string = pkg.version;
+
+	exportMenuVisible: boolean = false;
+	exportDestination: string = null;
+	exportPattern: string = "{project}_{name}";
 
 	constructor() {
 		super();
@@ -639,6 +718,14 @@ export default class App extends Vue implements IApp {
 		window.addEventListener("resize", () => {
 			//console.log(this.$refs.GL);
 		});
+	}
+
+	showExportMenu() {
+		this.exportMenuVisible = true;
+	}
+
+	hideExportMenu() {
+		this.exportMenuVisible = false;
 	}
 
 	undoAction() {
@@ -1051,12 +1138,29 @@ export default class App extends Vue implements IApp {
 		remote.shell.showItemInFolder(path);
 	}
 
+	chooseExportDestination() {
+		let path = dialog.showOpenDialogSync(remote.getCurrentWindow(), {
+			properties: ["openDirectory", "createDirectory"]
+		});
+
+		console.log(path);
+		if (path && path.length > 0) {
+			this.exportDestination = path[0];
+		}
+	}
+
 	async exportTextures() {
 		const settings = new ExportSettings();
 
 		// folder export
 		settings.outputPath = "C:/Users/Nicolas Brown/Desktop/test";
 		settings.outputType = OutputType.Folder;
+
+		if (!this.exportDestination) {
+			this.chooseExportDestination();
+		}
+
+		settings.outputPath = this.exportDestination;
 
 		// zip export
 		// settings.outputPath = "C:/Users/Nicolas Brown/Desktop/test.zip";

@@ -12652,6 +12652,11 @@ vue-eslint-parser@^5.0.0:
     esquery "^1.0.1"
     lodash "^4.17.11"
 
+vue-final-modal@^2.4.1:
+  version "2.4.1"
+  resolved "https://registry.yarnpkg.com/vue-final-modal/-/vue-final-modal-2.4.1.tgz#7c3776295fecbd456e4f83de921379f1d980590a"
+  integrity sha512-tvkPaf94wzoANjNFNP8b40bXuCAk28jg0OkhRKL3oQ9VTTwhlX25gnWG5d2qyxLfnE2237E8ngwF3KNPf/bhrw==
+
 vue-golden-layout@^1.6.0:
   version "1.6.0"
   resolved "https://registry.yarnpkg.com/vue-golden-layout/-/vue-golden-layout-1.6.0.tgz#6a489cb2ff3e4fa1ac302036283f5af870defe6a"
