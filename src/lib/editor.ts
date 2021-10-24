@@ -268,14 +268,18 @@ export class Editor {
 		let node = this.library.create("output");
 		let nodeView = this.addNode(node, 0, 0);
 		// figure out why this doesnt work before adding addNode:
+		node.setProperty("name", "albedo");
 		node.setProperty("color", new Color(1, 1, 1, 1));
+		node.setProperty("components", 0);
 		nodeView.setCenter(800, offset + spacing * 0);
 		this.assignNodeToTextureChannel(nodeView.id, "albedo");
 
 		// normal
 		node = this.library.create("output");
 		nodeView = this.addNode(node, 0, 0);
+		node.setProperty("name", "normal");
 		node.setProperty("color", new Color(0.5, 0.5, 1, 1));
+		node.setProperty("components", 1);
 		nodeView.setCenter(800, offset + spacing * 1);
 		this.assignNodeToTextureChannel(nodeView.id, "normal");
 		const normalId = node.id;
@@ -290,21 +294,30 @@ export class Editor {
 		// roughness
 		node = this.library.create("output");
 		nodeView = this.addNode(node, 0, 0);
+		node.setProperty("name", "roughness");
 		node.setProperty("color", new Color(0.5, 0.5, 0.5, 1));
+		node.setProperty("components", 2);
+		node.setProperty("precision", 1);
 		nodeView.setCenter(800, offset + spacing * 2);
 		this.assignNodeToTextureChannel(nodeView.id, "roughness");
 
 		// metalness
 		node = this.library.create("output");
 		nodeView = this.addNode(node, 0, 0);
+		node.setProperty("name", "metalness");
 		node.setProperty("color", new Color(0, 0, 0, 1));
+		node.setProperty("components", 2);
+		node.setProperty("precision", 1);
 		nodeView.setCenter(800, offset + spacing * 3);
 		this.assignNodeToTextureChannel(nodeView.id, "metalness");
 
 		// height
 		node = this.library.create("output");
 		nodeView = this.addNode(node, 0, 0);
+		node.setProperty("name", "height");
 		node.setProperty("color", new Color(0, 0, 0, 1));
+		node.setProperty("components", 2);
+		node.setProperty("precision", 1);
 		nodeView.setCenter(800, offset + spacing * 4);
 		this.assignNodeToTextureChannel(nodeView.id, "height");
 
