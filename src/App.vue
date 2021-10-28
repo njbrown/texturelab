@@ -55,10 +55,10 @@
 							Choose Folder
 						</button>
 					</div>
-					<div>
+					<!-- <div>
 						<span>Pattern:</span><br />
 						<input v-model="exportPattern" />
-					</div>
+					</div> -->
 					<div>
 						<button
 							style="float:right;margin-top:1em;"
