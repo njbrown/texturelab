@@ -119,29 +119,29 @@ export function setupMenu() {
 				}
 			]
 		},
-		{
-			label: "Export",
-			submenu: [
-				{
-					label: "Zip",
-					click: (item, focusedWindow) => {
-						focusedWindow.webContents.send(MenuCommands.ExportZip);
-					}
-				},
-				{
-					label: "Unity Material",
-					click: (item, focusedWindow) => {
-						focusedWindow.webContents.send(MenuCommands.ExportUnity);
-					}
-				},
-				{
-					label: "Unity (Zip)",
-					click: (item, focusedWindow) => {
-						focusedWindow.webContents.send(MenuCommands.ExportUnityZip);
-					}
-				}
-			]
-		},
+		// {
+		// 	label: "Export",
+		// 	submenu: [
+		// 		{
+		// 			label: "Zip",
+		// 			click: (item, focusedWindow) => {
+		// 				focusedWindow.webContents.send(MenuCommands.ExportZip);
+		// 			}
+		// 		},
+		// 		{
+		// 			label: "Unity Material",
+		// 			click: (item, focusedWindow) => {
+		// 				focusedWindow.webContents.send(MenuCommands.ExportUnity);
+		// 			}
+		// 		},
+		// 		{
+		// 			label: "Unity (Zip)",
+		// 			click: (item, focusedWindow) => {
+		// 				focusedWindow.webContents.send(MenuCommands.ExportUnityZip);
+		// 			}
+		// 		}
+		// 	]
+		// },
 		{
 			label: "Examples",
 			submenu: [

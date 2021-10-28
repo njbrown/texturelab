@@ -8,8 +8,8 @@
 				<i class="bx bx-redo" style="font-size:1.4rem !important;"></i>Redo
 			</a>
 
-			<a class="right button" href="#" @click="exportUnity()">Unity Export</a>
-			<a class="right button" href="#" @click="exportZip()">Zip Export</a>
+			<!-- <a class="right button" href="#" @click="exportUnity()">Unity Export</a>
+			<a class="right button" href="#" @click="exportZip()">Zip Export</a> -->
 			<span class="right">
 				<a class="export export-left" href="#" @click="exportTextures()"
 					>Export</a
@@ -60,7 +60,10 @@
 						<input v-model="exportPattern" />
 					</div>
 					<div>
-						<button @click="exportTextures()">
+						<button
+							style="float:right;margin-top:1em;"
+							@click="exportTextures()"
+						>
 							Export
 						</button>
 					</div>
@@ -447,6 +450,10 @@ export default class App extends Vue implements IApp {
 	exportMenuVisible: boolean = false;
 	exportDestination: string = null;
 	exportPattern: string = "{project}_{name}";
+	// use channel name when no export name is present
+	// this is a fallback for existing textures made prior
+	// to the new export system
+	exportUseChannelName: boolean = false;
 
 	constructor() {
 		super();
