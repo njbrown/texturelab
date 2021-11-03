@@ -55,10 +55,10 @@
 							Choose Folder
 						</button>
 					</div>
-					<!-- <div>
+					<div>
 						<span>Pattern:</span><br />
 						<input v-model="exportPattern" />
-					</div> -->
+					</div>
 					<div>
 						<button
 							style="float:right;margin-top:1em;"
@@ -1040,6 +1040,11 @@ export default class App extends Vue implements IApp {
 			this.resolution = 1024;
 			this.randomSeed = 32;
 
+			const exportData = project.data["export"];
+			if (exportData) {
+				this.exportPattern = exportData["filePattern"] || "{project}_{name}";
+			}
+
 			this.project = unobserve(project);
 			this.library = unobserve(this.editor.library);
 
@@ -1172,14 +1177,16 @@ export default class App extends Vue implements IApp {
 		const settings = new ExportSettings();
 
 		// folder export
-		settings.outputPath = "C:/Users/Nicolas Brown/Desktop/test";
 		settings.outputType = OutputType.Folder;
 
 		if (!this.exportDestination) {
 			this.chooseExportDestination();
 		}
 
+		settings.name = this.project.name;
 		settings.outputPath = this.exportDestination;
+
+		settings.filePattern = this.exportPattern;
 
 		// zip export
 		// settings.outputPath = "C:/Users/Nicolas Brown/Desktop/test.zip";
@@ -1243,6 +1250,11 @@ export default class App extends Vue implements IApp {
 			this.editor.load(project.data);
 			this.resolution = 1024;
 			this.randomSeed = 32;
+
+			const exportData = project.data["export"];
+			if (exportData) {
+				this.exportPattern = exportData["filePattern"] || "{project}_{name}";
+			}
 
 			project.path = null; // this ensures saving pops SaveAs dialog
 			this.project = unobserve(project);

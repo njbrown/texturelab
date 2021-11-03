@@ -124,7 +124,13 @@ export class Exporter {
 				designer.height
 			);
 
-			files.set(node.name + ".png", fileData);
+			const fileName = interpolateString(settings.filePattern, {
+				project: settings.name,
+				name: node.name
+			});
+
+			// files.set(node.name + ".png", fileData);
+			files.set(fileName + ".png", fileData);
 
 			// write to file if folder mode
 			// fs.writeFile(exportPath, bytes, function(err) {
@@ -304,6 +310,7 @@ function exportFilesToFolder(
 	folderPath: string
 ) {
 	for (let fileName of files.keys()) {
+		console.log(fileName);
 		const exportPath = path.join(folderPath, fileName);
 		const bytes = files.get(fileName);
 
@@ -336,6 +343,26 @@ function convertRange(data: Uint16Array) {
 		// if (i < 10) console.log(floatData[i] * UINT_MAX);
 		data[i] = floatData[i] * UINT_MAX;
 	}
+}
+
+function interpolateString(text: string, exportData: object) {
+	if (!text) return "";
+
+	// run regex on text and replace values from the string
+	text = text.replace(
+		/{([a-z]+)}/g,
+		(wholeMatch: string, path: any): string => {
+			// console.log(path);
+			const data = exportData[path];
+			if (!data) return "";
+
+			return data;
+		}
+	);
+
+	// console.log(text);
+
+	return text;
 }
 
 // class PixelDataConverter
