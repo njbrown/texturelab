@@ -57,7 +57,14 @@
 					</div>
 					<div>
 						<span>Pattern:</span><br />
-						<input v-model="exportPattern" />
+						<div>
+							<input v-model="exportPattern" />
+							<button @click="resetExportPattern()">reset</button>
+						</div>
+						<div style="font-size:0.7em;">
+							${project} - Project Name <br />
+							${name} - Output Node Name <br />
+						</div>
 					</div>
 					<div>
 						<button
@@ -1171,6 +1178,10 @@ export default class App extends Vue implements IApp {
 		if (path && path.length > 0) {
 			this.exportDestination = path[0];
 		}
+	}
+
+	resetExportPattern() {
+		this.exportPattern = "${project}_${name}";
 	}
 
 	async exportTextures() {
