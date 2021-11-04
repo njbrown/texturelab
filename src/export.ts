@@ -124,8 +124,12 @@ export class Exporter {
 				designer.height
 			);
 
+			const projectName = settings.name
+				.replace(" ", "_")
+				.replace(/[^0-9a-zA-Z_]/g, "");
+
 			const fileName = interpolateString(settings.filePattern, {
-				project: settings.name,
+				project: projectName,
 				name: node.name
 			});
 
@@ -350,7 +354,7 @@ function interpolateString(text: string, exportData: object) {
 
 	// run regex on text and replace values from the string
 	text = text.replace(
-		/{([a-z]+)}/g,
+		/\${([a-z]+)}/g,
 		(wholeMatch: string, path: any): string => {
 			// console.log(path);
 			const data = exportData[path];

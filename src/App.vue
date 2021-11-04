@@ -449,7 +449,7 @@ export default class App extends Vue implements IApp {
 
 	exportMenuVisible: boolean = false;
 	exportDestination: string = null;
-	exportPattern: string = "{project}_{name}";
+	exportPattern: string = "${project}_${name}";
 	// use channel name when no export name is present
 	// this is a fallback for existing textures made prior
 	// to the new export system
