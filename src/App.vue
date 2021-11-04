@@ -1006,7 +1006,9 @@ export default class App extends Vue implements IApp {
 
 			if (!path.endsWith(".texture")) path += ".texture";
 
-			this.project.name = path.replace(/^.*[\\/]/, "");
+			const fileName = path.replace(/^.*[\\/]/, "");
+			this.project.name =
+				fileName.substr(0, fileName.lastIndexOf(".")) || fileName;
 			this.project.path = path;
 
 			ProjectManager.save(path, this.project);
