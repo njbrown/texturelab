@@ -984,6 +984,12 @@ export default class App extends Vue implements IApp {
 		this.project.data = data;
 		this.project.data["appVersion"] = this.version;
 
+		//export data
+		const exportData = {
+			filePattern: this.exportPattern
+		};
+		this.project.data["export"] = exportData;
+
 		// if project has no name then it hasnt been saved yet
 		if (this.project.path == null || saveAs) {
 			let path = dialog.showSaveDialogSync(remote.getCurrentWindow(), {
@@ -1049,7 +1055,7 @@ export default class App extends Vue implements IApp {
 
 			const exportData = project.data["export"];
 			if (exportData) {
-				this.exportPattern = exportData["filePattern"] || "{project}_{name}";
+				this.exportPattern = exportData["filePattern"] || "${project}_${name}";
 			}
 
 			this.project = unobserve(project);
