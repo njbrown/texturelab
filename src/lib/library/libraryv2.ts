@@ -74,6 +74,8 @@ import { SimplexNoiseV2 } from "./v2/simplexnoise";
 import { DirectionalWarpNodeV2 } from "./v2/directionalwarpv2";
 import { ImageNode } from "./v2/imagenode";
 
+import { Ray } from "./v3/ray";
+
 export function createLibrary() {
 	const lib = new DesignerLibrary();
 	lib.versionName = "v2";
@@ -183,6 +185,8 @@ export function createLibrary() {
 	lib.addNode("image", "Image", ImageNode);
 	//lib.addNode("simplexnoise", "Simplex Noise", SimplexNoiseV2);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
+	
+	lib.addNode("ray", "Ray", Ray);
 
 	return lib;
 }
