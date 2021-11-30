@@ -35,7 +35,8 @@ export enum MenuCommands {
 
 	HelpTutorials = "help_tutorials",
 	HelpAbout = "help_about",
-	HelpSubmitBug = "help_submitbug"
+	HelpSubmitBug = "help_submitbug",
+	HelpDocumentation = "help_docs"
 }
 
 export function setupMenu() {
@@ -209,20 +210,26 @@ export function setupMenu() {
 				}
 			]
 		},
-		// {
-		//   label: "Help",
-		//   submenu: [
-		//     {
-		//       label: "Tutorials"
-		//     },
-		//     {
-		//       label: "About"
-		//     },
-		//     {
-		//       label: "Submit Bug"
-		//     }
-		//   ]
-		// },
+		{
+			label: "Help",
+			submenu: [
+				{
+					label: "Documentation",
+					click: (item, focusedWindow) => {
+						focusedWindow.webContents.send(MenuCommands.HelpDocumentation);
+					}
+				},
+				{
+					label: "About",
+					click: (item, focusedWindow) => {
+						focusedWindow.webContents.send(MenuCommands.HelpAbout);
+					}
+				}
+				// {
+				//   label: "Submit Bug"
+				// }
+			]
+		},
 		...(process.env.NODE_ENV !== "production"
 			? [
 					{

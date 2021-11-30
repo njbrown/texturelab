@@ -551,6 +551,9 @@ export default class App extends Vue implements IApp {
 		electron.ipcRenderer.on(MenuCommands.HelpSubmitBug, (evt, arg) => {
 			this.submitBugs();
 		});
+		electron.ipcRenderer.on(MenuCommands.HelpDocumentation, (evt, arg) => {
+			this.showDocumentation();
+		});
 	}
 
 	mounted() {
@@ -1235,9 +1238,17 @@ export default class App extends Vue implements IApp {
 
 	showTutorials() {}
 
-	showAboutDialog() {}
+	showAboutDialog() {
+		alert(
+			"TextureLab \n v" + pkg.displayVersion + "\n\n Developed by njbrown\n"
+		);
+	}
 
 	submitBugs() {}
+
+	showDocumentation() {
+		shell.openExternal("https://texturelab.io");
+	}
 
 	openExample(fileName: string) {
 		let fullPath = path.join(__static, "assets/examples/", fileName);
