@@ -1247,7 +1247,7 @@ export default class App extends Vue implements IApp {
 	submitBugs() {}
 
 	showDocumentation() {
-		shell.openExternal("https://texturelab.io");
+		shell.openExternal("https://www.texturelab.io/docs");
 	}
 
 	openExample(fileName: string) {
