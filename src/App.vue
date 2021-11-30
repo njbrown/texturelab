@@ -25,7 +25,7 @@
 					Hello this is the export modal
 				</div>
 			</vue-final-modal> -->
-			<vue-final-modal
+			<!-- <vue-final-modal
 				v-model="exportMenuVisible"
 				classes="modal-container"
 				content-class="modal-content"
@@ -34,13 +34,13 @@
 					<i class="bx bx-x" style="font-size:1.4rem !important;"></i>
 				</button>
 				<span class="modal__title">Export Settings</span>
-				<!-- <div>
+				<div>
 					<span>Output Type</span>
 					<select>
 						<option value="zip">Zip</option>
 						<option value="folder">Folder</option>
 					</select>
-				</div> -->
+				</div>
 				<div class="modal__content">
 					<span>Destination:</span><br />
 					<div>
@@ -75,7 +75,17 @@
 						</button>
 					</div>
 				</div>
-			</vue-final-modal>
+			</vue-final-modal> -->
+			<exportdialog
+				:exportMenuVisible="exportMenuVisible"
+				@show="exportMenuVisible = true"
+				@hide="exportMenuVisible = false"
+				:exportPattern="exportPattern"
+				@exportPatternChanged="exportPatternChanged"
+				:project="project"
+				:editor="editor"
+				@exportTextures="exportTextures"
+			/>
 		</div>
 		<golden-layout
 			class="container"
@@ -335,35 +345,6 @@ body {
 </style>
 
 <style scoped>
-::v-deep .modal-container {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	min-width: 50vw;
-}
-::v-deep .modal-content {
-	position: relative;
-	display: flex;
-	flex-direction: column;
-	margin: 0 1rem;
-	padding: 1rem;
-	border: 1px solid #e2e8f0;
-	border-radius: 0.25rem;
-	background: #fff;
-}
-.modal__title {
-	margin: 0 2rem 0 0;
-	font-size: 1.5rem;
-	font-weight: 700;
-}
-.modal__close {
-	position: absolute;
-	top: 0.5rem;
-	right: 0.5rem;
-}
-</style>
-
-<style scoped>
 .dark-mode div::v-deep .modal-content {
 	border-color: #2d3748;
 	background-color: #1a202c;
@@ -400,6 +381,7 @@ import { AddItemsAction } from "./lib/actions/additemsaction";
 import { UndoStack } from "./lib/undostack";
 import { unobserve } from "./unobserve";
 import { IApp } from "./iapp";
+import ExportDialog from "./views/dialogs/ExportDialog.vue";
 import { SetGlobalRandomSeedAction } from "./lib/actions/setglobalrandomseedaction";
 const electron = require("electron");
 const remote = require("@electron/remote");
@@ -412,11 +394,11 @@ import {
 	ImageFileType,
 	OutputType
 } from "./export";
-import VfmPlugin from "vue-final-modal";
+// import VfmPlugin from "vue-final-modal";
 
 declare var __static: any;
 
-Vue.use(VfmPlugin);
+// Vue.use(VfmPlugin);
 
 @Component({
 	components: {
@@ -425,7 +407,8 @@ Vue.use(VfmPlugin);
 		NodePropertiesView,
 		LibraryMenu,
 		preview2d: Preview2D,
-		preview3d: Preview3D
+		preview3d: Preview3D,
+		exportdialog: ExportDialog
 	}
 })
 export default class App extends Vue implements IApp {
@@ -454,7 +437,7 @@ export default class App extends Vue implements IApp {
 
 	version: string = pkg.version;
 
-	exportMenuVisible: boolean = false;
+	exportMenuVisible: boolean = true;
 	exportDestination: string = null;
 	exportPattern: string = "${project}_${name}";
 	// use channel name when no export name is present
@@ -748,6 +731,7 @@ export default class App extends Vue implements IApp {
 
 	showExportMenu() {
 		this.exportMenuVisible = true;
+		this.$forceUpdate();
 	}
 
 	hideExportMenu() {
@@ -1177,15 +1161,25 @@ export default class App extends Vue implements IApp {
 		remote.shell.showItemInFolder(path);
 	}
 
-	chooseExportDestination() {
+	// returns true if destination was chosen
+	// returns false otherwise
+	chooseExportDestination(): boolean {
 		let path = dialog.showOpenDialogSync(remote.getCurrentWindow(), {
 			properties: ["openDirectory", "createDirectory"]
 		});
 
-		console.log(path);
+		// console.log(path);
 		if (path && path.length > 0) {
 			this.exportDestination = path[0];
+			return true;
+		} else {
+			return false;
 		}
+	}
+
+	exportPatternChanged(value) {
+		console.log(value);
+		this.exportPattern = value;
 	}
 
 	resetExportPattern() {
@@ -1199,7 +1193,7 @@ export default class App extends Vue implements IApp {
 		settings.outputType = OutputType.Folder;
 
 		if (!this.exportDestination) {
-			this.chooseExportDestination();
+			if (!this.chooseExportDestination()) return;
 		}
 
 		settings.name = this.project.name;

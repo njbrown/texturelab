@@ -25,10 +25,12 @@ if (process.env.VUE_APP_SENTRY_DNS) {
 import App from "./App.vue";
 import router from "./router";
 import store from "./store";
+import VfmPlugin from "vue-final-modal";
 
 Vue.config.productionTip = false;
 Vue.use(vgl);
 Vue.use(VueToast);
+Vue.use(VfmPlugin);
 
 import { Titlebar, Color } from "custom-electron-titlebar";
 const titleBar = new Titlebar({
