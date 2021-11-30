@@ -437,7 +437,7 @@ export default class App extends Vue implements IApp {
 
 	version: string = pkg.version;
 
-	exportMenuVisible: boolean = true;
+	exportMenuVisible: boolean = false;
 	exportDestination: string = null;
 	exportPattern: string = "${project}_${name}";
 	// use channel name when no export name is present
@@ -1266,7 +1266,7 @@ export default class App extends Vue implements IApp {
 
 			const exportData = project.data["export"];
 			if (exportData) {
-				this.exportPattern = exportData["filePattern"] || "{project}_{name}";
+				this.exportPattern = exportData["filePattern"] || "${project}_${name}";
 			}
 
 			project.path = null; // this ensures saving pops SaveAs dialog

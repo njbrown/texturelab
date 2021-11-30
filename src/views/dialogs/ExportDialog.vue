@@ -39,7 +39,11 @@
 			<div class="prop-container">
 				<span class="prop-title">Pattern:</span><br />
 				<div>
-					<input class="text-input" v-model="exportPattern" />
+					<input
+						class="text-input"
+						:value="exportPattern"
+						@change="onExportPatternChanged"
+					/>
 					<a class="small-button" href="#" @click="resetExportPattern()"
 						>reset</a
 					>
@@ -178,9 +182,12 @@ export default class ExportDialog extends Vue {
 		// this.exportMenuVisible = false;
 	}
 
-	onExportPatternChanged(value: string) {
+	onExportPatternChanged(event: MouseEvent) {
 		// this.exportPattern = value;
-		this.$emit("exportPatternChanged", value);
+		this.$emit(
+			"exportPatternChanged",
+			(event.target as HTMLInputElement).value
+		);
 	}
 
 	chooseExportDestination() {
