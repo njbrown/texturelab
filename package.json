@@ -1,6 +1,7 @@
 {
 	"name": "texturelab",
-	"version": "0.3.1",
+	"version": "0.3.2",
+	"displayVersion":"0.3.2-beta",
 	"private": true,
 	"scripts": {
 		"serve": "vue-cli-service serve",
