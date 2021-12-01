@@ -1,5 +1,7 @@
 import { NodeRenderContext } from "@/lib/designer";
+import { TextureDataType } from "@/lib/designer/gl";
 import { FloatProperty } from "@/lib/designer/properties";
+import { TextureDataConverter } from "@/lib/designer/texturedataconverter";
 import { DesignerNode } from "../../designer/designernode";
 
 // https://xjavascript.com/view/639466/read-pixels-in-webgltexture-rendering-webgl-to-texture
@@ -13,7 +15,7 @@ export class Bevel extends DesignerNode {
 
 	// working pixels
 	resultPixels: Float32Array;
-	readPixels: Uint16Array;
+	readPixels: Float32Array;
 
 	readFbo: WebGLFramebuffer;
 
@@ -21,6 +23,8 @@ export class Bevel extends DesignerNode {
 
 	width: number;
 	height: number;
+
+	converter: TextureDataConverter;
 
 	public init() {
 		this.title = "Bevel";
@@ -40,6 +44,9 @@ export class Bevel extends DesignerNode {
 
 		// create framebuffer for reading pixels from input texture
 		this.readFbo = this.gl.createFramebuffer();
+		this.converter = new TextureDataConverter(
+			this.gl as WebGL2RenderingContext
+		);
 	}
 
 	private initArrays() {
@@ -61,7 +68,7 @@ export class Bevel extends DesignerNode {
 		this.gridOuter = new Float64Array(gridSize);
 		this.gridInner = new Float64Array(gridSize);
 		this.resultPixels = new Float32Array(width * height * 4);
-		this.readPixels = new Uint16Array(width * height * 4);
+		this.readPixels = new Float32Array(width * height * 4);
 	}
 
 	public render(context: NodeRenderContext) {
@@ -90,28 +97,37 @@ export class Bevel extends DesignerNode {
 		let gridSize = width * height;
 		let gl = context.gl as WebGL2RenderingContext;
 
-		gl.bindFramebuffer(gl.FRAMEBUFFER, this.readFbo);
-		gl.framebufferTexture2D(
-			gl.FRAMEBUFFER,
-			gl.COLOR_ATTACHMENT0,
-			gl.TEXTURE_2D,
-			inputTexture,
-			0
-		);
-		if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE) {
-			gl.readPixels(
-				0,
-				0,
+		// gl.bindFramebuffer(gl.FRAMEBUFFER, this.readFbo);
+		// gl.framebufferTexture2D(
+		// 	gl.FRAMEBUFFER,
+		// 	gl.COLOR_ATTACHMENT0,
+		// 	gl.TEXTURE_2D,
+		// 	inputTexture,
+		// 	0
+		// );
+		// if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE) {
+		// 	gl.readPixels(
+		// 		0,
+		// 		0,
+		// 		width,
+		// 		height,
+		// 		gl.RGBA,
+		// 		gl.HALF_FLOAT,
+		// 		this.readPixels
+		// 	);
+		// } else {
+		// 	alert("Bevel: unable to read from FBO");
+		// }
+		// gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+		this.readPixels = new Float32Array(
+			this.converter.getData(
+				inputTexture,
 				width,
 				height,
-				gl.RGBA,
-				gl.HALF_FLOAT,
-				this.readPixels
-			);
-		} else {
-			alert("Bevel: unable to read from FBO");
-		}
-		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+				TextureDataType.Float32
+			)
+		);
 
 		// max value from each color component
 		const VALUE_MAX = 15360.0;
@@ -119,13 +135,15 @@ export class Bevel extends DesignerNode {
 
 		// copy data over from canvas data to grid
 		for (let i = 0; i < gridSize; i++) {
-			let col = 0;
-			col += VALUE_MAX - pixels[i * 4 + 0];
-			col += VALUE_MAX - pixels[i * 4 + 1];
-			col += VALUE_MAX - pixels[i * 4 + 2];
+			// let col = 0;
+			// col += VALUE_MAX - pixels[i * 4 + 0];
+			// col += VALUE_MAX - pixels[i * 4 + 1];
+			// col += VALUE_MAX - pixels[i * 4 + 2];
+			// let a = (col * 0.3333) / VALUE_MAX;
 
-			//grid[i] = (col * 0.3333) / 255;
-			let a = (col * 0.3333) / VALUE_MAX;
+			// just use the red component
+			let a = pixels[i * 4 + 0];
+
 			//let a = 1.0 - (col * 0.3333) / 255; // invert
 			this.gridOuter[i] =
 				a === 1 ? 0 : a === 0 ? INF : Math.pow(Math.max(0, 0.5 - a), 2);
