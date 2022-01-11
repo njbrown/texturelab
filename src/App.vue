@@ -394,6 +394,8 @@ import {
 	ImageFileType,
 	OutputType
 } from "./export";
+import settings from "electron-settings";
+import { Settings } from "./settings";
 // import VfmPlugin from "vue-final-modal";
 
 declare var __static: any;
@@ -460,6 +462,11 @@ export default class App extends Vue implements IApp {
 		});
 		electron.ipcRenderer.on(MenuCommands.FileOpen, (evt, arg) => {
 			this.openProject();
+		});
+		electron.ipcRenderer.on(MenuCommands.FileOpenRecent, (evt, path) => {
+			this.openProject(path);
+			// open recent project at path
+			// alert("opening file: " + path);
 		});
 		electron.ipcRenderer.on(MenuCommands.FileSave, (evt, arg) => {
 			this.saveProject();
@@ -892,6 +899,8 @@ export default class App extends Vue implements IApp {
 				this.setWindowTitle(project.name);
 
 				UndoStack.current.clear();
+
+				this.addRecentFiles(file.path);
 			};
 
 			if (!UndoStack.current.isClean()) {
@@ -918,6 +927,24 @@ export default class App extends Vue implements IApp {
 				openProject();
 			}
 		}
+	}
+
+	addRecentFiles(path: string) {
+		let recentFiles = settings.getSync(Settings.RecentFiles);
+		if (!Array.isArray(recentFiles)) {
+			recentFiles = [];
+		}
+
+		// remove existing item
+		const index = recentFiles.indexOf(path);
+		if (index !== -1) {
+			recentFiles.splice(index, 1);
+		}
+
+		// add new item to front of list
+		recentFiles.unshift(path);
+
+		settings.setSync(Settings.RecentFiles, recentFiles);
 	}
 
 	newProject() {
@@ -1002,6 +1029,8 @@ export default class App extends Vue implements IApp {
 			this.setWindowTitle(this.project.name);
 			UndoStack.current.setClean();
 
+			this.addRecentFiles(path);
+
 			if (onSuccess) onSuccess();
 		} else {
 			ProjectManager.save(this.project.path, this.project);
@@ -1009,21 +1038,24 @@ export default class App extends Vue implements IApp {
 		}
 	}
 
-	openProject() {
+	openProject(projectPath: string = null) {
 		const openProject = () => {
-			let paths = dialog.showOpenDialogSync(remote.getCurrentWindow(), {
-				filters: [
-					{
-						name: "TextureLab Texture",
-						extensions: ["texture"]
-					}
-				],
-				defaultPath: "material"
-			});
+			let path = projectPath;
+			if (!path) {
+				let paths = dialog.showOpenDialogSync(remote.getCurrentWindow(), {
+					filters: [
+						{
+							name: "TextureLab Texture",
+							extensions: ["texture"]
+						}
+					],
+					defaultPath: "material"
+				});
 
-			if (!paths) return;
+				if (!paths) return;
 
-			let path = paths[0];
+				path = paths[0];
+			}
 
 			let project = ProjectManager.load(path);
 			// console.log(project);
@@ -1053,6 +1085,8 @@ export default class App extends Vue implements IApp {
 			this.setWindowTitle(project.name);
 
 			UndoStack.current.clear();
+
+			this.addRecentFiles(path);
 		};
 
 		if (!UndoStack.current.isClean()) {

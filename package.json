@@ -1,7 +1,7 @@
 {
 	"name": "texturelab",
 	"version": "0.3.2",
-	"displayVersion":"0.3.2-beta",
+	"displayVersion": "0.3.2-beta",
 	"private": true,
 	"scripts": {
 		"serve": "vue-cli-service serve",
@@ -30,6 +30,7 @@
 		"core-js": "^2.6.5",
 		"custom-electron-titlebar": "^3.1.0",
 		"dedent-js": "^1.0.1",
+		"electron-settings": "^4.0.2",
 		"element-resize-detector": "^1.1.15",
 		"fast-png": "^5.0.4",
 		"jquery": "^3.5.0",

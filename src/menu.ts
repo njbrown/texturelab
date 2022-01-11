@@ -4,10 +4,13 @@
 // https://alan.fyi/renderer-menu-functions-in-electron-vue/
 
 const { app, Menu, BrowserWindow } = require("electron");
+import settings from "electron-settings";
+import { Settings } from "./settings";
 
 export enum MenuCommands {
 	FileNew = "file_new",
 	FileOpen = "file_open",
+	FileOpenRecent = "file_open_recent",
 	FileSave = "file_save",
 	FileSaveAs = "file_saveas",
 	FileExit = "file_exit",
@@ -40,6 +43,27 @@ export enum MenuCommands {
 }
 
 export function setupMenu() {
+	//get recent files
+	console.log("getting files");
+	let recentFiles = settings.getSync(Settings.RecentFiles);
+	console.log("got files");
+	console.log(recentFiles);
+	if (!Array.isArray(recentFiles)) {
+		recentFiles = [];
+	}
+
+	let recentFilesMenu = [];
+	recentFiles.forEach(file => {
+		if (typeof file !== "string") return;
+
+		recentFilesMenu.push({
+			label: file,
+			click: (item, focusedWindow) => {
+				focusedWindow.webContents.send(MenuCommands.FileOpenRecent, file);
+			}
+		});
+	});
+
 	const template = [
 		{
 			label: "File",
@@ -57,6 +81,10 @@ export function setupMenu() {
 					click: (item, focusedWindow) => {
 						focusedWindow.webContents.send(MenuCommands.FileOpen);
 					}
+				},
+				{
+					label: "Open Recent",
+					submenu: recentFilesMenu
 				},
 				{
 					label: "Save",
