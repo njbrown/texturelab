@@ -961,6 +961,9 @@ export default class App extends Vue implements IApp {
 			this.resolution = 1024;
 			this.randomSeed = 32;
 
+			this.exportPattern = "${project}_${name}";
+			this.exportDestination = null;
+
 			this.setWindowTitle(this.project.name);
 			UndoStack.current.clear();
 		};
@@ -1072,6 +1075,8 @@ export default class App extends Vue implements IApp {
 			this.resolution = 1024;
 			this.randomSeed = 32;
 
+			this.exportPattern = "${project}_${name}";
+			this.exportDestination = null;
 			const exportData = project.data["export"];
 			if (exportData) {
 				this.exportPattern = exportData["filePattern"] || "${project}_${name}";
@@ -1316,6 +1321,9 @@ export default class App extends Vue implements IApp {
 			this.project = unobserve(project);
 			this.library = unobserve(this.editor.library);
 			this.setWindowTitle(project.name);
+
+			this.exportPattern = "${project}_${name}";
+			this.exportDestination = null;
 
 			UndoStack.current.clear();
 		};
