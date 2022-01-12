@@ -465,8 +465,6 @@ export default class App extends Vue implements IApp {
 		});
 		electron.ipcRenderer.on(MenuCommands.FileOpenRecent, (evt, path) => {
 			this.openProject(path);
-			// open recent project at path
-			// alert("opening file: " + path);
 		});
 		electron.ipcRenderer.on(MenuCommands.FileSave, (evt, arg) => {
 			this.saveProject();
