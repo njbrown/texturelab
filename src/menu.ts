@@ -44,10 +44,7 @@ export enum MenuCommands {
 
 export function setupMenu() {
 	//get recent files
-	console.log("getting files");
 	let recentFiles = settings.getSync(Settings.RecentFiles);
-	console.log("got files");
-	console.log(recentFiles);
 	if (!Array.isArray(recentFiles)) {
 		recentFiles = [];
 	}

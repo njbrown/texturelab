@@ -36,8 +36,10 @@ export class View3D {
 			roughness: 0.5,
 			metalness: 0.0,
 			transparent: true,
-			alphaTest: 0,
-			side: THREE.DoubleSide
+			// alphaTest: 0,
+			// depthFunc: THREE.AlwaysDepth,
+			side: THREE.FrontSide,
+			blending: THREE.NormalBlending
 		}
 	);
 	private cubeMap: THREE.CubeTexture;
@@ -418,11 +420,14 @@ export class View3D {
 		// clear all textures
 		// reset camera position
 		this.material = new THREE.MeshStandardMaterial({
-			//color: 0x3F51B5,
 			color: 0xffffff,
 			roughness: 0.5,
 			metalness: 0.0,
-			side: THREE.DoubleSide
+			transparent: true,
+			// alphaTest: 0,
+			// depthFunc: THREE.AlwaysDepth,
+			side: THREE.FrontSide,
+			blending: THREE.NormalBlending
 		});
 
 		// this.material.envMap = this.cubeMap;
