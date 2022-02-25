@@ -113,6 +113,7 @@ export class Editor {
 		imageCanvas: ImageCanvas,
 		channelName: string
 	) => void;
+	onnodetextureupdated?: (node: DesignerNode, timeInMs: number) => void;
 
 	constructor() {
 		this.displayNodes = new DisplayNodes();
@@ -360,6 +361,8 @@ export class Editor {
 				if (dnode == self.selectedDesignerNode)
 					self.onpreviewnode(dnode, graphNode.imageCanvas.canvas);
 			}
+
+			if (self.onnodetextureupdated) self.onnodetextureupdated(dnode, dtInMs);
 
 			if (self.ontexturechannelupdated && graphNode.textureChannel) {
 				self.ontexturechannelupdated(
@@ -819,6 +822,8 @@ export class Editor {
 		}
 		// load scene
 		const d = Designer.load(data, library);
+		// copy over relevant props
+		if (this.designer) d.setUpdateMode(this.designer.updateMode);
 
 		// load graph
 		const g = NodeScene.load(d, data["scene"], this.canvas);

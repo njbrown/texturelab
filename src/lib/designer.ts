@@ -42,6 +42,11 @@ export class NodeRenderTimer {
 	node: DesignerNode;
 }
 
+export enum UpdateMode {
+	Immediate = "immediate",
+	Staggered = "staggered"
+}
+
 export class Designer {
 	canvas: HTMLCanvasElement;
 	gl: WebGL2RenderingContext;
@@ -50,6 +55,8 @@ export class Designer {
 	vertexShaderSource: string;
 	fbo: WebGLFramebuffer;
 	thumbnailProgram: WebGLProgram;
+
+	updateMode: UpdateMode;
 
 	randomSeed: number;
 	width: number;
@@ -85,6 +92,8 @@ export class Designer {
 		this.width = 1024;
 		this.height = 1024;
 		this.randomSeed = 32;
+
+		this.updateMode = UpdateMode.Staggered;
 
 		this.canvas = <HTMLCanvasElement>document.createElement("canvas");
 		//document.body.appendChild(this.canvas);
@@ -184,7 +193,7 @@ export class Designer {
 		this.createThumbmailProgram();
 	}
 
-	update() {
+	updateImmediate() {
 		this.updateRenderTimers();
 
 		let updateQuota = 10000000000000;
@@ -196,7 +205,7 @@ export class Designer {
 					// update this node's texture and thumbnail
 
 					// a note about this:
-					// technically all the child nodes should be updated here, so this.updateList
+					// technically all the subsequent nodes should be updated here, so this.updateList
 					// wont be touched in this function
 					// so we avoid messing up our loop since the length of this.updateList wont change
 					this.generateImageFromNode(node);
@@ -211,6 +220,44 @@ export class Designer {
 				}
 			}
 		}
+	}
+
+	updateStaggered() {
+		this.updateRenderTimers();
+
+		const batch: DesignerNode[] = [];
+
+		for (const node of this.updateList) {
+			if (this.haveAllUpdatedLeftNodes(node)) {
+				batch.push(node);
+			}
+		}
+
+		for (const node of batch) {
+			this.generateImageFromNode(node, false);
+
+			// remove from list
+			batch.splice(batch.indexOf(node), 1);
+			this.updateList.splice(this.updateList.indexOf(node), 1);
+			node.needsUpdate = false;
+		}
+	}
+
+	get processedNodes() {
+		return this.nodes.length - this.updateList.length;
+	}
+
+	get totalNodes() {
+		return this.nodes.length;
+	}
+
+	setUpdateMode(updateMode: UpdateMode) {
+		this.updateMode = updateMode;
+	}
+
+	update() {
+		if (this.updateMode == UpdateMode.Immediate) this.updateImmediate();
+		else this.updateStaggered();
 	}
 
 	updateRenderTimers() {
@@ -430,17 +477,22 @@ export class Designer {
 	// for every node updated in this function, it emits onthumbnailgenerated(node, thumbnail)
 	// it returns a thumbnail (an html image)
 
-	generateImageFromNode(node: DesignerNode): HTMLImageElement {
-		//console.log("generating node "+node.exportName);
-		// process input nodes
+	generateImageFromNode(
+		node: DesignerNode,
+		processInputs: boolean = true
+	): HTMLImageElement {
 		const inputs: NodeInput[] = this.getNodeInputs(node);
-		for (const input of inputs) {
-			if (input.node.needsUpdate) {
-				this.generateImageFromNode(input.node);
 
-				// remove from update list since thumbnail has now been generated
-				input.node.needsUpdate = false;
-				this.updateList.splice(this.updateList.indexOf(input.node), 1);
+		if (processInputs) {
+			// process input nodes
+			for (const input of inputs) {
+				if (input.node.needsUpdate) {
+					this.generateImageFromNode(input.node);
+
+					// remove from update list since thumbnail has now been generated
+					input.node.needsUpdate = false;
+					this.updateList.splice(this.updateList.indexOf(input.node), 1);
+				}
 			}
 		}
 
