@@ -149,6 +149,26 @@
 								@blur="setRandomSeed"
 								@focus="captureRandomSeed"
 							/>
+
+							<div style="float:right; display:flex;flex-direction:row;">
+								<select
+									class="enum"
+									:value="updateMode"
+									@change="setUpdateMode"
+								>
+									<option value="staggered">Update Mode: Staggered</option>
+									<option value="immediate">Update Mode: Immediate</option>
+								</select>
+								<!-- <div
+									style="width:10em;display:inline-block; height:100%;text-align:center;color:white;white-space:nowrap; border-radius:4px; background:skyblue;"
+								>
+									60% (12/20)
+								</div> -->
+								<progress-view
+									:value="this.processedNodes"
+									:total="this.totalNodes"
+								/>
+							</div>
 						</div>
 						<canvas
 							width="400"
@@ -357,6 +377,7 @@ import { Component, Prop, Vue, Watch, Model } from "vue-property-decorator";
 import EditorView from "@/views/Editor.vue";
 import LibraryView from "@/views/Library.vue";
 import LibraryMenu from "@/components/LibraryMenu.vue";
+import ProgressView from "@/components/ProgressView.vue";
 import { Editor } from "@/lib/editor";
 import { View3D } from "@/lib/view3d";
 import { createLibrary as createV2Library } from "@/lib/library/libraryv2";
@@ -365,7 +386,7 @@ import Preview2D from "./views/Preview2D.vue";
 import Preview3D from "./views/Preview3D.vue";
 import { DesignerLibrary } from "./lib/designer/library";
 import { DesignerNode } from "./lib/designer/designernode";
-import { Designer } from "./lib/designer";
+import { Designer, UpdateMode } from "./lib/designer";
 import { Project, ProjectManager } from "./lib/project";
 import { Titlebar, Color } from "custom-electron-titlebar";
 import { MenuCommands } from "./menu";
@@ -408,6 +429,7 @@ declare var __static: any;
 		LibraryView,
 		NodePropertiesView,
 		LibraryMenu,
+		ProgressView,
 		preview2d: Preview2D,
 		preview3d: Preview3D,
 		exportdialog: ExportDialog
@@ -427,6 +449,10 @@ export default class App extends Vue implements IApp {
 	//designer!: Designer;
 
 	project: Project;
+
+	updateMode: UpdateMode = UpdateMode.Staggered;
+	processedNodes: number = 0;
+	totalNodes: number = 0;
 
 	isMenuSetup: boolean = false;
 
@@ -674,6 +700,10 @@ export default class App extends Vue implements IApp {
 		this.editor.onframeselected = frame => {
 			this.propHolder = unobserve(frame);
 		};
+		this.editor.onnodetextureupdated = (dnode, dtInMs) => {
+			this.processedNodes = this.editor.designer.processedNodes;
+			this.totalNodes = this.editor.designer.totalNodes;
+		};
 		// this.editor.onnavigationselected = nav => {
 		//   this.propHolder = nav;
 		// };
@@ -780,6 +810,12 @@ export default class App extends Vue implements IApp {
 		let lib = this.$refs.libraryMenu as any;
 
 		if (lib.show == false) lib.showModal(this.mouseX, this.mouseY);
+	}
+
+	setUpdateMode(evt: any) {
+		// console.log(evt);
+		this.updateMode = evt.target.value as UpdateMode;
+		this.editor.designer.setUpdateMode(this.updateMode);
 	}
 
 	itemCreated(item: any) {
