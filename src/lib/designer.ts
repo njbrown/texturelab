@@ -204,14 +204,15 @@ export class Designer {
 				if (this.haveAllUpdatedLeftNodes(node)) {
 					// update this node's texture and thumbnail
 
+					// remove from list
+					this.updateList.splice(this.updateList.indexOf(node), 1);
+
 					// a note about this:
 					// technically all the subsequent nodes should be updated here, so this.updateList
 					// wont be touched in this function
 					// so we avoid messing up our loop since the length of this.updateList wont change
 					this.generateImageFromNode(node);
 
-					// remove from list
-					this.updateList.splice(this.updateList.indexOf(node), 1);
 					node.needsUpdate = false;
 					//break;// one per update loop
 
@@ -234,11 +235,12 @@ export class Designer {
 		}
 
 		for (const node of batch) {
-			this.generateImageFromNode(node, false);
-
 			// remove from list
 			batch.splice(batch.indexOf(node), 1);
 			this.updateList.splice(this.updateList.indexOf(node), 1);
+
+			this.generateImageFromNode(node, false);
+
 			node.needsUpdate = false;
 		}
 	}
