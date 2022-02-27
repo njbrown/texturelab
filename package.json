@@ -20,7 +20,7 @@
 	"dependencies": {
 		"@electron/remote": "^1.2.0",
 		"@petamoriken/float16": "^3.4.7",
-		"@sentry/electron": "^2.5.1",
+		"@sentry/electron": "^3.0.0",
 		"@types/adm-zip": "^0.4.34",
 		"@types/node": "^16.9.2",
 		"@types/pngjs": "^6.0.1",
