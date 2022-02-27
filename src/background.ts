@@ -6,11 +6,13 @@ import installExtension, { VUEJS_DEVTOOLS } from "electron-devtools-installer";
 import { setupMenu } from "./menu";
 import * as Sentry from "@sentry/electron";
 
-if (process.env.VUE_APP_SENTRY_DNS) {
-	Sentry.init({ dsn: process.env.VUE_APP_SENTRY_DNS });
-}
+// todo: fix later
+// https://docs.sentry.io/platforms/javascript/guides/electron/
+// if (process.env.VUE_APP_SENTRY_DNS) {
+// 	Sentry.init({ dsn: process.env.VUE_APP_SENTRY_DNS });
+// }
 
-require("@electron/remote/main").initialize();
+// require("@electron/remote/main").initialize();
 
 const isDevelopment = process.env.NODE_ENV !== "production";
 

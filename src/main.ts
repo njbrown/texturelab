@@ -18,9 +18,11 @@ import * as $ from "jquery";
 (<any>window).$ = $;
 (<any>window).JQuery = $;
 
-if (process.env.VUE_APP_SENTRY_DNS) {
-	Sentry.init({ dsn: process.env.VUE_APP_SENTRY_DNS });
-}
+// todo: fix later
+// https://docs.sentry.io/platforms/javascript/guides/electron/
+// if (process.env.VUE_APP_SENTRY_DNS) {
+// 	Sentry.init({ dsn: process.env.VUE_APP_SENTRY_DNS });
+// }
 
 import App from "./App.vue";
 import router from "./router";
