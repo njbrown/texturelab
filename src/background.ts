@@ -12,7 +12,8 @@ import * as Sentry from "@sentry/electron";
 // 	Sentry.init({ dsn: process.env.VUE_APP_SENTRY_DNS });
 // }
 
-// require("@electron/remote/main").initialize();
+// seems as tho this needs to be called else the app breaks
+require("@electron/remote/main").initialize();
 
 const isDevelopment = process.env.NODE_ENV !== "production";
 
@@ -26,6 +27,7 @@ let win: BrowserWindow | null;
 protocol.registerSchemesAsPrivileged([
 	{ scheme: "app", privileges: { secure: true, standard: true } }
 ]);
+console.log("registered schemes");
 
 function createWindow() {
 	// Create the browser window.
@@ -51,6 +53,7 @@ function createWindow() {
 	} else {
 		createProtocol("app");
 		// Load the index.html when not in development
+		console.log("loading page");
 		win.loadURL("app://./index.html");
 	}
 
