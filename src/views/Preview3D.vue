@@ -215,8 +215,8 @@ export default {
 				let paths = dialog.showOpenDialogSync(remote.getCurrentWindow(), {
 					filters: [
 						{
-							name: "Obj Model",
-							extensions: ["obj"]
+							name: "Obj or FBX Model",
+							extensions: ["obj", "fbx"]
 						}
 					],
 					defaultPath: ""

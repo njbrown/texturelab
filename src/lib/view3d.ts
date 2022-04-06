@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import { OrbitControls } from "three-orbitcontrols-ts";
 import { DesignerNode } from "./designer/designernode";
 import { ImageCanvas } from "./designer/imagecanvas";
@@ -402,14 +404,28 @@ export class View3D {
 	}
 
 	loadModel(modelPath: string) {
-		if (this.model) this.scene.remove(this.model);
+		const ext = modelPath
+			.split(".")
+			.pop()
+			.toLocaleLowerCase();
 
-		let loader = new OBJLoader();
+		let loader = null;
+		if (ext === "obj") loader = new OBJLoader();
+		else if (ext === "fbx") loader = new FBXLoader();
+		else return;
+
 		loader.load(modelPath, group => {
+			if (this.model) this.scene.remove(this.model);
+
 			// assign material to all children
-			for (let child of group.children)
-				if (child instanceof THREE.Mesh)
-					(child as THREE.Mesh).material = this.material;
+			// for (let child of group.children)
+			// 	if (child instanceof THREE.Mesh)
+			// 		(child as THREE.Mesh).material = this.material;
+
+			group.traverse(obj => {
+				if (obj instanceof THREE.Mesh)
+					(obj as THREE.Mesh).material = this.material;
+			});
 
 			this.model = group;
 			this.scene.add(this.model);
