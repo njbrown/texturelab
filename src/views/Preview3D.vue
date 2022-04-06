@@ -212,23 +212,21 @@ export default {
 				this.view3d.setModel(evt.target.value);
 				this.shape = evt.target.value;
 			} else {
-				dialog.showOpenDialog(
-					remote.getCurrentWindow(),
-					{
-						filters: [
-							{
-								name: "Obj Model",
-								extensions: ["obj"]
-							}
-						],
-						defaultPath: ""
-					},
-					(paths, bookmarks) => {
-						let path = paths[0];
-						this.view3d.loadModel(path);
-						this.shape = null;
-					}
-				);
+				let paths = dialog.showOpenDialogSync(remote.getCurrentWindow(), {
+					filters: [
+						{
+							name: "Obj Model",
+							extensions: ["obj"]
+						}
+					],
+					defaultPath: ""
+				});
+
+				if (paths && paths.length > 0) {
+					const path = paths[0];
+					this.view3d.loadModel(path);
+					this.shape = null;
+				}
 			}
 		},
 		setTiling(evt) {
