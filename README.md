@@ -16,6 +16,9 @@
 
 ![Screenshot](https://user-images.githubusercontent.com/1708550/123368911-4ceb9f00-d542-11eb-87b5-b0fc3ea3cc3d.png)
 
+# NOTE!
+Texturelab will soon be converted to a qt project. All issues will be addressed after the conversion is complete.
+
 ## Building
 
 Building is done with `yarn`. Install it [here](https://classic.yarnpkg.com/en/docs/install) if you havent already.
