@@ -73,6 +73,13 @@ import { GradientNoiseFractalSum } from "./v2/gradientnoisefractalsum";
 import { SimplexNoiseV2 } from "./v2/simplexnoise";
 import { DirectionalWarpNodeV2 } from "./v2/directionalwarpv2";
 import { ImageNode } from "./v2/imagenode";
+import { MaskedBlur } from "./v3/maskedblur";
+import { Rays } from "./v3/rays";
+import { Swirl } from "./v3/swirl";
+import { Curvature} from "./v3/curvature";
+import { Pixelate } from "./v3/pixelate";
+import { CausticsNoise } from "./v3/causticsnoise";
+import { TilePath } from "./v3/tilepath";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -183,6 +190,13 @@ export function createLibrary() {
 	lib.addNode("image", "Image", ImageNode);
 	//lib.addNode("simplexnoise", "Simplex Noise", SimplexNoiseV2);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
-
+	lib.addNode("maskedblur", "Masked Blur", MaskedBlur);
+	lib.addNode("ray","Ray", Rays)
+	lib.addNode("swirl", "Swirl", Swirl);
+	lib.addNode("curvature", "Curvature", Curvature);
+	//lib.addNode("causticsnoise", "Caustics Noise", CausticsNoise);
+	//lib.addNode("pixelate", "Pixelate", Pixelate);
+	//lib.addNode("tilepath", "Tile Path", TilePath);
+	
 	return lib;
 }
