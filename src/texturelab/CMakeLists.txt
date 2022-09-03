@@ -36,7 +36,10 @@ else()
     )
 endif()
 
-target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets qtadvanceddocking)
+target_include_directories(texturelab PUBLIC
+                            ../ads/src
+                            )
 
 set_target_properties(texturelab PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER io.texturelab.app
