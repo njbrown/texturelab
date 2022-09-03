@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 
 #include <QList>
+#include <QToolBar>
+#include <QLayout>
 
 #include "DockSplitter.h"
 #include "DockAreaWidget.h"
@@ -10,11 +12,38 @@ MainWindow::MainWindow(QWidget *parent)
 {
     resize(1280, 720);
 
-    // this->setupMenus();
+    this->setupToolbar();
+    // // this->setupMenus();
+    // editor = new QWidget(this);
+    // this->setCentralWidget(editor);
+    // this->layout()->addWidget(editor);
 
+    // editor->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     this->dockManager = new ads::CDockManager(this);
 
     this->setupDocks();
+}
+
+void MainWindow::setupToolbar()
+{
+    // https://www.setnode.com/blog/right-aligning-a-button-in-a-qtoolbar/
+    toolBar = this->addToolBar("main toolbar");
+
+    QWidget *spacer = new QWidget();
+    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    // undo redo
+    toolBar->addAction("Undo");
+    toolBar->addAction("Redo");
+
+    // spacer
+    toolBar->addWidget(spacer);
+
+    // export
+    toolBar->addAction("Export");
+
+    // behavior
+    toolBar->setMovable(false);
 }
 
 /*

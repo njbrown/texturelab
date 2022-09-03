@@ -5,6 +5,7 @@
 #include <QString>
 #include "DockManager.h"
 
+class QToolBar;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -14,6 +15,7 @@ public:
     ~MainWindow();
 
 protected:
+    void setupToolbar();
     void setupMenus();
     void setupDocks();
 
@@ -21,5 +23,7 @@ protected:
 
 private:
     ads::CDockManager *dockManager;
+    QToolBar *toolBar;
+    QWidget* editor;
 };
 #endif // MAINWINDOW_H
