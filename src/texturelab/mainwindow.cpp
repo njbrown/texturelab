@@ -3,6 +3,8 @@
 #include <QList>
 #include <QToolBar>
 #include <QLayout>
+#include <QMenuBar>
+#include <QMenu>
 
 #include "DockSplitter.h"
 #include "DockAreaWidget.h"
@@ -12,16 +14,36 @@ MainWindow::MainWindow(QWidget *parent)
 {
     resize(1280, 720);
 
+    this->setupMenus();
     this->setupToolbar();
-    // // this->setupMenus();
-    // editor = new QWidget(this);
-    // this->setCentralWidget(editor);
-    // this->layout()->addWidget(editor);
 
-    // editor->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     this->dockManager = new ads::CDockManager(this);
 
     this->setupDocks();
+}
+
+void MainWindow::setupMenus()
+{
+    auto fileMenu = this->menuBar()->addMenu("File");
+    fileMenu->addAction("Open Project", []() {});
+    fileMenu->addAction("New Project", []() {});
+    fileMenu->addSeparator();
+    fileMenu->addAction("Save", []() {});
+    fileMenu->addAction("Save As...", []() {});
+    fileMenu->addSeparator();
+    fileMenu->addAction("Edit", []() {});
+
+    auto editMenu = this->menuBar()->addMenu("Edit");
+    editMenu->addAction("Undo", []() {});
+    editMenu->addAction("Redo", []() {});
+    editMenu->addAction("Cut", []() {});
+    editMenu->addAction("Copy", []() {});
+    editMenu->addAction("Paste", []() {});
+
+    auto examplesMenu = this->menuBar()->addMenu("Examples");
+    auto optionsMenu = this->menuBar()->addMenu("Help");
+    optionsMenu->addAction("Documentation", []() {});
+    optionsMenu->addAction("About", []() {});
 }
 
 void MainWindow::setupToolbar()
