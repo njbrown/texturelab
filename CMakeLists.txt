@@ -6,6 +6,9 @@ project(qtcompleteapp VERSION 0.1 LANGUAGES CXX)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/ads)
 set_target_properties(qtadvanceddocking PROPERTIES BUILD_STATIC TRUE)
 
+# Advanced Docking System
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/nodegraph)
+
 # Main App
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/texturelab)
 
