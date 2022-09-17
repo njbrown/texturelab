@@ -9,6 +9,8 @@
 #include "DockSplitter.h"
 #include "DockAreaWidget.h"
 
+#include "widgets/graphwidget.h"
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -98,7 +100,7 @@ void MainWindow::setupDocks()
     // https://forum.qt.io/topic/3055/mainwindow-layout-problem-with-qdockwidget/17
 
     // graph goes in the center
-    auto graphArea = addDock("Graph", ads::CenterDockWidgetArea, new QWidget(this), nullptr);
+    auto graphArea = addDock("Graph", ads::CenterDockWidgetArea, new GraphWidget(), nullptr);
     auto leftArea = addDock("2D View", ads::LeftDockWidgetArea, new QWidget(this), graphArea);
     auto rightArea = addDock("Properties", ads::RightDockWidgetArea, new QWidget(this), graphArea);
 

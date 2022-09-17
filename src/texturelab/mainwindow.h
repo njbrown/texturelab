@@ -5,6 +5,12 @@
 #include <QString>
 #include "DockManager.h"
 
+class GraphWidget;
+class LibraryWidget;
+class PropertiesWidget;
+class View2DWidget;
+class View3DWidget;
+
 class QToolBar;
 class MainWindow : public QMainWindow
 {
@@ -24,6 +30,12 @@ protected:
 private:
     ads::CDockManager *dockManager;
     QToolBar *toolBar;
-    QWidget* editor;
+    QWidget *editor;
+
+    GraphWidget *graphWidget;
+    LibraryWidget *libraryWidget;
+    PropertiesWidget *propWidget;
+    View2DWidget *view2DWidget;
+    View3DWidget *view3DWidget;
 };
 #endif // MAINWINDOW_H
