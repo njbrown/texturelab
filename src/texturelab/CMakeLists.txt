@@ -49,9 +49,10 @@ else()
     )
 endif()
 
-target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets qtadvanceddocking)
+target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets qtadvanceddocking nodegraph)
 target_include_directories(texturelab PUBLIC
                             ../ads/src
+                            ../nodegraph
                             )
 
 set_target_properties(texturelab PROPERTIES
