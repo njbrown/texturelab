@@ -13,9 +13,11 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(NODEGRAPH_SRCS
     # main.cpp
     nodegraph.cpp
+    graph/scene.cpp
 )
 set(NODEGRAPH_HEADERS
     nodegraph.h
+    graph/scene.h
 )
 
 # library

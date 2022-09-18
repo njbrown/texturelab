@@ -40,6 +40,9 @@ NodeGraph::
     // setViewportUpdateMode(QGraphicsView::BoundingRectViewportUpdate);
     setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
 
+    // not needed rn
+    // setDragMode(QGraphicsView::ScrollHandDrag);
+
     // setViewport(new QGLWidget(QGLFormat(QGL::SampleBuffers)));
 
     auto scene = new QGraphicsScene();
@@ -123,17 +126,18 @@ void NodeGraph::
 void NodeGraph::
     mousePressEvent(QMouseEvent *event)
 {
-    QGraphicsView::mousePressEvent(event);
+
     if (event->button() == Qt::LeftButton)
     {
         _clickPos = mapToScene(event->pos());
     }
+    QGraphicsView::mousePressEvent(event);
 }
 
 void NodeGraph::
     mouseMoveEvent(QMouseEvent *event)
 {
-    QGraphicsView::mouseMoveEvent(event);
+
     if (event->buttons() == Qt::LeftButton)
     {
         // Make sure shift is not being pressed
@@ -143,12 +147,14 @@ void NodeGraph::
             setSceneRect(sceneRect().translated(difference.x(), difference.y()));
         }
     }
+    QGraphicsView::mouseMoveEvent(event);
 }
 
 void NodeGraph::
     drawBackground(QPainter *painter, const QRectF &r)
 {
     QGraphicsView::drawBackground(painter, r);
+    painter->setRenderHint(QPainter::Antialiasing);
 
     auto drawGrid =
         [&](double gridStep)

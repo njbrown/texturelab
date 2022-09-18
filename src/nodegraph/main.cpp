@@ -2,6 +2,7 @@
 #include <QMainWindow>
 #include <QStackedLayout>
 #include "nodegraph.h"
+#include "graph/scene.h"
 
 int main(int argc, char *argv[])
 {
@@ -14,6 +15,10 @@ int main(int argc, char *argv[])
     // layout->addWidget(graph);
 
     w.setCentralWidget(graph);
+
+    Scene *scene = new Scene();
+    scene->addItem(new Node());
+    graph->setScene(scene);
 
     w.resize(800, 600);
 
