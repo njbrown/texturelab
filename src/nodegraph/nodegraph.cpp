@@ -25,7 +25,7 @@ NodeGraph::
     NodeGraph(QWidget *parent)
     : QGraphicsView(parent)
 {
-    setDragMode(QGraphicsView::ScrollHandDrag);
+    setDragMode(QGraphicsView::RubberBandDrag);
     setRenderHint(QPainter::Antialiasing);
 
     // setBackgroundBrush(BackgroundColor);
@@ -39,9 +39,6 @@ NodeGraph::
     setCacheMode(QGraphicsView::CacheBackground);
     // setViewportUpdateMode(QGraphicsView::BoundingRectViewportUpdate);
     setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
-
-    // not needed rn
-    // setDragMode(QGraphicsView::ScrollHandDrag);
 
     // setViewport(new QGLWidget(QGLFormat(QGL::SampleBuffers)));
 
@@ -95,15 +92,6 @@ void NodeGraph::
 void NodeGraph::
     keyPressEvent(QKeyEvent *event)
 {
-    switch (event->key())
-    {
-    case Qt::Key_Shift:
-        setDragMode(QGraphicsView::RubberBandDrag);
-        break;
-
-    default:
-        break;
-    }
 
     QGraphicsView::keyPressEvent(event);
 }
@@ -114,7 +102,7 @@ void NodeGraph::
     switch (event->key())
     {
     case Qt::Key_Shift:
-        setDragMode(QGraphicsView::ScrollHandDrag);
+        // setDragMode(QGraphicsView::ScrollHandDrag);
         break;
 
     default:
@@ -126,10 +114,10 @@ void NodeGraph::
 void NodeGraph::
     mousePressEvent(QMouseEvent *event)
 {
-
-    if (event->button() == Qt::LeftButton)
+    if (event->button() == Qt::MiddleButton && scene()->mouseGrabberItem() == nullptr)
     {
         _clickPos = mapToScene(event->pos());
+        setDragMode(QGraphicsView::NoDrag);
     }
     QGraphicsView::mousePressEvent(event);
 }
@@ -138,16 +126,22 @@ void NodeGraph::
     mouseMoveEvent(QMouseEvent *event)
 {
 
-    if (event->buttons() == Qt::LeftButton)
+    if (event->buttons() == Qt::MiddleButton)
     {
-        // Make sure shift is not being pressed
-        if ((event->modifiers() & Qt::ShiftModifier) == 0)
-        {
-            QPointF difference = _clickPos - mapToScene(event->pos());
-            setSceneRect(sceneRect().translated(difference.x(), difference.y()));
-        }
+        QPointF difference = _clickPos - mapToScene(event->pos());
+        setSceneRect(sceneRect().translated(difference.x(), difference.y()));
     }
     QGraphicsView::mouseMoveEvent(event);
+}
+
+void NodeGraph::
+    mouseReleaseEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::MiddleButton)
+    {
+        setDragMode(QGraphicsView::RubberBandDrag);
+    }
+    QGraphicsView::mouseReleaseEvent(event);
 }
 
 void NodeGraph::
