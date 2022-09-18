@@ -10,6 +10,26 @@ Scene::Scene() : QGraphicsScene()
 {
 }
 
+void Scene::addNode(NodePtr node)
+{
+    this->addItem(node.data());
+}
+
+void Scene::connectNodes(NodePtr leftNode, QString leftOutputName, NodePtr rightNode, QString rightInputName)
+{
+    auto leftPort = leftNode->getOutPortByName(leftOutputName);
+    auto rightPort = rightNode->getInPortByName(rightInputName);
+
+    // create new connection item from ports
+    auto conn = new Connection();
+    conn->startPort = leftPort;
+    conn->endPort = rightPort;
+    conn->updatePosFromPorts();
+    conn->updatePath();
+
+    this->addItem(conn);
+}
+
 Node::Node()
 {
     width = 100;
@@ -52,6 +72,7 @@ Node::Node()
     setGraphicsEffect(effect);
 
     setAcceptHoverEvents(true);
+    // setAcceptDrops(true);
 }
 
 void Node::addInPort(QString name)
@@ -59,7 +80,6 @@ void Node::addInPort(QString name)
     PortPtr port(new Port(this));
     port->name = name;
     inPorts.append(port);
-    // port->setParent(this);
 
     // top and bottom padding for sockets
     const int pad = inPorts.count() < 5 ? 10 : 0;
@@ -79,6 +99,46 @@ void Node::addInPort(QString name)
 
 void Node::addOutPort(QString name)
 {
+    PortPtr port(new Port(this));
+    port->name = name;
+    outPorts.append(port);
+
+    // top and bottom padding for sockets
+    const int pad = outPorts.count() < 5 ? 10 : 0;
+
+    // sort in sockets
+    int incr = (this->height - pad * 2) / outPorts.count();
+    int mid = incr / 2.0;
+    int i = 0;
+    for (auto port : outPorts)
+    {
+        int y = pad + i * incr + mid;
+        int x = width;
+        port->setCenter(x, y);
+        i++;
+    }
+}
+
+PortPtr Node::getInPortByName(QString name)
+{
+    for (auto port : inPorts)
+    {
+        if (port->name == name)
+            return port;
+    }
+
+    Q_ASSERT(false);
+}
+
+PortPtr Node::getOutPortByName(QString name)
+{
+    for (auto port : outPorts)
+    {
+        if (port->name == name)
+            return port;
+    }
+
+    Q_ASSERT(false);
 }
 
 QRectF
@@ -192,4 +252,64 @@ void Port::paint(QPainter *painter,
     // draw border
     painter->setPen(QPen(QColor(0, 0, 0), 3));
     painter->drawRoundedRect(rect, rect.width() / 2, rect.height() / 2);
+}
+
+Connection::Connection()
+{
+    pos1 = QPointF(0, 0);
+    pos2 = QPointF(0, 0);
+
+    connectState = ConnectionState::Complete;
+
+    auto pen = QPen(QColor(200, 200, 200));
+    pen.setBrush(QColor(50, 150, 250));
+    pen.setCapStyle(Qt::RoundCap);
+    pen.setWidth(lineThickness);
+    setPen(pen);
+}
+
+void Connection::updatePosFromPorts()
+{
+    pos1 = startPort->scenePos();
+    pos2 = endPort->scenePos();
+}
+
+void Connection::updatePath()
+{
+    p = new QPainterPath;
+    p->moveTo(pos1);
+
+    qreal dx = pos2.x() - pos1.x();
+    qreal dy = pos2.y() - pos1.y();
+
+    QPointF ctr1(pos1.x() + dx * 0.25, pos1.y() + dy * 0.1);
+    QPointF ctr2(pos1.x() + dx * 0.75, pos1.y() + dy * 0.9);
+
+    p->cubicTo(ctr1, ctr2, pos2);
+    p->setFillRule(Qt::OddEvenFill);
+
+    setPath(*p);
+}
+
+void Connection::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    painter->setRenderHint(QPainter::Antialiasing);
+    if (connectState == ConnectionState::Dragging)
+    {
+        QPen pen(QColor(90, 90, 90), lineThickness);
+        pen.setStyle(Qt::DashLine);
+        pen.setDashOffset(6);
+        painter->setPen(pen);
+        painter->drawPath(*p);
+    }
+    if (connectState == ConnectionState::Complete)
+    {
+        // create gradient for line
+        QPen pen(QColor(0, 255, 255), lineThickness);
+        painter->setPen(pen);
+        painter->drawPath(*p);
+    }
+
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
 }

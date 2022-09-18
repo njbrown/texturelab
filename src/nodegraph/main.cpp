@@ -18,11 +18,19 @@ int main(int argc, char *argv[])
 
     Scene *scene = new Scene();
 
-    auto node = new Node();
+    NodePtr node(new Node());
     node->addInPort("image");
     node->addInPort("height");
+    node->addOutPort("image");
+    scene->addNode(node);
 
-    scene->addItem(node);
+    NodePtr outputNode(new Node());
+    outputNode->addInPort("image");
+    outputNode->setPos(150, 150);
+    scene->addNode(outputNode);
+
+    scene->connectNodes(node, "image", outputNode, "image");
+
     graph->setScene(scene);
 
     w.resize(800, 600);

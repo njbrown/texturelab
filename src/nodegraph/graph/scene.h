@@ -7,6 +7,7 @@
 #include <QSharedPointer>
 #include <QPainterPath>
 #include <QRectF>
+#include <QGraphicsPathItem>
 
 class QGraphicsTextItem;
 
@@ -22,6 +23,8 @@ class Scene : public QGraphicsScene
 {
 public:
     Scene();
+    void addNode(NodePtr node);
+    void connectNodes(NodePtr leftNode, QString leftOutputName, NodePtr rightNode, QString rightInputName);
 };
 
 class Node : public QGraphicsObject
@@ -39,6 +42,9 @@ public:
 
     void addInPort(QString name);
     void addOutPort(QString name);
+
+    PortPtr getInPortByName(QString name);
+    PortPtr getOutPortByName(QString name);
 
     QRectF
     boundingRect() const override;
@@ -100,11 +106,36 @@ protected:
           QWidget *widget = 0) override;
 };
 
-class Connection : public QGraphicsObject
+enum class ConnectionState
 {
+    Dragging,
+    Complete
+};
+
+class Connection : public QGraphicsPathItem
+{
+    friend class Scene;
+
+public:
+    ConnectionState connectState;
+
     PortPtr startPort;
     PortPtr endPort;
 
+    QPointF pos1;
+    QPointF pos2;
+
+    double lineThickness = 5.0;
+
 public:
+    explicit Connection();
     void updatePositions();
+
+    void updatePosFromPorts();
+    void updatePath();
+
+    QPainterPath *p;
+
+    // virtual int type() const override;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 };
