@@ -14,6 +14,7 @@ Node::Node()
 {
     width = 100;
     height = 100;
+    isHovered = false;
 
     setFlag(QGraphicsItem::ItemIsMovable, true);
     setFlag(QGraphicsItem::ItemIsFocusable, true);
@@ -36,7 +37,7 @@ Node::Node()
     cursor.clearSelection();
     text->setTextCursor(cursor);
 
-    text->document()->setDocumentMargin(0);
+    text->document()->setDocumentMargin(2);
 
     QFont font = text->font();
     font.setWeight(QFont::Bold);
@@ -44,13 +45,40 @@ Node::Node()
     text->setFont(font);
 
     QGraphicsDropShadowEffect *effect = new QGraphicsDropShadowEffect;
-    effect->setBlurRadius(12);
+    effect->setBlurRadius(20);
     effect->setXOffset(0);
     effect->setYOffset(0);
-    effect->setColor(QColor(00, 00, 00, 40));
+    effect->setColor(QColor(00, 00, 00, 70));
     setGraphicsEffect(effect);
 
     setAcceptHoverEvents(true);
+}
+
+void Node::addInPort(QString name)
+{
+    PortPtr port(new Port(this));
+    port->name = name;
+    inPorts.append(port);
+    // port->setParent(this);
+
+    // top and bottom padding for sockets
+    const int pad = inPorts.count() < 5 ? 10 : 0;
+
+    // sort in sockets
+    int incr = (this->height - pad * 2) / inPorts.count();
+    int mid = incr / 2.0;
+    int i = 0;
+    for (auto port : inPorts)
+    {
+        int y = pad + i * incr + mid;
+        int x = 0;
+        port->setCenter(x, y);
+        i++;
+    }
+}
+
+void Node::addOutPort(QString name)
+{
 }
 
 QRectF
@@ -67,12 +95,14 @@ Node::boundingRect() const
 void Node::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 {
     this->text->hide();
+    this->isHovered = true;
     QGraphicsObject::hoverEnterEvent(event);
 }
 
 void Node::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
 {
     this->text->show();
+    this->isHovered = false;
     QGraphicsObject::hoverLeaveEvent(event);
 }
 
@@ -115,11 +145,51 @@ void Node::paint(QPainter *painter,
     QPainterPath bgPath;
     bgPath.setFillRule(Qt::WindingFill);
     bgPath.addRoundedRect(0, 0, nodeWidth, nodeHeight, titleRadius, titleRadius);
-    painter->fillPath(bgPath, QBrush(QColor(10, 10, 10, 160)));
+    painter->fillPath(bgPath, QBrush(QColor(10, 10, 10, 255)));
 
     // draw border
-    painter->setPen(QPen(titleColor, 2));
+    painter->setPen(QPen(titleColor, 3));
     painter->drawRoundedRect(rect, titleRadius, titleRadius);
 
     // draw highlight
+}
+
+Port::Port(QGraphicsObject *parent) : QGraphicsObject(parent)
+{
+    _radius = 7;
+    name = "";
+}
+
+QRectF
+Port::boundingRect() const
+{
+    return QRectF(-_radius, -_radius, _radius * 2, _radius * 2);
+}
+
+void Port::setCenter(float x, float y)
+{
+    // auto rect = this->boundingRect();
+    // setPos(QPointF(x - rect.x() / 2, y - rect.y() / 2));
+    setPos(QPointF(x, y));
+}
+
+void Port::paint(QPainter *painter,
+                 QStyleOptionGraphicsItem const *option,
+                 QWidget *widget)
+{
+    auto rect = boundingRect();
+
+    QPen pen(QColor(00, 00, 00, 250), 1.0f);
+    painter->setPen(pen);
+
+    // background
+    QPainterPath bgPath;
+    bgPath.setFillRule(Qt::WindingFill);
+    // bgPath.addRoundedRect(-_radius, _radius, rect.width(), rect.height(), rect.width() / 2, rect.height() / 2);
+    bgPath.addRoundedRect(rect, _radius, _radius);
+    painter->fillPath(bgPath, QBrush(QColor(170, 170, 170, 255)));
+
+    // draw border
+    painter->setPen(QPen(QColor(0, 0, 0), 3));
+    painter->drawRoundedRect(rect, rect.width() / 2, rect.height() / 2);
 }

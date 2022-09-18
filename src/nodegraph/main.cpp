@@ -17,7 +17,12 @@ int main(int argc, char *argv[])
     w.setCentralWidget(graph);
 
     Scene *scene = new Scene();
-    scene->addItem(new Node());
+
+    auto node = new Node();
+    node->addInPort("image");
+    node->addInPort("height");
+
+    scene->addItem(node);
     graph->setScene(scene);
 
     w.resize(800, 600);

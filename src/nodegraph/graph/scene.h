@@ -30,13 +30,20 @@ class Node : public QGraphicsObject
     int height;
     QGraphicsTextItem *text;
 
+    bool isHovered;
+
 public:
     explicit Node();
     QVector<PortPtr> inPorts;
     QVector<PortPtr> outPorts;
 
+    void addInPort(QString name);
+    void addOutPort(QString name);
+
     QRectF
     boundingRect() const override;
+
+    bool hovered() const { return isHovered; };
 
 protected:
     void
@@ -68,11 +75,29 @@ protected:
 
 class Port : public QGraphicsObject
 {
+    QGraphicsTextItem *text;
+    int _radius;
+
 public:
     NodePtr node;
     QVector<ConnectionPtr> connections;
 
     QString name;
+
+    int radius() const { return _radius; }
+
+    Port(QGraphicsObject *parent);
+
+    QRectF
+    boundingRect() const override;
+
+    void setCenter(float x, float y);
+
+protected:
+    void
+    paint(QPainter *painter,
+          QStyleOptionGraphicsItem const *option,
+          QWidget *widget = 0) override;
 };
 
 class Connection : public QGraphicsObject
