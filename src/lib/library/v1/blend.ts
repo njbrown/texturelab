@@ -18,7 +18,14 @@ export class BlendNode extends GpuDesignerNode {
 			"Min",
 			"Switch",
 			"Overlay",
-			"Screen"
+			"Screen",
+            //  News blend mode
+            "Exclusion",
+            "Hard light",
+            "Soft light",
+            "Color dodge",
+            "Color burn",
+            "Linear burn"
 		]);
 		this.addFloatProperty("opacity", "Opacity", 1.0, 0.0, 1.0, 0.01);
 
@@ -71,6 +78,38 @@ export class BlendNode extends GpuDesignerNode {
                 col.g = screen(colA.g, colB.g);
                 col.b = screen(colA.b, colB.b);
             }
+
+            if (prop_type==9){ // exclusion
+                col.rgb = colB.rgb + colA.rgb - 2.0 * colB.rgb * colA.rgb;
+            }
+            // a = colB; b = colA
+            if (prop_type==10){ // Hard light
+                if(colB.r < 0.5) col.r = (2.0 * colB.r * colA.r); else col.r = (1.0 - 2.0 * (1.0 - colB.r) * (1.0 - colA.r));
+                if(colB.g < 0.5) col.g = (2.0 * colB.g * colA.g); else col.g = (1.0 - 2.0 * (1.0 - colB.g) * (1.0 - colA.g));
+                if(colB.b < 0.5) col.b = (2.0 * colB.b * colA.b); else col.b = (1.0 - 2.0 * (1.0 - colB.b) * (1.0 - colA.b));
+                //if b < 0.5 ?           (2.0 * a * b) : (1.0 - 2.0 * (1.0 - a) * (1.0 - b))
+            }
+ 
+            if (prop_type==11){ // Soft light
+                if(colB.r < 0.5) col.r = 2.0 * colB.r * colA.r + colB.r * colB.r * (1.0 - 2.0 * colA.r); else col.r = sqrt(colB.r) * (2.0 * colA.r - 1.0) + (2.0 * colB.r) * (1.0 - colA.r);
+                if(colB.g < 0.5) col.g = 2.0 * colB.g * colA.g + colB.g * colB.g * (1.0 - 2.0 * colA.g); else col.g = sqrt(colB.g) * (2.0 * colA.g - 1.0) + (2.0 * colB.g) * (1.0 - colA.g);
+                if(colB.b < 0.5) col.b = 2.0 * colB.b * colA.b + colB.b * colB.b * (1.0 - 2.0 * colA.b); else col.b = sqrt(colB.b) * (2.0 * colA.b - 1.0) + (2.0 * colB.b) * (1.0 - colA.b);
+                //b < 0.5 ?             (2.0 * a * b + a * a * (1.0 - 2.0 * b))                          :            (sqrt(a) * (2.0 * b - 1.0) + (2.0 * a) * (1.0 - b)) 
+            }
+            
+            if (prop_type==12){ // Color dodge
+                col.rgb = colB.rgb / (1.0 - colA.rgb);
+            }
+            
+            if (prop_type==13){ // Color burn
+                col.rgb = 1.0 - (1.0 - colB.rgb) / colA.rgb;
+            }
+            
+            if (prop_type==14){ // Linear burn
+                col.rgb = colB.rgb + colA.rgb - 1.0;
+            }
+            
+
 
             // apply opacity
             col.rgb = mix(colB.rgb, col.rgb, vec3(finalOpacity));
