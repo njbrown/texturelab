@@ -92,12 +92,19 @@ public:
 
     int radius() const { return _radius; }
 
+    void addConnection(ConnectionPtr con) { connections.append(con); }
+
+    // todo: implement
+    void removeConnection(ConnectionPtr con);
+
     Port(QGraphicsObject *parent);
 
     QRectF
     boundingRect() const override;
 
     void setCenter(float x, float y);
+
+    QVariant itemChange(GraphicsItemChange change, const QVariant &value);
 
 protected:
     void

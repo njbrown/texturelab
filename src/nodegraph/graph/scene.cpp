@@ -27,6 +27,12 @@ void Scene::connectNodes(NodePtr leftNode, QString leftOutputName, NodePtr right
     conn->updatePosFromPorts();
     conn->updatePath();
 
+    ConnectionPtr connPtr(conn);
+
+    // also add them to the ports
+    leftPort->addConnection(connPtr);
+    rightPort->addConnection(connPtr);
+
     this->addItem(conn);
 }
 
@@ -216,6 +222,8 @@ void Node::paint(QPainter *painter,
 
 Port::Port(QGraphicsObject *parent) : QGraphicsObject(parent)
 {
+    this->setFlag(QGraphicsItem::ItemSendsScenePositionChanges);
+
     _radius = 7;
     name = "";
 }
@@ -231,6 +239,19 @@ void Port::setCenter(float x, float y)
     // auto rect = this->boundingRect();
     // setPos(QPointF(x - rect.x() / 2, y - rect.y() / 2));
     setPos(QPointF(x, y));
+}
+
+QVariant Port::itemChange(GraphicsItemChange change, const QVariant &value)
+{
+    if (change == ItemScenePositionHasChanged)
+    {
+        for (auto con : connections)
+        {
+            con->updatePosFromPorts();
+            con->updatePath();
+        }
+    }
+    return value;
 }
 
 void Port::paint(QPainter *painter,
