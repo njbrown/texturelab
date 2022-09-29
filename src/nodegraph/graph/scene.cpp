@@ -5,6 +5,7 @@
 #include <QTextBlockFormat>
 #include <QTextCursor>
 #include <QTextDocument>
+#include <QUuid>
 
 Scene::Scene() : QGraphicsScene()
 {
@@ -25,7 +26,7 @@ void Scene::connectNodes(NodePtr leftNode, QString leftOutputName, NodePtr right
     conn->startPort = leftPort;
     conn->endPort = rightPort;
     conn->updatePosFromPorts();
-    conn->updatePath();
+    conn->updatePathFromPositions();
 
     ConnectionPtr connPtr(conn);
 
@@ -46,6 +47,8 @@ Node::Node()
     setFlag(QGraphicsItem::ItemIsFocusable, true);
     setFlag(QGraphicsItem::ItemIsSelectable, true);
     setFlag(QGraphicsItem::ItemSendsScenePositionChanges, true);
+
+    setCursor(Qt::ClosedHandCursor);
 
     text = new QGraphicsTextItem(this);
     text->setPlainText("Title");
@@ -85,6 +88,8 @@ void Node::addInPort(QString name)
 {
     PortPtr port(new Port(this));
     port->name = name;
+    port->portType = PortType::In;
+    port->node = this->sharedFromThis();
     inPorts.append(port);
 
     // top and bottom padding for sockets
@@ -107,6 +112,8 @@ void Node::addOutPort(QString name)
 {
     PortPtr port(new Port(this));
     port->name = name;
+    port->portType = PortType::Out;
+    port->node = this->sharedFromThis();
     outPorts.append(port);
 
     // top and bottom padding for sockets
@@ -123,6 +130,23 @@ void Node::addOutPort(QString name)
         port->setCenter(x, y);
         i++;
     }
+}
+
+PortPtr Node::getPortById(QString id)
+{
+    for (auto port : inPorts)
+    {
+        if (port->id() == id)
+            return port;
+    }
+
+    for (auto port : outPorts)
+    {
+        if (port->id() == id)
+            return port;
+    }
+
+    Q_ASSERT(false);
 }
 
 PortPtr Node::getInPortByName(QString name)
@@ -220,12 +244,20 @@ void Node::paint(QPainter *painter,
     // draw highlight
 }
 
+QString Port::id() const
+{
+    return _id;
+}
+
 Port::Port(QGraphicsObject *parent) : QGraphicsObject(parent)
 {
+    // this->setFlag(QGraphicsItem::ItemIsSelectable, false);
     this->setFlag(QGraphicsItem::ItemSendsScenePositionChanges);
 
     _radius = 7;
     name = "";
+    portType = PortType::In;
+    _id = QUuid::createUuid().toString();
 }
 
 QRectF
@@ -248,7 +280,7 @@ QVariant Port::itemChange(GraphicsItemChange change, const QVariant &value)
         for (auto con : connections)
         {
             con->updatePosFromPorts();
-            con->updatePath();
+            con->updatePathFromPositions();
         }
     }
     return value;
@@ -295,7 +327,7 @@ void Connection::updatePosFromPorts()
     pos2 = endPort->scenePos();
 }
 
-void Connection::updatePath()
+void Connection::updatePathFromPositions()
 {
     p = new QPainterPath;
     p->moveTo(pos1);

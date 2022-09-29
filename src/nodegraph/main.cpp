@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 
     w.setCentralWidget(graph);
 
-    Scene *scene = new Scene();
+    auto scene = graph->scene();
 
     NodePtr node(new Node());
     node->addInPort("image");
@@ -31,7 +31,11 @@ int main(int argc, char *argv[])
 
     scene->connectNodes(node, "image", outputNode, "image");
 
-    graph->setScene(scene);
+    NodePtr node2(new Node());
+    node2->addInPort("image");
+    node2->addOutPort("result");
+    node2->setPos(250, 170);
+    scene->addNode(node2);
 
     w.resize(800, 600);
 

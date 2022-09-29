@@ -5,11 +5,11 @@
 #include <QList>
 #include <QVector>
 #include <QSharedPointer>
-#include <QPainterPath>
 #include <QRectF>
 #include <QGraphicsPathItem>
 
 class QGraphicsTextItem;
+class QPainterPath;
 
 class Node;
 class Port;
@@ -19,7 +19,14 @@ typedef QSharedPointer<Node> NodePtr;
 typedef QSharedPointer<Connection> ConnectionPtr;
 typedef QSharedPointer<Port> PortPtr;
 
-class Scene : public QGraphicsScene
+enum class SceneItemType : int
+{
+    Node = 1,
+    Port = 2,
+    Connection = 3
+};
+
+class Scene : public QGraphicsScene, public QEnableSharedFromThis<Scene>
 {
 public:
     Scene();
@@ -27,7 +34,7 @@ public:
     void connectNodes(NodePtr leftNode, QString leftOutputName, NodePtr rightNode, QString rightInputName);
 };
 
-class Node : public QGraphicsObject
+class Node : public QGraphicsObject, public QEnableSharedFromThis<Node>
 {
     int width;
     int height;
@@ -43,6 +50,8 @@ public:
     void addInPort(QString name);
     void addOutPort(QString name);
 
+    PortPtr getPortById(QString id);
+
     PortPtr getInPortByName(QString name);
     PortPtr getOutPortByName(QString name);
 
@@ -50,6 +59,8 @@ public:
     boundingRect() const override;
 
     bool hovered() const { return isHovered; };
+
+    virtual int type() const override { return (int)SceneItemType::Node; }
 
 protected:
     void
@@ -79,16 +90,27 @@ protected:
     // mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
 };
 
-class Port : public QGraphicsObject
+enum class PortType : int
+{
+    Invalid = 0,
+    In = 1,
+    Out = 2
+};
+
+class Port : public QGraphicsObject, public QEnableSharedFromThis<Port>
 {
     QGraphicsTextItem *text;
     int _radius;
+    QString _id;
 
 public:
     NodePtr node;
     QVector<ConnectionPtr> connections;
 
+    PortType portType;
     QString name;
+
+    QString id() const;
 
     int radius() const { return _radius; }
 
@@ -106,6 +128,8 @@ public:
 
     QVariant itemChange(GraphicsItemChange change, const QVariant &value);
 
+    virtual int type() const override { return (int)SceneItemType::Port; }
+
 protected:
     void
     paint(QPainter *painter,
@@ -119,7 +143,7 @@ enum class ConnectionState
     Complete
 };
 
-class Connection : public QGraphicsPathItem
+class Connection : public QGraphicsPathItem, public QEnableSharedFromThis<Connection>
 {
     friend class Scene;
 
@@ -134,12 +158,14 @@ public:
 
     double lineThickness = 5.0;
 
+    virtual int type() const override { return (int)SceneItemType::Connection; }
+
 public:
     explicit Connection();
     void updatePositions();
 
     void updatePosFromPorts();
-    void updatePath();
+    void updatePathFromPositions();
 
     QPainterPath *p;
 
