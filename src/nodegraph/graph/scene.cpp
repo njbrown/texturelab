@@ -43,6 +43,10 @@ Node::Node()
     height = 100;
     isHovered = false;
 
+    defaultBorderColor = QColor(0, 0, 0);
+    highlightBorderColor = QColor(120, 120, 120);
+    selectedBorderColor = QColor(200, 200, 200);
+
     setFlag(QGraphicsItem::ItemIsMovable, true);
     setFlag(QGraphicsItem::ItemIsFocusable, true);
     setFlag(QGraphicsItem::ItemIsSelectable, true);
@@ -208,6 +212,14 @@ void Node::paint(QPainter *painter,
 
     auto rect = boundingRect();
 
+    QColor borderColor;
+    if (isSelected())
+        borderColor = this->selectedBorderColor;
+    else if (isHovered)
+        borderColor = this->highlightBorderColor;
+    else
+        borderColor = this->defaultBorderColor;
+
     // not really needed
     // painter->setClipRect(option->exposedRect);
 
@@ -228,8 +240,9 @@ void Node::paint(QPainter *painter,
     // block.addRect(0, titleHeight, nodeWidth, 3);
     // painter->fillPath(block, QBrush(QColor(30, 30, 30, 160)));
 
-    QPen pen(QColor(00, 00, 00, 250), .5);
-    painter->setPen(pen);
+    // QPen pen(QColor(00, 00, 00, 250), .5);
+    // QPen pen(borderColor, .5);
+    // painter->setPen(pen);
 
     // background
     QPainterPath bgPath;
@@ -238,7 +251,7 @@ void Node::paint(QPainter *painter,
     painter->fillPath(bgPath, QBrush(QColor(10, 10, 10, 255)));
 
     // draw border
-    painter->setPen(QPen(titleColor, 3));
+    painter->setPen(QPen(borderColor, 3));
     painter->drawRoundedRect(rect, titleRadius, titleRadius);
 
     // draw highlight
@@ -335,8 +348,8 @@ void Connection::updatePathFromPositions()
     qreal dx = pos2.x() - pos1.x();
     qreal dy = pos2.y() - pos1.y();
 
-    QPointF ctr1(pos1.x() + dx * 0.25, pos1.y() + dy * 0.1);
-    QPointF ctr2(pos1.x() + dx * 0.75, pos1.y() + dy * 0.9);
+    QPointF ctr1(pos1.x() + dx * 0.5, pos1.y());
+    QPointF ctr2(pos2.x() - dx * 0.5, pos2.y());
 
     p->cubicTo(ctr1, ctr2, pos2);
     p->setFillRule(Qt::OddEvenFill);
@@ -347,21 +360,37 @@ void Connection::updatePathFromPositions()
 void Connection::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     painter->setRenderHint(QPainter::Antialiasing);
+    painter->save();
+
     if (connectState == ConnectionState::Dragging)
     {
-        QPen pen(QColor(90, 90, 90), lineThickness);
+        QPen pen(QColor(150, 150, 150), lineThickness);
         pen.setStyle(Qt::DashLine);
-        pen.setDashOffset(6);
+        pen.setDashOffset(4);
         painter->setPen(pen);
         painter->drawPath(*p);
+
+        painter->setPen(QPen(QColor(0, 0, 0), 3));
+        painter->setBrush(QBrush(QColor(150, 150, 150)));
+        painter->drawEllipse(pos1, 8, 8);
+
+        painter->setPen(Qt::NoPen);
+        painter->drawEllipse(pos2, 6, 6);
     }
     if (connectState == ConnectionState::Complete)
     {
         // create gradient for line
-        QPen pen(QColor(0, 255, 255), lineThickness);
+        QPen pen(QColor(170, 170, 170), lineThickness);
         painter->setPen(pen);
         painter->drawPath(*p);
+
+        painter->setPen(QPen(QColor(0, 0, 0), 3));
+        painter->setBrush(QBrush(QColor(170, 170, 170)));
+        painter->drawEllipse(pos1, 8, 8);
+        painter->drawEllipse(pos2, 8, 8);
     }
+
+    painter->restore();
 
     Q_UNUSED(option);
     Q_UNUSED(widget);

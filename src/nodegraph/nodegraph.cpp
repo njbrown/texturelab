@@ -287,8 +287,9 @@ bool NodeGraph::sceneMousePressEvent(QGraphicsSceneMouseEvent *event)
             {
                 activeCon = ConnectionPtr(new Connection());
                 activeCon->startPort = port;
+                activeCon->connectState = ConnectionState::Dragging;
 
-                activeCon->pos1 = scenePos;
+                activeCon->pos1 = port->scenePos();
                 activeCon->pos2 = scenePos;
                 activeCon->updatePathFromPositions();
 
@@ -377,6 +378,7 @@ bool NodeGraph::sceneMouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 
             // it's okay to check this since the two prior checks
             // would have invalidated same-type and same-port connections
+            // todo: override connection
             if (rightPort->connections.count() != 0)
             {
                 isConValid = false;

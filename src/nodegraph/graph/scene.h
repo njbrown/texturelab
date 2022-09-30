@@ -41,6 +41,11 @@ class Node : public QGraphicsObject, public QEnableSharedFromThis<Node>
     QGraphicsTextItem *text;
 
     bool isHovered;
+    // bool isSelected;
+
+    QColor defaultBorderColor;
+    QColor highlightBorderColor;
+    QColor selectedBorderColor;
 
 public:
     explicit Node();
@@ -156,7 +161,7 @@ public:
     QPointF pos1;
     QPointF pos2;
 
-    double lineThickness = 5.0;
+    double lineThickness = 4.0;
 
     virtual int type() const override { return (int)SceneItemType::Connection; }
 
