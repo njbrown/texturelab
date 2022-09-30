@@ -26,6 +26,7 @@ int main(int argc, char *argv[])
 
     NodePtr outputNode(new Node());
     outputNode->addInPort("image");
+    outputNode->addOutPort("result");
     outputNode->setPos(150, 150);
     scene->addNode(outputNode);
 
@@ -33,8 +34,9 @@ int main(int argc, char *argv[])
 
     NodePtr node2(new Node());
     node2->addInPort("image");
+    node2->addInPort("image2");
     node2->addOutPort("result");
-    node2->setPos(250, 170);
+    node2->setPos(250, 0);
     scene->addNode(node2);
 
     w.resize(800, 600);

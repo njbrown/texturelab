@@ -314,9 +314,19 @@ bool NodeGraph::sceneMousePressEvent(QGraphicsSceneMouseEvent *event)
 
 bool NodeGraph::sceneMouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
+    auto scenePos = event->scenePos();
     if (mbStates.left && !!activeCon)
     {
-        activeCon->pos2 = event->scenePos();
+        auto rawPort = this->getPortAtScenePos(scenePos.x(), scenePos.y());
+        if (rawPort)
+        {
+            // snap if close enough
+            activeCon->pos2 = rawPort->scenePos();
+        }
+        else
+        {
+            activeCon->pos2 = scenePos;
+        }
         activeCon->updatePathFromPositions();
     }
 

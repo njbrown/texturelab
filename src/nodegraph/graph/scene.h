@@ -129,6 +129,9 @@ public:
     QRectF
     boundingRect() const override;
 
+    QRectF
+    actualRect() const;
+
     void setCenter(float x, float y);
 
     QVariant itemChange(GraphicsItemChange change, const QVariant &value);

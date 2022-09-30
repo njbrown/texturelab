@@ -276,6 +276,15 @@ Port::Port(QGraphicsObject *parent) : QGraphicsObject(parent)
 QRectF
 Port::boundingRect() const
 {
+    // return QRectF(-_radius, -_radius, _radius * 2, _radius * 2);
+
+    // add extra space for hit testing
+    return QRectF(-_radius * 2, -_radius * 2, _radius * 4, _radius * 4);
+}
+
+QRectF
+Port::actualRect() const
+{
     return QRectF(-_radius, -_radius, _radius * 2, _radius * 2);
 }
 
@@ -303,7 +312,7 @@ void Port::paint(QPainter *painter,
                  QStyleOptionGraphicsItem const *option,
                  QWidget *widget)
 {
-    auto rect = boundingRect();
+    auto rect = actualRect();
 
     QPen pen(QColor(00, 00, 00, 250), 1.0f);
     painter->setPen(pen);
