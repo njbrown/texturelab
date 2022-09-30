@@ -39,6 +39,7 @@ class Node : public QGraphicsObject, public QEnableSharedFromThis<Node>
     int width;
     int height;
     QGraphicsTextItem *text;
+    QString name;
 
     bool isHovered;
     // bool isSelected;
@@ -48,9 +49,11 @@ class Node : public QGraphicsObject, public QEnableSharedFromThis<Node>
     QColor selectedBorderColor;
 
 public:
-    explicit Node();
     QVector<PortPtr> inPorts;
     QVector<PortPtr> outPorts;
+    explicit Node();
+
+    void setName(QString name);
 
     void addInPort(QString name);
     void addOutPort(QString name);

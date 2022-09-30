@@ -55,20 +55,13 @@ Node::Node()
     setCursor(Qt::ClosedHandCursor);
 
     text = new QGraphicsTextItem(this);
-    text->setPlainText("Title");
 
     text->setPos(0, 0);
     text->setTextWidth(100);
     text->setDefaultTextColor(QColor(255, 255, 255));
 
     // center title
-    QTextBlockFormat format;
-    format.setAlignment(Qt::AlignCenter);
-    QTextCursor cursor = text->textCursor();
-    cursor.select(QTextCursor::Document);
-    cursor.mergeBlockFormat(format);
-    cursor.clearSelection();
-    text->setTextCursor(cursor);
+    setName("Title");
 
     text->document()->setDocumentMargin(2);
 
@@ -86,6 +79,20 @@ Node::Node()
 
     setAcceptHoverEvents(true);
     // setAcceptDrops(true);
+}
+
+void Node::setName(QString name)
+{
+    this->name = name;
+    text->setPlainText(name);
+
+    QTextBlockFormat format;
+    format.setAlignment(Qt::AlignCenter);
+    QTextCursor cursor = text->textCursor();
+    cursor.select(QTextCursor::Document);
+    cursor.mergeBlockFormat(format);
+    cursor.clearSelection();
+    text->setTextCursor(cursor);
 }
 
 void Node::addInPort(QString name)
@@ -264,6 +271,8 @@ QString Port::id() const
 
 Port::Port(QGraphicsObject *parent) : QGraphicsObject(parent)
 {
+    setCursor(Qt::ClosedHandCursor);
+
     // this->setFlag(QGraphicsItem::ItemIsSelectable, false);
     this->setFlag(QGraphicsItem::ItemSendsScenePositionChanges);
 
@@ -381,7 +390,7 @@ void Connection::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
 
         painter->setPen(QPen(QColor(0, 0, 0), 3));
         painter->setBrush(QBrush(QColor(150, 150, 150)));
-        painter->drawEllipse(pos1, 8, 8);
+        painter->drawEllipse(pos1, 7, 7);
 
         painter->setPen(Qt::NoPen);
         painter->drawEllipse(pos2, 6, 6);
@@ -395,8 +404,8 @@ void Connection::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
 
         painter->setPen(QPen(QColor(0, 0, 0), 3));
         painter->setBrush(QBrush(QColor(170, 170, 170)));
-        painter->drawEllipse(pos1, 8, 8);
-        painter->drawEllipse(pos2, 8, 8);
+        painter->drawEllipse(pos1, 7, 7);
+        painter->drawEllipse(pos2, 7, 7);
     }
 
     painter->restore();
