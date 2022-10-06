@@ -46,6 +46,8 @@ public:
 
     void scaleDown();
 
+    virtual ~NodeGraph();
+
 protected:
     void setNodeGraphScene(ScenePtr scene);
 
