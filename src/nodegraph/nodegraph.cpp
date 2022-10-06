@@ -298,6 +298,32 @@ bool NodeGraph::sceneMousePressEvent(QGraphicsSceneMouseEvent *event)
             {
                 // in-sockets with an active connection are the only
                 // ones that can be edited, and that's the case here
+                if (port->connections.count() > 0)
+                {
+                    // get the connection
+                    auto con = port->connections[0];
+
+                    // remove it
+                    _scene->removeConnection(con);
+
+                    // make it activeCon
+                    con->endPort.clear();
+                    con->pos1 = con->startPort->scenePos();
+                    con->pos2 = scenePos;
+                    activeCon = con;
+                    activeCon->updatePathFromPositions();
+                    activeCon->connectState = ConnectionState::Dragging;
+
+                    // emit connection removal signal
+
+                    this->_scene->addItem(activeCon.data());
+                    setDragMode(QGraphicsView::NoDrag);
+                    return true;
+                }
+                else
+                {
+                    // allow starting connection from left to right?
+                }
             }
             // start new connection
             else if (port->portType != PortType::Invalid /* in or out */)
