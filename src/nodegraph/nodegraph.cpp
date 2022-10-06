@@ -117,8 +117,25 @@ void NodeGraph::
 void NodeGraph::
     keyPressEvent(QKeyEvent *event)
 {
+    if (event->key() == Qt::Key_Delete)
+    {
+        // delete items!
+        auto items = this->_scene->selectedItems();
+        for (auto item : items)
+        {
+            if (item->type() == (int)SceneItemType::Node)
+            {
+                auto node = qgraphicsitem_cast<Node *>(item);
+                this->_scene->removeNode(node->sharedFromThis());
+            }
+        }
+
+        // package them and pass them to deletion signal
+    }
 
     QGraphicsView::keyPressEvent(event);
+
+    this->invalidateScene(QRect(-1000, -1000, 1000, 1000));
 }
 
 void NodeGraph::

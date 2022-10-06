@@ -37,6 +37,43 @@ void Scene::connectNodes(NodePtr leftNode, QString leftOutputName, NodePtr right
     this->addItem(conn);
 }
 
+void Scene::removeNode(NodePtr node)
+{
+    // gather connections
+    QList<ConnectionPtr> cons;
+    for (auto port : node->getInPorts())
+    {
+        cons.append(port->connections);
+    }
+
+    for (auto port : node->getOutPorts())
+    {
+        cons.append(port->connections);
+    }
+
+    // remove connections
+    for (auto con : cons)
+    {
+        this->removeConnection(con);
+    }
+
+    // remove node
+    node->hide(); // fix display cache issue
+    this->removeItem(node.data());
+
+    // reshow here in case i forget when re-adding node for
+    // undo-redo
+    node->show();
+}
+
+void Scene::removeConnection(ConnectionPtr con)
+{
+    con->startPort->removeConnection(con);
+    con->endPort->removeConnection(con);
+
+    this->removeItem(con.data());
+}
+
 Node::Node()
 {
     width = 100;
@@ -93,6 +130,16 @@ void Node::setName(QString name)
     cursor.mergeBlockFormat(format);
     cursor.clearSelection();
     text->setTextCursor(cursor);
+}
+
+const QVector<PortPtr> Node::getInPorts() const
+{
+    return inPorts;
+}
+
+const QVector<PortPtr> Node::getOutPorts() const
+{
+    return outPorts;
 }
 
 void Node::addInPort(QString name)
@@ -315,6 +362,12 @@ QVariant Port::itemChange(GraphicsItemChange change, const QVariant &value)
         }
     }
     return value;
+}
+
+void Port::removeConnection(ConnectionPtr con)
+{
+    // todo: make sure this does what it's supposed to do
+    connections.removeOne(con);
 }
 
 void Port::paint(QPainter *painter,

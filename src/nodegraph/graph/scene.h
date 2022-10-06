@@ -32,6 +32,13 @@ public:
     Scene();
     void addNode(NodePtr node);
     void connectNodes(NodePtr leftNode, QString leftOutputName, NodePtr rightNode, QString rightInputName);
+
+    // this removes the node and associating connections
+    // and node from scene
+    void removeNode(NodePtr node);
+
+    // removes connection and item from scene
+    void removeConnection(ConnectionPtr con);
 };
 
 class Node : public QGraphicsObject, public QEnableSharedFromThis<Node>
@@ -52,6 +59,9 @@ public:
     QVector<PortPtr> inPorts;
     QVector<PortPtr> outPorts;
     explicit Node();
+
+    const QVector<PortPtr> getInPorts() const;
+    const QVector<PortPtr> getOutPorts() const;
 
     void setName(QString name);
 
@@ -124,7 +134,6 @@ public:
 
     void addConnection(ConnectionPtr con) { connections.append(con); }
 
-    // todo: implement
     void removeConnection(ConnectionPtr con);
 
     Port(QGraphicsObject *parent);

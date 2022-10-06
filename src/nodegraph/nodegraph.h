@@ -13,8 +13,10 @@ class QPainter;
 class QWheelEvent;
 class QShowEvent;
 class Scene;
+class Node;
 class Connection;
 typedef QSharedPointer<Scene> ScenePtr;
+typedef QSharedPointer<Node> NodePtr;
 typedef QSharedPointer<Connection> ConnectionPtr;
 class Port;
 
@@ -90,4 +92,15 @@ private:
     ScenePtr _scene;
     MouseButtonStates mbStates;
     ConnectionPtr activeCon;
+
+    QList<NodePtr> nodes;
+    QList<ConnectionPtr> cons;
+
+signals:
+    void connectionAdded(ConnectionPtr con);
+    void connectionRemoved(ConnectionPtr con);
+    void nodeAdded(NodePtr node);
+    void nodeRemoved(NodePtr node);
+
+    void itemsDeleted(QList<NodePtr> nodes, QList<ConnectionPtr> cons);
 };
