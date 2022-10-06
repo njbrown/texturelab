@@ -43,6 +43,8 @@ public:
 
 class Node : public QGraphicsObject, public QEnableSharedFromThis<Node>
 {
+    QString _id;
+
     int width;
     int height;
     QGraphicsTextItem *text;
@@ -59,6 +61,9 @@ public:
     QVector<PortPtr> inPorts;
     QVector<PortPtr> outPorts;
     explicit Node();
+
+    const QString id() const { return _id; }
+    void setId(const QString &id) { _id = id; }
 
     const QVector<PortPtr> getInPorts() const;
     const QVector<PortPtr> getOutPorts() const;
@@ -129,6 +134,7 @@ public:
     QString name;
 
     QString id() const;
+    void setId(const QString &id) { _id = id; }
 
     int radius() const { return _radius; }
 
@@ -167,6 +173,8 @@ class Connection : public QGraphicsPathItem, public QEnableSharedFromThis<Connec
 {
     friend class Scene;
 
+    QString _id;
+
 public:
     ConnectionState connectState;
 
@@ -182,6 +190,10 @@ public:
 
 public:
     explicit Connection();
+
+    const QString id() const { return _id; }
+    void setId(const QString &id) { _id = id; }
+
     void updatePositions();
 
     void updatePosFromPorts();
