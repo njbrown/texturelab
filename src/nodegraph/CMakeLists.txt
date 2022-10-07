@@ -17,7 +17,7 @@ set(NODEGRAPH_SRCS
 )
 set(NODEGRAPH_HEADERS
     nodegraph.h
-    library.h
+    utils.h
     graph/scene.h
 )
 
