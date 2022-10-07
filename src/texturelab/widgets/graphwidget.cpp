@@ -10,4 +10,6 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
 {
     graph = new NodeGraph(this);
     this->setCentralWidget(graph);
+
+    library = nullptr;
 }

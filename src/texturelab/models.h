@@ -66,6 +66,9 @@ public:
 
     QString leftItemId;
     QString rightItemId;
+
+    QString leftName;
+    QString rightName;
 };
 
 #endif

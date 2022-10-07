@@ -10,6 +10,7 @@
 #include "DockAreaWidget.h"
 
 #include "widgets/graphwidget.h"
+#include "widgets/librarywidget.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -107,7 +108,7 @@ void MainWindow::setupDocks()
     setWidgetRatiosInArea(graphArea, {1.0f / 5, 3.0f / 5, 1.0f / 5});
 
     addDock("3D View", ads::BottomDockWidgetArea, new QWidget(this), leftArea);
-    addDock("Library", ads::BottomDockWidgetArea, new QWidget(this), rightArea);
+    addDock("Library", ads::BottomDockWidgetArea, new LibraryWidget(), rightArea);
     setWidgetRatiosInArea(leftArea, {0.5f, 0.5f});
     setWidgetRatiosInArea(rightArea, {0.5f, 0.5f});
 }
