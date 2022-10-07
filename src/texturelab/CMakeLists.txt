@@ -19,8 +19,13 @@ set(PROJECT_SOURCES
         ./mainwindow.cpp
         ./mainwindow.h
         ./models.h
+        ./models.cpp
+        ./project.h
+        ./project.cpp
         ./props.h
         ./props.cpp
+        ./libraries/library.h
+        ./libraries/library.cpp
         ./widgets/graphwidget.h
         ./widgets/graphwidget.cpp
         ./widgets/librarywidget.h
