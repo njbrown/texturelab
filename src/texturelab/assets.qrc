@@ -1,4 +1,5 @@
 <RCC>
     <qresource prefix="/">
+    <file alias="nodes/bevel.png">../../public/assets/nodes/bevel.png</file>
     </qresource>
 </RCC>
