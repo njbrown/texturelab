@@ -326,7 +326,7 @@ Port::Port(QGraphicsObject *parent) : QGraphicsObject(parent)
     _radius = 7;
     name = "";
     portType = PortType::In;
-    _id = QUuid::createUuid().toString();
+    _id = QUuid::createUuid().toString(QUuid::WithoutBraces);
 }
 
 QRectF
