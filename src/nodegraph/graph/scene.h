@@ -1,15 +1,17 @@
 #pragma once
 
-#include <QGraphicsScene>
 #include <QGraphicsObject>
-#include <QList>
-#include <QVector>
-#include <QSharedPointer>
-#include <QRectF>
 #include <QGraphicsPathItem>
+#include <QGraphicsScene>
+#include <QList>
+#include <QRectF>
+#include <QSharedPointer>
+#include <QVector>
 
 class QGraphicsTextItem;
 class QPainterPath;
+
+namespace nodegraph {
 
 class Node;
 class Port;
@@ -19,188 +21,166 @@ typedef QSharedPointer<Node> NodePtr;
 typedef QSharedPointer<Connection> ConnectionPtr;
 typedef QSharedPointer<Port> PortPtr;
 
-enum class SceneItemType : int
-{
-    Node = 1,
-    Port = 2,
-    Connection = 3
+enum class SceneItemType : int { Node = 1, Port = 2, Connection = 3 };
+
+class Scene : public QGraphicsScene, public QEnableSharedFromThis<Scene> {
+public:
+  Scene();
+  void addNode(NodePtr node);
+  void connectNodes(NodePtr leftNode, QString leftOutputName, NodePtr rightNode,
+                    QString rightInputName);
+
+  // this removes the node and associating connections
+  // and node from scene
+  void removeNode(NodePtr node);
+
+  // removes connection and item from scene
+  void removeConnection(ConnectionPtr con);
 };
 
-class Scene : public QGraphicsScene, public QEnableSharedFromThis<Scene>
-{
-public:
-    Scene();
-    void addNode(NodePtr node);
-    void connectNodes(NodePtr leftNode, QString leftOutputName, NodePtr rightNode, QString rightInputName);
+class Node : public QGraphicsObject, public QEnableSharedFromThis<Node> {
+  QString _id;
 
-    // this removes the node and associating connections
-    // and node from scene
-    void removeNode(NodePtr node);
+  int width;
+  int height;
+  QGraphicsTextItem *text;
+  QString name;
 
-    // removes connection and item from scene
-    void removeConnection(ConnectionPtr con);
-};
+  bool isHovered;
+  // bool isSelected;
 
-class Node : public QGraphicsObject, public QEnableSharedFromThis<Node>
-{
-    QString _id;
-
-    int width;
-    int height;
-    QGraphicsTextItem *text;
-    QString name;
-
-    bool isHovered;
-    // bool isSelected;
-
-    QColor defaultBorderColor;
-    QColor highlightBorderColor;
-    QColor selectedBorderColor;
+  QColor defaultBorderColor;
+  QColor highlightBorderColor;
+  QColor selectedBorderColor;
 
 public:
-    QVector<PortPtr> inPorts;
-    QVector<PortPtr> outPorts;
-    explicit Node();
+  QVector<PortPtr> inPorts;
+  QVector<PortPtr> outPorts;
+  explicit Node();
 
-    const QString id() const { return _id; }
-    void setId(const QString &id) { _id = id; }
+  const QString id() const { return _id; }
+  void setId(const QString &id) { _id = id; }
 
-    const QVector<PortPtr> getInPorts() const;
-    const QVector<PortPtr> getOutPorts() const;
+  const QVector<PortPtr> getInPorts() const;
+  const QVector<PortPtr> getOutPorts() const;
 
-    void setName(QString name);
+  void setName(QString name);
 
-    void addInPort(QString name);
-    void addOutPort(QString name);
+  void addInPort(QString name);
+  void addOutPort(QString name);
 
-    PortPtr getPortById(QString id);
+  PortPtr getPortById(QString id);
 
-    PortPtr getInPortByName(QString name);
-    PortPtr getOutPortByName(QString name);
+  PortPtr getInPortByName(QString name);
+  PortPtr getOutPortByName(QString name);
 
-    QRectF
-    boundingRect() const override;
+  QRectF boundingRect() const override;
 
-    bool hovered() const { return isHovered; };
+  bool hovered() const { return isHovered; };
 
-    virtual int type() const override { return (int)SceneItemType::Node; }
+  virtual int type() const override { return (int)SceneItemType::Node; }
 
 protected:
-    void
-    paint(QPainter *painter,
-          QStyleOptionGraphicsItem const *option,
-          QWidget *widget = 0) override;
+  void paint(QPainter *painter, QStyleOptionGraphicsItem const *option,
+             QWidget *widget = 0) override;
 
-    // void
-    // mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+  // void
+  // mousePressEvent(QGraphicsSceneMouseEvent *event) override;
 
-    // void
-    // mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+  // void
+  // mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
 
-    // void
-    // mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+  // void
+  // mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
 
-    void
-    hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
+  void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
 
-    void
-    hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
+  void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
 
-    // void
-    // hoverMoveEvent(QGraphicsSceneHoverEvent *) override;
+  // void
+  // hoverMoveEvent(QGraphicsSceneHoverEvent *) override;
 
-    // void
-    // mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
+  // void
+  // mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
 };
 
-enum class PortType : int
-{
-    Invalid = 0,
-    In = 1,
-    Out = 2
-};
+enum class PortType : int { Invalid = 0, In = 1, Out = 2 };
 
-class Port : public QGraphicsObject, public QEnableSharedFromThis<Port>
-{
-    QGraphicsTextItem *text;
-    int _radius;
-    QString _id;
+class Port : public QGraphicsObject, public QEnableSharedFromThis<Port> {
+  QGraphicsTextItem *text;
+  int _radius;
+  QString _id;
 
 public:
-    NodePtr node;
-    QVector<ConnectionPtr> connections;
+  NodePtr node;
+  QVector<ConnectionPtr> connections;
 
-    PortType portType;
-    QString name;
+  PortType portType;
+  QString name;
 
-    QString id() const;
-    void setId(const QString &id) { _id = id; }
+  QString id() const;
+  void setId(const QString &id) { _id = id; }
 
-    int radius() const { return _radius; }
+  int radius() const { return _radius; }
 
-    void addConnection(ConnectionPtr con) { connections.append(con); }
+  void addConnection(ConnectionPtr con) { connections.append(con); }
 
-    void removeConnection(ConnectionPtr con);
+  void removeConnection(ConnectionPtr con);
 
-    Port(QGraphicsObject *parent);
+  Port(QGraphicsObject *parent);
 
-    QRectF
-    boundingRect() const override;
+  QRectF boundingRect() const override;
 
-    QRectF
-    actualRect() const;
+  QRectF actualRect() const;
 
-    void setCenter(float x, float y);
+  void setCenter(float x, float y);
 
-    QVariant itemChange(GraphicsItemChange change, const QVariant &value);
+  QVariant itemChange(GraphicsItemChange change, const QVariant &value);
 
-    virtual int type() const override { return (int)SceneItemType::Port; }
+  virtual int type() const override { return (int)SceneItemType::Port; }
 
 protected:
-    void
-    paint(QPainter *painter,
-          QStyleOptionGraphicsItem const *option,
-          QWidget *widget = 0) override;
+  void paint(QPainter *painter, QStyleOptionGraphicsItem const *option,
+             QWidget *widget = 0) override;
 };
 
-enum class ConnectionState
-{
-    Dragging,
-    Complete
-};
+enum class ConnectionState { Dragging, Complete };
 
-class Connection : public QGraphicsPathItem, public QEnableSharedFromThis<Connection>
-{
-    friend class Scene;
+class Connection : public QGraphicsPathItem,
+                   public QEnableSharedFromThis<Connection> {
+  friend class Scene;
 
-    QString _id;
+  QString _id;
 
 public:
-    ConnectionState connectState;
+  ConnectionState connectState;
 
-    PortPtr startPort;
-    PortPtr endPort;
+  PortPtr startPort;
+  PortPtr endPort;
 
-    QPointF pos1;
-    QPointF pos2;
+  QPointF pos1;
+  QPointF pos2;
 
-    double lineThickness = 4.0;
+  double lineThickness = 4.0;
 
-    virtual int type() const override { return (int)SceneItemType::Connection; }
+  virtual int type() const override { return (int)SceneItemType::Connection; }
 
 public:
-    explicit Connection();
+  explicit Connection();
 
-    const QString id() const { return _id; }
-    void setId(const QString &id) { _id = id; }
+  const QString id() const { return _id; }
+  void setId(const QString &id) { _id = id; }
 
-    void updatePositions();
+  void updatePositions();
 
-    void updatePosFromPorts();
-    void updatePathFromPositions();
+  void updatePosFromPorts();
+  void updatePathFromPositions();
 
-    QPainterPath *p;
+  QPainterPath *p;
 
-    // virtual int type() const override;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
+  // virtual int type() const override;
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
+             QWidget *widget) override;
 };
+
+} // namespace nodegraph

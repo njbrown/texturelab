@@ -1,53 +1,54 @@
+#include "graph/scene.h"
+#include "nodegraph.h"
 #include <QApplication>
 #include <QMainWindow>
 #include <QStackedLayout>
-#include "nodegraph.h"
-#include "graph/scene.h"
 
-int main(int argc, char *argv[])
-{
-    QApplication a(argc, argv);
-    QMainWindow w;
+using namespace nodegraph;
 
-    auto graph = new NodeGraph(&w);
+int main(int argc, char *argv[]) {
+  QApplication a(argc, argv);
+  QMainWindow w;
 
-    // QStackedLayout *layout = new QStackedLayout(&w);
-    // layout->addWidget(graph);
+  auto graph = new NodeGraph(&w);
 
-    w.setCentralWidget(graph);
+  // QStackedLayout *layout = new QStackedLayout(&w);
+  // layout->addWidget(graph);
 
-    auto scene = graph->scene();
+  w.setCentralWidget(graph);
 
-    NodePtr node(new Node());
-    node->setName("Warp");
-    node->addInPort("image");
-    node->addInPort("height");
-    node->addOutPort("image");
-    scene->addNode(node);
+  auto scene = graph->scene();
 
-    NodePtr outputNode(new Node());
-    outputNode->setName("Floodfill");
-    outputNode->addInPort("image");
-    outputNode->addOutPort("result");
-    outputNode->setPos(200, 150);
-    scene->addNode(outputNode);
+  NodePtr node(new Node());
+  node->setName("Warp");
+  node->addInPort("image");
+  node->addInPort("height");
+  node->addOutPort("image");
+  scene->addNode(node);
 
-    scene->connectNodes(node, "image", outputNode, "image");
+  NodePtr outputNode(new Node());
+  outputNode->setName("Floodfill");
+  outputNode->addInPort("image");
+  outputNode->addOutPort("result");
+  outputNode->setPos(200, 150);
+  scene->addNode(outputNode);
 
-    NodePtr node2(new Node());
-    node2->setName("Stress Test");
-    node2->addInPort("image");
-    node2->addInPort("image2");
-    node2->addInPort("image3");
-    node2->addInPort("image4");
-    node2->addOutPort("result");
-    node2->setPos(320, 0);
-    scene->addNode(node2);
+  scene->connectNodes(node, "image", outputNode, "image");
 
-    w.resize(800, 600);
+  NodePtr node2(new Node());
+  node2->setName("Stress Test");
+  node2->addInPort("image");
+  node2->addInPort("image2");
+  node2->addInPort("image3");
+  node2->addInPort("image4");
+  node2->addOutPort("result");
+  node2->setPos(320, 0);
+  scene->addNode(node2);
 
-    w.show();
-    w.showMaximized();
+  w.resize(800, 600);
 
-    return a.exec();
+  w.show();
+  w.showMaximized();
+
+  return a.exec();
 }

@@ -2,19 +2,20 @@
 
 #include <QMainWindow>
 
+namespace nodegraph {
 class NodeGraph;
+}
 class Library;
 
 class TextureProject;
 typedef QSharedPointer<TextureProject> TextureProjectPtr;
 
-class GraphWidget : public QMainWindow
-{
+class GraphWidget : public QMainWindow {
 public:
-    GraphWidget();
+  GraphWidget();
 
-    void setTextureProject(TextureProjectPtr project);
+  void setTextureProject(TextureProjectPtr project);
 
-    NodeGraph *graph;
-    Library *library;
+  nodegraph::NodeGraph *graph;
+  Library *library;
 };

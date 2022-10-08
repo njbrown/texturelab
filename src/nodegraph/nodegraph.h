@@ -1,9 +1,9 @@
 #pragma once
 
-#include <QtWidgets/QGraphicsView>
-#include <QtCore/QRectF>
-#include <QtCore/QPointF>
 #include <QSharedPointer>
+#include <QtCore/QPointF>
+#include <QtCore/QRectF>
+#include <QtWidgets/QGraphicsView>
 
 class QWidget;
 class QWheelEvent;
@@ -12,6 +12,8 @@ class QMouseEvent;
 class QPainter;
 class QWheelEvent;
 class QShowEvent;
+
+namespace nodegraph {
 class Scene;
 class Node;
 class Connection;
@@ -20,87 +22,85 @@ typedef QSharedPointer<Node> NodePtr;
 typedef QSharedPointer<Connection> ConnectionPtr;
 class Port;
 
-struct MouseButtonStates
-{
-    bool left;
-    bool middle;
-    bool right;
+struct MouseButtonStates {
+  bool left;
+  bool middle;
+  bool right;
 
-    MouseButtonStates();
+  MouseButtonStates();
 
-    // reset all to false
-    void reset();
+  // reset all to false
+  void reset();
 };
 
 /*
 This class draws a lot of inspiration from NodeGraphQt
 https://github.com/jchanvfx/NodeGraphQt/blob/master/NodeGraphQt/widgets/viewer.py
 */
-class NodeGraph
-    : public QGraphicsView
-{
+class NodeGraph : public QGraphicsView {
 public:
-    NodeGraph(QWidget *parent = nullptr);
+  NodeGraph(QWidget *parent = nullptr);
 
-    ScenePtr scene() const { return _scene; }
+  ScenePtr scene() const { return _scene; }
 
-    void scaleUp();
+  void scaleUp();
 
-    void scaleDown();
+  void scaleDown();
 
-    virtual ~NodeGraph();
+  virtual ~NodeGraph();
 
 protected:
-    void setNodeGraphScene(ScenePtr scene);
+  void setNodeGraphScene(ScenePtr scene);
 
-    void wheelEvent(QWheelEvent *event) override;
+  void wheelEvent(QWheelEvent *event) override;
 
-    void keyPressEvent(QKeyEvent *event) override;
+  void keyPressEvent(QKeyEvent *event) override;
 
-    void keyReleaseEvent(QKeyEvent *event) override;
+  void keyReleaseEvent(QKeyEvent *event) override;
 
-    void mousePressEvent(QMouseEvent *event) override;
+  void mousePressEvent(QMouseEvent *event) override;
 
-    void mouseMoveEvent(QMouseEvent *event) override;
+  void mouseMoveEvent(QMouseEvent *event) override;
 
-    void mouseReleaseEvent(QMouseEvent *event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override;
 
-    void drawBackground(QPainter *painter, const QRectF &r) override;
+  void drawBackground(QPainter *painter, const QRectF &r) override;
 
-    void showEvent(QShowEvent *event) override;
+  void showEvent(QShowEvent *event) override;
 
-    bool eventFilter(QObject *o, QEvent *e) override;
+  bool eventFilter(QObject *o, QEvent *e) override;
 
-    // events coming from the scene
-    // void sceneKeyPressEvent(QKeyEvent *event);
+  // events coming from the scene
+  // void sceneKeyPressEvent(QKeyEvent *event);
 
-    // void sceneKeyReleaseEvent(QKeyEvent *event);
+  // void sceneKeyReleaseEvent(QKeyEvent *event);
 
-    // NOTE: these functions return true if they swallow the event
-    // this is because they're implemented using eventFilters and
-    // that's how eventFilters work in qt
-    bool sceneMousePressEvent(QGraphicsSceneMouseEvent *event);
+  // NOTE: these functions return true if they swallow the event
+  // this is because they're implemented using eventFilters and
+  // that's how eventFilters work in qt
+  bool sceneMousePressEvent(QGraphicsSceneMouseEvent *event);
 
-    bool sceneMouseMoveEvent(QGraphicsSceneMouseEvent *event);
+  bool sceneMouseMoveEvent(QGraphicsSceneMouseEvent *event);
 
-    bool sceneMouseReleaseEvent(QGraphicsSceneMouseEvent *event);
+  bool sceneMouseReleaseEvent(QGraphicsSceneMouseEvent *event);
 
-    const Port *getPortAtScenePos(float x, float y) const;
+  const Port *getPortAtScenePos(float x, float y) const;
 
 private:
-    QPointF _clickPos;
-    ScenePtr _scene;
-    MouseButtonStates mbStates;
-    ConnectionPtr activeCon;
+  QPointF _clickPos;
+  ScenePtr _scene;
+  MouseButtonStates mbStates;
+  ConnectionPtr activeCon;
 
-    QList<NodePtr> nodes;
-    QList<ConnectionPtr> cons;
+  QList<NodePtr> nodes;
+  QList<ConnectionPtr> cons;
 
 signals:
-    void connectionAdded(ConnectionPtr con);
-    void connectionRemoved(ConnectionPtr con);
-    void nodeAdded(NodePtr node);
-    void nodeRemoved(NodePtr node);
+  void connectionAdded(ConnectionPtr con);
+  void connectionRemoved(ConnectionPtr con);
+  void nodeAdded(NodePtr node);
+  void nodeRemoved(NodePtr node);
 
-    void itemsDeleted(QList<NodePtr> nodes, QList<ConnectionPtr> cons);
+  void itemsDeleted(QList<NodePtr> nodes, QList<ConnectionPtr> cons);
 };
+} // namespace nodegraph

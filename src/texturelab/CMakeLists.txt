@@ -24,6 +24,7 @@ set(PROJECT_SOURCES
         ./project.cpp
         ./props.h
         ./props.cpp
+        ./libraries/libv2.h
         ./libraries/library.h
         ./libraries/library.cpp
         ./widgets/graphwidget.h

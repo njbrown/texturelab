@@ -1,5 +1,6 @@
 #include "../models.h"
 #include "library.h"
+#include "libv2.h"
 
 #include <QMap>
 
@@ -41,4 +42,15 @@ bool Library::hasNode(QString name)
 LibraryV1::LibraryV1() : Library()
 {
     // add items
+}
+
+Library *createLibraryV2()
+{
+    auto lib = new Library();
+    lib->addNode<PolygonNode>("polygon", "Polygon", ":nodes/bevel.png");
+    lib->addNode<ColorNode>("color", "Color", ":nodes/bevel.png");
+    lib->addNode<BlendNode>("blend", "Blend", ":nodes/bevel.png");
+    lib->addNode<OutputNode>("output", "Output", ":nodes/bevel.png");
+
+    return lib;
 }

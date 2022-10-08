@@ -24,7 +24,8 @@ TextureProjectPtr Project::loadTexture(QString path)
     qDebug() << json["libraryVersion"].toString();
 
     // create library from version
-    Library *lib = new LibraryV1();
+    // Library *lib = new LibraryV1();
+    Library *lib = createLibraryV2();
 
     // scene objects
     auto sceneObj = json["scene"].toObject();
@@ -35,7 +36,6 @@ TextureProjectPtr Project::loadTexture(QString path)
     for (auto item : nodeArray)
     {
         auto nodeDef = item.toObject();
-        qDebug() << nodeDef;
 
         auto node = lib->createNode(nodeDef["typeName"].toString());
         node->exportName = nodeDef["exportName"].toString("");

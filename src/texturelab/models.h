@@ -55,14 +55,24 @@ class TextureNode : public QEnableSharedFromThis<TextureNode>
 {
 public:
     QString id;
+    QString title;
+
     QVector2D pos;
+
+    QList<QString> inputs;
 
     long randomSeed;
     QString exportName;
 
     QMap<QString, Prop *> props;
 
+    virtual void init(){};
+
+    void addInput(const QString &inputName);
+
     void setProp(QString propName, QVariant value);
+
+    // add prop functions
 };
 
 class Comment : public QEnableSharedFromThis<Comment>

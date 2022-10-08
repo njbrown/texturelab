@@ -8,7 +8,7 @@ TextureNodePtr TextureProject::getNodeById(const QString &id)
 
 void TextureProject::addConnection(TextureNodePtr leftNode, TextureNodePtr rightNode, QString rightNodeInput)
 {
-    auto con = ConnectionPtr(new Connection());
+    QSharedPointer<Connection> con(new Connection());
     con->id = createGuid();
 
     con->leftNode = leftNode;
@@ -19,6 +19,11 @@ void TextureProject::addConnection(TextureNodePtr leftNode, TextureNodePtr right
     this->connections[con->id] = con;
 
     // todo: request updates
+}
+
+void TextureNode::addInput(const QString &inputName)
+{
+    inputs.append(inputName);
 }
 
 void TextureNode::setProp(QString propName, QVariant value)
