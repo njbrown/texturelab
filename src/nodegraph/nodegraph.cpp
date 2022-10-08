@@ -26,13 +26,15 @@ namespace nodegraph {
 
 MouseButtonStates::MouseButtonStates() { reset(); }
 
-void MouseButtonStates::reset() {
+void MouseButtonStates::reset()
+{
     left = false;
     middle = false;
     right = false;
 }
 
-NodeGraph::NodeGraph(QWidget *parent) : QGraphicsView(parent) {
+NodeGraph::NodeGraph(QWidget* parent) : QGraphicsView(parent)
+{
     setDragMode(QGraphicsView::RubberBandDrag);
     setRenderHint(QPainter::Antialiasing);
 
@@ -54,13 +56,16 @@ NodeGraph::NodeGraph(QWidget *parent) : QGraphicsView(parent) {
     // scene->addText("Hello World!");
     // setScene(scene);
 
+    setAcceptDrops(true);
+
     this->setNodeGraphScene(ScenePtr(new Scene()));
     mbStates.reset();
 }
 
-void NodeGraph::setNodeGraphScene(const ScenePtr &scene) {
+void NodeGraph::setNodeGraphScene(const ScenePtr& scene)
+{
 
-        // properly cleanup old scene
+    // properly cleanup old scene
     if (!!this->_scene) {
         this->setScene(nullptr);
     }
@@ -72,7 +77,8 @@ void NodeGraph::setNodeGraphScene(const ScenePtr &scene) {
     scene->installEventFilter(this);
 }
 
-void NodeGraph::wheelEvent(QWheelEvent *event) {
+void NodeGraph::wheelEvent(QWheelEvent* event)
+{
     QPoint delta = event->angleDelta();
 
     if (delta.y() == 0) {
@@ -88,7 +94,8 @@ void NodeGraph::wheelEvent(QWheelEvent *event) {
         scaleDown();
 }
 
-void NodeGraph::scaleUp() {
+void NodeGraph::scaleUp()
+{
     double const step = 1.2;
     double const factor = std::pow(step, 1.0);
 
@@ -100,20 +107,22 @@ void NodeGraph::scaleUp() {
     scale(factor, factor);
 }
 
-void NodeGraph::scaleDown() {
+void NodeGraph::scaleDown()
+{
     double const step = 1.2;
     double const factor = std::pow(step, -1.0);
 
     scale(factor, factor);
 }
 
-void NodeGraph::keyPressEvent(QKeyEvent *event) {
+void NodeGraph::keyPressEvent(QKeyEvent* event)
+{
     if (event->key() == Qt::Key_Delete) {
         // delete items!
         auto items = this->_scene->selectedItems();
         for (auto item : items) {
             if (item->type() == (int)SceneItemType::Node) {
-                auto node = qgraphicsitem_cast<Node *>(item);
+                auto node = qgraphicsitem_cast<Node*>(item);
                 this->_scene->removeNode(node->sharedFromThis());
             }
         }
@@ -126,7 +135,8 @@ void NodeGraph::keyPressEvent(QKeyEvent *event) {
     this->invalidateScene(QRect(-1000, -1000, 1000, 1000));
 }
 
-void NodeGraph::keyReleaseEvent(QKeyEvent *event) {
+void NodeGraph::keyReleaseEvent(QKeyEvent* event)
+{
     switch (event->key()) {
     case Qt::Key_Shift:
         // setDragMode(QGraphicsView::ScrollHandDrag);
@@ -138,7 +148,8 @@ void NodeGraph::keyReleaseEvent(QKeyEvent *event) {
     QGraphicsView::keyReleaseEvent(event);
 }
 
-void NodeGraph::mousePressEvent(QMouseEvent *event) {
+void NodeGraph::mousePressEvent(QMouseEvent* event)
+{
     if (event->button() == Qt::MiddleButton &&
         scene()->mouseGrabberItem() == nullptr) {
         _clickPos = mapToScene(event->pos());
@@ -147,7 +158,8 @@ void NodeGraph::mousePressEvent(QMouseEvent *event) {
     QGraphicsView::mousePressEvent(event);
 }
 
-void NodeGraph::mouseMoveEvent(QMouseEvent *event) {
+void NodeGraph::mouseMoveEvent(QMouseEvent* event)
+{
 
     if (event->buttons() == Qt::MiddleButton) {
         QPointF difference = _clickPos - mapToScene(event->pos());
@@ -156,14 +168,16 @@ void NodeGraph::mouseMoveEvent(QMouseEvent *event) {
     QGraphicsView::mouseMoveEvent(event);
 }
 
-void NodeGraph::mouseReleaseEvent(QMouseEvent *event) {
+void NodeGraph::mouseReleaseEvent(QMouseEvent* event)
+{
     if (event->button() == Qt::MiddleButton) {
         setDragMode(QGraphicsView::RubberBandDrag);
     }
     QGraphicsView::mouseReleaseEvent(event);
 }
 
-void NodeGraph::drawBackground(QPainter *painter, const QRectF &r) {
+void NodeGraph::drawBackground(QPainter* painter, const QRectF& r)
+{
     QGraphicsView::drawBackground(painter, r);
     painter->setRenderHint(QPainter::Antialiasing);
 
@@ -206,13 +220,15 @@ void NodeGraph::drawBackground(QPainter *painter, const QRectF &r) {
     drawGrid(150);
 }
 
-void NodeGraph::showEvent(QShowEvent *event) {
+void NodeGraph::showEvent(QShowEvent* event)
+{
     // _scene->setSceneRect(this->rect());
     QGraphicsView::showEvent(event);
 }
 
-bool NodeGraph::eventFilter(QObject *o, QEvent *e) {
-    QGraphicsSceneMouseEvent *me = (QGraphicsSceneMouseEvent *)e;
+bool NodeGraph::eventFilter(QObject* o, QEvent* e)
+{
+    QGraphicsSceneMouseEvent* me = (QGraphicsSceneMouseEvent*)e;
     if (o == _scene.data()) {
 
         switch ((int)e->type()) {
@@ -238,7 +254,8 @@ bool NodeGraph::eventFilter(QObject *o, QEvent *e) {
 }
 
 // todo: probably best to handle this in the views mousePressEvent
-bool NodeGraph::sceneMousePressEvent(QGraphicsSceneMouseEvent *event) {
+bool NodeGraph::sceneMousePressEvent(QGraphicsSceneMouseEvent* event)
+{
     // qDebug() << "Mouse Press!";
     if (event->button() == Qt::LeftButton)
         mbStates.left = true;
@@ -254,7 +271,7 @@ bool NodeGraph::sceneMousePressEvent(QGraphicsSceneMouseEvent *event) {
         if (rawPort) {
             // auto port = rawPort->node->getPortById(rawPort->id());
             // gotta cast to get the non-const version
-            PortPtr port = ((Port *)rawPort)->sharedFromThis();
+            PortPtr port = ((Port*)rawPort)->sharedFromThis();
 
             // are we modifying an existing port with a connection?
             if (port->portType == PortType::In) {
@@ -280,7 +297,8 @@ bool NodeGraph::sceneMousePressEvent(QGraphicsSceneMouseEvent *event) {
                     this->_scene->addItem(activeCon.data());
                     setDragMode(QGraphicsView::NoDrag);
                     return true;
-                } else {
+                }
+                else {
                     // allow starting connection from left to right?
                 }
             }
@@ -300,7 +318,8 @@ bool NodeGraph::sceneMousePressEvent(QGraphicsSceneMouseEvent *event) {
                 // event->ignore();
                 setDragMode(QGraphicsView::NoDrag);
                 return true;
-            } else {
+            }
+            else {
                 qDebug() << "trying to hit an Invalid socket";
             }
 
@@ -311,14 +330,16 @@ bool NodeGraph::sceneMousePressEvent(QGraphicsSceneMouseEvent *event) {
     return false;
 }
 
-bool NodeGraph::sceneMouseMoveEvent(QGraphicsSceneMouseEvent *event) {
+bool NodeGraph::sceneMouseMoveEvent(QGraphicsSceneMouseEvent* event)
+{
     auto scenePos = event->scenePos();
     if (mbStates.left && !!activeCon) {
         auto rawPort = this->getPortAtScenePos(scenePos.x(), scenePos.y());
         if (rawPort) {
             // snap if close enough
             activeCon->pos2 = rawPort->scenePos();
-        } else {
+        }
+        else {
             activeCon->pos2 = scenePos;
         }
         activeCon->updatePathFromPositions();
@@ -327,7 +348,8 @@ bool NodeGraph::sceneMouseMoveEvent(QGraphicsSceneMouseEvent *event) {
     return false;
 }
 
-bool NodeGraph::sceneMouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
+bool NodeGraph::sceneMouseReleaseEvent(QGraphicsSceneMouseEvent* event)
+{
     if (event->button() == Qt::LeftButton)
         mbStates.left = false;
     if (event->button() == Qt::MiddleButton)
@@ -342,7 +364,7 @@ bool NodeGraph::sceneMouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
         if (rawPort) {
             // auto hitPort = rawPort->node->getPortById(rawPort->id());
             // gotta cast to get the non-const version
-            PortPtr hitPort = ((Port *)rawPort)->sharedFromThis();
+            PortPtr hitPort = ((Port*)rawPort)->sharedFromThis();
 
             // determine between the in and out sockets
             PortPtr leftPort;
@@ -351,7 +373,8 @@ bool NodeGraph::sceneMouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
             if (hitPort->portType == PortType::In) {
                 leftPort = activeCon->startPort;
                 rightPort = hitPort;
-            } else {
+            }
+            else {
                 leftPort = hitPort;
                 rightPort = activeCon->startPort;
             }
@@ -401,18 +424,26 @@ bool NodeGraph::sceneMouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
     return false;
 }
 
-const Port *NodeGraph::getPortAtScenePos(float x, float y) const {
+void NodeGraph::dragEnterEvent(QDragEnterEvent* evt) { evt->ignore(); }
+
+void NodeGraph::dragMoveEvent(QDragMoveEvent* evt) { evt->ignore(); }
+
+void NodeGraph::dropEvent(QDropEvent* evt) { evt->ignore(); }
+
+const Port* NodeGraph::getPortAtScenePos(float x, float y) const
+{
     auto items = this->_scene->items(QPointF(x, y));
     // auto items = this->items();
     for (auto item : items) {
         if (item && item->type() == (int)SceneItemType::Port)
-            return (const Port *)item;
+            return (const Port*)item;
     }
 
     return nullptr;
 }
 
-NodeGraph::~NodeGraph() {
+NodeGraph::~NodeGraph()
+{
     // remove all items manually otherwise
     // smart point destructor of some items
     // will cause segfault when cleaning up

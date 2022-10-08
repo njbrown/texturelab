@@ -18,6 +18,7 @@ set(PROJECT_SOURCES
         ./main.cpp
         ./mainwindow.cpp
         ./mainwindow.h
+        ./utils.h
         ./models.h
         ./models.cpp
         ./project.h

@@ -38,11 +38,11 @@ This class draws a lot of inspiration from NodeGraphQt
 https://github.com/jchanvfx/NodeGraphQt/blob/master/NodeGraphQt/widgets/viewer.py
 */
 class NodeGraph : public QGraphicsView {
-  public:
-    NodeGraph(QWidget *parent = nullptr);
+public:
+    NodeGraph(QWidget* parent = nullptr);
 
     ScenePtr scene() const { return _scene; }
-    void setNodeGraphScene(const ScenePtr &scene);
+    void setNodeGraphScene(const ScenePtr& scene);
 
     void scaleUp();
 
@@ -50,24 +50,24 @@ class NodeGraph : public QGraphicsView {
 
     virtual ~NodeGraph();
 
-  protected:
-    void wheelEvent(QWheelEvent *event) override;
+protected:
+    void wheelEvent(QWheelEvent* event) override;
 
-    void keyPressEvent(QKeyEvent *event) override;
+    void keyPressEvent(QKeyEvent* event) override;
 
-    void keyReleaseEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent* event) override;
 
-    void mousePressEvent(QMouseEvent *event) override;
+    void mousePressEvent(QMouseEvent* event) override;
 
-    void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
 
-    void mouseReleaseEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
 
-    void drawBackground(QPainter *painter, const QRectF &r) override;
+    void drawBackground(QPainter* painter, const QRectF& r) override;
 
-    void showEvent(QShowEvent *event) override;
+    void showEvent(QShowEvent* event) override;
 
-    bool eventFilter(QObject *o, QEvent *e) override;
+    bool eventFilter(QObject* o, QEvent* e) override;
 
     // events coming from the scene
     // void sceneKeyPressEvent(QKeyEvent *event);
@@ -77,15 +77,23 @@ class NodeGraph : public QGraphicsView {
     // NOTE: these functions return true if they swallow the event
     // this is because they're implemented using eventFilters and
     // that's how eventFilters work in qt
-    bool sceneMousePressEvent(QGraphicsSceneMouseEvent *event);
+    bool sceneMousePressEvent(QGraphicsSceneMouseEvent* event);
 
-    bool sceneMouseMoveEvent(QGraphicsSceneMouseEvent *event);
+    bool sceneMouseMoveEvent(QGraphicsSceneMouseEvent* event);
 
-    bool sceneMouseReleaseEvent(QGraphicsSceneMouseEvent *event);
+    bool sceneMouseReleaseEvent(QGraphicsSceneMouseEvent* event);
 
-    const Port *getPortAtScenePos(float x, float y) const;
+    // allow drag and drop
+    // https://stackoverflow.com/a/7210404
+    // must ignore the events in nodegraph so they
+    // propagate to the parent widget
+    void dragEnterEvent(QDragEnterEvent* evt);
+    void dragMoveEvent(QDragMoveEvent* event);
+    void dropEvent(QDropEvent* event);
 
-  private:
+    const Port* getPortAtScenePos(float x, float y) const;
+
+private:
     QPointF _clickPos;
     ScenePtr _scene;
     MouseButtonStates mbStates;
@@ -94,7 +102,7 @@ class NodeGraph : public QGraphicsView {
     QList<NodePtr> nodes;
     QList<ConnectionPtr> cons;
 
-  signals:
+signals:
     void connectionAdded(ConnectionPtr con);
     void connectionRemoved(ConnectionPtr con);
     void nodeAdded(NodePtr node);

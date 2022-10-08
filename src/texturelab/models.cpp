@@ -1,12 +1,21 @@
 #include "models.h"
+#include "libraries/library.h"
 #include "props.h"
 
-TextureNodePtr TextureProject::getNodeById(const QString &id)
+TextureNodePtr TextureProject::getNodeById(const QString& id)
 {
     return nodes[id];
 }
 
-void TextureProject::addConnection(TextureNodePtr leftNode, TextureNodePtr rightNode, QString rightNodeInput)
+void TextureProject::addNode(const TextureNodePtr& node)
+{
+    // todo: check if node already exists
+    this->nodes[node->id] = node;
+}
+
+void TextureProject::addConnection(TextureNodePtr leftNode,
+                                   TextureNodePtr rightNode,
+                                   QString rightNodeInput)
 {
     QSharedPointer<Connection> con(new Connection());
     con->id = createGuid();
@@ -21,7 +30,21 @@ void TextureProject::addConnection(TextureNodePtr leftNode, TextureNodePtr right
     // todo: request updates
 }
 
-void TextureNode::addInput(const QString &inputName)
+TextureProjectPtr TextureProject::createEmpty(Library* library)
+{
+    auto project = new TextureProject();
+    project->randomSeed = 0;
+    if (library != nullptr)
+        project->library = library;
+    else
+        project->library = createLibraryV2();
+
+    return TextureProjectPtr(project);
+}
+
+TextureNode::TextureNode() { id = createGuid(); }
+
+void TextureNode::addInput(const QString& inputName)
 {
     inputs.append(inputName);
 }

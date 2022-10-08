@@ -5,7 +5,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
-TextureProjectPtr Project::loadTexture(QString path) {
+TextureProjectPtr Project::loadTexture(QString path)
+{
     QFile file(path);
     file.open(QIODevice::ReadOnly);
     QJsonParseError error;
@@ -23,7 +24,7 @@ TextureProjectPtr Project::loadTexture(QString path) {
 
     // create library from version
     // Library *lib = new LibraryV1();
-    Library *lib = createLibraryV2();
+    Library* lib = createLibraryV2();
 
     // scene objects
     auto sceneObj = json["scene"].toObject();
@@ -51,9 +52,6 @@ TextureProjectPtr Project::loadTexture(QString path) {
         for (auto key : propObj.keys()) {
             node->setProp(key, propObj[key].toVariant());
         }
-
-        // todo: put this in the appropriate place
-        node->init();
 
         texture->nodes[node->id] = node;
     }

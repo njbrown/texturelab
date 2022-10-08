@@ -2,22 +2,18 @@
 
 #include "../models.h"
 
-class PolygonNode : public TextureNode
-{
+class PolygonNode : public TextureNode {
 public:
-    virtual void init() override
-    {
+    virtual void init() override {
         this->title = "Polygon";
 
         // todo: add props
     }
 };
 
-class ColorNode : public TextureNode
-{
+class ColorNode : public TextureNode {
 public:
-    virtual void init() override
-    {
+    virtual void init() override {
         this->title = "Color";
 
         this->addInput("image");
@@ -26,11 +22,9 @@ public:
     }
 };
 
-class BlendNode : public TextureNode
-{
+class BlendNode : public TextureNode {
 public:
-    virtual void init() override
-    {
+    virtual void init() override {
         this->title = "Blend";
 
         this->addInput("colorA");
@@ -41,12 +35,10 @@ public:
     }
 };
 
-class OutputNode : public TextureNode
-{
+class OutputNode : public TextureNode {
 public:
-    virtual void init() override
-    {
-        this->title = "Blend";
+    virtual void init() override {
+        this->title = "Output";
 
         this->addInput("image");
 

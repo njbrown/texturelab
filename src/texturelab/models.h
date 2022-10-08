@@ -1,12 +1,12 @@
 #ifndef MODELS_H
 #define MODELS_H
 
-#include <QString>
-#include <QMap>
-#include <QList>
-#include <QVector2D>
-#include <QSharedPointer>
 #include <QEnableSharedFromThis>
+#include <QList>
+#include <QMap>
+#include <QSharedPointer>
+#include <QString>
+#include <QVector2D>
 
 class TextureProject;
 class TextureNode;
@@ -22,37 +22,35 @@ typedef QSharedPointer<Connection> ConnectionPtr;
 class Prop;
 class Library;
 
-enum class PackageFileType
-{
-    Texture,
-    Image
-};
+enum class PackageFileType { Texture, Image };
 
-class ProjectFile
-{
+class ProjectFile {
 public:
     QByteArray contents();
 };
 
-class TextureProject : public QEnableSharedFromThis<TextureProject>
-{
+class TextureProject : public QEnableSharedFromThis<TextureProject> {
 public:
     int randomSeed;
-    Library *library;
+    Library* library = nullptr;
 
     QMap<QString, TextureNodePtr> nodes;
     QMap<QString, ConnectionPtr> connections;
     QMap<QString, CommentPtr> comments;
     QMap<QString, FramePtr> frames;
 
-    TextureNodePtr getNodeById(const QString &id);
+    TextureNodePtr getNodeById(const QString& id);
+
+    void addNode(const TextureNodePtr& node);
 
     // todo: make two port variant
-    void addConnection(TextureNodePtr leftNode, TextureNodePtr rightNode, QString rightNodeInput);
+    void addConnection(TextureNodePtr leftNode, TextureNodePtr rightNode,
+                       QString rightNodeInput);
+
+    static TextureProjectPtr createEmpty(Library* library = nullptr);
 };
 
-class TextureNode : public QEnableSharedFromThis<TextureNode>
-{
+class TextureNode : public QEnableSharedFromThis<TextureNode> {
 public:
     QString id;
     QString title;
@@ -64,27 +62,27 @@ public:
     long randomSeed;
     QString exportName;
 
-    QMap<QString, Prop *> props;
+    QMap<QString, Prop*> props;
+
+    TextureNode();
 
     virtual void init(){};
 
-    void addInput(const QString &inputName);
+    void addInput(const QString& inputName);
 
     void setProp(QString propName, QVariant value);
 
     // add prop functions
 };
 
-class Comment : public QEnableSharedFromThis<Comment>
-{
+class Comment : public QEnableSharedFromThis<Comment> {
 public:
     QString id;
     QString text;
     QVector2D pos;
 };
 
-class Frame : public QEnableSharedFromThis<Frame>
-{
+class Frame : public QEnableSharedFromThis<Frame> {
 public:
     QString id;
     QString text;
@@ -93,8 +91,7 @@ public:
     QVector2D size;
 };
 
-class Connection : public QEnableSharedFromThis<Connection>
-{
+class Connection : public QEnableSharedFromThis<Connection> {
 public:
     QString id;
 
