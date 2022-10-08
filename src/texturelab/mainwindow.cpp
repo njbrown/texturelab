@@ -1,24 +1,22 @@
 #include "mainwindow.h"
 
-#include <QList>
-#include <QToolBar>
-#include <QLayout>
-#include <QMenuBar>
-#include <QMenu>
 #include <QFileDialog>
+#include <QLayout>
+#include <QList>
+#include <QMenu>
+#include <QMenuBar>
 #include <QMessageBox>
+#include <QToolBar>
 
-#include "DockSplitter.h"
 #include "DockAreaWidget.h"
+#include "DockSplitter.h"
 
 #include "widgets/graphwidget.h"
 #include "widgets/librarywidget.h"
 
 #include "project.h"
 
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-{
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     resize(1280, 720);
 
     this->setupMenus();
@@ -29,11 +27,9 @@ MainWindow::MainWindow(QWidget *parent)
     this->setupDocks();
 }
 
-void MainWindow::setupMenus()
-{
+void MainWindow::setupMenus() {
     auto fileMenu = this->menuBar()->addMenu("File");
-    fileMenu->addAction("Open Project", [=]()
-                        { this->openProject(); });
+    fileMenu->addAction("Open Project", [=]() { this->openProject(); });
     fileMenu->addAction("New Project", []() {});
     fileMenu->addSeparator();
     fileMenu->addAction("Save", []() {});
@@ -54,8 +50,7 @@ void MainWindow::setupMenus()
     optionsMenu->addAction("About", []() {});
 }
 
-void MainWindow::setupToolbar()
-{
+void MainWindow::setupToolbar() {
     // https://www.setnode.com/blog/right-aligning-a-button-in-a-qtoolbar/
     toolBar = this->addToolBar("main toolbar");
 
@@ -83,58 +78,62 @@ void MainWindow::setupToolbar()
     pass ratios as fractions, the function handles the actual width calculation
     setWidgetRatiosInArea(myArea, { 1.0f/5.0f, 1.0f/5.0f, 1.0f/5.0f })
 */
-void setWidgetRatiosInArea(ads::CDockAreaWidget *area, const QList<float> &ratios)
-{
+void setWidgetRatiosInArea(ads::CDockAreaWidget *area,
+                           const QList<float> &ratios) {
     auto splitter = ads::internal::findParent<ads::CDockSplitter *>(area);
-    if (splitter)
-    {
+    if (splitter) {
         int width = splitter->width();
 
         QList<int> finalRatios;
-        for (auto ratio : ratios)
-        {
+        for (auto ratio : ratios) {
             finalRatios.append(ratio * width);
         }
         splitter->setSizes(finalRatios);
     }
 }
 
-void MainWindow::setupDocks()
-{
+void MainWindow::setupDocks() {
     setDockNestingEnabled(true);
 
     // https://forum.qt.io/topic/3055/mainwindow-layout-problem-with-qdockwidget/17
 
     // graph goes in the center
-    auto graphArea = addDock("Graph", ads::CenterDockWidgetArea, new GraphWidget(), nullptr);
-    auto leftArea = addDock("2D View", ads::LeftDockWidgetArea, new QWidget(this), graphArea);
-    auto rightArea = addDock("Properties", ads::RightDockWidgetArea, new QWidget(this), graphArea);
+    this->graphWidget = new GraphWidget();
+    auto graphArea =
+        addDock("Graph", ads::CenterDockWidgetArea, graphWidget, nullptr);
+    auto leftArea = addDock("2D View", ads::LeftDockWidgetArea,
+                            new QWidget(this), graphArea);
+    auto rightArea = addDock("Properties", ads::RightDockWidgetArea,
+                             new QWidget(this), graphArea);
 
     setWidgetRatiosInArea(graphArea, {1.0f / 5, 3.0f / 5, 1.0f / 5});
 
     addDock("3D View", ads::BottomDockWidgetArea, new QWidget(this), leftArea);
-    addDock("Library", ads::BottomDockWidgetArea, new LibraryWidget(), rightArea);
+    addDock("Library", ads::BottomDockWidgetArea, new LibraryWidget(),
+            rightArea);
     setWidgetRatiosInArea(leftArea, {0.5f, 0.5f});
     setWidgetRatiosInArea(rightArea, {0.5f, 0.5f});
 }
 
-ads::CDockAreaWidget *MainWindow::addDock(const QString &title, ads::DockWidgetArea area, QWidget *widget, ads::CDockAreaWidget *areaWidget)
-{
+ads::CDockAreaWidget *MainWindow::addDock(const QString &title,
+                                          ads::DockWidgetArea area,
+                                          QWidget *widget,
+                                          ads::CDockAreaWidget *areaWidget) {
     ads::CDockWidget *dockWidget = new ads::CDockWidget(title);
     if (widget != nullptr)
         dockWidget->setWidget(widget);
 
-    auto newAreaWidget = dockManager->addDockWidget(area, dockWidget, areaWidget);
+    auto newAreaWidget =
+        dockManager->addDockWidget(area, dockWidget, areaWidget);
 
     return newAreaWidget;
 }
 
-void MainWindow::openProject()
-{
-    auto filePath = QFileDialog::getOpenFileName(this, "Open Texture File", "", "Texturelab File (*.texture)");
+void MainWindow::openProject() {
+    auto filePath = QFileDialog::getOpenFileName(this, "Open Texture File", "",
+                                                 "Texturelab File (*.texture)");
 
-    if (filePath.isNull() || filePath.isEmpty())
-    {
+    if (filePath.isNull() || filePath.isEmpty()) {
         return;
     }
 
@@ -145,6 +144,4 @@ void MainWindow::openProject()
     this->graphWidget->setTextureProject(project);
 }
 
-MainWindow::~MainWindow()
-{
-}
+MainWindow::~MainWindow() {}

@@ -1,27 +1,25 @@
 #include "project.h"
 #include "libraries/library.h"
-#include <QJsonDocument>
 #include <QFile>
 #include <QJsonArray>
+#include <QJsonDocument>
 #include <QJsonObject>
 
-TextureProjectPtr Project::loadTexture(QString path)
-{
+TextureProjectPtr Project::loadTexture(QString path) {
     QFile file(path);
     file.open(QIODevice::ReadOnly);
     QJsonParseError error;
     auto json = QJsonDocument::fromJson(file.readAll(), &error);
     file.close();
 
-    if (error.error)
-    {
+    if (error.error) {
         // report error
         return TextureProjectPtr(nullptr);
     }
 
     TextureProjectPtr texture(new TextureProject());
 
-    qDebug() << json["libraryVersion"].toString();
+    // qDebug() << json["libraryVersion"].toString();
 
     // create library from version
     // Library *lib = new LibraryV1();
@@ -33,8 +31,7 @@ TextureProjectPtr Project::loadTexture(QString path)
 
     // load nodes
     auto nodeArray = json["nodes"].toArray();
-    for (auto item : nodeArray)
-    {
+    for (auto item : nodeArray) {
         auto nodeDef = item.toObject();
 
         auto node = lib->createNode(nodeDef["typeName"].toString());
@@ -51,18 +48,19 @@ TextureProjectPtr Project::loadTexture(QString path)
 
         // add props
         auto propObj = nodeDef["properties"].toObject();
-        for (auto key : propObj.keys())
-        {
+        for (auto key : propObj.keys()) {
             node->setProp(key, propObj[key].toVariant());
         }
+
+        // todo: put this in the appropriate place
+        node->init();
 
         texture->nodes[node->id] = node;
     }
 
     // load connections
     auto conArray = json["connections"].toArray();
-    for (auto item : conArray)
-    {
+    for (auto item : conArray) {
         auto conObj = item.toObject();
 
         QString leftNodeId = conObj["leftNodeId"].toString();

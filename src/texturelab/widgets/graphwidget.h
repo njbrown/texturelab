@@ -1,10 +1,14 @@
 #pragma once
 
 #include <QMainWindow>
+#include <QSharedPointer>
 
 namespace nodegraph {
 class NodeGraph;
-}
+class Scene;
+typedef QSharedPointer<Scene> ScenePtr;
+
+} // namespace nodegraph
 class Library;
 
 class TextureProject;
@@ -18,4 +22,5 @@ public:
 
   nodegraph::NodeGraph *graph;
   Library *library;
+  nodegraph::ScenePtr scene;
 };
