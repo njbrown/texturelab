@@ -27,7 +27,10 @@ typedef QSharedPointer<Scene> ScenePtr;
 enum class SceneItemType : int { Node = 1, Port = 2, Connection = 3 };
 
 class Scene : public QGraphicsScene, public QEnableSharedFromThis<Scene> {
-  public:
+public:
+    QMap<QString, NodePtr> nodes;
+    QString id;
+
     Scene();
     static ScenePtr create();
 
@@ -44,8 +47,7 @@ class Scene : public QGraphicsScene, public QEnableSharedFromThis<Scene> {
     // removes connection and item from scene
     void removeConnection(ConnectionPtr con);
 
-    QMap<QString, NodePtr> nodes;
-    QString id;
+    ~Scene();
 };
 
 class Node : public QGraphicsObject, public QEnableSharedFromThis<Node> {
@@ -53,7 +55,7 @@ class Node : public QGraphicsObject, public QEnableSharedFromThis<Node> {
 
     int width;
     int height;
-    QGraphicsTextItem *text;
+    QGraphicsTextItem* text;
     QString name;
 
     bool isHovered;
@@ -63,14 +65,14 @@ class Node : public QGraphicsObject, public QEnableSharedFromThis<Node> {
     QColor highlightBorderColor;
     QColor selectedBorderColor;
 
-  public:
+public:
     QVector<PortPtr> inPorts;
     QVector<PortPtr> outPorts;
     explicit Node();
     static NodePtr create();
 
     const QString id() const { return _id; }
-    void setId(const QString &id) { _id = id; }
+    void setId(const QString& id) { _id = id; }
 
     const QVector<PortPtr> getInPorts() const;
     const QVector<PortPtr> getOutPorts() const;
@@ -90,10 +92,11 @@ class Node : public QGraphicsObject, public QEnableSharedFromThis<Node> {
     bool hovered() const { return isHovered; };
 
     virtual int type() const override { return (int)SceneItemType::Node; }
+    virtual ~Node();
 
-  protected:
-    void paint(QPainter *painter, QStyleOptionGraphicsItem const *option,
-               QWidget *widget = 0) override;
+protected:
+    void paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
+               QWidget* widget = 0) override;
 
     // void
     // mousePressEvent(QGraphicsSceneMouseEvent *event) override;
@@ -104,9 +107,9 @@ class Node : public QGraphicsObject, public QEnableSharedFromThis<Node> {
     // void
     // mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
 
-    void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
+    void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
 
-    void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
 
     // void
     // hoverMoveEvent(QGraphicsSceneHoverEvent *) override;
@@ -118,11 +121,11 @@ class Node : public QGraphicsObject, public QEnableSharedFromThis<Node> {
 enum class PortType : int { Invalid = 0, In = 1, Out = 2 };
 
 class Port : public QGraphicsObject, public QEnableSharedFromThis<Port> {
-    QGraphicsTextItem *text;
+    QGraphicsTextItem* text;
     int _radius;
     QString _id;
 
-  public:
+public:
     NodePtr node;
     QVector<ConnectionPtr> connections;
 
@@ -130,7 +133,7 @@ class Port : public QGraphicsObject, public QEnableSharedFromThis<Port> {
     QString name;
 
     QString id() const;
-    void setId(const QString &id) { _id = id; }
+    void setId(const QString& id) { _id = id; }
 
     int radius() const { return _radius; }
 
@@ -138,7 +141,7 @@ class Port : public QGraphicsObject, public QEnableSharedFromThis<Port> {
 
     void removeConnection(ConnectionPtr con);
 
-    Port(QGraphicsObject *parent);
+    Port(QGraphicsObject* parent);
 
     QRectF boundingRect() const override;
 
@@ -146,13 +149,14 @@ class Port : public QGraphicsObject, public QEnableSharedFromThis<Port> {
 
     void setCenter(float x, float y);
 
-    QVariant itemChange(GraphicsItemChange change, const QVariant &value);
+    QVariant itemChange(GraphicsItemChange change, const QVariant& value);
 
     virtual int type() const override { return (int)SceneItemType::Port; }
+    virtual ~Port();
 
-  protected:
-    void paint(QPainter *painter, QStyleOptionGraphicsItem const *option,
-               QWidget *widget = 0) override;
+protected:
+    void paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
+               QWidget* widget = 0) override;
 };
 
 enum class ConnectionState { Dragging, Complete };
@@ -163,7 +167,7 @@ class Connection : public QGraphicsPathItem,
 
     QString _id;
 
-  public:
+public:
     ConnectionState connectState;
 
     PortPtr startPort;
@@ -176,22 +180,24 @@ class Connection : public QGraphicsPathItem,
 
     virtual int type() const override { return (int)SceneItemType::Connection; }
 
-  public:
+public:
     explicit Connection();
 
     const QString id() const { return _id; }
-    void setId(const QString &id) { _id = id; }
+    void setId(const QString& id) { _id = id; }
 
     void updatePositions();
 
     void updatePosFromPorts();
     void updatePathFromPositions();
 
-    QPainterPath *p;
+    QPainterPath* p;
 
     // virtual int type() const override;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
-               QWidget *widget) override;
+    void paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
+               QWidget* widget) override;
+
+    virtual ~Connection();
 };
 
 } // namespace nodegraph

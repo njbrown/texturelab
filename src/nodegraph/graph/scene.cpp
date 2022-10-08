@@ -9,19 +9,22 @@
 
 namespace nodegraph {
 
-Scene::Scene() : QGraphicsScene() {
+Scene::Scene() : QGraphicsScene()
+{
     this->id = QUuid::createUuid().toString(QUuid::WithoutBraces);
 }
 
 ScenePtr Scene::create() { return ScenePtr(new Scene()); }
 
-void Scene::addNode(NodePtr node) {
+void Scene::addNode(NodePtr node)
+{
     this->addItem(node.data());
     nodes[node->id()] = node;
 }
 
 void Scene::connectNodes(NodePtr leftNode, QString leftOutputName,
-                         NodePtr rightNode, QString rightInputName) {
+                         NodePtr rightNode, QString rightInputName)
+{
     auto leftPort = leftNode->getOutPortByName(leftOutputName);
     qDebug() << rightNode->getInPorts();
     auto rightPort = rightNode->getInPortByName(rightInputName);
@@ -44,7 +47,8 @@ void Scene::connectNodes(NodePtr leftNode, QString leftOutputName,
 
 NodePtr Scene::getNodeById(QString id) { return nodes[id]; }
 
-void Scene::removeNode(NodePtr node) {
+void Scene::removeNode(NodePtr node)
+{
     // gather connections
     QList<ConnectionPtr> cons;
     for (auto port : node->getInPorts()) {
@@ -69,14 +73,26 @@ void Scene::removeNode(NodePtr node) {
     node->show();
 }
 
-void Scene::removeConnection(ConnectionPtr con) {
+void Scene::removeConnection(ConnectionPtr con)
+{
     con->startPort->removeConnection(con);
     con->endPort->removeConnection(con);
 
     this->removeItem(con.data());
 }
 
-Node::Node() {
+Scene::~Scene()
+{
+    // remove all items manually otherwise
+    // smart point destructor of some items
+    // will cause segfault when cleaning up
+    auto items = this->items();
+    for (auto item : items)
+        this->removeItem(item);
+}
+
+Node::Node()
+{
     width = 100;
     height = 100;
     isHovered = false;
@@ -108,7 +124,7 @@ Node::Node() {
     font.setPixelSize(12);
     text->setFont(font);
 
-    QGraphicsDropShadowEffect *effect = new QGraphicsDropShadowEffect;
+    QGraphicsDropShadowEffect* effect = new QGraphicsDropShadowEffect;
     effect->setBlurRadius(20);
     effect->setXOffset(0);
     effect->setYOffset(0);
@@ -121,7 +137,8 @@ Node::Node() {
 
 NodePtr Node::create() { return NodePtr(new Node()); }
 
-void Node::setName(QString name) {
+void Node::setName(QString name)
+{
     this->name = name;
     text->setPlainText(name);
 
@@ -138,7 +155,8 @@ const QVector<PortPtr> Node::getInPorts() const { return inPorts; }
 
 const QVector<PortPtr> Node::getOutPorts() const { return outPorts; }
 
-void Node::addInPort(QString name) {
+void Node::addInPort(QString name)
+{
     PortPtr port(new Port(this));
     port->name = name;
     port->portType = PortType::In;
@@ -160,7 +178,8 @@ void Node::addInPort(QString name) {
     }
 }
 
-void Node::addOutPort(QString name) {
+void Node::addOutPort(QString name)
+{
     PortPtr port(new Port(this));
     port->name = name;
     port->portType = PortType::Out;
@@ -182,7 +201,8 @@ void Node::addOutPort(QString name) {
     }
 }
 
-PortPtr Node::getPortById(QString id) {
+PortPtr Node::getPortById(QString id)
+{
     for (auto port : inPorts) {
         if (port->id() == id)
             return port;
@@ -196,7 +216,8 @@ PortPtr Node::getPortById(QString id) {
     Q_ASSERT(false);
 }
 
-PortPtr Node::getInPortByName(QString name) {
+PortPtr Node::getInPortByName(QString name)
+{
     for (auto port : inPorts) {
         if (port->name == name)
             return port;
@@ -205,7 +226,8 @@ PortPtr Node::getInPortByName(QString name) {
     Q_ASSERT(false);
 }
 
-PortPtr Node::getOutPortByName(QString name) {
+PortPtr Node::getOutPortByName(QString name)
+{
     for (auto port : outPorts) {
         if (port->name == name)
             return port;
@@ -221,20 +243,23 @@ QRectF Node::boundingRect() const { return QRectF(0, 0, 100, 100); }
 //     QGraphicsObject::mouseMoveEvent(event);
 // }
 
-void Node::hoverEnterEvent(QGraphicsSceneHoverEvent *event) {
+void Node::hoverEnterEvent(QGraphicsSceneHoverEvent* event)
+{
     this->text->hide();
     this->isHovered = true;
     QGraphicsObject::hoverEnterEvent(event);
 }
 
-void Node::hoverLeaveEvent(QGraphicsSceneHoverEvent *event) {
+void Node::hoverLeaveEvent(QGraphicsSceneHoverEvent* event)
+{
     this->text->show();
     this->isHovered = false;
     QGraphicsObject::hoverLeaveEvent(event);
 }
 
-void Node::paint(QPainter *painter, QStyleOptionGraphicsItem const *option,
-                 QWidget *widget) {
+void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
+                 QWidget* widget)
+{
     const int titleHeight = 20;
     const int nodeWidth = width;
     const int nodeHeight = height;
@@ -290,9 +315,18 @@ void Node::paint(QPainter *painter, QStyleOptionGraphicsItem const *option,
     // draw highlight
 }
 
+Node::~Node()
+{
+    // remove ownership from scene else scene will try to
+    // clean it up after it's been deleted
+    if (this->scene())
+        this->scene()->removeItem(this);
+}
+
 QString Port::id() const { return _id; }
 
-Port::Port(QGraphicsObject *parent) : QGraphicsObject(parent) {
+Port::Port(QGraphicsObject* parent) : QGraphicsObject(parent)
+{
     setCursor(Qt::ClosedHandCursor);
 
     // this->setFlag(QGraphicsItem::ItemIsSelectable, false);
@@ -304,24 +338,28 @@ Port::Port(QGraphicsObject *parent) : QGraphicsObject(parent) {
     _id = QUuid::createUuid().toString(QUuid::WithoutBraces);
 }
 
-QRectF Port::boundingRect() const {
+QRectF Port::boundingRect() const
+{
     // return QRectF(-_radius, -_radius, _radius * 2, _radius * 2);
 
     // add extra space for hit testing
     return QRectF(-_radius * 2, -_radius * 2, _radius * 4, _radius * 4);
 }
 
-QRectF Port::actualRect() const {
+QRectF Port::actualRect() const
+{
     return QRectF(-_radius, -_radius, _radius * 2, _radius * 2);
 }
 
-void Port::setCenter(float x, float y) {
+void Port::setCenter(float x, float y)
+{
     // auto rect = this->boundingRect();
     // setPos(QPointF(x - rect.x() / 2, y - rect.y() / 2));
     setPos(QPointF(x, y));
 }
 
-QVariant Port::itemChange(GraphicsItemChange change, const QVariant &value) {
+QVariant Port::itemChange(GraphicsItemChange change, const QVariant& value)
+{
     if (change == ItemScenePositionHasChanged) {
         for (auto con : connections) {
             con->updatePosFromPorts();
@@ -331,13 +369,15 @@ QVariant Port::itemChange(GraphicsItemChange change, const QVariant &value) {
     return value;
 }
 
-void Port::removeConnection(ConnectionPtr con) {
+void Port::removeConnection(ConnectionPtr con)
+{
     // todo: make sure this does what it's supposed to do
     connections.removeOne(con);
 }
 
-void Port::paint(QPainter *painter, QStyleOptionGraphicsItem const *option,
-                 QWidget *widget) {
+void Port::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
+                 QWidget* widget)
+{
     auto rect = actualRect();
 
     QPen pen(QColor(00, 00, 00, 250), 1.0f);
@@ -356,7 +396,16 @@ void Port::paint(QPainter *painter, QStyleOptionGraphicsItem const *option,
     painter->drawRoundedRect(rect, rect.width() / 2, rect.height() / 2);
 }
 
-Connection::Connection() {
+Port::~Port()
+{
+    // remove ownership from scene else scene will try to
+    // clean it up after it's been deleted
+    if (this->scene())
+        this->scene()->removeItem(this);
+}
+
+Connection::Connection()
+{
     pos1 = QPointF(0, 0);
     pos2 = QPointF(0, 0);
 
@@ -369,12 +418,14 @@ Connection::Connection() {
     setPen(pen);
 }
 
-void Connection::updatePosFromPorts() {
+void Connection::updatePosFromPorts()
+{
     pos1 = startPort->scenePos();
     pos2 = endPort->scenePos();
 }
 
-void Connection::updatePathFromPositions() {
+void Connection::updatePathFromPositions()
+{
     p = new QPainterPath;
     p->moveTo(pos1);
 
@@ -390,9 +441,9 @@ void Connection::updatePathFromPositions() {
     setPath(*p);
 }
 
-void Connection::paint(QPainter *painter,
-                       const QStyleOptionGraphicsItem *option,
-                       QWidget *widget) {
+void Connection::paint(QPainter* painter,
+                       const QStyleOptionGraphicsItem* option, QWidget* widget)
+{
     painter->setRenderHint(QPainter::Antialiasing);
     painter->save();
 
@@ -426,6 +477,14 @@ void Connection::paint(QPainter *painter,
 
     Q_UNUSED(option);
     Q_UNUSED(widget);
+}
+
+Connection::~Connection()
+{
+    // remove ownership from scene else scene will try to
+    // clean it up after it's been deleted
+    if (this->scene())
+        this->scene()->removeItem(this);
 }
 
 } // namespace nodegraph

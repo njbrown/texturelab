@@ -442,15 +442,6 @@ const Port* NodeGraph::getPortAtScenePos(float x, float y) const
     return nullptr;
 }
 
-NodeGraph::~NodeGraph()
-{
-    // remove all items manually otherwise
-    // smart point destructor of some items
-    // will cause segfault when cleaning up
-    // todo: move this to scene items
-    auto items = this->_scene->items();
-    for (auto item : items)
-        this->_scene->removeItem(item);
-}
+NodeGraph::~NodeGraph() {}
 
 } // namespace nodegraph
