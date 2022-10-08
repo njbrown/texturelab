@@ -13,3 +13,8 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
 
     library = nullptr;
 }
+
+void GraphWidget::setTextureProject(TextureProjectPtr project)
+{
+    // generate nodes from texture project
+}

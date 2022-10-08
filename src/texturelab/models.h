@@ -20,11 +20,7 @@ typedef QSharedPointer<Frame> FramePtr;
 typedef QSharedPointer<Connection> ConnectionPtr;
 
 class Prop;
-
-class Project
-{
-public:
-};
+class Library;
 
 enum class PackageFileType
 {
@@ -42,11 +38,17 @@ class TextureProject : public QEnableSharedFromThis<TextureProject>
 {
 public:
     int randomSeed;
+    Library *library;
 
-    QMap<QString, TextureNode *> nodes;
-    QMap<QString, Connection *> connections;
-    QMap<QString, Comment *> comments;
-    QMap<QString, Frame *> frames;
+    QMap<QString, TextureNodePtr> nodes;
+    QMap<QString, ConnectionPtr> connections;
+    QMap<QString, CommentPtr> comments;
+    QMap<QString, FramePtr> frames;
+
+    TextureNodePtr getNodeById(const QString &id);
+
+    // todo: make two port variant
+    void addConnection(TextureNodePtr leftNode, TextureNodePtr rightNode, QString rightNodeInput);
 };
 
 class TextureNode : public QEnableSharedFromThis<TextureNode>
@@ -58,7 +60,7 @@ public:
     long randomSeed;
     QString exportName;
 
-    QList<Prop *> props;
+    QMap<QString, Prop *> props;
 
     void setProp(QString propName, QVariant value);
 };
@@ -86,11 +88,11 @@ class Connection : public QEnableSharedFromThis<Connection>
 public:
     QString id;
 
-    QString leftItemId;
-    QString rightItemId;
+    TextureNodePtr leftNode;
+    TextureNodePtr rightNode;
 
-    QString leftName;
-    QString rightName;
+    QString leftNodeOutputName;
+    QString rightNodeInputName;
 };
 
 #endif

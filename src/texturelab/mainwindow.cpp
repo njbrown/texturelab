@@ -5,12 +5,16 @@
 #include <QLayout>
 #include <QMenuBar>
 #include <QMenu>
+#include <QFileDialog>
+#include <QMessageBox>
 
 #include "DockSplitter.h"
 #include "DockAreaWidget.h"
 
 #include "widgets/graphwidget.h"
 #include "widgets/librarywidget.h"
+
+#include "project.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -28,7 +32,8 @@ MainWindow::MainWindow(QWidget *parent)
 void MainWindow::setupMenus()
 {
     auto fileMenu = this->menuBar()->addMenu("File");
-    fileMenu->addAction("Open Project", []() {});
+    fileMenu->addAction("Open Project", [=]()
+                        { this->openProject(); });
     fileMenu->addAction("New Project", []() {});
     fileMenu->addSeparator();
     fileMenu->addAction("Save", []() {});
@@ -122,6 +127,22 @@ ads::CDockAreaWidget *MainWindow::addDock(const QString &title, ads::DockWidgetA
     auto newAreaWidget = dockManager->addDockWidget(area, dockWidget, areaWidget);
 
     return newAreaWidget;
+}
+
+void MainWindow::openProject()
+{
+    auto filePath = QFileDialog::getOpenFileName(this, "Open Texture File", "", "Texturelab File (*.texture)");
+
+    if (filePath.isNull() || filePath.isEmpty())
+    {
+        return;
+    }
+
+    auto project = Project::loadTexture(filePath);
+    this->project = project;
+
+    // pass project to graph
+    this->graphWidget->setTextureProject(project);
 }
 
 MainWindow::~MainWindow()

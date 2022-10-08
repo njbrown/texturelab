@@ -5,5 +5,5 @@
 class Project
 {
 public:
-    TextureProjectPtr loadTexture(QString path);
+    static TextureProjectPtr loadTexture(QString path);
 };

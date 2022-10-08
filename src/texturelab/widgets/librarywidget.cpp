@@ -1,5 +1,5 @@
 #include "librarywidget.h"
-#include "library.h"
+#include "./libraries/library.h"
 
 #include <QListWidget>
 #include <QFont>

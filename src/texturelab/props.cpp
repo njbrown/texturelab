@@ -2,6 +2,11 @@
 
 #include <QString>
 
+QString createGuid()
+{
+    return QUuid::createUuid().toString(QUuid::WithoutBraces);
+}
+
 QString PropType::toString(Value propType)
 {
     switch (propType)

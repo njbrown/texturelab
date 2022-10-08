@@ -10,11 +10,7 @@
 class Prop;
 
 // http://techiesolves.blogspot.com/2018/01/base64-qstring-to-qimage-to-qstring-in.html
-QString createGuid()
-{
-    return QUuid::createUuid().toString(QUuid::WithoutBraces);
-}
-
+QString createGuid();
 class PropType
 {
 public:

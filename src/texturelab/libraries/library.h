@@ -4,6 +4,10 @@
 #include <QIcon>
 #include <QString>
 #include <functional>
+#include <QSharedPointer>
+
+class TextureNode;
+typedef QSharedPointer<TextureNode> TextureNodePtr;
 
 class LibraryEntry
 {
