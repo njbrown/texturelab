@@ -43,7 +43,7 @@ void MainWindow::setupMenus()
 {
     auto fileMenu = this->menuBar()->addMenu("File");
     fileMenu->addAction("Open Project", [=]() { this->openProject(); });
-    fileMenu->addAction("New Project", []() {});
+    fileMenu->addAction("New Project", [=]() { this->newProject(); });
     fileMenu->addSeparator();
     fileMenu->addAction("Save", []() {});
     fileMenu->addAction("Save As...", []() {});
@@ -157,10 +157,10 @@ void MainWindow::openProject()
     }
 
     auto project = Project::loadTexture(filePath);
-    this->project = project;
 
-    // pass project to graph
-    this->graphWidget->setTextureProject(project);
+    setProject(project);
 }
+
+void MainWindow::newProject() { setProject(TextureProject::createEmpty()); }
 
 MainWindow::~MainWindow() {}

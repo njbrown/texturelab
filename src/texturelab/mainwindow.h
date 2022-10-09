@@ -30,6 +30,7 @@ protected:
 
     // menu callbacks
     void openProject();
+    void newProject();
 
     void setProject(TextureProjectPtr project);
 
