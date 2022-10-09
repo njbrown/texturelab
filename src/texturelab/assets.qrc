@@ -1,5 +1,8 @@
 <RCC>
     <qresource prefix="/">
     <file alias="nodes/bevel.png">../../public/assets/nodes/bevel.png</file>
+    <file alias="nodes/color.png">../../public/assets/nodes/color.png</file>
+    <file alias="nodes/blend.png">../../public/assets/nodes/blend.png</file>
+    <file alias="nodes/output.png">../../public/assets/nodes/output.png</file>
     </qresource>
 </RCC>

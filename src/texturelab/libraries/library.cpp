@@ -45,9 +45,9 @@ Library* createLibraryV2()
 {
     auto lib = new Library();
     lib->addNode<PolygonNode>("polygon", "Polygon", ":nodes/bevel.png");
-    lib->addNode<ColorNode>("color", "Color", ":nodes/bevel.png");
-    lib->addNode<BlendNode>("blend", "Blend", ":nodes/bevel.png");
-    lib->addNode<OutputNode>("output", "Output", ":nodes/bevel.png");
+    lib->addNode<ColorNode>("color", "Color", ":nodes/color.png");
+    lib->addNode<BlendNode>("blend", "Blend", ":nodes/blend.png");
+    lib->addNode<OutputNode>("output", "Output", ":nodes/output.png");
 
     return lib;
 }
