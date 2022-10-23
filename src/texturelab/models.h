@@ -32,6 +32,9 @@ public:
 class TextureProject : public QEnableSharedFromThis<TextureProject> {
 public:
     int randomSeed;
+    int textureWidth;
+    int textureHeight;
+
     Library* library = nullptr;
 
     QMap<QString, TextureNodePtr> nodes;

@@ -16,6 +16,8 @@
 
 #include "project.h"
 
+#include "graphics/texturerenderer.h"
+
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 {
     resize(1280, 720);
@@ -30,6 +32,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     // set default empty project
     auto project = TextureProject::createEmpty();
     this->setProject(project);
+
+    // test texture rendering
+    auto renderer = new TextureRenderer();
+    renderer->testRendering();
 }
 
 void MainWindow::setProject(TextureProjectPtr project)

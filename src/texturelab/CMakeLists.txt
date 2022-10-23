@@ -11,8 +11,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets OpenGL)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets OpenGL)
 
 set(PROJECT_SOURCES
         ./main.cpp
@@ -38,6 +38,8 @@ set(PROJECT_SOURCES
         ./widgets/view2dwidget.cpp
         ./widgets/view3dwidget.h
         ./widgets/view3dwidget.cpp
+        ./graphics/texturerenderer.h
+        ./graphics/texturerenderer.cpp
 )
 
 set(PROJECT_RESOURCES
@@ -56,7 +58,7 @@ else()
     )
 endif()
 
-target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets qtadvanceddocking nodegraph)
+target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::OpenGL qtadvanceddocking nodegraph)
 target_include_directories(texturelab PUBLIC
                             ../ads/src
                             ../nodegraph
