@@ -8,6 +8,9 @@
 #include <QString>
 #include <QVector2D>
 
+class QOpenGLFramebufferObject;
+class QOpenGLShaderProgram;
+
 class TextureProject;
 class TextureNode;
 class Comment;
@@ -43,6 +46,7 @@ public:
     QMap<QString, FramePtr> frames;
 
     TextureNodePtr getNodeById(const QString& id);
+    QVector<TextureNodePtr> getNodeDependencies(const QString& id);
 
     void addNode(const TextureNodePtr& node);
 
@@ -67,6 +71,15 @@ public:
 
     QMap<QString, Prop*> props;
 
+    // texture needs updating
+    bool isDirty;
+
+    int textureWidth;
+    int textureHeight;
+    QOpenGLFramebufferObject* texture = nullptr;
+    QOpenGLShaderProgram* shader = nullptr;
+    QString shaderSource;
+
     TextureNode();
 
     virtual void init(){};
@@ -74,6 +87,13 @@ public:
     void addInput(const QString& inputName);
 
     void setProp(QString propName, QVariant value);
+
+    void setShaderSource(const QString& source) { shaderSource = source; }
+
+    bool isGraphicsResourcesInitialized()
+    {
+        return texture == nullptr || shader == nullptr;
+    }
 
     // add prop functions
 };
