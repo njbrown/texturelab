@@ -25,6 +25,13 @@ typedef QSharedPointer<Connection> ConnectionPtr;
 class Prop;
 class Library;
 
+class IntProp;
+class FloatProp;
+class BoolProp;
+class EnumProp;
+class ColorProp;
+class StringProp;
+
 enum class PackageFileType { Texture, Image };
 
 class ProjectFile {
@@ -103,6 +110,27 @@ public:
     }
 
     // add prop functions
+    IntProp* addIntProp(const QString& id, const QString& displayName,
+                        int defaultVal = 1, int minVal = 1, int maxVal = 100,
+                        int increment = 1);
+    FloatProp* addFloatProp(const QString& id, const QString& displayName,
+                            double defaultVal = 1, double minVal = 1,
+                            double maxVal = 100, double increment = 1);
+    BoolProp* addBoolProp(const QString& id, const QString& displayName,
+                          bool defaultVal = false);
+    EnumProp* addEnumProp(const QString& id, const QString& displayName,
+                          QList<QString> defaultVal);
+    ColorProp* addColorProp(const QString& id, const QString& displayName,
+                            QColor defaultVal);
+    StringProp* addStringProp(const QString& id, const QString& displayName,
+                              const QString& defaultVal = "");
+
+    // GradientProp* addGradientProp(const QString& id, const QString&
+    // displayName,
+    //                               Gradient defaultVal);
+
+    // ImageProp* addImageProp(const QString& id, const QString& displayName,
+    //                         QImage defaultVal);
 };
 
 class Comment : public QEnableSharedFromThis<Comment> {
