@@ -4,6 +4,8 @@
 #include <QSharedPointer>
 
 class QDragEnterEvent;
+class TextureRenderer;
+
 namespace nodegraph {
 class NodeGraph;
 class Scene;
@@ -27,10 +29,14 @@ public:
     void dragMoveEvent(QDragMoveEvent* event);
     void dropEvent(QDropEvent* event);
 
+    void setTextureRenderer(TextureRenderer* renderer);
+
     nodegraph::NodeGraph* graph;
     // Library* library;
     nodegraph::ScenePtr scene;
     TextureProjectPtr project;
+
+    TextureRenderer* renderer;
 
 protected:
     void addNode(const TextureNodePtr& node);

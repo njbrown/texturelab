@@ -35,8 +35,8 @@ public:
 class TextureProject : public QEnableSharedFromThis<TextureProject> {
 public:
     int randomSeed;
-    int textureWidth;
-    int textureHeight;
+    int textureWidth = 1024;
+    int textureHeight = 1024;
 
     Library* library = nullptr;
 
@@ -46,6 +46,7 @@ public:
     QMap<QString, FramePtr> frames;
 
     TextureNodePtr getNodeById(const QString& id);
+    ConnectionPtr getConnectionById(const QString& id);
     QVector<TextureNodePtr> getNodeDependencies(const QString& id);
 
     void addNode(const TextureNodePtr& node);
@@ -53,6 +54,12 @@ public:
     // todo: make two port variant
     void addConnection(TextureNodePtr leftNode, TextureNodePtr rightNode,
                        QString rightNodeInput);
+
+    ConnectionPtr removeConnection(const QString& leftNode,
+                                   const QString& rightNode,
+                                   const QString& rightNodeInput);
+    void removeConnection(ConnectionPtr con);
+    void removeConnection(const QString& id);
 
     static TextureProjectPtr createEmpty(Library* library = nullptr);
 };
@@ -92,7 +99,7 @@ public:
 
     bool isGraphicsResourcesInitialized()
     {
-        return texture == nullptr || shader == nullptr;
+        return texture != nullptr && shader != nullptr;
     }
 
     // add prop functions

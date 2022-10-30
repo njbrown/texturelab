@@ -11,6 +11,7 @@ class LibraryWidget;
 class PropertiesWidget;
 class View2DWidget;
 class View3DWidget;
+class TextureRenderer;
 
 class TextureProject;
 typedef QSharedPointer<TextureProject> TextureProjectPtr;
@@ -48,6 +49,8 @@ private:
     PropertiesWidget* propWidget;
     View2DWidget* view2DWidget;
     View3DWidget* view3DWidget;
+
+    TextureRenderer* renderer;
 
     TextureProjectPtr project;
 };

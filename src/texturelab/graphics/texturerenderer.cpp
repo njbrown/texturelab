@@ -264,8 +264,6 @@ void TextureRenderer::update()
     if (!project)
         return;
 
-    ctx->makeCurrent(surface);
-
     // check for nodes that need updating and update
     for (auto& node : project->nodes) {
         if (!node->isGraphicsResourcesInitialized()) {
@@ -292,13 +290,20 @@ void TextureRenderer::update()
         // }
     }
 
+    ctx->makeCurrent(surface);
     // todo: use quota
     while (true) {
         auto nextNode = getNextUpdatableNode();
         if (!nextNode)
             break;
 
+        qDebug() << "Rendering node: " << nextNode->id;
         renderNode(nextNode);
+
+        nextNode->isDirty = false;
+
+        auto img = nextNode->texture->toImage();
+        emit thumbnailGenerated(nextNode->id, QPixmap::fromImage(img));
     }
 
     ctx->doneCurrent();
@@ -312,9 +317,16 @@ void TextureRenderer::initializeNodeGraphicsResources(
     // create fbo
     node->texture = new QOpenGLFramebufferObject(project->textureWidth,
                                                  project->textureWidth);
+    node->textureWidth = project->textureWidth;
+    node->textureHeight = project->textureHeight;
+
+    if (!node->texture->isValid()) {
+        qFatal("FBO could not be created");
+    }
 
     // build and compile shaders
     node->shader = buildShaderForNode(node);
+    ctx->doneCurrent();
 }
 
 void TextureRenderer::renderNode(const TextureNodePtr& node)
@@ -328,59 +340,79 @@ void TextureRenderer::renderNode(const TextureNodePtr& node)
 
     vao->bind();
 
-    node->shader->bind();
+    if (node->shader->isLinked()) {
+        node->shader->bind();
 
-    // clear all inputs
-    int texIndex = 0;
-    for (auto input : node->inputs) {
-        gl->glActiveTexture(GL_TEXTURE0 + texIndex);
-        gl->glBindTexture(GL_TEXTURE_2D, 0);
+        // clear all inputs
+        int texIndex = 0;
+        for (auto input : node->inputs) {
+            gl->glActiveTexture(GL_TEXTURE0 + texIndex);
+            gl->glBindTexture(GL_TEXTURE_2D, 0);
 
-        // gl->glUniform1i(node->shader->uniformLocation(input), 0);
-        node->shader->setUniformValue(input.toStdString().c_str(), 0);
-        node->shader->setUniformValue(
-            (input + "_connected").toStdString().c_str(), 0);
+            // gl->glUniform1i(node->shader->uniformLocation(input), 0);
+            node->shader->setUniformValue(input.toStdString().c_str(), 0);
+            node->shader->setUniformValue(
+                (input + "_connected").toStdString().c_str(), 0);
 
-        texIndex++;
+            texIndex++;
+        }
+
+        // pass inputs
+        auto nodeInputs = getNodeInputs(node);
+        texIndex = 0;
+        for (auto nodeInput : nodeInputs) {
+            gl->glActiveTexture(GL_TEXTURE0 + texIndex);
+            // if (!nodeInput.node->texture->bind())
+            //     qFatal("could not bind texture");
+            gl->glBindTexture(GL_TEXTURE_2D,
+                              nodeInput.node->texture->texture());
+
+            auto name = nodeInput.name;
+            // gl->glUniform1i(node->shader->uniformLocation(input), 0);
+            node->shader->setUniformValue(name.toStdString().c_str(), texIndex);
+            node->shader->setUniformValue(
+                (name + "_connected").toStdString().c_str(), 1);
+
+            texIndex++;
+        }
+
+        // render triangles
+        vbo->bind();
+        gl->glEnableVertexAttribArray((int)VertexUsage::Position);
+        gl->glEnableVertexAttribArray((int)VertexUsage::TexCoord0);
+        gl->glVertexAttribPointer((int)VertexUsage::Position, 3, GL_FLOAT,
+                                  GL_FALSE, 5 * sizeof(float), nullptr);
+        gl->glVertexAttribPointer((int)VertexUsage::TexCoord0, 2, GL_FLOAT,
+                                  GL_FALSE, 5 * sizeof(float),
+                                  reinterpret_cast<void*>(3 * sizeof(float)));
+
+        gl->glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        vbo->release();
     }
 
-    // pass inputs
-    // auto nodeInputs = this->project->getNodeDependencies(node->id);
-    // texIndex = 0;
-    // for (auto inputNode : nodeInputs) {
-    //     gl->glActiveTexture(GL_TEXTURE0 + texIndex);
-    //     inputNode->texture->bind();
+    vao->release();
 
-    //     // todo: get node input name!!
-
-    //     // gl->glUniform1i(node->shader->uniformLocation(input), 0);
-    //     node->shader->setUniformValue(input.toStdString().c_str(), 0);
-    //     node->shader->setUniformValue(
-    //         (input + "_connected").toStdString().c_str(), 0);
-
-    //     texIndex++;
-    // }
-
-    // render triangles
-    vbo->bind();
-    gl->glEnableVertexAttribArray((int)VertexUsage::Position);
-    gl->glEnableVertexAttribArray((int)VertexUsage::TexCoord0);
-    gl->glVertexAttribPointer((int)VertexUsage::Position, 3, GL_FLOAT, GL_FALSE,
-                              5 * sizeof(float), nullptr);
-    gl->glVertexAttribPointer((int)VertexUsage::TexCoord0, 2, GL_FLOAT,
-                              GL_FALSE, 5 * sizeof(float),
-                              reinterpret_cast<void*>(3 * sizeof(float)));
-
-    gl->glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    vbo->release();
-
-    // gl->glBindFramebuffer(GL_FRAMEBUFFER, ctx->defaultFramebufferObject());
-    node->texture->release();
+    // gl->glBindFramebuffer(GL_FRAMEBUFFER,
+    // ctx->defaultFramebufferObject());
 
     // grab pixels to pixmap
-    auto img = node->texture->toImage();
-    img.save("/home/nicolas/Desktop/" + node->id + ".png");
+    // auto img = node->texture->toImage();
+    // img.save(node->id + ".png");
+
+    node->texture->release();
+}
+
+QVector<NodeInput> TextureRenderer::getNodeInputs(const TextureNodePtr& node)
+{
+    QVector<NodeInput> inputs;
+    for (auto con : project->connections) {
+        if (con->rightNode == node) {
+            inputs.append({con->leftNode, con->rightNodeInputName});
+        }
+    }
+
+    return inputs;
 }
 
 TextureNodePtr TextureRenderer::getNextUpdatableNode() const
@@ -397,7 +429,7 @@ TextureNodePtr TextureRenderer::getNextUpdatableNode() const
         // we have a dirty node, check if all deps are clean
         auto deps = project->getNodeDependencies(node->id);
         for (auto dep : deps) {
-            if (!dep->isDirty) {
+            if (dep->isDirty) {
                 hasCleanDeps = false;
                 break;
             }
@@ -414,6 +446,8 @@ TextureNodePtr TextureRenderer::getNextUpdatableNode() const
 QOpenGLShaderProgram*
 TextureRenderer::buildShaderForNode(const TextureNodePtr& node)
 {
+    ctx->makeCurrent(surface);
+
     QOpenGLShader* vshader = new QOpenGLShader(QOpenGLShader::Vertex);
     QOpenGLShader* fshader = new QOpenGLShader(QOpenGLShader::Fragment);
     auto program = new QOpenGLShaderProgram;
@@ -421,7 +455,7 @@ TextureRenderer::buildShaderForNode(const TextureNodePtr& node)
     QString vSource = R""""(
         #version 150 core
 
-        precision highp float;
+        //precision highp float;
 
         in vec3 a_pos;
         in vec2 a_texCoord;
@@ -437,7 +471,7 @@ TextureRenderer::buildShaderForNode(const TextureNodePtr& node)
 
     QString fSource = R""""(
         #version 150 core
-        precision highp float;
+        //precision highp float;
         in vec2 v_texCoord;
 
         #define GRADIENT_MAX_POINTS 32        
@@ -486,6 +520,8 @@ TextureRenderer::buildShaderForNode(const TextureNodePtr& node)
     }
 
     ctx->doneCurrent();
+
+    return program;
 }
 
 QString TextureRenderer::createRandomLib()

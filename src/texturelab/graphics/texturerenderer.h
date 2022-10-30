@@ -9,12 +9,18 @@ class QOpenGLFunctions_3_2_Core;
 class QOpenGLVertexArrayObject;
 class QOpenGLBuffer;
 class QOpenGLShader;
+class QOpenGLShaderProgram;
 class QOpenGLFramebufferObject;
 
 class TextureProject;
 typedef QSharedPointer<TextureProject> TextureProjectPtr;
 class TextureNode;
 typedef QSharedPointer<TextureNode> TextureNodePtr;
+
+struct NodeInput {
+    TextureNodePtr node;
+    QString name;
+};
 
 // https://stackoverflow.com/questions/31323749/easiest-way-for-offscreen-rendering-with-qopenglwidget
 class TextureRenderer : public QObject {
@@ -42,6 +48,7 @@ public:
     TextureProjectPtr project;
 
 private:
+    QVector<NodeInput> getNodeInputs(const TextureNodePtr& node);
     TextureNodePtr getNextUpdatableNode() const;
     QOpenGLShaderProgram* buildShaderForNode(const TextureNodePtr& node);
     QString createRandomLib();
@@ -59,8 +66,6 @@ public:
     // texture id
     int width;
     int height;
-
-    QOpenGLTexture* texture = nullptr;
 
     QPixmap thumbnail;
 };

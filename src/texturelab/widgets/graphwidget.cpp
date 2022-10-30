@@ -6,6 +6,7 @@
 #include <QMimeData>
 #include <QToolBar>
 
+#include "./graphics/texturerenderer.h"
 #include "./models.h"
 #include "./utils.h"
 #include "graph/scene.h"
@@ -19,6 +20,50 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
     this->setCentralWidget(graph);
 
     this->setAcceptDrops(true);
+
+    connect(graph, &nodegraph::NodeGraph::connectionAdded,
+            [=](nodegraph::ConnectionPtr con) {
+                qDebug() << "CONNECTION ADDED";
+
+                // auto sceneCon = project->getConnectionById(con->id());
+                // sceneCon->rightNode->isDirty = true;
+
+                auto leftNode =
+                    project->getNodeById(con->startPort->node->id());
+                auto rightNode = project->getNodeById(con->endPort->node->id());
+                auto rightName = con->endPort->name;
+
+                project->addConnection(leftNode, rightNode, rightName);
+
+                // make ready for update
+                rightNode->isDirty = true;
+
+                // todo: try to update later
+                renderer->update();
+            });
+
+    connect(graph, &nodegraph::NodeGraph::connectionRemoved,
+            [=](nodegraph::ConnectionPtr con) {
+                qDebug() << "CONNECTION REMOVED";
+
+                auto leftNodeId = con->startPort->node->id();
+                auto rightNodeId = con->endPort->node->id();
+                auto portName = con->endPort->name;
+
+                auto removedCon = project->removeConnection(
+                    leftNodeId, rightNodeId, portName);
+
+                removedCon->rightNode->isDirty = true;
+
+                // todo: try to update later
+                renderer->update();
+            });
+
+    // connect(graph, &nodegraph::NodeGraph::nodeAdded,
+    //         [=](nodegraph::NodePtr node) { qDebug() << "NODE ADDED"; });
+
+    // connect(graph, &nodegraph::NodeGraph::nodeRemoved,
+    //         [=](nodegraph::NodePtr node) { qDebug() << "NODE REMOVED"; });
 
     // library = nullptr;
 }
@@ -99,8 +144,24 @@ void GraphWidget::dropEvent(QDropEvent* evt)
         this->project->addNode(node);
         this->addNode(node);
 
+        this->renderer->update();
+
         evt->accept();
     }
     // mimeData->formats().contains()
     // if (mimeData->data("ITEM_TYPE").toStdString() == "")
+}
+
+void GraphWidget::setTextureRenderer(TextureRenderer* renderer)
+{
+    this->renderer = renderer;
+
+    connect(renderer, &TextureRenderer::thumbnailGenerated,
+            [=](const QString& nodeId, const QPixmap& pixmap) {
+                // scene->setNodeThumbnail(nodeId, pixmap);
+                auto node = scene->getNodeById(nodeId);
+                if (node) {
+                    node->setThumbnail(pixmap);
+                }
+            });
 }

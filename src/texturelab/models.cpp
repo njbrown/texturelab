@@ -7,6 +7,11 @@ TextureNodePtr TextureProject::getNodeById(const QString& id)
     return nodes[id];
 }
 
+ConnectionPtr TextureProject::getConnectionById(const QString& id)
+{
+    return connections[id];
+}
+
 QVector<TextureNodePtr> TextureProject::getNodeDependencies(const QString& id)
 {
     auto node = nodes[id];
@@ -43,6 +48,34 @@ void TextureProject::addConnection(TextureNodePtr leftNode,
     this->connections[con->id] = con;
 
     // todo: request updates
+}
+
+ConnectionPtr TextureProject::removeConnection(const QString& leftNode,
+                                               const QString& rightNode,
+                                               const QString& rightNodeInput)
+{
+    for (auto conKey : connections.keys()) {
+        auto con = connections[conKey];
+
+        if (con->leftNode->id == leftNode && con->rightNode->id == rightNode &&
+            con->rightNodeInputName == rightNodeInput) {
+            connections.remove(conKey);
+
+            return con;
+        }
+    }
+
+    return ConnectionPtr(nullptr);
+}
+
+void TextureProject::removeConnection(ConnectionPtr con)
+{
+    this->connections.remove(con->id);
+}
+
+void TextureProject::removeConnection(const QString& id)
+{
+    this->connections.remove(id);
 }
 
 TextureProjectPtr TextureProject::createEmpty(Library* library)

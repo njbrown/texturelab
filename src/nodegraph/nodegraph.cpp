@@ -281,6 +281,9 @@ bool NodeGraph::sceneMousePressEvent(QGraphicsSceneMouseEvent* event)
                     // get the connection
                     auto con = port->connections[0];
 
+                    // emit connection removal signal
+                    emit connectionRemoved(con);
+
                     // remove it
                     _scene->removeConnection(con);
 
@@ -291,8 +294,6 @@ bool NodeGraph::sceneMousePressEvent(QGraphicsSceneMouseEvent* event)
                     activeCon = con;
                     activeCon->updatePathFromPositions();
                     activeCon->connectState = ConnectionState::Dragging;
-
-                    // emit connection removal signal
 
                     this->_scene->addItem(activeCon.data());
                     setDragMode(QGraphicsView::NoDrag);
@@ -407,9 +408,11 @@ bool NodeGraph::sceneMouseReleaseEvent(QGraphicsSceneMouseEvent* event)
 
             if (isConValid) {
                 // actually make connection
-                _scene->connectNodes(leftPort->node, leftPort->name,
-                                     rightPort->node, rightPort->name);
+                auto con =
+                    _scene->connectNodes(leftPort->node, leftPort->name,
+                                         rightPort->node, rightPort->name);
 
+                emit connectionAdded(con);
                 // todo: emit undo task
             }
         }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "graph/scene.h"
 #include <QSharedPointer>
 #include <QtCore/QPointF>
 #include <QtCore/QRectF>
@@ -38,6 +39,7 @@ This class draws a lot of inspiration from NodeGraphQt
 https://github.com/jchanvfx/NodeGraphQt/blob/master/NodeGraphQt/widgets/viewer.py
 */
 class NodeGraph : public QGraphicsView {
+    Q_OBJECT
 public:
     NodeGraph(QWidget* parent = nullptr);
 

@@ -5,6 +5,7 @@
 #include <QGraphicsScene>
 #include <QList>
 #include <QMap>
+#include <QPixmap>
 #include <QRectF>
 #include <QSharedPointer>
 #include <QVector>
@@ -37,8 +38,8 @@ public:
     void addNode(NodePtr node);
     NodePtr getNodeById(QString id);
 
-    void connectNodes(NodePtr leftNode, QString leftOutputName,
-                      NodePtr rightNode, QString rightInputName);
+    ConnectionPtr connectNodes(NodePtr leftNode, QString leftOutputName,
+                               NodePtr rightNode, QString rightInputName);
 
     // this removes the node and associating connections
     // and node from scene
@@ -57,6 +58,8 @@ class Node : public QGraphicsObject, public QEnableSharedFromThis<Node> {
     int height;
     QGraphicsTextItem* text;
     QString name;
+
+    QPixmap thumbnail;
 
     bool isHovered;
     // bool isSelected;
@@ -78,6 +81,7 @@ public:
     const QVector<PortPtr> getOutPorts() const;
 
     void setName(QString name);
+    void setThumbnail(const QPixmap& pixmap);
 
     void addInPort(QString name);
     void addOutPort(QString name);

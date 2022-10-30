@@ -22,8 +22,8 @@ void Scene::addNode(NodePtr node)
     nodes[node->id()] = node;
 }
 
-void Scene::connectNodes(NodePtr leftNode, QString leftOutputName,
-                         NodePtr rightNode, QString rightInputName)
+ConnectionPtr Scene::connectNodes(NodePtr leftNode, QString leftOutputName,
+                                  NodePtr rightNode, QString rightInputName)
 {
     auto leftPort = leftNode->getOutPortByName(leftOutputName);
     qDebug() << rightNode->getInPorts();
@@ -43,6 +43,8 @@ void Scene::connectNodes(NodePtr leftNode, QString leftOutputName,
     rightPort->addConnection(connPtr);
 
     this->addItem(conn);
+
+    return connPtr;
 }
 
 NodePtr Scene::getNodeById(QString id) { return nodes[id]; }
@@ -98,7 +100,8 @@ Node::Node()
     isHovered = false;
 
     defaultBorderColor = QColor(0, 0, 0);
-    highlightBorderColor = QColor(120, 120, 120);
+    highlightBorderColor = QColor(0, 0, 0);
+    // highlightBorderColor = QColor(120, 120, 120);
     selectedBorderColor = QColor(200, 200, 200);
 
     setFlag(QGraphicsItem::ItemIsMovable, true);
@@ -109,10 +112,13 @@ Node::Node()
     setCursor(Qt::ClosedHandCursor);
 
     text = new QGraphicsTextItem(this);
+    text->setFlag(QGraphicsItem::ItemIsFocusable, false);
+    text->setFlag(QGraphicsItem::ItemIsSelectable, false);
 
     text->setPos(0, 0);
     text->setTextWidth(100);
     text->setDefaultTextColor(QColor(255, 255, 255));
+    text->setZValue(5);
 
     // center title
     setName("Title");
@@ -149,6 +155,12 @@ void Node::setName(QString name)
     cursor.mergeBlockFormat(format);
     cursor.clearSelection();
     text->setTextCursor(cursor);
+}
+
+void Node::setThumbnail(const QPixmap& pixmap)
+{
+    this->thumbnail = pixmap;
+    this->update();
 }
 
 const QVector<PortPtr> Node::getInPorts() const { return inPorts; }
@@ -308,11 +320,25 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
                           titleRadius);
     painter->fillPath(bgPath, QBrush(QColor(10, 10, 10, 255)));
 
+    if (!thumbnail.isNull()) {
+        painter->drawPixmap(QRect(0, 0, nodeWidth, nodeHeight), thumbnail);
+    }
+
+    // draw highlight
+
+    // top bar for text
+    if (!isHovered) {
+        QPainterPath bgPath;
+        bgPath.setFillRule(Qt::WindingFill);
+        bgPath.addRoundedRect(0, 0, nodeWidth, 18, titleRadius, titleRadius);
+        painter->fillPath(bgPath, QBrush(QColor(0, 0, 0, 255)));
+
+        text->paint(painter, option, widget);
+    }
+
     // draw border
     painter->setPen(QPen(borderColor, 3));
     painter->drawRoundedRect(rect, titleRadius, titleRadius);
-
-    // draw highlight
 }
 
 Node::~Node()

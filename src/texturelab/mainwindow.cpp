@@ -34,8 +34,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     this->setProject(project);
 
     // test texture rendering
-    auto renderer = new TextureRenderer();
-    renderer->testRendering();
+    //     auto renderer = new TextureRenderer();
+    //     renderer->testRendering();
 }
 
 void MainWindow::setProject(TextureProjectPtr project)
@@ -43,6 +43,11 @@ void MainWindow::setProject(TextureProjectPtr project)
     this->project = project;
     this->graphWidget->setTextureProject(project);
     this->libraryWidget->setLibrary(project->library);
+
+    renderer = new TextureRenderer();
+    renderer->setProject(project);
+    renderer->update();
+    this->graphWidget->setTextureRenderer(renderer);
 }
 
 void MainWindow::setupMenus()
