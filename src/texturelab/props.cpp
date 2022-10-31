@@ -9,8 +9,7 @@ QString createGuid()
 
 QString PropType::toString(Value propType)
 {
-    switch (propType)
-    {
+    switch (propType) {
     case Float:
         return "float";
     case Int:
@@ -52,4 +51,20 @@ PropType::Value PropType::fromString(QString propType)
         return Image;
 
     return Unknown;
+}
+
+Prop::Prop() { id = createGuid(); }
+
+QJsonObject Prop::toJson()
+{
+    QJsonObject obj;
+    obj["id"] = id;
+    obj["name"] = name;
+    obj["displayName"] = displayName;
+}
+void Prop::fromJson(const QJsonObject& obj)
+{
+    id = obj["id"].toString();
+    name = obj["name"].toString();
+    displayName = obj["displayName"].toString();
 }

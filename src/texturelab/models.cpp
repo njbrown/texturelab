@@ -106,3 +106,109 @@ void TextureNode::setProp(QString propName, QVariant value)
     if (props.contains(propName))
         props[propName]->setValue(value);
 }
+
+IntProp* TextureNode::addIntProp(const QString& name,
+                                 const QString& displayName, int defaultVal,
+                                 int minVal, int maxVal, int increment)
+{
+    auto prop = new IntProp();
+    prop->name = name;
+    prop->displayName = displayName;
+    prop->minValue = minVal;
+    prop->maxValue = maxVal;
+    prop->step = increment;
+    prop->value = defaultVal;
+
+    props[name] = prop;
+
+    return prop;
+}
+
+FloatProp* TextureNode::addFloatProp(const QString& name,
+                                     const QString& displayName,
+                                     double defaultVal, double minVal,
+                                     double maxVal, double increment)
+{
+    auto prop = new FloatProp();
+    prop->name = name;
+    prop->displayName = displayName;
+    prop->minValue = minVal;
+    prop->maxValue = maxVal;
+    prop->step = increment;
+    prop->value = defaultVal;
+
+    props[name] = prop;
+
+    return prop;
+}
+
+BoolProp* TextureNode::addBoolProp(const QString& name,
+                                   const QString& displayName, bool defaultVal)
+{
+    auto prop = new BoolProp();
+    prop->name = name;
+    prop->displayName = displayName;
+    prop->value = defaultVal;
+
+    props[name] = prop;
+
+    return prop;
+}
+
+EnumProp* TextureNode::addEnumProp(const QString& name,
+                                   const QString& displayName,
+                                   QList<QString> defaultVal)
+{
+    auto prop = new EnumProp();
+    prop->name = name;
+    prop->displayName = displayName;
+    prop->values = defaultVal;
+
+    props[name] = prop;
+
+    return prop;
+}
+
+ColorProp* TextureNode::addColorProp(const QString& name,
+                                     const QString& displayName,
+                                     const QColor& defaultVal)
+{
+    auto prop = new ColorProp();
+    prop->name = name;
+    prop->displayName = displayName;
+    prop->value = defaultVal;
+
+    props[name] = prop;
+
+    return prop;
+}
+
+StringProp* TextureNode::addStringProp(const QString& name,
+                                       const QString& displayName,
+                                       const QString& defaultVal)
+{
+    auto prop = new StringProp();
+    prop->name = name;
+    prop->displayName = displayName;
+    prop->value = defaultVal;
+
+    props[name] = prop;
+
+    return prop;
+}
+
+// GradientProp* addGradientProp(const QString& name, const QString&
+// displayName,
+//                               Gradient defaultVal);
+
+ImageProp* TextureNode::addImageProp(const QString& name,
+                                     const QString& displayName)
+{
+    auto prop = new ImageProp();
+    prop->name = name;
+    prop->displayName = displayName;
+
+    props[name] = prop;
+
+    return prop;
+}

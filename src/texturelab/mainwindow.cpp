@@ -46,8 +46,9 @@ void MainWindow::setProject(TextureProjectPtr project)
 
     renderer = new TextureRenderer();
     renderer->setProject(project);
-    renderer->update();
     this->graphWidget->setTextureRenderer(renderer);
+
+    renderer->update();
 }
 
 void MainWindow::setupMenus()

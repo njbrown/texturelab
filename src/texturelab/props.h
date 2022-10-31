@@ -1,21 +1,22 @@
 #pragma once
 
-#include <QString>
-#include <QList>
-#include <QJsonObject>
-#include <QJsonArray>
-#include <QUuid>
+#include <QBuffer>
 #include <QColor>
+#include <QIODevice>
+#include <QImage>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QList>
+#include <QString>
+#include <QUuid>
 
 class Prop;
 
 // http://techiesolves.blogspot.com/2018/01/base64-qstring-to-qimage-to-qstring-in.html
 QString createGuid();
-class PropType
-{
+class PropType {
 public:
-    enum Value
-    {
+    enum Value {
         Unknown = -1,
         Float = 0,
         Int,
@@ -32,15 +33,13 @@ public:
     static Value fromString(QString propType);
 };
 
-class PropertyGroup
-{
+class PropertyGroup {
 public:
     QString name;
-    QList<Prop *> props;
+    QList<Prop*> props;
 };
 
-class Prop
-{
+class Prop {
 public:
     QString id;
     QString name;
@@ -53,18 +52,19 @@ public:
     virtual void setValue(QVariant val) = 0;
 
     virtual QJsonObject toJson();
-    virtual void fromJson(const QJsonObject &obj);
+    virtual void fromJson(const QJsonObject& obj);
+
+    virtual ~Prop() {}
 };
 
-class FloatProp : public Prop
-{
+class FloatProp : public Prop {
 public:
     double value;
     double minValue;
     double maxValue;
     double step;
 
-    FloatProp()
+    FloatProp() : Prop()
     {
         value = 0;
         minValue = 0;
@@ -73,15 +73,9 @@ public:
         type = PropType::Float;
     }
 
-    QVariant getValue()
-    {
-        return QVariant::fromValue(value);
-    }
+    QVariant getValue() override { return QVariant::fromValue(value); }
 
-    void setValue(QVariant val)
-    {
-        value = val.toDouble();
-    }
+    void setValue(QVariant val) override { value = val.toDouble(); }
 
     QJsonObject toJson() override
     {
@@ -93,8 +87,9 @@ public:
         return obj;
     }
 
-    void fromJson(const QJsonObject &obj) override
+    void fromJson(const QJsonObject& obj) override
     {
+        Prop::fromJson(obj);
         value = obj["value"].toDouble();
         minValue = obj["minValue"].toDouble();
         maxValue = obj["maxValue"].toDouble();
@@ -102,15 +97,14 @@ public:
     }
 };
 
-class IntProp : public Prop
-{
+class IntProp : public Prop {
 public:
     long value;
     long minValue;
     long maxValue;
     long step;
 
-    IntProp()
+    IntProp() : Prop()
     {
         value = 0;
         minValue = 0;
@@ -119,15 +113,9 @@ public:
         type = PropType::Int;
     }
 
-    QVariant getValue()
-    {
-        return QVariant::fromValue(value);
-    }
+    QVariant getValue() override { return QVariant::fromValue(value); }
 
-    void setValue(QVariant val)
-    {
-        value = (long)val.toLongLong();
-    }
+    void setValue(QVariant val) override { value = (long)val.toLongLong(); }
 
     QJsonObject toJson() override
     {
@@ -139,8 +127,9 @@ public:
         return obj;
     }
 
-    void fromJson(const QJsonObject &obj) override
+    void fromJson(const QJsonObject& obj) override
     {
+        Prop::fromJson(obj);
         value = obj["value"].toDouble();
         minValue = obj["minValue"].toDouble();
         maxValue = obj["maxValue"].toDouble();
@@ -148,26 +137,19 @@ public:
     }
 };
 
-class BoolProp : public Prop
-{
+class BoolProp : public Prop {
 public:
     bool value;
 
-    BoolProp()
+    BoolProp() : Prop()
     {
         type = PropType::Bool;
         value = false;
     }
 
-    QVariant getValue()
-    {
-        return value;
-    }
+    QVariant getValue() override { return value; }
 
-    void setValue(QVariant val)
-    {
-        value = val.toBool();
-    }
+    void setValue(QVariant val) override { value = val.toBool(); }
 
     QJsonObject toJson() override
     {
@@ -176,32 +158,23 @@ public:
         return obj;
     }
 
-    void fromJson(const QJsonObject &obj) override
+    void fromJson(const QJsonObject& obj) override
     {
+        Prop::fromJson(obj);
         value = obj["value"].toBool();
     }
 };
 
-class EnumProp : public Prop
-{
+class EnumProp : public Prop {
 public:
     QList<QString> values;
     int index;
 
-    EnumProp()
-    {
-        type = PropType::Color;
-    }
+    EnumProp() : Prop() { type = PropType::Color; }
 
-    QVariant getValue()
-    {
-        return index;
-    }
+    QVariant getValue() override { return index; }
 
-    void setValue(QVariant val)
-    {
-        index = val.value<int>();
-    }
+    void setValue(QVariant val) override { index = val.value<int>(); }
 
     QJsonObject toJson() override
     {
@@ -210,8 +183,7 @@ public:
 
         // values
         QJsonArray valueList;
-        for (auto enumValue : values)
-        {
+        for (auto enumValue : values) {
             valueList.append(enumValue);
         }
         obj["values"] = valueList;
@@ -219,37 +191,27 @@ public:
         return obj;
     }
 
-    void fromJson(const QJsonObject &obj) override
+    void fromJson(const QJsonObject& obj) override
     {
+        Prop::fromJson(obj);
         index = obj["index"].toInt();
 
         auto list = obj["values"].toArray();
         values.empty();
-        for (auto item : list)
-        {
+        for (auto item : list) {
             values.append(item.toString());
         }
     }
 };
 
-struct ColorProp : public Prop
-{
+struct ColorProp : public Prop {
     QColor value;
 
-    ColorProp()
-    {
-        type = PropType::Color;
-    }
+    ColorProp() : Prop() { type = PropType::Color; }
 
-    QVariant getValue()
-    {
-        return value;
-    }
+    QVariant getValue() override { return value; }
 
-    void setValue(QVariant val)
-    {
-        value = val.value<QColor>();
-    }
+    void setValue(QVariant val) override { value = val.value<QColor>(); }
 
     QJsonObject toJson() override
     {
@@ -264,8 +226,9 @@ struct ColorProp : public Prop
         return obj;
     }
 
-    void fromJson(const QJsonObject &obj) override
+    void fromJson(const QJsonObject& obj) override
     {
+        Prop::fromJson(obj);
         auto colorObj = obj["value"].toObject();
         value.setRed(colorObj["r"].toInt());
         value.setGreen(colorObj["g"].toInt());
@@ -274,25 +237,15 @@ struct ColorProp : public Prop
     }
 };
 
-class StringProp : public Prop
-{
+class StringProp : public Prop {
 public:
     QString value;
 
-    StringProp()
-    {
-        type = PropType::Color;
-    }
+    StringProp() : Prop() { type = PropType::Color; }
 
-    QVariant getValue()
-    {
-        return value;
-    }
+    QVariant getValue() override { return value; }
 
-    void setValue(QVariant val)
-    {
-        value = val.value<QString>();
-    }
+    void setValue(QVariant val) override { value = val.value<QString>(); }
 
     QJsonObject toJson() override
     {
@@ -301,8 +254,56 @@ public:
         return obj;
     }
 
-    void fromJson(const QJsonObject &obj) override
+    void fromJson(const QJsonObject& obj) override
     {
+        Prop::fromJson(obj);
         value = obj["value"].toString();
+    }
+};
+
+class ImageProp : public Prop {
+public:
+    QImage value;
+
+    ImageProp() : Prop() { type = PropType::Image; }
+
+    QVariant getValue() override { return value; }
+
+    void setValue(QVariant val) override { value = val.value<QImage>(); }
+
+    QJsonObject toJson() override
+    {
+        auto obj = Prop::toJson();
+        if (value.isNull()) {
+            obj["value"] = "";
+            return obj;
+        }
+
+        QBuffer buffer;
+        buffer.open(QIODevice::WriteOnly);
+        value.save(&buffer, "PNG");
+        QString encoded = buffer.data().toBase64();
+
+        obj["value"] = "data:image/png;base64," + encoded;
+        return obj;
+    }
+
+    void fromJson(const QJsonObject& obj) override
+    {
+        Prop::fromJson(obj);
+
+        auto stringData = obj["value"].toString();
+        if (stringData.isNull() || stringData.isEmpty())
+            return;
+
+        auto parts = stringData.split(";base64,");
+        if (parts.length() == 0 || parts.length() == 1)
+            return;
+
+        auto bytes = QByteArray::fromBase64(parts[0].toUtf8());
+
+        QImage image;
+        image.loadFromData(QByteArray::fromBase64(stringData.toUtf8()));
+        this->value = value;
     }
 };

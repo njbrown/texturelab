@@ -8,11 +8,13 @@ public:
     {
         this->title = "Polygon";
 
+        this->addFloatProp("radius", "Radius", 0.2, 0, 3, 0.01);
+
         // todo: add props
         this->setShaderSource(R""""(
         vec4 process(vec2 uv)
         {
-            float prop_radius = 0.35;
+            //float prop_radius = 0.35;
 
             float dist = distance(uv, vec2(0.5));
             if( dist <= prop_radius) {
@@ -57,6 +59,12 @@ public:
         this->addInput("opacity");
 
         // todo: add props
+        this->setShaderSource(R""""(
+        vec4 process(vec2 uv)
+        {
+            return vec4(1,1,1,1);
+        }
+        )"""");
     }
 };
 
@@ -69,5 +77,12 @@ public:
         this->addInput("image");
 
         // todo: add props
+        this->setShaderSource(R""""(
+        vec4 process(vec2 uv)
+        {
+            vec4 prop_color = vec4(1,1,1,1);
+            return texture(image,uv) * prop_color;
+        }
+        )"""");
     }
 };

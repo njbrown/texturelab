@@ -18,6 +18,7 @@
 // #include <QOpenGLPaintDevice>
 // #include <QtGui/QOpenGLFunctions_3_3_Core>
 
+#include "../props.h"
 #include "models.h"
 
 enum class VertexUsage : int {
@@ -340,8 +341,10 @@ void TextureRenderer::renderNode(const TextureNodePtr& node)
 
     vao->bind();
 
-    if (node->shader->isLinked()) {
-        node->shader->bind();
+    auto shader = node->shader;
+
+    if (shader->isLinked()) {
+        shader->bind();
 
         // clear all inputs
         int texIndex = 0;
@@ -350,8 +353,8 @@ void TextureRenderer::renderNode(const TextureNodePtr& node)
             gl->glBindTexture(GL_TEXTURE_2D, 0);
 
             // gl->glUniform1i(node->shader->uniformLocation(input), 0);
-            node->shader->setUniformValue(input.toStdString().c_str(), 0);
-            node->shader->setUniformValue(
+            shader->setUniformValue(input.toStdString().c_str(), 0);
+            shader->setUniformValue(
                 (input + "_connected").toStdString().c_str(), 0);
 
             texIndex++;
@@ -369,11 +372,52 @@ void TextureRenderer::renderNode(const TextureNodePtr& node)
 
             auto name = nodeInput.name;
             // gl->glUniform1i(node->shader->uniformLocation(input), 0);
-            node->shader->setUniformValue(name.toStdString().c_str(), texIndex);
-            node->shader->setUniformValue(
-                (name + "_connected").toStdString().c_str(), 1);
+            shader->setUniformValue(name.toStdString().c_str(), texIndex);
+            shader->setUniformValue((name + "_connected").toStdString().c_str(),
+                                    1);
 
             texIndex++;
+        }
+
+        // pass seed
+        shader->setUniformValue(
+            "_seed", (GLint)(project->randomSeed + node->randomSeed));
+
+        // texture size
+        shader->setUniformValue(
+            "_textureSize",
+            QVector2D(project->textureWidth, project->textureHeight));
+
+        // pass props
+        for (auto prop : node->props) {
+            auto propName = ("prop_" + prop->name.toStdString()).c_str();
+            switch (prop->type) {
+            case PropType::Int: {
+                auto intVal = ((IntProp*)prop)->value;
+                shader->setUniformValue(propName, (GLint)intVal);
+            } break;
+            case PropType::Float: {
+                auto floatVal = ((FloatProp*)prop)->value;
+                shader->setUniformValue(propName, (GLfloat)floatVal);
+            } break;
+            case PropType::Bool: {
+                auto boolVal = ((BoolProp*)prop)->value;
+                shader->setUniformValue(propName, (GLint)boolVal == true);
+            } break;
+            case PropType::Enum: {
+                auto enumVal = ((EnumProp*)prop)->index;
+                shader->setUniformValue(propName, (GLint)enumVal);
+            } break;
+            case PropType::Color: {
+                auto colorVal = ((ColorProp*)prop)->value;
+                shader->setUniformValue(
+                    propName, QVector4D(colorVal.redF(), colorVal.greenF(),
+                                        colorVal.blueF(), colorVal.alphaF()));
+            } break;
+            case PropType::Gradient:
+                // todo: pass gradient
+                break;
+            }
         }
 
         // render triangles
@@ -504,6 +548,8 @@ TextureRenderer::buildShaderForNode(const TextureNodePtr& node)
         qDebug() << "FRAGMENT SHADER ERROR";
         qDebug() << fshader->log();
     }
+
+    // qDebug() << fSource;
 
     program->removeAllShaders();
 
@@ -685,5 +731,30 @@ QString TextureRenderer::createCodeForInputs(const TextureNodePtr& node)
 
 QString TextureRenderer::createCodeForProps(const TextureNodePtr& node)
 {
-    return "";
+    QString code = "";
+
+    for (auto prop : node->props) {
+        switch (prop->type) {
+        case PropType::Int:
+            code += "uniform int prop_" + prop->name + ";\n";
+            break;
+        case PropType::Float:
+            code += "uniform float prop_" + prop->name + ";\n";
+            break;
+        case PropType::Bool:
+            code += "uniform bool prop_" + prop->name + ";\n";
+            break;
+        case PropType::Enum:
+            code += "uniform int prop_" + prop->name + ";\n";
+            break;
+        case PropType::Color:
+            code += "uniform vec4 prop_" + prop->name + ";\n";
+            break;
+        case PropType::Gradient:
+            code += "uniform int prop_" + prop->name + ";\n";
+            break;
+        }
+    }
+
+    return code + "\n";
 }
