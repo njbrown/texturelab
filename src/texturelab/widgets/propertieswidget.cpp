@@ -113,6 +113,8 @@ void PropertiesWidget::setSelectedNode(const TextureNodePtr& node)
                 node->setProp(prop->name, value);
                 // mark subsequent nodes as dirty!!!
 
+                project->markNodeAsDirty(node);
+
                 emit propertyUpdated(prop->name, value);
             });
             layout->addWidget(widget);
@@ -141,4 +143,9 @@ void PropertiesWidget::clearSelection()
         layout->removeItem(layout->itemAt(0));
 
     propWidgets.clear();
+}
+
+void PropertiesWidget::setProject(const TextureProjectPtr& project)
+{
+    this->project = project;
 }

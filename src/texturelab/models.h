@@ -56,6 +56,7 @@ public:
     TextureNodePtr getNodeById(const QString& id);
     ConnectionPtr getConnectionById(const QString& id);
     QVector<TextureNodePtr> getNodeDependencies(const QString& id);
+    QVector<TextureNodePtr> getNodeRightOfNode(const QString& id);
 
     void addNode(const TextureNodePtr& node);
 

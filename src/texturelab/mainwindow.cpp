@@ -63,7 +63,9 @@ void MainWindow::setProject(TextureProjectPtr project)
     this->project = project;
     this->graphWidget->setTextureProject(project);
     this->libraryWidget->setLibrary(project->library);
+
     this->propWidget->clearSelection();
+    this->propWidget->setProject(project);
 
     renderer = new TextureRenderer();
     renderer->setProject(project);

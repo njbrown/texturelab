@@ -1,6 +1,7 @@
 #include "models.h"
 #include "libraries/library.h"
 #include "props.h"
+#include <QQueue>
 
 TextureNodePtr TextureProject::getNodeById(const QString& id)
 {
@@ -21,6 +22,21 @@ QVector<TextureNodePtr> TextureProject::getNodeDependencies(const QString& id)
         if (con->rightNode == node) {
             auto depNode = con->leftNode;
             cons.append(depNode);
+        }
+    }
+
+    return cons;
+}
+
+QVector<TextureNodePtr> TextureProject::getNodeRightOfNode(const QString& id)
+{
+    auto node = nodes[id];
+
+    QVector<TextureNodePtr> cons;
+    for (auto con : connections) {
+        if (con->leftNode == node) {
+            auto nextNode = con->rightNode;
+            cons.append(nextNode);
         }
     }
 
@@ -76,6 +92,21 @@ void TextureProject::removeConnection(ConnectionPtr con)
 void TextureProject::removeConnection(const QString& id)
 {
     this->connections.remove(id);
+}
+
+void TextureProject::markNodeAsDirty(const TextureNodePtr& node)
+{
+    QQueue<TextureNodePtr> queue;
+    queue.enqueue(node);
+
+    while (!queue.isEmpty()) {
+        auto nextNode = queue.dequeue();
+        nextNode->isDirty = true;
+
+        auto list = getNodeRightOfNode(nextNode->id);
+        for (auto item : list)
+            queue.enqueue(item);
+    }
 }
 
 TextureProjectPtr TextureProject::createEmpty(Library* library)
