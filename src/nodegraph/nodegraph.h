@@ -94,6 +94,7 @@ protected:
     void dropEvent(QDropEvent* event);
 
     const Port* getPortAtScenePos(float x, float y) const;
+    void handleSelectionChange();
 
 private:
     QPointF _clickPos;
@@ -109,6 +110,9 @@ signals:
     void connectionRemoved(ConnectionPtr con);
     void nodeAdded(NodePtr node);
     void nodeRemoved(NodePtr node);
+
+    // null nodeptr means no active node selected
+    void nodeSelectionChanged(NodePtr node);
 
     void itemsDeleted(QList<NodePtr> nodes, QList<ConnectionPtr> cons);
 };

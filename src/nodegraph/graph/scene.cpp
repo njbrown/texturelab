@@ -1,5 +1,6 @@
 #include "scene.h"
 #include <QGraphicsDropShadowEffect>
+#include <QGraphicsSceneMouseEvent>
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
 #include <QTextBlockFormat>
@@ -254,6 +255,13 @@ QRectF Node::boundingRect() const { return QRectF(0, 0, 100, 100); }
 // {
 //     QGraphicsObject::mouseMoveEvent(event);
 // }
+
+void Node::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
+{
+    // if (event->button() == Qt::LeftButton) {
+    //     emit selected(sharedFromThis());
+    // }
+}
 
 void Node::hoverEnterEvent(QGraphicsSceneHoverEvent* event)
 {

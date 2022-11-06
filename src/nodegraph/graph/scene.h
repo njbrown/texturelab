@@ -108,8 +108,7 @@ protected:
     // void
     // mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
 
-    // void
-    // mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
 
     void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
 
@@ -120,6 +119,9 @@ protected:
 
     // void
     // mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
+
+    // signals:
+    //     void selected(const NodePtr& node);
 };
 
 enum class PortType : int { Invalid = 0, In = 1, Out = 2 };

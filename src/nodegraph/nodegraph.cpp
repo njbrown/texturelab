@@ -75,6 +75,10 @@ void NodeGraph::setNodeGraphScene(const ScenePtr& scene)
 
     // handle scene's events from within the view
     scene->installEventFilter(this);
+
+    // connect to selection signal
+    connect(scene.data(), &QGraphicsScene::selectionChanged,
+            [=]() { this->handleSelectionChange(); });
 }
 
 void NodeGraph::wheelEvent(QWheelEvent* event)
@@ -443,6 +447,19 @@ const Port* NodeGraph::getPortAtScenePos(float x, float y) const
     }
 
     return nullptr;
+}
+
+void NodeGraph::handleSelectionChange()
+{
+    auto selected = this->_scene->selectedItems();
+    for (auto item : selected) {
+        if (item->type() == (int)SceneItemType::Node) {
+            emit nodeSelectionChanged(((Node*)item)->sharedFromThis());
+            return;
+        }
+    }
+
+    emit nodeSelectionChanged(NodePtr(nullptr));
 }
 
 NodeGraph::~NodeGraph() {}
