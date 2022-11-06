@@ -4,6 +4,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMimeData>
+#include <QOpenGLContext>
 #include <QToolBar>
 
 #include "./graphics/texturerenderer.h"
@@ -173,11 +174,12 @@ void GraphWidget::setTextureRenderer(TextureRenderer* renderer)
     this->renderer = renderer;
 
     connect(renderer, &TextureRenderer::thumbnailGenerated,
-            [=](const QString& nodeId, const QPixmap& pixmap) {
+            [=](const QString& nodeId, GLint texId, const QPixmap& pixmap) {
                 // scene->setNodeThumbnail(nodeId, pixmap);
                 auto node = scene->getNodeById(nodeId);
                 if (node) {
                     node->setThumbnail(pixmap);
+                    node->setTextureId(texId);
                 }
             });
 }

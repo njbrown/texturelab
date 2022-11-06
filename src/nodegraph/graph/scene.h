@@ -5,6 +5,7 @@
 #include <QGraphicsScene>
 #include <QList>
 #include <QMap>
+#include <QOpenGLContext>
 #include <QPixmap>
 #include <QRectF>
 #include <QSharedPointer>
@@ -56,6 +57,8 @@ class Node : public QGraphicsObject, public QEnableSharedFromThis<Node> {
 
     int width;
     int height;
+    GLuint texId = 0;
+
     QGraphicsTextItem* text;
     QString name;
 
@@ -76,6 +79,8 @@ public:
 
     const QString id() const { return _id; }
     void setId(const QString& id) { _id = id; }
+
+    void setTextureId(GLuint id) { texId = id; }
 
     const QVector<PortPtr> getInPorts() const;
     const QVector<PortPtr> getOutPorts() const;

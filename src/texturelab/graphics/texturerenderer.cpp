@@ -155,6 +155,8 @@ void TextureRenderer::setup()
 
     // create context
     ctx = new QOpenGLContext();
+    // https://doc.qt.io/qt-6/qopenglcontext.html#globalShareContext
+    ctx->setShareContext(QOpenGLContext::globalShareContext());
     ctx->setFormat(format);
     if (!ctx->create()) {
         qFatal("unable to create surface!");
@@ -303,8 +305,11 @@ void TextureRenderer::update()
 
         nextNode->isDirty = false;
 
-        auto img = nextNode->texture->toImage();
-        emit thumbnailGenerated(nextNode->id, QPixmap::fromImage(img));
+        // auto img = nextNode->texture->toImage();
+        // emit thumbnailGenerated(nextNode->id,  QPixmap::fromImage(img));
+
+        auto texId = nextNode->texture->texture();
+        emit thumbnailGenerated(nextNode->id, texId, QPixmap());
     }
 
     ctx->doneCurrent();

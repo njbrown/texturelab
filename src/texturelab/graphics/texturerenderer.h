@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QOpenGLContext>
 #include <QPixmap>
 #include <QSharedPointer>
 
@@ -56,7 +57,8 @@ private:
     QString createCodeForInputs(const TextureNodePtr& node);
     QString createCodeForProps(const TextureNodePtr& node);
 signals:
-    void thumbnailGenerated(const QString& nodeId, const QPixmap& pixmap);
+    void thumbnailGenerated(const QString& nodeId, GLuint texId,
+                            const QPixmap& pixmap);
 };
 
 // note: there's no specified fbo limit

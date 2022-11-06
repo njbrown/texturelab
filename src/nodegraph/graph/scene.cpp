@@ -348,6 +348,33 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
         painter->drawPixmap(QRect(0, 0, nodeWidth, nodeHeight), thumbnail);
     }
 
+    // thumbnail as texture
+    if (texId != 0) {
+        // // https://doc.qt.io/qt-5/qpainter.html#beginNativePainting
+        painter->beginNativePainting();
+
+        // glColor4f(1.0f, 0.0f, 0.0f, 1.0);
+        glEnable(GL_TEXTURE_2D);
+
+        glActiveTexture(0);
+        glBindTexture(GL_TEXTURE_2D, texId);
+        glBegin(GL_QUADS);
+        glTexCoord2f(0, 0);
+        glVertex2f(0, 0);
+
+        glTexCoord2f(1, 0);
+        glVertex2f(100, 0);
+
+        glTexCoord2f(1, 1);
+        glVertex2f(100, 100);
+
+        glTexCoord2f(0, 1);
+        glVertex2f(0, 100);
+        glEnd();
+
+        painter->endNativePainting();
+    }
+
     // draw highlight
 
     // top bar for text
@@ -363,19 +390,6 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
     // draw border
     painter->setPen(QPen(borderColor, 3));
     painter->drawRoundedRect(rect, titleRadius, titleRadius);
-
-    // // https://doc.qt.io/qt-5/qpainter.html#beginNativePainting
-    painter->beginNativePainting();
-
-    glColor4f(1.0f, 0.0f, 0.0f, 1.0);
-    glBegin(GL_QUADS);
-    glVertex2f(0, 0);
-    glVertex2f(100, 0);
-    glVertex2f(100, 100);
-    glVertex2f(0, 100);
-    glEnd();
-
-    painter->endNativePainting();
 }
 
 Node::~Node()
