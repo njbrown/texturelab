@@ -58,6 +58,7 @@ else()
     )
 endif()
 
+# note: openglwidgets is qt6 only
 target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::OpenGL qtadvanceddocking nodegraph)
 target_include_directories(texturelab PUBLIC
                             ../ads/src

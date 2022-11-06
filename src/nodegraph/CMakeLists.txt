@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.5)
 
 
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} 5.5 COMPONENTS Core Gui Widgets REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} 5.5 COMPONENTS Core Gui Widgets OpenGLWidgets REQUIRED)
 if (UNIX AND NOT APPLE)
     include_directories(${Qt${QT_VERSION_MAJOR}Gui_PRIVATE_INCLUDE_DIRS})
 endif()
@@ -23,9 +23,10 @@ set(NODEGRAPH_HEADERS
 
 # library
 add_library(nodegraph STATIC ${NODEGRAPH_SRCS} ${NODEGRAPH_HEADERS})
-target_link_libraries(nodegraph PUBLIC Qt${QT_VERSION_MAJOR}::Core 
-                                               Qt${QT_VERSION_MAJOR}::Gui 
-                                               Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(nodegraph PRIVATE Qt${QT_VERSION_MAJOR}::Core 
+                                        Qt${QT_VERSION_MAJOR}::Gui 
+                                        Qt${QT_VERSION_MAJOR}::OpenGLWidgets 
+                                        Qt${QT_VERSION_MAJOR}::Widgets)
 
 
 set_target_properties(nodegraph PROPERTIES

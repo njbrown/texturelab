@@ -1,6 +1,9 @@
 #include "scene.h"
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsSceneMouseEvent>
+#include <QGraphicsView>
+#include <QOpenGLContext>
+#include <QPaintEngine>
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
 #include <QTextBlockFormat>
@@ -105,6 +108,8 @@ Node::Node()
     // highlightBorderColor = QColor(120, 120, 120);
     selectedBorderColor = QColor(200, 200, 200);
 
+    setCacheMode(QGraphicsItem::NoCache);
+
     setFlag(QGraphicsItem::ItemIsMovable, true);
     setFlag(QGraphicsItem::ItemIsFocusable, true);
     setFlag(QGraphicsItem::ItemIsSelectable, true);
@@ -136,7 +141,8 @@ Node::Node()
     effect->setXOffset(0);
     effect->setYOffset(0);
     effect->setColor(QColor(00, 00, 00, 70));
-    setGraphicsEffect(effect);
+    // setGraphicsEffect(effect); // forces node to raster remder
+    // maybe render to node behind this to get same effect
 
     setAcceptHoverEvents(true);
     // setAcceptDrops(true);
@@ -288,6 +294,14 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
     const int titleRadius = 4;
     const QColor titleColor(0, 0, 0);
 
+    // // https://doc.qt.io/qt-5/qpainter.html#beginNativePainting
+    // https://github.com/liff-engineer/WeeklyARTS/blob/d8605aa3bfb2641d2a13621262024a1edff7b661/2018_9_4/Mixin2D%263DinQt.md
+    auto type = painter->paintEngine()->type();
+    if (type != QPaintEngine::OpenGL && type != QPaintEngine::OpenGL2) {
+        qWarning() << "Paint engine needs to be OPENGL!";
+        // return;
+    }
+
     auto rect = boundingRect();
 
     QColor borderColor;
@@ -349,6 +363,19 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
     // draw border
     painter->setPen(QPen(borderColor, 3));
     painter->drawRoundedRect(rect, titleRadius, titleRadius);
+
+    // // https://doc.qt.io/qt-5/qpainter.html#beginNativePainting
+    painter->beginNativePainting();
+
+    glColor4f(1.0f, 0.0f, 0.0f, 1.0);
+    glBegin(GL_QUADS);
+    glVertex2f(0, 0);
+    glVertex2f(100, 0);
+    glVertex2f(100, 100);
+    glVertex2f(0, 100);
+    glEnd();
+
+    painter->endNativePainting();
 }
 
 Node::~Node()

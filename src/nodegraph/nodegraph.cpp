@@ -9,6 +9,7 @@
 // #include <QtCore/QColor>
 
 // #include <QtOpenGL>
+#include <QOpenGLWidget>
 #include <QtWidgets>
 
 #include <QDebug>
@@ -35,6 +36,13 @@ void MouseButtonStates::reset()
 
 NodeGraph::NodeGraph(QWidget* parent) : QGraphicsView(parent)
 {
+    // https://doc.qt.io/qt-6.2/graphicsview.html#opengl-rendering
+    auto gl = new QOpenGLWidget();
+    QSurfaceFormat format;
+    format.setSamples(4);
+    gl->setFormat(format);
+    this->setViewport(gl);
+
     setDragMode(QGraphicsView::RubberBandDrag);
     setRenderHint(QPainter::Antialiasing);
 
@@ -46,7 +54,7 @@ NodeGraph::NodeGraph(QWidget* parent) : QGraphicsView(parent)
 
     setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
 
-    setCacheMode(QGraphicsView::CacheBackground);
+    // setCacheMode(QGraphicsView::CacheBackground);
     // setViewportUpdateMode(QGraphicsView::BoundingRectViewportUpdate);
     setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
 
@@ -182,6 +190,12 @@ void NodeGraph::mouseReleaseEvent(QMouseEvent* event)
 
 void NodeGraph::drawBackground(QPainter* painter, const QRectF& r)
 {
+    auto type = painter->paintEngine()->type();
+    if (type != QPaintEngine::OpenGL && type != QPaintEngine::OpenGL2) {
+        qWarning() << "background paint engine needs to be OPENGL!";
+        // return;
+    }
+
     QGraphicsView::drawBackground(painter, r);
     painter->setRenderHint(QPainter::Antialiasing);
 
