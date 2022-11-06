@@ -8,7 +8,7 @@ public:
     {
         this->title = "Polygon";
 
-        this->addFloatProp("radius", "Radius", 0.2, 0, 3, 0.01);
+        this->addFloatProp("radius", "Radius", 0.2, 0, 1, 0.01);
 
         // todo: add props
         this->setShaderSource(R""""(

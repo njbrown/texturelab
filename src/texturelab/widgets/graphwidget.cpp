@@ -59,6 +59,22 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
                 renderer->update();
             });
 
+    connect(graph, &nodegraph::NodeGraph::nodeSelectionChanged,
+            [=](nodegraph::NodePtr node) {
+                if (!!node) {
+                    qDebug() << "NODE SELECTED";
+
+                    if (!!project) {
+                        auto texNode = project->getNodeById(node->id());
+                        emit nodeSelectionChanged(texNode);
+                    }
+                }
+                else {
+                    qDebug() << "NODE DESELECTED";
+                    emit nodeSelectionChanged(TextureNodePtr(nullptr));
+                }
+            });
+
     // connect(graph, &nodegraph::NodeGraph::nodeAdded,
     //         [=](nodegraph::NodePtr node) { qDebug() << "NODE ADDED"; });
 

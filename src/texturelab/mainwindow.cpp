@@ -13,7 +13,9 @@
 
 #include "widgets/graphwidget.h"
 #include "widgets/librarywidget.h"
+#include "widgets/propertieswidget.h"
 
+#include "models.h"
 #include "project.h"
 
 #include "graphics/texturerenderer.h"
@@ -25,9 +27,27 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     this->setupMenus();
     this->setupToolbar();
 
+    this->renderer = nullptr;
+
     this->dockManager = new ads::CDockManager(this);
 
     this->setupDocks();
+
+    // setup callbacks
+    connect(this->graphWidget, &GraphWidget::nodeSelectionChanged,
+            [this](const TextureNodePtr& node) {
+                if (!!node)
+                    this->propWidget->setSelectedNode(node);
+                else
+                    this->propWidget->clearSelection();
+            });
+
+    connect(this->propWidget, &PropertiesWidget::propertyUpdated,
+            [this](const QString& name, const QVariant& value) {
+                if (this->renderer && !!this->project) {
+                    this->renderer->update();
+                }
+            });
 
     // set default empty project
     auto project = TextureProject::createEmpty();
@@ -43,6 +63,7 @@ void MainWindow::setProject(TextureProjectPtr project)
     this->project = project;
     this->graphWidget->setTextureProject(project);
     this->libraryWidget->setLibrary(project->library);
+    this->propWidget->clearSelection();
 
     renderer = new TextureRenderer();
     renderer->setProject(project);
@@ -131,8 +152,10 @@ void MainWindow::setupDocks()
         addDock("Graph", ads::CenterDockWidgetArea, graphWidget, nullptr);
     auto leftArea = addDock("2D View", ads::LeftDockWidgetArea,
                             new QWidget(this), graphArea);
+
+    this->propWidget = new PropertiesWidget();
     auto rightArea = addDock("Properties", ads::RightDockWidgetArea,
-                             new QWidget(this), graphArea);
+                             this->propWidget, graphArea);
 
     this->libraryWidget = new LibraryWidget();
     setWidgetRatiosInArea(graphArea, {1.0f / 5, 3.0f / 5, 1.0f / 5});

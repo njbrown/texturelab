@@ -103,8 +103,10 @@ void TextureNode::addInput(const QString& inputName)
 
 void TextureNode::setProp(QString propName, QVariant value)
 {
-    if (props.contains(propName))
+    if (props.contains(propName)) {
         props[propName]->setValue(value);
+        this->isDirty = true;
+    }
 }
 
 IntProp* TextureNode::addIntProp(const QString& name,

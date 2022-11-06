@@ -69,6 +69,8 @@ public:
     void removeConnection(ConnectionPtr con);
     void removeConnection(const QString& id);
 
+    void markNodeAsDirty(const TextureNodePtr& node);
+
     static TextureProjectPtr createEmpty(Library* library = nullptr);
 };
 

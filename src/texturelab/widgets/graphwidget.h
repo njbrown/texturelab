@@ -20,6 +20,8 @@ typedef QSharedPointer<TextureProject> TextureProjectPtr;
 typedef QSharedPointer<TextureNode> TextureNodePtr;
 
 class GraphWidget : public QMainWindow {
+    Q_OBJECT
+
 public:
     GraphWidget();
 
@@ -40,4 +42,7 @@ public:
 
 protected:
     void addNode(const TextureNodePtr& node);
+
+signals:
+    void nodeSelectionChanged(const TextureNodePtr& node);
 };

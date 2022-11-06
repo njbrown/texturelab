@@ -261,6 +261,8 @@ void Node::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
     // if (event->button() == Qt::LeftButton) {
     //     emit selected(sharedFromThis());
     // }
+
+    QGraphicsObject::mouseReleaseEvent(event);
 }
 
 void Node::hoverEnterEvent(QGraphicsSceneHoverEvent* event)
