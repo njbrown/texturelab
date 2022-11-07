@@ -1,6 +1,6 @@
 #include "propertieswidget.h"
-#include "../models.h"
-#include "../props.h"
+#include "../../models.h"
+#include "../../props.h"
 
 #include <QDoubleSpinBox>
 #include <QHBoxLayout>

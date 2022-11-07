@@ -13,7 +13,7 @@
 
 #include "widgets/graphwidget.h"
 #include "widgets/librarywidget.h"
-#include "widgets/propertieswidget.h"
+#include "widgets/properties/propertieswidget.h"
 
 #include "models.h"
 #include "project.h"

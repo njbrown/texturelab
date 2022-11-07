@@ -32,8 +32,8 @@ set(PROJECT_SOURCES
         ./widgets/graphwidget.cpp
         ./widgets/librarywidget.h
         ./widgets/librarywidget.cpp
-        ./widgets/propertieswidget.h
-        ./widgets/propertieswidget.cpp
+        ./widgets/properties/propertieswidget.h
+        ./widgets/properties/propertieswidget.cpp
         ./widgets/view2dwidget.h
         ./widgets/view2dwidget.cpp
         ./widgets/view3dwidget.h
