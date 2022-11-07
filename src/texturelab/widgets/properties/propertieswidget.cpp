@@ -1,84 +1,9 @@
 #include "propertieswidget.h"
 #include "../../models.h"
 #include "../../props.h"
+#include "propwidgets.h"
 
-#include <QDoubleSpinBox>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QSlider>
-#include <QSpinBox>
 #include <QVBoxLayout>
-
-const int SLIDER_MAX = 1000;
-
-// https://stackoverflow.com/a/19007951
-FloatPropWidget::FloatPropWidget()
-{
-    prop = nullptr;
-
-    auto vlayout = new QVBoxLayout(this);
-    this->setLayout(vlayout);
-
-    // label
-    label = new QLabel(this);
-    label->setText("");
-    vlayout->addWidget(label);
-
-    // slider
-    slider = new QSlider(Qt::Horizontal, this);
-    slider->setMinimum(0);
-    slider->setMaximum(SLIDER_MAX);
-    slider->setSingleStep(1);
-
-    spinbox = new QDoubleSpinBox(this);
-
-    auto hbox = new QHBoxLayout();
-    hbox->addWidget(slider);
-    hbox->addWidget(spinbox);
-
-    vlayout->addLayout(hbox);
-
-    this->setFixedHeight(80);
-
-    connect(slider, &QSlider::valueChanged, [=](int val) {
-        auto percent = val / (float)SLIDER_MAX;
-        if (prop) {
-            auto range = prop->maxValue - prop->minValue;
-            auto finalValue = prop->minValue + range * percent;
-            spinbox->setValue(finalValue);
-
-            emit valueChanged(finalValue);
-        }
-    });
-
-    connect(spinbox, &QDoubleSpinBox::valueChanged, [=](double val) {
-        if (prop) {
-            auto range = prop->maxValue - prop->minValue;
-            auto finalValue = (val / range) * SLIDER_MAX;
-
-            slider->setValue(finalValue);
-
-            emit valueChanged(val);
-        }
-    });
-}
-
-void FloatPropWidget::setProp(FloatProp* prop)
-{
-    label->setText(prop->displayName);
-
-    spinbox->setMinimum(prop->minValue);
-    spinbox->setMaximum(prop->maxValue);
-    spinbox->setSingleStep(prop->step);
-    spinbox->setValue(prop->value);
-
-    auto range = prop->maxValue - prop->minValue;
-    auto finalValue = (prop->value / range) * SLIDER_MAX;
-
-    slider->setValue(finalValue);
-
-    this->prop = prop;
-}
 
 PropertiesWidget::PropertiesWidget() : QWidget()
 {
@@ -107,12 +32,41 @@ void PropertiesWidget::setSelectedNode(const TextureNodePtr& node)
             propWidgets.append(widget);
 
             connect(widget, &FloatPropWidget::valueChanged, [=](double value) {
-                qDebug() << "prop" << prop->name << " changed: " << value;
+                // qDebug() << "prop" << prop->name << " changed: " << value;
                 // set node value
 
                 node->setProp(prop->name, value);
-                // mark subsequent nodes as dirty!!!
+                project->markNodeAsDirty(node);
 
+                emit propertyUpdated(prop->name, value);
+            });
+            layout->addWidget(widget);
+
+        } break;
+        case PropType::Int: {
+            auto widget = new IntPropWidget();
+            widget->setProp((IntProp*)prop);
+            propWidgets.append(widget);
+
+            connect(widget, &IntPropWidget::valueChanged, [=](int value) {
+                // qDebug() << "prop" << prop->name << " changed: " << value;
+                // set node value
+
+                node->setProp(prop->name, value);
+                project->markNodeAsDirty(node);
+
+                emit propertyUpdated(prop->name, value);
+            });
+            layout->addWidget(widget);
+
+        } break;
+        case PropType::Enum: {
+            auto widget = new EnumPropWidget();
+            widget->setProp((EnumProp*)prop);
+            propWidgets.append(widget);
+
+            connect(widget, &EnumPropWidget::valueChanged, [=](int value) {
+                node->setProp(prop->name, value);
                 project->markNodeAsDirty(node);
 
                 emit propertyUpdated(prop->name, value);

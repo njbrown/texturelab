@@ -190,12 +190,13 @@ BoolProp* TextureNode::addBoolProp(const QString& name,
 
 EnumProp* TextureNode::addEnumProp(const QString& name,
                                    const QString& displayName,
-                                   QList<QString> defaultVal)
+                                   QList<QString> values)
 {
     auto prop = new EnumProp();
     prop->name = name;
     prop->displayName = displayName;
-    prop->values = defaultVal;
+    prop->values = values;
+    prop->index = 0;
 
     props[name] = prop;
 

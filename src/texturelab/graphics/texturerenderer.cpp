@@ -396,6 +396,7 @@ void TextureRenderer::renderNode(const TextureNodePtr& node)
         // pass props
         for (auto prop : node->props) {
             auto propName = ("prop_" + prop->name.toStdString()).c_str();
+            // qDebug() << "glsl prop: " << propName;
             switch (prop->type) {
             case PropType::Int: {
                 auto intVal = ((IntProp*)prop)->value;

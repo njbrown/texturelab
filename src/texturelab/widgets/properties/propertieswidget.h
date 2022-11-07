@@ -8,29 +8,7 @@ class TextureNode;
 typedef QSharedPointer<TextureProject> TextureProjectPtr;
 typedef QSharedPointer<TextureNode> TextureNodePtr;
 
-class QLabel;
-class QSlider;
-class QDoubleSpinBox;
-class FloatProp;
-
 enum class PropertyDisplayMode { None, Node, Frame, Comment };
-
-// https://stackoverflow.com/a/19007951
-class FloatPropWidget : public QWidget {
-    Q_OBJECT
-
-    QLabel* label;
-    QSlider* slider;
-    QDoubleSpinBox* spinbox;
-
-    FloatProp* prop;
-
-public:
-    FloatPropWidget();
-    void setProp(FloatProp* prop);
-signals:
-    void valueChanged(float);
-};
 
 class PropertiesWidget : public QWidget {
 

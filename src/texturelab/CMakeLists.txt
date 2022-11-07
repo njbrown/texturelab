@@ -34,6 +34,8 @@ set(PROJECT_SOURCES
         ./widgets/librarywidget.cpp
         ./widgets/properties/propertieswidget.h
         ./widgets/properties/propertieswidget.cpp
+        ./widgets/properties/propwidgets.h
+        ./widgets/properties/propwidgets.cpp
         ./widgets/view2dwidget.h
         ./widgets/view2dwidget.cpp
         ./widgets/view3dwidget.h

@@ -170,7 +170,11 @@ public:
     QList<QString> values;
     int index;
 
-    EnumProp() : Prop() { type = PropType::Color; }
+    EnumProp() : Prop()
+    {
+        type = PropType::Enum;
+        index = 0;
+    }
 
     QVariant getValue() override { return index; }
 
