@@ -15,6 +15,7 @@
 #include <QOpenGLWidget>
 #include <QPaintEngine>
 
+#include "./graphics/texturerenderer.h"
 #include "./models.h"
 #include "./utils.h"
 
@@ -30,12 +31,23 @@ View2DWidget::View2DWidget() : QMainWindow()
 
 void View2DWidget::setSelectedNode(const TextureNodePtr& node)
 {
+    this->node = node;
     this->graph->setSelectedNode(node);
 }
 
 void View2DWidget::clearSelection() {}
 
 void View2DWidget::reRenderNode() { this->graph->scene()->invalidate(); }
+
+void View2DWidget::setTextureRenderer(TextureRenderer* renderer)
+{
+    connect(renderer, &TextureRenderer::thumbnailGenerated,
+            [=](const QString& nodeId, GLint texId, const QPixmap& pixmap) {
+                if (!!node && node->id == nodeId) {
+                    this->graph->scene()->invalidate();
+                }
+            });
+}
 
 View2DWidget::~View2DWidget() { delete graph; }
 

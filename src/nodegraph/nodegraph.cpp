@@ -187,6 +187,24 @@ void NodeGraph::mouseReleaseEvent(QMouseEvent* event)
     QGraphicsView::mouseReleaseEvent(event);
 }
 
+void NodeGraph::mouseDoubleClickEvent(QMouseEvent* event)
+{
+    if (event->button() == Qt::LeftButton) {
+
+        auto scenePos = this->mapToScene(event->pos());
+
+        // node: stripped const from returned node
+        auto node = (Node*)getNodeAtScenePos(scenePos.x(), scenePos.y());
+        if (node) {
+            emit nodeDoubleClicked(node->sharedFromThis());
+        }
+        else {
+            emit nodeDoubleClicked(nullptr);
+        }
+    }
+    QGraphicsView::mouseDoubleClickEvent(event);
+}
+
 void NodeGraph::drawBackground(QPainter* painter, const QRectF& r)
 {
     auto type = painter->paintEngine()->type();
@@ -457,6 +475,19 @@ const Port* NodeGraph::getPortAtScenePos(float x, float y) const
     for (auto item : items) {
         if (item && item->type() == (int)SceneItemType::Port)
             return (const Port*)item;
+    }
+
+    return nullptr;
+}
+
+// get top-most node
+const Node* NodeGraph::getNodeAtScenePos(float x, float y) const
+{
+    auto items = this->_scene->items(QPointF(x, y));
+
+    for (auto item : items) {
+        if (item && item->type() == (int)SceneItemType::Node)
+            return (const Node*)item;
     }
 
     return nullptr;

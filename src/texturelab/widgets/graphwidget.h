@@ -45,4 +45,5 @@ protected:
 
 signals:
     void nodeSelectionChanged(const TextureNodePtr& node);
+    void nodeDoubleClicked(const TextureNodePtr& node);
 };

@@ -76,6 +76,22 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
                 }
             });
 
+    connect(graph, &nodegraph::NodeGraph::nodeDoubleClicked,
+            [=](nodegraph::NodePtr node) {
+                if (!!node) {
+                    // qDebug() << "NODE DOUBLE CLICKED";
+
+                    if (!!project) {
+                        auto texNode = project->getNodeById(node->id());
+                        emit nodeDoubleClicked(texNode);
+                    }
+                }
+                else {
+                    // qDebug() << "NODE DESELECTED";
+                    emit nodeDoubleClicked(TextureNodePtr(nullptr));
+                }
+            });
+
     // connect(graph, &nodegraph::NodeGraph::nodeAdded,
     //         [=](nodegraph::NodePtr node) { qDebug() << "NODE ADDED"; });
 

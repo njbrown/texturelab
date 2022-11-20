@@ -14,6 +14,7 @@ class QWheelEvent;
 class QShowEvent;
 class QGraphicsScene;
 class QStyleOptionGraphicsItem;
+class TextureRenderer;
 
 class TextureProject;
 class TextureNode;
@@ -24,11 +25,15 @@ class View2DGraph;
 class NodePreviewGraphicsItem;
 
 class View2DWidget : public QMainWindow {
+    TextureNodePtr node;
+
 public:
     View2DWidget();
 
     void setSelectedNode(const TextureNodePtr& node);
     void clearSelection();
+
+    void setTextureRenderer(TextureRenderer* renderer);
 
     void reRenderNode();
 

@@ -34,15 +34,25 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 
     this->setupDocks();
 
-    // setup callbacks
+    // setup callbacks for the widgets that are created once
     connect(this->graphWidget, &GraphWidget::nodeSelectionChanged,
             [this](const TextureNodePtr& node) {
                 if (!!node) {
                     this->propWidget->setSelectedNode(node);
-                    this->view2DWidget->setSelectedNode(node);
+                    // this->view2DWidget->setSelectedNode(node);
                 }
                 else {
                     this->propWidget->clearSelection();
+                    // this->view2DWidget->clearSelection();
+                }
+            });
+
+    connect(this->graphWidget, &GraphWidget::nodeDoubleClicked,
+            [this](const TextureNodePtr& node) {
+                if (!!node) {
+                    this->view2DWidget->setSelectedNode(node);
+                }
+                else {
                     this->view2DWidget->clearSelection();
                 }
             });
@@ -77,6 +87,7 @@ void MainWindow::setProject(TextureProjectPtr project)
     renderer = new TextureRenderer();
     renderer->setProject(project);
     this->graphWidget->setTextureRenderer(renderer);
+    this->view2DWidget->setTextureRenderer(renderer);
 
     renderer->update();
 }

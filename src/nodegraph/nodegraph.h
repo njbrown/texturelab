@@ -65,6 +65,8 @@ protected:
 
     void mouseReleaseEvent(QMouseEvent* event) override;
 
+    void mouseDoubleClickEvent(QMouseEvent* event) override;
+
     void drawBackground(QPainter* painter, const QRectF& r) override;
 
     void showEvent(QShowEvent* event) override;
@@ -94,6 +96,7 @@ protected:
     void dropEvent(QDropEvent* event);
 
     const Port* getPortAtScenePos(float x, float y) const;
+    const Node* getNodeAtScenePos(float x, float y) const;
     void handleSelectionChange();
 
 private:
@@ -112,7 +115,8 @@ signals:
     void nodeRemoved(NodePtr node);
 
     // null nodeptr means no active node selected
-    void nodeSelectionChanged(NodePtr node);
+    void nodeSelectionChanged(const NodePtr& node);
+    void nodeDoubleClicked(const NodePtr& node);
 
     void itemsDeleted(QList<NodePtr> nodes, QList<ConnectionPtr> cons);
 };
