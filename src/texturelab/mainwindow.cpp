@@ -14,6 +14,7 @@
 #include "widgets/graphwidget.h"
 #include "widgets/librarywidget.h"
 #include "widgets/properties/propertieswidget.h"
+#include "widgets/view2dwidget.h"
 
 #include "models.h"
 #include "project.h"
@@ -36,10 +37,14 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     // setup callbacks
     connect(this->graphWidget, &GraphWidget::nodeSelectionChanged,
             [this](const TextureNodePtr& node) {
-                if (!!node)
+                if (!!node) {
                     this->propWidget->setSelectedNode(node);
-                else
+                    this->view2DWidget->setSelectedNode(node);
+                }
+                else {
                     this->propWidget->clearSelection();
+                    this->view2DWidget->clearSelection();
+                }
             });
 
     connect(this->propWidget, &PropertiesWidget::propertyUpdated,
@@ -47,6 +52,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
                 if (this->renderer && !!this->project) {
                     this->renderer->update();
                 }
+
+                this->view2DWidget->reRenderNode();
             });
 
     // set default empty project
@@ -150,10 +157,11 @@ void MainWindow::setupDocks()
 
     // graph goes in the center
     this->graphWidget = new GraphWidget();
+    this->view2DWidget = new View2DWidget();
     auto graphArea =
         addDock("Graph", ads::CenterDockWidgetArea, graphWidget, nullptr);
     auto leftArea = addDock("2D View", ads::LeftDockWidgetArea,
-                            new QWidget(this), graphArea);
+                            this->view2DWidget, graphArea);
 
     this->propWidget = new PropertiesWidget();
     auto rightArea = addDock("Properties", ads::RightDockWidgetArea,

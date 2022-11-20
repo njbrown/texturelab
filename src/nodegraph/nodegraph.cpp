@@ -72,7 +72,6 @@ NodeGraph::NodeGraph(QWidget* parent) : QGraphicsView(parent)
 
 void NodeGraph::setNodeGraphScene(const ScenePtr& scene)
 {
-
     // properly cleanup old scene
     if (!!this->_scene) {
         this->setScene(nullptr);

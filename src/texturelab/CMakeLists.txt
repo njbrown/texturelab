@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets OpenGL)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets OpenGL)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets OpenGLWidgets)
 
 set(PROJECT_SOURCES
         ./main.cpp
@@ -61,7 +61,12 @@ else()
 endif()
 
 # note: openglwidgets is qt6 only
-target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::OpenGL qtadvanceddocking nodegraph)
+target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets 
+                                         Qt${QT_VERSION_MAJOR}::OpenGL 
+                                         Qt${QT_VERSION_MAJOR}::OpenGLWidgets 
+                                         qtadvanceddocking 
+                                         nodegraph)
+                                         
 target_include_directories(texturelab PUBLIC
                             ../ads/src
                             ../nodegraph
