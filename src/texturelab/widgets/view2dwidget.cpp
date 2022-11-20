@@ -64,7 +64,7 @@ View2DGraph::View2DGraph(QWidget* parent) : QGraphicsView(parent)
     setDragMode(QGraphicsView::ScrollHandDrag);
     setRenderHint(QPainter::Antialiasing);
 
-    setBackgroundBrush(QColor(53, 53, 53));
+    setBackgroundBrush(QColor(33, 33, 33));
 
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -77,8 +77,10 @@ View2DGraph::View2DGraph(QWidget* parent) : QGraphicsView(parent)
     this->setScene(_scene);
 
     preview = new NodePreviewGraphicsItem();
-    preview->hide();
     this->_scene->addItem(preview);
+    // this->fitInView(preview, Qt::KeepAspectRatio);
+    scale(0.3, 0.3);
+    preview->hide();
 }
 
 // view manipulation
@@ -196,15 +198,14 @@ void View2DGraph::drawBackground(QPainter* painter, const QRectF& r)
 
     QBrush bBrush = backgroundBrush();
 
-    QPen pfine(FineGridColor, 1.0);
+    // QPen pfine(FineGridColor, 1.0);
 
-    painter->setPen(pfine);
-    drawGrid(15);
+    // painter->setPen(pfine);
+    // drawGrid(15);
 
     QPen p(CoarseGridColor, 1.0);
-
     painter->setPen(p);
-    drawGrid(150);
+    drawGrid(1000);
 };
 
 // NODE PREVIEW
