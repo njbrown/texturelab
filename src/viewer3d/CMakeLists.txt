@@ -10,77 +10,70 @@ endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-set(NODEGRAPH_SRCS
-    # main.cpp
-    nodegraph.cpp
-    graph/scene.cpp
+set(SRCS
+    main.cpp
+    viewer3d.cpp
 )
-set(NODEGRAPH_HEADERS
-    nodegraph.h
-    utils.h
-    graph/scene.h
+set(HEADERS
+    viewer3d.h
 )
 
 # library
-add_library(nodegraph STATIC ${NODEGRAPH_SRCS} ${NODEGRAPH_HEADERS})
-target_link_libraries(nodegraph PRIVATE Qt${QT_VERSION_MAJOR}::Core 
+add_library(viewer3d STATIC ${SRCS} ${HEADERS})
+target_link_libraries(viewer3d PRIVATE Qt${QT_VERSION_MAJOR}::Core 
                                         Qt${QT_VERSION_MAJOR}::Gui 
                                         Qt${QT_VERSION_MAJOR}::OpenGLWidgets 
                                         Qt${QT_VERSION_MAJOR}::Widgets)
 
 
-set_target_properties(nodegraph PROPERTIES
+set_target_properties(viewer3d PROPERTIES
     AUTOMOC ON
     AUTORCC ON
     CXX_EXTENSIONS OFF
-    EXPORT_NAME "Nodegraph Library"
+    EXPORT_NAME "3d Viewer"
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
 if(QT_VERSION_MAJOR STREQUAL "5")
-    set_target_properties(nodegraph PROPERTIES
+    set_target_properties(viewer3d PROPERTIES
         CXX_STANDARD 14
         CXX_STANDARD_REQUIRED ON)
 elseif(QT_VERSION_MAJOR STREQUAL "6")
-    set_target_properties(nodegraph PROPERTIES
+    set_target_properties(viewer3d PROPERTIES
         CXX_STANDARD 17
         CXX_STANDARD_REQUIRED ON)
 endif()
 
 # EXE for testing purposes
-add_executable(nodegraph_app
-            ${NODEGRAPH_HEADERS}
-            ${NODEGRAPH_SRCS}
+add_executable(viewer3d_app
+            ${HEADERS}
+            ${SRCS}
             main.cpp
         )
-target_link_libraries(nodegraph_app PRIVATE Qt${QT_VERSION_MAJOR}::Core
+target_link_libraries(viewer3d_app PRIVATE Qt${QT_VERSION_MAJOR}::Core
                                             Qt${QT_VERSION_MAJOR}::Gui
                                             Qt${QT_VERSION_MAJOR}::OpenGLWidgets 
                                             Qt${QT_VERSION_MAJOR}::Widgets)
 
 
-set_target_properties(nodegraph_app PROPERTIES
+set_target_properties(viewer3d_app PROPERTIES
     AUTOMOC ON
     AUTORCC ON
     CXX_EXTENSIONS OFF
-    EXPORT_NAME "Nodegraph App"
+    EXPORT_NAME "Viewer Sample App"
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
 if(QT_VERSION_MAJOR STREQUAL "5")
-    set_target_properties(nodegraph_app PROPERTIES
+    set_target_properties(viewer3d_app PROPERTIES
         CXX_STANDARD 14
         CXX_STANDARD_REQUIRED ON)
 elseif(QT_VERSION_MAJOR STREQUAL "6")
-    set_target_properties(nodegraph_app PROPERTIES
+    set_target_properties(viewer3d_app PROPERTIES
         CXX_STANDARD 17
         CXX_STANDARD_REQUIRED ON)
 endif()
-
-# if(QT_VERSION_MAJOR EQUAL 6)
-#     qt_finalize_executable(qtapp)
-# endif()
