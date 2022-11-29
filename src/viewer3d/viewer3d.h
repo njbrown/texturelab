@@ -20,12 +20,15 @@ class QOpenGLTexture;
 class QOpenGLShaderProgram;
 class QOpenGLBuffer;
 class QOpenGLVertexArrayObject;
+class Mesh;
 
 class Viewer3D : public QOpenGLWidget {
     QOpenGLTexture* texture = nullptr;
     QOpenGLShaderProgram* mainProgram = nullptr;
     QOpenGLBuffer* mesh = nullptr;
     QOpenGLVertexArrayObject* vao = nullptr;
+
+    Mesh* gltfMesh;
 
     QOpenGLFunctions* gl = nullptr;
 

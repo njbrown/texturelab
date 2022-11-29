@@ -1,6 +1,6 @@
 <RCC>
     <qresource prefix="/">
     <file alias="assets/brick.jpg">assets/brick.jpg</file>
-    <file alias="assets/cube.obj">assets/cube.obj</file>
+    <file alias="assets/cube.gltf">assets/cube.gltf</file>
     </qresource>
 </RCC>

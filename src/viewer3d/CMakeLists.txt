@@ -16,7 +16,13 @@ set(SRCS
 )
 set(HEADERS
     viewer3d.h
+    gltf/json.hpp
+    gltf/tiny_gltf.h
+    gltf/stb_image.h
 )
+
+set(RESOURCES
+    ./assets.qrc)
 
 # library
 add_library(viewer3d STATIC ${SRCS} ${HEADERS})
@@ -51,6 +57,7 @@ add_executable(viewer3d_app
             ${HEADERS}
             ${SRCS}
             main.cpp
+            ${RESOURCES}
         )
 target_link_libraries(viewer3d_app PRIVATE Qt${QT_VERSION_MAJOR}::Core
                                             Qt${QT_VERSION_MAJOR}::Gui
