@@ -5,6 +5,7 @@
 
 #include <QFile>
 #include <QImage>
+#include <QMouseEvent>
 #include <QOpenGLBuffer>
 #include <QOpenGLContext>
 #include <QOpenGLExtraFunctions>
@@ -79,6 +80,8 @@ void Viewer3D::initializeGL()
 
 void Viewer3D::paintGL()
 {
+    buildView();
+
     gl->glViewport(0, 0, this->width(), this->height());
     gl->glClearDepthf(1.0);
     gl->glClearColor(1, 0, 0, 1);
@@ -126,6 +129,62 @@ void Viewer3D::resizeGL(int w, int h)
 
     // Set perspective projection
     projMatrix.perspective(fov, aspect, zNear, zFar);
+}
+
+void Viewer3D::mousePressEvent(QMouseEvent* e)
+{
+    prevPos = e->pos();
+
+    if (e->button() == Qt::LeftButton) {
+        leftMouseDown = true;
+    }
+    if (e->button() == Qt::MiddleButton) {
+        middleMouseDown = true;
+    }
+}
+void Viewer3D::mouseReleaseEvent(QMouseEvent* e)
+{
+    if (e->button() == Qt::LeftButton) {
+        leftMouseDown = true;
+    }
+    if (e->button() == Qt::MiddleButton) {
+        middleMouseDown = true;
+    }
+}
+void Viewer3D::mouseMoveEvent(QMouseEvent* e)
+{
+    if (leftMouseDown) {
+        auto diff = e->pos() - prevPos;
+
+        yaw += -diff.x() * dragSpeed;
+        pitch += diff.y() * dragSpeed;
+
+        prevPos = e->pos();
+
+        this->repaint();
+    }
+}
+
+void Viewer3D::wheelEvent(QWheelEvent* e)
+{
+    auto dir = e->angleDelta().y() > 0 ? -1 : 1;
+    zoom += dir * zoomSpeed;
+
+    this->repaint();
+}
+
+void Viewer3D::buildView()
+{
+    QVector3D view(0, 0, -zoom);
+    // auto rot = QMatrix4x4::rotate();
+    auto rot = QQuaternion::fromEulerAngles(pitch, yaw, 0);
+    auto eyePos = rot.rotatedVector(view);
+
+    // offset by center
+    eyePos += center;
+
+    viewMatrix.setToIdentity();
+    viewMatrix.lookAt(eyePos, center, QVector3D(0, 1, 0));
 }
 
 QOpenGLShaderProgram* createMainShader()

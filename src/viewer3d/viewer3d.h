@@ -45,8 +45,28 @@ class Viewer3D : public QOpenGLWidget {
     QVector3D m_eye;
     QVector3D m_target = {0, 0, -1};
 
+    // trackball params
+    float zoom = 5;
+    float zoomSpeed = 0.3f;
+    QPoint prevPos;
+    QVector3D center = {0, 0, 0};
+    float yaw = 0;
+    float pitch = 0;
+    float dragSpeed = 0.5f;
+
+    bool leftMouseDown = false;
+    bool middleMouseDown = false;
+
 protected:
     void initializeGL();
     void paintGL();
     void resizeGL(int w, int h);
+
+    // trackball events
+    void mousePressEvent(QMouseEvent* e) override;
+    void mouseReleaseEvent(QMouseEvent* e) override;
+    void mouseMoveEvent(QMouseEvent* e) override;
+    void wheelEvent(QWheelEvent* e) override;
+
+    void buildView();
 };
