@@ -31,3 +31,39 @@ void IblSampler::loadPanorama(const QString& path)
 }
 
 // https://stackoverflow.com/questions/50666781/create-cubemap-from-qopenglframebuffer
+
+QOpenGLTexture* IblSampler::createCubemap(bool withMipmaps)
+{
+    auto cubemap = new QOpenGLTexture(QOpenGLTexture::TargetCubeMap);
+    if (withMipmaps)
+        cubemap->setMinMagFilters(QOpenGLTexture::LinearMipMapLinear,
+                                  QOpenGLTexture::Linear);
+    else
+        cubemap->setMinMagFilters(QOpenGLTexture::Linear,
+                                  QOpenGLTexture::Linear);
+
+    cubemap->setWrapMode(QOpenGLTexture::ClampToEdge);
+    cubemap->create();
+
+    cubemap->setSize(textureSize, textureSize, 3);
+    // cubemap->setMipLevels()
+    cubemap->setFormat(QOpenGLTexture::RGB32F);
+    cubemap->allocateStorage();
+
+    return cubemap;
+}
+
+QOpenGLTexture* IblSampler::createLut()
+{
+    auto cubemap = new QOpenGLTexture(QOpenGLTexture::Target2D);
+    cubemap->setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear);
+    cubemap->setWrapMode(QOpenGLTexture::ClampToEdge);
+    cubemap->create();
+
+    cubemap->setSize(textureSize, textureSize, 3);
+    // cubemap->setMipLevels()
+    cubemap->setFormat(QOpenGLTexture::RGBA32F);
+    cubemap->allocateStorage();
+
+    return cubemap;
+}

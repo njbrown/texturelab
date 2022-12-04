@@ -38,8 +38,8 @@ public:
 
     void loadPanorama(const QString& path);
 
-    GLuint createCubemap(bool withMipmaps);
-    GLuint createLut();
+    QOpenGLTexture* createCubemap(bool withMipmaps);
+    QOpenGLTexture* createLut();
 
     // generation functions
     void panoramaToCubemap();
