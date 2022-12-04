@@ -13,9 +13,11 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(SRCS
     main.cpp
     viewer3d.cpp
+    iblsampler.cpp
 )
 set(HEADERS
     viewer3d.h
+    iblsampler.h
     gltf/json.hpp
     gltf/tiny_gltf.h
     gltf/stb_image.h

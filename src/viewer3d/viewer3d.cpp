@@ -19,6 +19,8 @@
 
 #include <iostream>
 
+#include "iblsampler.h"
+
 #define TINYGLTF_IMPLEMENTATION
 #define TINYGLTF_NO_STB_IMAGE
 #define TINYGLTF_NO_INCLUDE_STB_IMAGE
@@ -76,6 +78,10 @@ void Viewer3D::initializeGL()
     projMatrix.setToIdentity();
     projMatrix.perspective(45, this->width() / (float)this->height(), 1.0,
                            1000);
+
+    IblSampler sampler;
+    sampler.gl = gl;
+    sampler.loadPanorama(":assets/panorama.hdr");
 }
 
 void Viewer3D::paintGL()

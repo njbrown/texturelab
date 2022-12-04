@@ -2,5 +2,6 @@
     <qresource prefix="/">
     <file alias="assets/brick.jpg">assets/brick.jpg</file>
     <file alias="assets/cube.gltf">assets/cube.gltf</file>
+    <file alias="assets/panorama.hdr">assets/panorama.hdr</file>
     </qresource>
 </RCC>
