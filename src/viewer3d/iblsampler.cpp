@@ -1,10 +1,18 @@
 #include "iblsampler.h"
+#include "shadercache.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "gltf/stb_image.h"
 
 #include <QFile>
 #include <QOpenGLFunctions>
 #include <QOpenGLTexture>
+
+IblSampler::IblSampler()
+{
+    shaderCache = new ShaderCache();
+    shaderCache->addShaderFile("", "");
+}
 
 // stbi_loadf_from_memory
 // https://stackoverflow.com/questions/32666824/qopengltexture-qt-from-raw-data-freeimage

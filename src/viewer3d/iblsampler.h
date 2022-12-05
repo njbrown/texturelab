@@ -5,6 +5,7 @@
 class QOpenGLFramebufferObject;
 class QOpenGLFunctions;
 class QOpenGLTexture;
+class ShaderCache;
 
 // reference:
 // https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/master/source/ibl_sampler.js
@@ -35,6 +36,10 @@ public:
     GLuint cubemapTextureID;
 
     QOpenGLFramebufferObject* framebuffer;
+
+    ShaderCache* shaderCache;
+
+    IblSampler();
 
     void loadPanorama(const QString& path);
 
