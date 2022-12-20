@@ -5,5 +5,6 @@
     <file alias="assets/panorama.hdr">assets/panorama.hdr</file>
     <file>assets/fullscreen.vert</file>
     <file>assets/panorama_to_cubemap.frag</file>
+    <file>assets/ibl_filtering.frag</file>
     </qresource>
 </RCC>

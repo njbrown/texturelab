@@ -1,5 +1,6 @@
 #include "iblsampler.h"
 #include "shadercache.h"
+#include <cmath>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "gltf/stb_image.h"
@@ -31,6 +32,8 @@ IblSampler::IblSampler()
     shaderCache->addShaderFile("fullscreen.vert", ":assets/fullscreen.vert");
     shaderCache->addShaderFile("panorama_to_cubemap.frag",
                                ":assets/panorama_to_cubemap.frag");
+    shaderCache->addShaderFile("ibl_filtering.frag",
+                               ":assets/ibl_filtering.frag");
 }
 
 // stbi_loadf_from_memory
@@ -97,6 +100,9 @@ QOpenGLTexture* IblSampler::createLut()
 
 void IblSampler::init(const QString& panoramaPath)
 {
+    mipmapLevels =
+        std::floor(std::log2(this->textureSize)) + 1 - this->lowestMipLevel;
+
     framebuffer = new QOpenGLFramebufferObject(textureSize, textureSize);
     if (!framebuffer->isValid()) {
         qFatal("FBO could not be created");
@@ -206,6 +212,10 @@ void IblSampler::panoramaToCubemap()
         vbo->release();
     }
 
+    cubemapTexture->bind();
+    cubemapTexture->generateMipMaps();
+    cubemapTexture->release();
+
     // gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
     auto ctx = QOpenGLContext::currentContext();
     gl->glBindFramebuffer(GL_FRAMEBUFFER, ctx->defaultFramebufferObject());
@@ -243,4 +253,83 @@ QOpenGLShaderProgram* IblSampler::createShader(const QString& vertSource,
     }
 
     return program;
+}
+
+void IblSampler::applyFilter(int distribution, float roughness,
+                             int targetMipLevel, int targetTexture,
+                             int sampleCount, float lodBias = 0.0)
+{
+    auto currentTextureSize = this->textureSize >> targetMipLevel;
+
+    auto vertSource = shaderCache->generateShaderSource("fullscreen.vert");
+    auto fragSource = shaderCache->generateShaderSource("ibl_filtering.frag");
+
+    auto shader = createShader(vertSource, fragSource);
+
+    // render each face
+    for (int i = 0; i < 6; i++) {
+        gl->glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->handle());
+        gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                   GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                                   targetTexture, targetMipLevel);
+
+        gl->glViewport(0, 0, currentTextureSize, currentTextureSize);
+        gl->glClearColor(0, 0, 0, 1);
+        gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        shader->bind();
+        cubemapTexture->bind(0);
+        shader->setUniformValue("u_cubemapTexture", 0);
+
+        shader->setUniformValue("u_roughness", roughness);
+        shader->setUniformValue("u_sampleCount", sampleCount);
+        shader->setUniformValue("u_width", textureSize);
+        shader->setUniformValue("u_lodBias", lodBias);
+        shader->setUniformValue("u_distribution", distribution);
+        shader->setUniformValue("u_currentFace", i);
+        shader->setUniformValue("u_isGeneratingLUT", 0);
+
+        vbo->bind();
+        gl->glEnableVertexAttribArray((int)VertexUsage::Position);
+        gl->glEnableVertexAttribArray((int)VertexUsage::TexCoord0);
+        gl->glVertexAttribPointer((int)VertexUsage::Position, 3, GL_FLOAT,
+                                  GL_FALSE, 5 * sizeof(float), nullptr);
+        gl->glVertexAttribPointer((int)VertexUsage::TexCoord0, 2, GL_FLOAT,
+                                  GL_FALSE, 5 * sizeof(float),
+                                  reinterpret_cast<void*>(3 * sizeof(float)));
+
+        gl->glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        vbo->release();
+    }
+
+    // gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    auto ctx = QOpenGLContext::currentContext();
+    gl->glBindFramebuffer(GL_FRAMEBUFFER, ctx->defaultFramebufferObject());
+}
+
+void IblSampler::cubeMapToLambertian()
+{
+    this->applyFilter(0, 0.0, 0, this->lambertianTexture->textureId(),
+                      this->lambertianSampleCount);
+}
+
+void IblSampler::cubeMapToGGX()
+{
+    for (int currentMipLevel = 0; currentMipLevel <= this->mipmapLevels;
+         ++currentMipLevel) {
+        auto roughness = (currentMipLevel) / (this->mipmapLevels - 1);
+        this->applyFilter(1, roughness, currentMipLevel,
+                          this->ggxTexture->textureId(), this->ggxSampleCount);
+    }
+}
+void IblSampler::cubeMapToSheen()
+{
+    for (auto currentMipLevel = 0; currentMipLevel <= this->mipmapLevels;
+         ++currentMipLevel) {
+        auto roughness = (currentMipLevel) / (this->mipmapLevels - 1);
+        this->applyFilter(2, roughness, currentMipLevel,
+                          this->sheenTexture->textureId(),
+                          this->sheenSamplCount);
+    }
 }

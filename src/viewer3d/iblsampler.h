@@ -25,14 +25,19 @@ public:
     int lowestMipLevel = 4;
     int lutResolution = 1024;
 
-    int mipmapCount = -1;
+    int mipmapLevels = -1;
 
-    GLuint lambertianTextureID;
-    GLuint ggxTextureID;
-    GLuint sheenTextureID;
+    QOpenGLTexture* lambertianTexture;
+    QOpenGLTexture* ggxTexture;
+    QOpenGLTexture* sheenTexture;
+    // GLuint lambertianTextureID;
+    // GLuint ggxTextureID;
+    // GLuint sheenTextureID;
 
-    GLuint ggxLutTextureID;
-    GLuint charlieLutTextureID;
+    QOpenGLTexture* ggxLutTextureID;
+    QOpenGLTexture* charlieLutTextureID;
+    // GLuint ggxLutTextureID;
+    // GLuint charlieLutTextureID;
 
     QOpenGLTexture* inputTexture;
     QOpenGLTexture* cubemapTexture;
