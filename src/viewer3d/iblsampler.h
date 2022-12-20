@@ -34,8 +34,8 @@ public:
     // GLuint ggxTextureID;
     // GLuint sheenTextureID;
 
-    QOpenGLTexture* ggxLutTextureID;
-    QOpenGLTexture* charlieLutTextureID;
+    QOpenGLTexture* ggxLutTexture;
+    QOpenGLTexture* charlieLutTexture;
     // GLuint ggxLutTextureID;
     // GLuint charlieLutTextureID;
 
@@ -68,9 +68,13 @@ public:
 
     void applyFilter(int distribution, float roughness, int targetMipLevel,
                      int targetTexture, int sampleCount, float lodBias = 0.0);
+    void sampleLut(int distribution, int targetTextureId,
+                   int currentTextureSize);
 
     void init(const QString& panoramaPath);
 
     QOpenGLShaderProgram* createShader(const QString& vertSource,
                                        const QString& fragSource);
+
+    void filterAll();
 };

@@ -83,6 +83,8 @@ void Viewer3D::initializeGL()
     iblSampler->gl = gl;
     iblSampler->init(":assets/panorama.hdr");
 
+    iblSampler->filterAll();
+
     // do all the conversions
     // iblSampler->panoramaToCubemap();
 }
