@@ -7,7 +7,7 @@ class QOpenGLShaderProgram;
 
 class ShaderCache {
     QMap<QString, QString> shaders;
-    QString shaderVersion = "#version 150 core";
+    QString shaderVersion = "#version 150 core \n";
 
 public:
     void addShaderSource(const QString& shaderName,

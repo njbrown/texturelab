@@ -79,9 +79,12 @@ void Viewer3D::initializeGL()
     projMatrix.perspective(45, this->width() / (float)this->height(), 1.0,
                            1000);
 
-    IblSampler sampler;
-    sampler.gl = gl;
-    sampler.loadPanorama(":assets/panorama.hdr");
+    iblSampler = new IblSampler();
+    iblSampler->gl = gl;
+    iblSampler->init(":assets/panorama.hdr");
+
+    // do all the conversions
+    // iblSampler->panoramaToCubemap();
 }
 
 void Viewer3D::paintGL()
@@ -99,6 +102,8 @@ void Viewer3D::paintGL()
     vao->bind();
 
     // todo: bind textures
+    // iblSampler->inputTexture->bind(0);
+    iblSampler->cubemapTexture->bind(0);
 
     mainProgram->bind();
     mainProgram->setUniformValue("worldMatrix", worldMatrix);

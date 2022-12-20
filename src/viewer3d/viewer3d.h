@@ -22,6 +22,8 @@ class QOpenGLBuffer;
 class QOpenGLVertexArrayObject;
 class Mesh;
 
+class IblSampler;
+
 class Viewer3D : public QOpenGLWidget {
     QOpenGLTexture* texture = nullptr;
     QOpenGLShaderProgram* mainProgram = nullptr;
@@ -56,6 +58,8 @@ class Viewer3D : public QOpenGLWidget {
 
     bool leftMouseDown = false;
     bool middleMouseDown = false;
+
+    IblSampler* iblSampler;
 
 protected:
     void initializeGL();

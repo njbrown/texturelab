@@ -3,5 +3,7 @@
     <file alias="assets/brick.jpg">assets/brick.jpg</file>
     <file alias="assets/cube.gltf">assets/cube.gltf</file>
     <file alias="assets/panorama.hdr">assets/panorama.hdr</file>
+    <file>assets/fullscreen.vert</file>
+    <file>assets/panorama_to_cubemap.frag</file>
     </qresource>
 </RCC>

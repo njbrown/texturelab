@@ -20,7 +20,7 @@ void ShaderCache::addShaderFile(const QString& shaderName,
 }
 
 QString ShaderCache::generateShaderSource(const QString& shaderName,
-                                          const QVector<QString> defines = {})
+                                          const QVector<QString> defines)
 {
     QString flags = "";
     for (auto define : defines) {
@@ -29,6 +29,8 @@ QString ShaderCache::generateShaderSource(const QString& shaderName,
 
     auto source = getShaderAndResolveIncludes(shaderName);
     auto finalSource = shaderVersion + flags + source;
+
+    return finalSource;
 }
 
 QString ShaderCache::getShaderAndResolveIncludes(const QString& shader)
