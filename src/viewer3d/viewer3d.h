@@ -104,4 +104,18 @@ protected:
 
 public:
     Viewer3D();
+
+    // public functions exposed to main app
+    void setAlbedoTexture(GLuint texId);
+    void setNormalTexture(GLuint texId);
+    void setMetalnessTexture(GLuint texId);
+    void setRoughnessTexture(GLuint texId);
+    void setAlphaTexture(GLuint texId);
+    void setAoTexture(GLuint texId);
+    void setEmissiveTexture(GLuint texId);
+    void setHeightTexture(GLuint texId);
+
+    void resetTextures();
+    void resetCamera();
+    void loadEnvironment(const QString path);
 };
