@@ -21,6 +21,8 @@ int main(int argc, char* argv[])
     qDebug("Requesting 3.3 core context");
     fmt.setVersion(3, 3);
     fmt.setProfile(QSurfaceFormat::CoreProfile);
+    // https://doc.qt.io/qt-6/qopengldebuglogger.html
+    fmt.setOption(QSurfaceFormat::DebugContext);
     // }
     // else {
     //     qDebug("Requesting 3.0 context");

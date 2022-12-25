@@ -8,6 +8,7 @@
 #include <QMouseEvent>
 #include <QOpenGLBuffer>
 #include <QOpenGLContext>
+#include <QOpenGLDebugLogger>
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>
@@ -62,10 +63,28 @@ QOpenGLBuffer* loadMesh();
 Mesh* loadMeshFromRc(const QString& path);
 void renderGltfMesh(Mesh* mesh);
 
+Viewer3D::Viewer3D() : QOpenGLWidget()
+{
+    // QOpenGLContext* context = new QOpenGLContext;
+    // context->setFormat(QSurfaceFormat::defaultFormat());
+    // context->create();
+    // this->setContext(context);
+}
+
 void Viewer3D::initializeGL()
 {
     gl = QOpenGLContext::currentContext()->functions();
     gl->initializeOpenGLFunctions();
+
+    QOpenGLContext* ctx = QOpenGLContext::currentContext();
+    QOpenGLDebugLogger* logger = new QOpenGLDebugLogger(this);
+    logger->initialize();
+    QObject::connect(logger, &QOpenGLDebugLogger::messageLogged,
+                     [=](const QOpenGLDebugMessage& debugMessage) {
+                         qDebug() << debugMessage;
+                     });
+
+    logger->startLogging();
 
     vao = new QOpenGLVertexArrayObject;
     if (vao->create())
@@ -85,11 +104,12 @@ void Viewer3D::initializeGL()
     shaderCache->addShaderFile("textures.glsl", ":assets/textures.glsl");
     shaderCache->addShaderFile("tonemapping.glsl", ":assets/tonemapping.glsl");
 
-    mainProgram = createMainShader();
+    // mainProgram = createMainShader();
 
-    mesh = loadMesh();
+    // mesh = loadMesh();
+    auto mat = this->loadMaterial();
     gltfMesh = loadMeshFromRc(":assets/cube.gltf");
-    gltfMesh->material = this->loadMaterial();
+    gltfMesh->material = mat;
 
     // setup matrices
     worldMatrix.setToIdentity();
@@ -497,7 +517,7 @@ void Viewer3D::renderGltfMesh(Mesh* mesh)
     // default mat props
     shader->setUniformValue("u_BaseColorFactor", QVector4D(1, 1, 1, 1));
     shader->setUniformValue("u_MetallicFactor", 1.f);
-    shader->setUniformValue("u_RoughnessFactor", 1.f);
+    shader->setUniformValue("u_RoughnessFactor", 0.f);
     shader->setUniformValue("u_EmissiveStrength", 1.f);
     shader->setUniformValue("u_BaseColorUVSet", 0);
 
@@ -583,22 +603,37 @@ Material* Viewer3D::loadMaterial()
     auto mat = new Material();
 
     QStringList flags;
-    flags << "USE_IBL";
-    flags << "HAS_NORMAL_VEC3";
-    flags << "HAS_TANGENT_VEC4";
-    flags << "HAS_TEXCOORD_0_VEC2";
-    flags << "HAS_BASE_COLOR_MAP 1";         // albedo only for now
+    flags << "USE_IBL 1";
+    flags << "HAS_NORMAL_VEC3 1";
+    // flags << "LINEAR_OUTPUT 1";
+    // flags << "TEST 1";
+    // flags << "TEST2 1";
+    // flags << "HAS_TANGENT_VEC4 1";
+    // flags << "DEBUG_NORMAL_GEOMETRY 1";
+    flags << "DEBUG_NONE 1"; // IMPORTANT!! caused many headaches..
+    flags << "DEBUG DEBUG_NONE";
+    // flags << "DEBUG DEBUG_METALLIC_ROUGHNESS";
+
+    flags << "HAS_TEXCOORD_0_VEC2 1";
+    flags << "HAS_BASE_COLOR_MAP 1"; // albedo only for now
+    // flags << "HAS_NORMAL_MAP 1";
     flags << "MATERIAL_METALLICROUGHNESS 1"; // MR mode
+
+    flags << "ALPHAMODE_OPAQUE 0";
+    flags << "ALPHAMODE_MASK 1";
+    flags << "ALPHAMODE_BLEND 2";
     flags << "ALPHAMODE ALPHAMODE_OPAQUE";
+    // flags << "TONEMAP_ACES_NARKOWICZ 1";
+    // flags << "TONEMAP_ACES_HILL_EXPOSURE_BOOST 1";
 
     auto vertShader =
         shaderCache->generateShaderSource("primitive.vert", flags);
     auto fragShader = shaderCache->generateShaderSource("pbr.frag", flags);
 
     auto shader = new QOpenGLShaderProgram;
+    shader->bind();
     shader->addShaderFromSourceCode(QOpenGLShader::Vertex, vertShader);
     shader->addShaderFromSourceCode(QOpenGLShader::Fragment, fragShader);
-    shader->link();
 
     shader->bindAttributeLocation("a_position", (int)VertexUsage::Position);
     shader->bindAttributeLocation("a_normal", (int)VertexUsage::Normal);
@@ -606,6 +641,9 @@ Material* Viewer3D::loadMaterial()
     shader->bindAttributeLocation("a_color_0", (int)VertexUsage::Color);
     shader->bindAttributeLocation("a_texcoord_0", (int)VertexUsage::TexCoord0);
     shader->bindAttributeLocation("a_texcoord_1", (int)VertexUsage::TexCoord1);
+
+    shader->link();
+    // shader->release();
 
     mat->shader = shader;
 

@@ -32,7 +32,6 @@
 
 out vec4 g_finalColor;
 
-
 void main()
 {
     vec4 baseColor = getBaseColor();

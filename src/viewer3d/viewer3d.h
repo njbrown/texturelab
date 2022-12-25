@@ -101,4 +101,7 @@ protected:
     QOpenGLTexture* loadTexture(const QString& path);
     // void renderMesh(Mesh* mesh);
     void renderGltfMesh(Mesh* mesh);
+
+public:
+    Viewer3D();
 };

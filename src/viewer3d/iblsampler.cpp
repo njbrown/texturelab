@@ -111,6 +111,16 @@ void IblSampler::init(const QString& panoramaPath)
 
     ggxLutTexture = this->createLut();
     charlieLutTexture = this->createLut();
+
+    // ggxTexture->bind();
+    // ggxTexture->generateMipMaps(0);
+    // sheenTexture->bind();
+    // sheenTexture->generateMipMaps(0);
+    // sheenTexture->release();
+    gl->glBindTexture(GL_TEXTURE_CUBE_MAP, ggxTexture->textureId());
+    gl->glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+    gl->glBindTexture(GL_TEXTURE_CUBE_MAP, sheenTexture->textureId());
+    gl->glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 }
 
 void IblSampler::filterAll()
@@ -141,7 +151,7 @@ void IblSampler::loadPanorama(const QString& path)
 
     // given some `width`, `height` and `data_ptr`
     text->setSize(width, height, 3);
-    text->setFormat(QOpenGLTexture::RG32F);
+    text->setFormat(QOpenGLTexture::RGB32F);
     text->allocateStorage();
     text->setData(QOpenGLTexture::RGB, QOpenGLTexture::Float32, textureData);
 
@@ -153,6 +163,8 @@ void IblSampler::loadPanorama(const QString& path)
 QOpenGLTexture* IblSampler::createCubemap(bool withMipmaps)
 {
     auto cubemap = new QOpenGLTexture(QOpenGLTexture::TargetCubeMap);
+    cubemap->create();
+
     if (withMipmaps)
         cubemap->setMinMagFilters(QOpenGLTexture::LinearMipMapLinear,
                                   QOpenGLTexture::Linear);
@@ -161,12 +173,18 @@ QOpenGLTexture* IblSampler::createCubemap(bool withMipmaps)
                                   QOpenGLTexture::Linear);
 
     cubemap->setWrapMode(QOpenGLTexture::ClampToEdge);
-    cubemap->create();
+    cubemap->setSize(textureSize, textureSize, 1);
 
-    cubemap->setSize(textureSize, textureSize, 3);
     // cubemap->setMipLevels()
     cubemap->setFormat(QOpenGLTexture::RGB32F);
     cubemap->allocateStorage();
+
+    // cubemap->generateMipMaps(0);
+    // cubemap->bind();
+    // gl->glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+    // cubemap->release();
+    // cubemap->setMipBaseLevel(0);
+    // cubemap->setMipMaxLevel(11);
 
     return cubemap;
 }
@@ -227,13 +245,13 @@ void IblSampler::panoramaToCubemap()
         vbo->release();
     }
 
-    cubemapTexture->bind();
-    cubemapTexture->generateMipMaps();
-    cubemapTexture->release();
-
     // gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
     auto ctx = QOpenGLContext::currentContext();
     gl->glBindFramebuffer(GL_FRAMEBUFFER, ctx->defaultFramebufferObject());
+
+    cubemapTexture->bind();
+    cubemapTexture->generateMipMaps();
+    cubemapTexture->release();
 }
 
 QOpenGLShaderProgram* IblSampler::createShader(const QString& vertSource,
