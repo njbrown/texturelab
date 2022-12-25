@@ -26,6 +26,29 @@ enum class VertexUsage : int {
     Count = 8
 };
 
+void createSampleCube(QOpenGLFunctions* gl)
+{
+    GLuint tex;
+    gl->glGenTextures(1, &tex);
+    gl->glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
+
+    for (unsigned int i = 0; i < 6; ++i) {
+        gl->glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 256,
+                         256, 0, GL_RGB, GL_FLOAT, nullptr);
+    }
+    gl->glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S,
+                        GL_CLAMP_TO_EDGE);
+    gl->glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T,
+                        GL_CLAMP_TO_EDGE);
+    gl->glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R,
+                        GL_CLAMP_TO_EDGE);
+    gl->glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER,
+                        GL_LINEAR_MIPMAP_LINEAR);
+    gl->glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    gl->glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+}
+
 IblSampler::IblSampler()
 {
     shaderCache = new ShaderCache();
@@ -104,23 +127,33 @@ void IblSampler::init(const QString& panoramaPath)
 
     this->loadPanorama(panoramaPath);
 
-    cubemapTexture = this->createCubemap(true);
-    lambertianTexture = this->createCubemap(false);
-    ggxTexture = this->createCubemap(true);
-    sheenTexture = this->createCubemap(true);
+    // createSampleCube(gl);
 
-    ggxLutTexture = this->createLut();
-    charlieLutTexture = this->createLut();
+    // cubemapTexture = this->createCubemap(true);
+    // lambertianTexture = this->createCubemap(false);
+    // ggxTexture = this->createCubemap(true);
+    // sheenTexture = this->createCubemap(true);
+
+    // ggxLutTexture = this->createLut();
+    // charlieLutTexture = this->createLut();
+
+    cubemapTextureID = this->createCubemap(true);
+    lambertianTextureID = this->createCubemap(false);
+    ggxTextureID = this->createCubemap(true);
+    sheenTextureID = this->createCubemap(true);
+
+    ggxLutTextureID = this->createLut();
+    charlieLutTextureID = this->createLut();
 
     // ggxTexture->bind();
     // ggxTexture->generateMipMaps(0);
     // sheenTexture->bind();
     // sheenTexture->generateMipMaps(0);
     // sheenTexture->release();
-    gl->glBindTexture(GL_TEXTURE_CUBE_MAP, ggxTexture->textureId());
-    gl->glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-    gl->glBindTexture(GL_TEXTURE_CUBE_MAP, sheenTexture->textureId());
-    gl->glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+    // gl->glBindTexture(GL_TEXTURE_CUBE_MAP, ggxTexture->textureId());
+    // gl->glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+    // gl->glBindTexture(GL_TEXTURE_CUBE_MAP, sheenTexture->textureId());
+    // gl->glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 }
 
 void IblSampler::filterAll()
@@ -160,48 +193,99 @@ void IblSampler::loadPanorama(const QString& path)
 
 // https://stackoverflow.com/questions/50666781/create-cubemap-from-qopenglframebuffer
 
-QOpenGLTexture* IblSampler::createCubemap(bool withMipmaps)
+// QOpenGLTexture* IblSampler::createCubemap(bool withMipmaps)
+// {
+//     auto cubemap = new QOpenGLTexture(QOpenGLTexture::TargetCubeMap);
+//     cubemap->create();
+
+//     if (withMipmaps)
+//         cubemap->setMinMagFilters(QOpenGLTexture::LinearMipMapLinear,
+//                                   QOpenGLTexture::Linear);
+//     else
+//         cubemap->setMinMagFilters(QOpenGLTexture::Linear,
+//                                   QOpenGLTexture::Linear);
+
+//     cubemap->setWrapMode(QOpenGLTexture::ClampToEdge);
+//     cubemap->setSize(textureSize, textureSize, 1);
+
+//     // cubemap->setMipLevels()
+//     cubemap->setFormat(QOpenGLTexture::RGB16F);
+//     cubemap->allocateStorage();
+
+//     cubemap->generateMipMaps(0);
+//     // cubemap->bind();
+//     // gl->glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+//     // cubemap->release();
+//     // cubemap->setMipBaseLevel(0);
+//     // cubemap->setMipMaxLevel(11);
+
+//     return cubemap;
+// }
+
+// QOpenGLTexture* IblSampler::createLut()
+// {
+//     auto texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
+//     texture->setMinMagFilters(QOpenGLTexture::Linear,
+//     QOpenGLTexture::Linear);
+//     texture->setWrapMode(QOpenGLTexture::ClampToEdge);
+//     texture->create();
+
+//     texture->setSize(textureSize, textureSize, 3);
+//     // cubemap->setMipLevels()
+//     texture->setFormat(QOpenGLTexture::RGBA32F);
+//     texture->allocateStorage();
+
+//     return texture;
+// }
+
+GLuint IblSampler::createCubemap(bool withMipmaps)
 {
-    auto cubemap = new QOpenGLTexture(QOpenGLTexture::TargetCubeMap);
-    cubemap->create();
+    GLuint tex;
+    gl->glGenTextures(1, &tex);
+    gl->glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
+
+    for (unsigned int i = 0; i < 6; ++i) {
+        gl->glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F,
+                         textureSize, textureSize, 0, GL_RGB, GL_FLOAT,
+                         nullptr);
+    }
+    gl->glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S,
+                        GL_CLAMP_TO_EDGE);
+    gl->glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T,
+                        GL_CLAMP_TO_EDGE);
+    gl->glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R,
+                        GL_CLAMP_TO_EDGE);
 
     if (withMipmaps)
-        cubemap->setMinMagFilters(QOpenGLTexture::LinearMipMapLinear,
-                                  QOpenGLTexture::Linear);
+        gl->glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER,
+                            GL_LINEAR_MIPMAP_LINEAR);
     else
-        cubemap->setMinMagFilters(QOpenGLTexture::Linear,
-                                  QOpenGLTexture::Linear);
+        gl->glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER,
+                            GL_LINEAR);
+    gl->glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    cubemap->setWrapMode(QOpenGLTexture::ClampToEdge);
-    cubemap->setSize(textureSize, textureSize, 1);
+    if (withMipmaps)
+        gl->glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 
-    // cubemap->setMipLevels()
-    cubemap->setFormat(QOpenGLTexture::RGB32F);
-    cubemap->allocateStorage();
-
-    // cubemap->generateMipMaps(0);
-    // cubemap->bind();
-    // gl->glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-    // cubemap->release();
-    // cubemap->setMipBaseLevel(0);
-    // cubemap->setMipMaxLevel(11);
-
-    return cubemap;
+    return tex;
 }
 
-QOpenGLTexture* IblSampler::createLut()
+GLuint IblSampler::createLut()
 {
-    auto texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
-    texture->setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear);
-    texture->setWrapMode(QOpenGLTexture::ClampToEdge);
-    texture->create();
+    GLuint tex;
+    gl->glGenTextures(1, &tex);
+    gl->glBindTexture(GL_TEXTURE_2D, tex);
 
-    texture->setSize(textureSize, textureSize, 3);
-    // cubemap->setMipLevels()
-    texture->setFormat(QOpenGLTexture::RGBA32F);
-    texture->allocateStorage();
+    gl->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, lutResolution, lutResolution,
+                     0, GL_RGBA, GL_FLOAT, nullptr);
 
-    return texture;
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    return tex;
 }
 
 void IblSampler::panoramaToCubemap()
@@ -219,7 +303,7 @@ void IblSampler::panoramaToCubemap()
         gl->glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->handle());
         gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                    GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                                   cubemapTexture->textureId(), 0);
+                                   cubemapTextureID, 0);
 
         gl->glViewport(0, 0, textureSize, textureSize);
         gl->glClearColor(0, 0, 0, 1);
@@ -248,10 +332,8 @@ void IblSampler::panoramaToCubemap()
     // gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
     auto ctx = QOpenGLContext::currentContext();
     gl->glBindFramebuffer(GL_FRAMEBUFFER, ctx->defaultFramebufferObject());
-
-    cubemapTexture->bind();
-    cubemapTexture->generateMipMaps();
-    cubemapTexture->release();
+    gl->glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTextureID);
+    gl->glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 }
 
 QOpenGLShaderProgram* IblSampler::createShader(const QString& vertSource,
@@ -311,7 +393,9 @@ void IblSampler::applyFilter(int distribution, float roughness,
         gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader->bind();
-        cubemapTexture->bind(0);
+        gl->glActiveTexture(GL_TEXTURE0);
+        gl->glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTextureID);
+        // cubemapTexture->bind(0);
         shader->setUniformValue("uCubeMap", 0);
 
         shader->setUniformValue("u_roughness", roughness);
@@ -343,7 +427,7 @@ void IblSampler::applyFilter(int distribution, float roughness,
 
 void IblSampler::cubeMapToLambertian()
 {
-    this->applyFilter(0, 0.0, 0, this->lambertianTexture->textureId(),
+    this->applyFilter(0, 0.0, 0, this->lambertianTextureID,
                       this->lambertianSampleCount);
 }
 
@@ -352,8 +436,8 @@ void IblSampler::cubeMapToGGX()
     for (int currentMipLevel = 0; currentMipLevel <= this->mipmapLevels;
          ++currentMipLevel) {
         auto roughness = (currentMipLevel) / (this->mipmapLevels - 1);
-        this->applyFilter(1, roughness, currentMipLevel,
-                          this->ggxTexture->textureId(), this->ggxSampleCount);
+        this->applyFilter(1, roughness, currentMipLevel, this->ggxTextureID,
+                          this->ggxSampleCount);
     }
 }
 void IblSampler::cubeMapToSheen()
@@ -361,8 +445,7 @@ void IblSampler::cubeMapToSheen()
     for (auto currentMipLevel = 0; currentMipLevel <= this->mipmapLevels;
          ++currentMipLevel) {
         auto roughness = (currentMipLevel) / (this->mipmapLevels - 1);
-        this->applyFilter(2, roughness, currentMipLevel,
-                          this->sheenTexture->textureId(),
+        this->applyFilter(2, roughness, currentMipLevel, this->sheenTextureID,
                           this->sheenSamplCount);
     }
 }
@@ -385,7 +468,9 @@ void IblSampler::sampleLut(int distribution, int targetTextureId,
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     shader->bind();
-    cubemapTexture->bind(0);
+    // cubemapTexture->bind(0);
+    gl->glActiveTexture(GL_TEXTURE0);
+    gl->glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTextureID);
     shader->setUniformValue("uCubeMap", 0);
 
     shader->setUniformValue("u_roughness", 0.0f);
@@ -416,13 +501,12 @@ void IblSampler::sampleLut(int distribution, int targetTextureId,
 
 void IblSampler::sampleGGXLut()
 {
-    this->ggxLutTexture = this->createLut();
-    this->sampleLut(1, this->ggxLutTexture->textureId(), this->lutResolution);
+    this->ggxLutTextureID = this->createLut();
+    this->sampleLut(1, this->ggxLutTextureID, this->lutResolution);
 }
 
 void IblSampler::sampleCharlieLut()
 {
-    this->charlieLutTexture = this->createLut();
-    this->sampleLut(2, this->charlieLutTexture->textureId(),
-                    this->lutResolution);
+    this->charlieLutTextureID = this->createLut();
+    this->sampleLut(2, this->charlieLutTextureID, this->lutResolution);
 }

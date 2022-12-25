@@ -27,22 +27,22 @@ public:
 
     int mipmapLevels = -1;
 
-    QOpenGLTexture* lambertianTexture;
-    QOpenGLTexture* ggxTexture;
-    QOpenGLTexture* sheenTexture;
-    // GLuint lambertianTextureID;
-    // GLuint ggxTextureID;
-    // GLuint sheenTextureID;
+    // QOpenGLTexture* lambertianTexture;
+    // QOpenGLTexture* ggxTexture;
+    // QOpenGLTexture* sheenTexture;
+    GLuint lambertianTextureID;
+    GLuint ggxTextureID;
+    GLuint sheenTextureID;
 
-    QOpenGLTexture* ggxLutTexture;
-    QOpenGLTexture* charlieLutTexture;
-    // GLuint ggxLutTextureID;
-    // GLuint charlieLutTextureID;
+    // QOpenGLTexture* ggxLutTexture;
+    // QOpenGLTexture* charlieLutTexture;
+    GLuint ggxLutTextureID;
+    GLuint charlieLutTextureID;
 
     QOpenGLTexture* inputTexture;
-    QOpenGLTexture* cubemapTexture;
+    // QOpenGLTexture* cubemapTexture;
     // GLuint inputTextureID;
-    // GLuint cubemapTextureID;
+    GLuint cubemapTextureID;
 
     QOpenGLFramebufferObject* framebuffer;
     QOpenGLVertexArrayObject* vao;
@@ -54,8 +54,10 @@ public:
 
     void loadPanorama(const QString& path);
 
-    QOpenGLTexture* createCubemap(bool withMipmaps);
-    QOpenGLTexture* createLut();
+    // QOpenGLTexture* createCubemap(bool withMipmaps);
+    // QOpenGLTexture* createLut();
+    GLuint createCubemap(bool withMipmaps);
+    GLuint createLut();
 
     // generation functions
     void panoramaToCubemap();

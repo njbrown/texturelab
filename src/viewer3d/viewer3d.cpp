@@ -529,15 +529,25 @@ void Viewer3D::renderGltfMesh(Mesh* mesh)
     // pbr maps - they start at 8
     // https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/master/source/Renderer/renderer.js#L732
     shader->setUniformValue("u_LambertianEnvSampler", 8);
-    iblSampler->lambertianTexture->bind(8);
+    // iblSampler->lambertianTexture->bind(8);
+    gl->glActiveTexture(GL_TEXTURE0 + 8);
+    gl->glBindTexture(GL_TEXTURE_CUBE_MAP, iblSampler->lambertianTextureID);
     shader->setUniformValue("u_GGXEnvSampler", 9);
-    iblSampler->ggxTexture->bind(9);
+    // iblSampler->ggxTexture->bind(9);
+    gl->glActiveTexture(GL_TEXTURE0 + 9);
+    gl->glBindTexture(GL_TEXTURE_CUBE_MAP, iblSampler->ggxTextureID);
     shader->setUniformValue("u_GGXLUT", 10);
-    iblSampler->ggxLutTexture->bind(10);
+    // iblSampler->ggxLutTexture->bind(10);
+    gl->glActiveTexture(GL_TEXTURE0 + 10);
+    gl->glBindTexture(GL_TEXTURE_2D, iblSampler->ggxLutTextureID);
     shader->setUniformValue("u_CharlieEnvSampler", 11);
-    iblSampler->sheenTexture->bind(11);
+    // iblSampler->sheenTexture->bind(11);
+    gl->glActiveTexture(GL_TEXTURE0 + 11);
+    gl->glBindTexture(GL_TEXTURE_CUBE_MAP, iblSampler->sheenTextureID);
     shader->setUniformValue("u_CharlieLUT", 12);
-    iblSampler->charlieLutTexture->bind(12);
+    // iblSampler->charlieLutTexture->bind(12);
+    gl->glActiveTexture(GL_TEXTURE0 + 12);
+    gl->glBindTexture(GL_TEXTURE_2D, iblSampler->charlieLutTextureID);
 
     shader->setUniformValue("u_MipCount", iblSampler->mipmapLevels);
     QMatrix3x3 envRot;
