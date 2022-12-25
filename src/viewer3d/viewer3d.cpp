@@ -519,12 +519,22 @@ void Viewer3D::renderGltfMesh(Mesh* mesh)
     shader->setUniformValue("u_MetallicFactor", 0.f);
     shader->setUniformValue("u_RoughnessFactor", 1.f);
     shader->setUniformValue("u_EmissiveStrength", 1.f);
+    shader->setUniformValue("u_NormalScale", 1.0f);
     shader->setUniformValue("u_BaseColorUVSet", 0);
+    shader->setUniformValue("u_NormalUVSet", 0);
+    shader->setUniformValue("u_EmissiveUVSet", 0);
+    shader->setUniformValue("u_MetallicRoughnessUVSet", 0);
 
     // albedo
     // mainProgram->setUniformValue("u_BaseColorFactor", mat->albedo);
     shader->setUniformValue("u_BaseColorSampler", 0);
     mat->albedoMap->bind(0);
+    // shader->setUniformValue("u_NormalSampler", 1);
+    // mat->normalMap->bind(1);
+    // shader->setUniformValue("u_MetallicRoughnessSampler", 2);
+    // mat->metalnessMap->bind(2);
+    // shader->setUniformValue("u_EmissiveSampler", 2);
+    // mat->emissiveMap->bind(3);
 
     // pbr maps - they start at 8
     // https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/master/source/Renderer/renderer.js#L732
@@ -591,6 +601,8 @@ bool loadGltfModel(tinygltf::Model& model, const QString& filename)
 
     bool res = loader.LoadASCIIFromString(&model, &err, &warn, text.c_str(),
                                           text.length(), "");
+    // bool res = loader.LoadASCIIFromFile(&model, &err, &warn, text.c_str(),
+    //                                     text.length());
     if (!warn.empty()) {
         std::cout << "WARN: " << warn << std::endl;
     }
@@ -625,8 +637,10 @@ Material* Viewer3D::loadMaterial()
     // flags << "DEBUG DEBUG_METALLIC_ROUGHNESS";
 
     flags << "HAS_TEXCOORD_0_VEC2 1";
-    flags << "HAS_BASE_COLOR_MAP 1"; // albedo only for now
+    flags << "HAS_BASE_COLOR_MAP 1";
     // flags << "HAS_NORMAL_MAP 1";
+    // flags << "HAS_METALLIC_ROUGHNESS_MAP 1";
+    // flags << "HAS_EMISSIVE_MAP 1";
     flags << "MATERIAL_METALLICROUGHNESS 1"; // MR mode
 
     flags << "ALPHAMODE_OPAQUE 0";
@@ -658,14 +672,23 @@ Material* Viewer3D::loadMaterial()
     mat->shader = shader;
 
     // textures
-    mat->albedoMap = loadTexture(":assets/brick.jpg");
+    // mat->albedoMap = loadTexture(":assets/brick.jpg");
+    mat->albedoMap = loadTexture(":assets/Default_albedo.jpg");
+    mat->normalMap = loadTexture(":assets/Default_normal.jpg");
+    mat->metalnessMap = loadTexture(":assets/Default_metalRoughness.jpg");
+    mat->emissiveMap = loadTexture(":assets/Default_emissive.jpg");
 
     return mat;
 }
 QOpenGLTexture* Viewer3D::loadTexture(const QString& path)
 {
     QImage image(path);
-    return new QOpenGLTexture(image);
+    auto tex = new QOpenGLTexture(image);
+    tex->setMinMagFilters(QOpenGLTexture::LinearMipMapLinear,
+                          QOpenGLTexture::Linear);
+    tex->generateMipMaps();
+
+    return tex;
 }
 
 // void Viewer3D::renderMesh(Mesh* mesh) {
