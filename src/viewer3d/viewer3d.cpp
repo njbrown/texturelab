@@ -511,13 +511,13 @@ void Viewer3D::renderGltfMesh(Mesh* mesh)
     shader->setUniformValue("u_ViewProjectionMatrix", projMatrix * viewMatrix);
     shader->setUniformValue("u_ModelMatrix", worldMatrix);
     shader->setUniformValue("u_NormalMatrix", normalMatrix);
-    shader->setUniformValue("u_Exposure", 1);
+    shader->setUniformValue("u_Exposure", 1.0f);
     shader->setUniformValue("u_Camera", camPos);
 
     // default mat props
     shader->setUniformValue("u_BaseColorFactor", QVector4D(1, 1, 1, 1));
-    shader->setUniformValue("u_MetallicFactor", 1.f);
-    shader->setUniformValue("u_RoughnessFactor", 0.f);
+    shader->setUniformValue("u_MetallicFactor", 0.f);
+    shader->setUniformValue("u_RoughnessFactor", 1.f);
     shader->setUniformValue("u_EmissiveStrength", 1.f);
     shader->setUniformValue("u_BaseColorUVSet", 0);
 
@@ -633,7 +633,7 @@ Material* Viewer3D::loadMaterial()
     flags << "ALPHAMODE_MASK 1";
     flags << "ALPHAMODE_BLEND 2";
     flags << "ALPHAMODE ALPHAMODE_OPAQUE";
-    // flags << "TONEMAP_ACES_NARKOWICZ 1";
+    flags << "TONEMAP_ACES_NARKOWICZ 1";
     // flags << "TONEMAP_ACES_HILL_EXPOSURE_BOOST 1";
 
     auto vertShader =
