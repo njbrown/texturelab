@@ -20,6 +20,7 @@
 #include <iostream>
 
 #include "iblsampler.h"
+#include "shadercache.h"
 
 #define TINYGLTF_IMPLEMENTATION
 #define TINYGLTF_NO_STB_IMAGE
@@ -45,9 +46,15 @@ public:
     int numElements = 0;
     std::map<int, QOpenGLBuffer*> vbos;
     QOpenGLBuffer* indexBuffer;
+    QList<VertexUsage> attribs;
 
     tinygltf::Primitive primitive;
     tinygltf::Accessor indexAccessor;
+
+    // transformation props
+    QMatrix4x4 transform;
+    QMatrix3x3 normalMatrix;
+    Material* material = nullptr;
 };
 
 QOpenGLShaderProgram* createMainShader();
@@ -64,10 +71,25 @@ void Viewer3D::initializeGL()
     if (vao->create())
         vao->bind();
 
+    shaderCache = new ShaderCache();
+    shaderCache->addShaderFile("animation.glsl", ":assets/animation.glsl");
+    shaderCache->addShaderFile("brdf.glsl", ":assets/brdf.glsl");
+    shaderCache->addShaderFile("functions.glsl", ":assets/functions.glsl");
+    shaderCache->addShaderFile("iridiscence.glsl", ":assets/iridiscence.glsl");
+    shaderCache->addShaderFile("ibl.glsl", ":assets/ibl.glsl");
+    shaderCache->addShaderFile("material_info.glsl",
+                               ":assets/material_info.glsl");
+    shaderCache->addShaderFile("pbr.frag", ":assets/pbr.frag");
+    shaderCache->addShaderFile("primitive.vert", ":assets/primitive.vert");
+    shaderCache->addShaderFile("punctual.glsl", ":assets/punctual.glsl");
+    shaderCache->addShaderFile("textures.glsl", ":assets/textures.glsl");
+    shaderCache->addShaderFile("tonemapping.glsl", ":assets/tonemapping.glsl");
+
     mainProgram = createMainShader();
 
     mesh = loadMesh();
     gltfMesh = loadMeshFromRc(":assets/cube.gltf");
+    gltfMesh->material = this->loadMaterial();
 
     // setup matrices
     worldMatrix.setToIdentity();
@@ -105,25 +127,26 @@ void Viewer3D::paintGL()
 
     // todo: bind textures
     // iblSampler->inputTexture->bind(0);
-    iblSampler->cubemapTexture->bind(0);
+    // iblSampler->ggxLutTexture->bind(0);
 
-    mainProgram->bind();
-    mainProgram->setUniformValue("worldMatrix", worldMatrix);
-    mainProgram->setUniformValue("viewMatrix", viewMatrix);
-    mainProgram->setUniformValue("projMatrix", projMatrix);
+    // mainProgram->bind();
+    // mainProgram->setUniformValue("worldMatrix", worldMatrix);
+    // mainProgram->setUniformValue("viewMatrix", viewMatrix);
+    // mainProgram->setUniformValue("projMatrix", projMatrix);
 
-    mesh->bind();
-    // setup attrib array
-    gl->glEnableVertexAttribArray((int)VertexUsage::Position);
-    gl->glEnableVertexAttribArray((int)VertexUsage::TexCoord0);
-    gl->glVertexAttribPointer((int)VertexUsage::Position, 3, GL_FLOAT, GL_FALSE,
-                              5 * sizeof(float), nullptr);
-    gl->glVertexAttribPointer((int)VertexUsage::TexCoord0, 2, GL_FLOAT,
-                              GL_FALSE, 5 * sizeof(float),
-                              reinterpret_cast<void*>(3 * sizeof(float)));
+    // mesh->bind();
+    // // setup attrib array
+    // gl->glEnableVertexAttribArray((int)VertexUsage::Position);
+    // gl->glEnableVertexAttribArray((int)VertexUsage::TexCoord0);
+    // gl->glVertexAttribPointer((int)VertexUsage::Position, 3, GL_FLOAT,
+    // GL_FALSE,
+    //                           5 * sizeof(float), nullptr);
+    // gl->glVertexAttribPointer((int)VertexUsage::TexCoord0, 2, GL_FLOAT,
+    //                           GL_FALSE, 5 * sizeof(float),
+    //                           reinterpret_cast<void*>(3 * sizeof(float)));
 
-    // render
-    gl->glDrawArrays(GL_TRIANGLES, 0, 6);
+    // // render
+    // gl->glDrawArrays(GL_TRIANGLES, 0, 6);
 
     // render gltf mesh
     renderGltfMesh(gltfMesh);
@@ -195,6 +218,7 @@ void Viewer3D::buildView()
 
     // offset by center
     eyePos += center;
+    camPos = eyePos;
 
     viewMatrix.setToIdentity();
     viewMatrix.lookAt(eyePos, center, QVector3D(0, 1, 0));
@@ -395,6 +419,7 @@ Mesh* loadMeshFromRc(const QString& path)
 
     tinygltf::Primitive primitive = mesh.primitives[0];
     tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
+    QList<VertexUsage> attribs;
 
     // assign vertex channels to buffers
     for (auto& attrib : primitive.attributes) {
@@ -428,6 +453,7 @@ Mesh* loadMeshFromRc(const QString& path)
                                       accessor.normalized ? GL_TRUE : GL_FALSE,
                                       byteStride,
                                       BUFFER_OFFSET(accessor.byteOffset));
+            attribs.append((VertexUsage)vaa);
         }
         else
             std::cout << "vaa missing: " << attrib.first << std::endl;
@@ -438,6 +464,7 @@ Mesh* loadMeshFromRc(const QString& path)
     Mesh* finalMesh = new Mesh;
     finalMesh->vao = vao;
     finalMesh->vbos = vbos;
+    finalMesh->attribs = attribs;
 
     finalMesh->indexBuffer = vbos.at(indexAccessor.bufferView);
     finalMesh->primitive = primitive;
@@ -445,14 +472,71 @@ Mesh* loadMeshFromRc(const QString& path)
     return finalMesh;
 }
 
-void renderGltfMesh(Mesh* mesh)
+// https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/glTF-WebGL-PBR/mesh.js#L113
+// https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/master/source/Renderer/renderer.js
+void Viewer3D::renderGltfMesh(Mesh* mesh)
 {
+    // setup material
+    auto& mat = mesh->material;
+    auto& shader = mat->shader;
+    shader->bind();
+
+    QMatrix4x4 mvp;
+    mvp.setToIdentity();
+    mvp = projMatrix * viewMatrix * worldMatrix;
+
+    auto modelInverse = worldMatrix.inverted();
+    auto normalMatrix = modelInverse.transposed();
+
+    shader->setUniformValue("u_ViewProjectionMatrix", projMatrix * viewMatrix);
+    shader->setUniformValue("u_ModelMatrix", worldMatrix);
+    shader->setUniformValue("u_NormalMatrix", normalMatrix);
+    shader->setUniformValue("u_Exposure", 1);
+    shader->setUniformValue("u_Camera", camPos);
+
+    // default mat props
+    shader->setUniformValue("u_BaseColorFactor", QVector4D(1, 1, 1, 1));
+    shader->setUniformValue("u_MetallicFactor", 1.f);
+    shader->setUniformValue("u_RoughnessFactor", 1.f);
+    shader->setUniformValue("u_EmissiveStrength", 1.f);
+    shader->setUniformValue("u_BaseColorUVSet", 0);
+
+    // albedo
+    // mainProgram->setUniformValue("u_BaseColorFactor", mat->albedo);
+    shader->setUniformValue("u_BaseColorSampler", 0);
+    mat->albedoMap->bind(0);
+
+    // pbr maps - they start at 8
+    // https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/master/source/Renderer/renderer.js#L732
+    shader->setUniformValue("u_LambertianEnvSampler", 8);
+    iblSampler->lambertianTexture->bind(8);
+    shader->setUniformValue("u_GGXEnvSampler", 9);
+    iblSampler->ggxTexture->bind(9);
+    shader->setUniformValue("u_GGXLUT", 10);
+    iblSampler->ggxLutTexture->bind(10);
+    shader->setUniformValue("u_CharlieEnvSampler", 11);
+    iblSampler->sheenTexture->bind(11);
+    shader->setUniformValue("u_CharlieLUT", 12);
+    iblSampler->charlieLutTexture->bind(12);
+
+    shader->setUniformValue("u_MipCount", iblSampler->mipmapLevels);
+    QMatrix3x3 envRot;
+    envRot.setToIdentity();
+    shader->setUniformValue("u_EnvRotation", envRot);
+    shader->setUniformValue("u_EnvIntensity", 1.0f);
+
+    // render mesh
     mesh->vao->bind();
     tinygltf::Primitive primitive = mesh->primitive;
     tinygltf::Accessor indexAccessor = mesh->indexAccessor;
 
     // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
     mesh->indexBuffer->bind();
+
+    gl->glEnableVertexAttribArray((int)VertexUsage::Position);
+    gl->glEnableVertexAttribArray((int)VertexUsage::Normal);
+    gl->glEnableVertexAttribArray((int)VertexUsage::Tangent);
+    gl->glEnableVertexAttribArray((int)VertexUsage::TexCoord0);
 
     glDrawElements(primitive.mode, indexAccessor.count,
                    indexAccessor.componentType,
@@ -493,3 +577,49 @@ bool loadGltfModel(tinygltf::Model& model, const QString& filename)
 
     return res;
 }
+
+Material* Viewer3D::loadMaterial()
+{
+    auto mat = new Material();
+
+    QStringList flags;
+    flags << "USE_IBL";
+    flags << "HAS_NORMAL_VEC3";
+    flags << "HAS_TANGENT_VEC4";
+    flags << "HAS_TEXCOORD_0_VEC2";
+    flags << "HAS_BASE_COLOR_MAP 1";         // albedo only for now
+    flags << "MATERIAL_METALLICROUGHNESS 1"; // MR mode
+    flags << "ALPHAMODE ALPHAMODE_OPAQUE";
+
+    auto vertShader =
+        shaderCache->generateShaderSource("primitive.vert", flags);
+    auto fragShader = shaderCache->generateShaderSource("pbr.frag", flags);
+
+    auto shader = new QOpenGLShaderProgram;
+    shader->addShaderFromSourceCode(QOpenGLShader::Vertex, vertShader);
+    shader->addShaderFromSourceCode(QOpenGLShader::Fragment, fragShader);
+    shader->link();
+
+    shader->bindAttributeLocation("a_position", (int)VertexUsage::Position);
+    shader->bindAttributeLocation("a_normal", (int)VertexUsage::Normal);
+    shader->bindAttributeLocation("a_tangent", (int)VertexUsage::Tangent);
+    shader->bindAttributeLocation("a_color_0", (int)VertexUsage::Color);
+    shader->bindAttributeLocation("a_texcoord_0", (int)VertexUsage::TexCoord0);
+    shader->bindAttributeLocation("a_texcoord_1", (int)VertexUsage::TexCoord1);
+
+    mat->shader = shader;
+
+    // textures
+    mat->albedoMap = loadTexture(":assets/brick.jpg");
+
+    return mat;
+}
+QOpenGLTexture* Viewer3D::loadTexture(const QString& path)
+{
+    QImage image(path);
+    return new QOpenGLTexture(image);
+}
+
+// void Viewer3D::renderMesh(Mesh* mesh) {
+
+// }

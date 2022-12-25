@@ -21,8 +21,29 @@ class QOpenGLShaderProgram;
 class QOpenGLBuffer;
 class QOpenGLVertexArrayObject;
 class Mesh;
+class ShaderCache;
 
 class IblSampler;
+
+struct Material {
+    QOpenGLShaderProgram* shader = nullptr;
+
+    QOpenGLTexture* albedoMap = nullptr;
+    QOpenGLTexture* normalMap = nullptr;
+    QOpenGLTexture* metalnessMap = nullptr;
+    QOpenGLTexture* roughnessMap = nullptr;
+    QOpenGLTexture* heightMap = nullptr;
+    QOpenGLTexture* aoMap = nullptr;
+    QOpenGLTexture* emissiveMap = nullptr;
+    QOpenGLTexture* alphaMap = nullptr;
+
+    QVector3D albedo = QVector3D(1, 1, 1);
+    float normalIntensity = 1.0;
+    float roughness = 1.0;
+    float heightScale = 1.0;
+    float alpha = 1.0;
+    QVector3D emission = QVector3D(1, 1, 1);
+};
 
 class Viewer3D : public QOpenGLWidget {
     QOpenGLTexture* texture = nullptr;
@@ -44,14 +65,15 @@ class Viewer3D : public QOpenGLWidget {
     QMatrix4x4 viewMatrix;
     QMatrix4x4 worldMatrix;
 
-    QVector3D m_eye;
-    QVector3D m_target = {0, 0, -1};
+    // QVector3D m_eye;
+    // QVector3D m_target = {0, 0, -1};
 
     // trackball params
     float zoom = 5;
     float zoomSpeed = 0.3f;
     QPoint prevPos;
     QVector3D center = {0, 0, 0};
+    QVector3D camPos = {0, 0, 0};
     float yaw = 0;
     float pitch = 0;
     float dragSpeed = 0.5f;
@@ -60,6 +82,7 @@ class Viewer3D : public QOpenGLWidget {
     bool middleMouseDown = false;
 
     IblSampler* iblSampler;
+    ShaderCache* shaderCache;
 
 protected:
     void initializeGL();
@@ -73,4 +96,9 @@ protected:
     void wheelEvent(QWheelEvent* e) override;
 
     void buildView();
+
+    Material* loadMaterial();
+    QOpenGLTexture* loadTexture(const QString& path);
+    // void renderMesh(Mesh* mesh);
+    void renderGltfMesh(Mesh* mesh);
 };
