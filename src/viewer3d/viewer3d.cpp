@@ -23,13 +23,8 @@
 #include "iblsampler.h"
 #include "shadercache.h"
 
+#include "geometry/geometry.h"
 #include "renderer/renderer.h"
-
-// #define TINYGLTF_IMPLEMENTATION
-// #define TINYGLTF_NO_STB_IMAGE
-// #define TINYGLTF_NO_INCLUDE_STB_IMAGE
-// #define TINYGLTF_NO_STB_IMAGE_WRITE
-// #include "gltf/tiny_gltf.h"
 
 QOpenGLShaderProgram* createMainShader();
 QOpenGLBuffer* loadMesh();
@@ -81,7 +76,8 @@ void Viewer3D::initializeGL()
 
     // mesh = loadMesh();
     auto mat = this->loadMaterial();
-    gltfMesh = loadMeshFromRc(":assets/cube.gltf");
+    // gltfMesh = loadMeshFromRc(":assets/cube.gltf");
+    gltfMesh = createSphere(this->gl, 2, 64, 64);
     this->material = mat;
 
     // setup matrices
@@ -94,18 +90,14 @@ void Viewer3D::initializeGL()
     projMatrix.perspective(45, this->width() / (float)this->height(), 1.0,
                            1000);
 
-    iblSampler = new IblSampler();
-    iblSampler->gl = gl;
-    iblSampler->init(":assets/panorama.hdr");
-
-    iblSampler->filterAll();
+    // iblSampler = new IblSampler();
+    // iblSampler->gl = gl;
+    // iblSampler->init(":assets/panorama.hdr");
+    // iblSampler->filterAll();
 
     renderer = new Renderer();
     renderer->init(this->gl);
     renderer->loadEnvironment(":assets/panorama.hdr");
-
-    // do all the conversions
-    // iblSampler->panoramaToCubemap();
 }
 
 void Viewer3D::paintGL()
@@ -114,36 +106,14 @@ void Viewer3D::paintGL()
 
     gl->glViewport(0, 0, this->width(), this->height());
     gl->glClearDepthf(1.0);
-    gl->glClearColor(1, 0, 0, 1);
+    gl->glClearColor(0.1, 0.1, 0.1, 1);
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     gl->glEnable(GL_DEPTH_TEST);
     // gl->glEnable(GL_DEPTH_TEST);
+    // gl->glDisable(GL_CULL_FACE);
 
     vao->bind();
-
-    // todo: bind textures
-    // iblSampler->inputTexture->bind(0);
-    // iblSampler->ggxLutTexture->bind(0);
-
-    // mainProgram->bind();
-    // mainProgram->setUniformValue("worldMatrix", worldMatrix);
-    // mainProgram->setUniformValue("viewMatrix", viewMatrix);
-    // mainProgram->setUniformValue("projMatrix", projMatrix);
-
-    // mesh->bind();
-    // // setup attrib array
-    // gl->glEnableVertexAttribArray((int)VertexUsage::Position);
-    // gl->glEnableVertexAttribArray((int)VertexUsage::TexCoord0);
-    // gl->glVertexAttribPointer((int)VertexUsage::Position, 3, GL_FLOAT,
-    // GL_FALSE,
-    //                           5 * sizeof(float), nullptr);
-    // gl->glVertexAttribPointer((int)VertexUsage::TexCoord0, 2, GL_FLOAT,
-    //                           GL_FALSE, 5 * sizeof(float),
-    //                           reinterpret_cast<void*>(3 * sizeof(float)));
-
-    // // render
-    // gl->glDrawArrays(GL_TRIANGLES, 0, 6);
 
     // render gltf mesh
     renderer->renderGltfMesh(gltfMesh, material, camPos, worldMatrix,
