@@ -465,8 +465,14 @@ protected:
 #endif
 
 #define TINYGLTF_VALUE_GET(ctype, var)                                         \
-    template <> inline const ctype& Value::Get<ctype>() const { return var; }  \
-    template <> inline ctype& Value::Get<ctype>() { return var; }
+    template <> inline const ctype& Value::Get<ctype>() const                  \
+    {                                                                          \
+        return var;                                                            \
+    }                                                                          \
+    template <> inline ctype& Value::Get<ctype>()                              \
+    {                                                                          \
+        return var;                                                            \
+    }
 TINYGLTF_VALUE_GET(bool, boolean_value_)
 TINYGLTF_VALUE_GET(double, real_value_)
 TINYGLTF_VALUE_GET(int, int_value_)
@@ -876,7 +882,7 @@ struct BufferView {
     size_t byteStride{0}; // minimum 4, maximum 252 (multiple of 4), default 0 =
                           // understood to be tightly packed
     int target{0};        // ["ARRAY_BUFFER", "ELEMENT_ARRAY_BUFFER"] for vertex
-                   // indices or attribs. Could be 0 for other data
+                          // indices or attribs. Could be 0 for other data
     Value extras;
     ExtensionMap extensions;
 
@@ -1542,7 +1548,7 @@ private:
 
 #if defined(TINYGLTF_IMPLEMENTATION) || defined(__INTELLISENSE__)
 #include <algorithm>
-//#include <cassert>
+// #include <cassert>
 #ifndef TINYGLTF_NO_FS
 #include <cstdio>
 #include <fstream>
@@ -1686,7 +1692,7 @@ private:
 #endif
 
 #elif !defined(__ANDROID__) && !defined(__OpenBSD__)
-//#include <wordexp.h>
+// #include <wordexp.h>
 #endif
 
 #if defined(__sparcv9) || defined(__powerpc__)

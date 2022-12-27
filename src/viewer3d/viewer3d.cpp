@@ -23,40 +23,13 @@
 #include "iblsampler.h"
 #include "shadercache.h"
 
-#define TINYGLTF_IMPLEMENTATION
-#define TINYGLTF_NO_STB_IMAGE
-#define TINYGLTF_NO_INCLUDE_STB_IMAGE
-#define TINYGLTF_NO_STB_IMAGE_WRITE
-#include "gltf/tiny_gltf.h"
+#include "renderer/renderer.h"
 
-enum class VertexUsage : int {
-    Position = 0,
-    Color = 1,
-    TexCoord0 = 2,
-    TexCoord1 = 3,
-    TexCoord2 = 4,
-    TexCoord3 = 5,
-    Normal = 6,
-    Tangent = 7,
-    Count = 8
-};
-
-class Mesh {
-public:
-    QOpenGLVertexArrayObject* vao = nullptr;
-    int numElements = 0;
-    std::map<int, QOpenGLBuffer*> vbos;
-    QOpenGLBuffer* indexBuffer;
-    QList<VertexUsage> attribs;
-
-    tinygltf::Primitive primitive;
-    tinygltf::Accessor indexAccessor;
-
-    // transformation props
-    QMatrix4x4 transform;
-    QMatrix3x3 normalMatrix;
-    Material* material = nullptr;
-};
+// #define TINYGLTF_IMPLEMENTATION
+// #define TINYGLTF_NO_STB_IMAGE
+// #define TINYGLTF_NO_INCLUDE_STB_IMAGE
+// #define TINYGLTF_NO_STB_IMAGE_WRITE
+// #include "gltf/tiny_gltf.h"
 
 QOpenGLShaderProgram* createMainShader();
 QOpenGLBuffer* loadMesh();
@@ -109,7 +82,7 @@ void Viewer3D::initializeGL()
     // mesh = loadMesh();
     auto mat = this->loadMaterial();
     gltfMesh = loadMeshFromRc(":assets/cube.gltf");
-    gltfMesh->material = mat;
+    this->material = mat;
 
     // setup matrices
     worldMatrix.setToIdentity();
@@ -126,6 +99,10 @@ void Viewer3D::initializeGL()
     iblSampler->init(":assets/panorama.hdr");
 
     iblSampler->filterAll();
+
+    renderer = new Renderer();
+    renderer->init(this->gl);
+    renderer->loadEnvironment(":assets/panorama.hdr");
 
     // do all the conversions
     // iblSampler->panoramaToCubemap();
@@ -169,7 +146,8 @@ void Viewer3D::paintGL()
     // gl->glDrawArrays(GL_TRIANGLES, 0, 6);
 
     // render gltf mesh
-    renderGltfMesh(gltfMesh);
+    renderer->renderGltfMesh(gltfMesh, material, camPos, worldMatrix,
+                             viewMatrix, projMatrix);
 }
 
 void Viewer3D::resizeGL(int w, int h)
@@ -375,251 +353,6 @@ QOpenGLBuffer* loadMesh()
     return vbo;
 }
 
-bool loadGltfModel(tinygltf::Model& model, const QString& filename);
-
-#define BUFFER_OFFSET(i) ((char*)NULL + (i))
-
-// https://github.com/syoyo/tinygltf/blob/release/examples/basic/main.cpp
-Mesh* loadMeshFromRc(const QString& path)
-{
-    auto gl = QOpenGLContext::currentContext()->functions();
-
-    tinygltf::Model model;
-    if (!loadGltfModel(model, path)) {
-        return nullptr;
-    }
-
-    // just convert the first mesh
-    if (model.meshes.size() == 0)
-        return nullptr;
-
-    auto mesh = model.meshes[0];
-
-    auto vao = new QOpenGLVertexArrayObject(nullptr);
-    vao->create();
-    vao->bind();
-
-    std::map<int, QOpenGLBuffer*> vbos;
-
-    // upload all model buffer views into GPU memory
-    for (size_t i = 0; i < model.bufferViews.size(); ++i) {
-        const tinygltf::BufferView& bufferView = model.bufferViews[i];
-        if (bufferView.target == 0) { // TODO impl drawarrays
-            std::cout << "WARN: bufferView.target is zero" << std::endl;
-            continue; // Unsupported bufferView.
-        }
-
-        const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
-        std::cout << "bufferview.target " << bufferView.target << std::endl;
-
-        // vertex or index buffer
-        auto vbo = new QOpenGLBuffer((QOpenGLBuffer::Type)bufferView.target);
-        vbo->create();
-        vbo->bind();
-        vbo->setUsagePattern(QOpenGLBuffer::StaticDraw);
-        vbo->allocate(&buffer.data.at(0) + bufferView.byteOffset,
-                      bufferView.byteLength);
-        vbo->release();
-
-        vbos[i] = vbo;
-
-        // GLuint vbo;
-        // glGenBuffers(1, &vbo);
-        // vbos[i] = vbo;
-        // glBindBuffer(bufferView.target, vbo);
-
-        // std::cout << "buffer.data.size = " << buffer.data.size()
-        //           << ", bufferview.byteOffset = " << bufferView.byteOffset
-        //           << std::endl;
-
-        // glBufferData(bufferView.target, bufferView.byteLength,
-        //              &buffer.data.at(0) + bufferView.byteOffset,
-        //              GL_STATIC_DRAW);
-    }
-
-    tinygltf::Primitive primitive = mesh.primitives[0];
-    tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
-    QList<VertexUsage> attribs;
-
-    // assign vertex channels to buffers
-    for (auto& attrib : primitive.attributes) {
-        tinygltf::Accessor accessor = model.accessors[attrib.second];
-        int byteStride =
-            accessor.ByteStride(model.bufferViews[accessor.bufferView]);
-        // glBindBuffer(GL_ARRAY_BUFFER, vbos[accessor.bufferView]);
-        vbos[accessor.bufferView]->bind();
-
-        int size = 1;
-        if (accessor.type != TINYGLTF_TYPE_SCALAR) {
-            size = accessor.type;
-        }
-
-        int vaa = -1;
-        if (attrib.first.compare("POSITION") == 0)
-            vaa = (int)VertexUsage::Position;
-        if (attrib.first.compare("NORMAL") == 0)
-            vaa = (int)VertexUsage::Normal;
-        if (attrib.first.compare("TANGENT") == 0)
-            vaa = (int)VertexUsage::Tangent;
-        if (attrib.first.compare("TEXCOORD_0") == 0)
-            vaa = (int)VertexUsage::TexCoord0;
-        if (attrib.first.compare("TEXCOORD_1") == 0)
-            vaa = (int)VertexUsage::TexCoord1;
-        if (attrib.first.compare("TEXCOORD_2") == 0)
-            vaa = (int)VertexUsage::TexCoord2;
-        if (vaa > -1) {
-            gl->glEnableVertexAttribArray(vaa);
-            gl->glVertexAttribPointer(vaa, size, accessor.componentType,
-                                      accessor.normalized ? GL_TRUE : GL_FALSE,
-                                      byteStride,
-                                      BUFFER_OFFSET(accessor.byteOffset));
-            attribs.append((VertexUsage)vaa);
-        }
-        else
-            std::cout << "vaa missing: " << attrib.first << std::endl;
-    }
-
-    vao->release();
-
-    Mesh* finalMesh = new Mesh;
-    finalMesh->vao = vao;
-    finalMesh->vbos = vbos;
-    finalMesh->attribs = attribs;
-
-    finalMesh->indexBuffer = vbos.at(indexAccessor.bufferView);
-    finalMesh->primitive = primitive;
-    finalMesh->indexAccessor = indexAccessor;
-    return finalMesh;
-}
-
-// https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/glTF-WebGL-PBR/mesh.js#L113
-// https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/master/source/Renderer/renderer.js
-void Viewer3D::renderGltfMesh(Mesh* mesh)
-{
-    // setup material
-    auto& mat = mesh->material;
-    auto& shader = mat->shader;
-    shader->bind();
-
-    QMatrix4x4 mvp;
-    mvp.setToIdentity();
-    mvp = projMatrix * viewMatrix * worldMatrix;
-
-    auto modelInverse = worldMatrix.inverted();
-    auto normalMatrix = modelInverse.transposed();
-
-    shader->setUniformValue("u_ViewProjectionMatrix", projMatrix * viewMatrix);
-    shader->setUniformValue("u_ModelMatrix", worldMatrix);
-    shader->setUniformValue("u_NormalMatrix", normalMatrix);
-    shader->setUniformValue("u_Exposure", 1.0f);
-    shader->setUniformValue("u_Camera", camPos);
-
-    // default mat props
-    shader->setUniformValue("u_BaseColorFactor", QVector4D(1, 1, 1, 1));
-    shader->setUniformValue("u_MetallicFactor", 0.f);
-    shader->setUniformValue("u_RoughnessFactor", 1.f);
-    shader->setUniformValue("u_EmissiveStrength", 1.f);
-    shader->setUniformValue("u_NormalScale", 1.0f);
-    shader->setUniformValue("u_BaseColorUVSet", 0);
-    shader->setUniformValue("u_NormalUVSet", 0);
-    shader->setUniformValue("u_EmissiveUVSet", 0);
-    shader->setUniformValue("u_MetallicRoughnessUVSet", 0);
-
-    // albedo
-    // mainProgram->setUniformValue("u_BaseColorFactor", mat->albedo);
-    shader->setUniformValue("u_BaseColorSampler", 0);
-    mat->albedoMap->bind(0);
-    // shader->setUniformValue("u_NormalSampler", 1);
-    // mat->normalMap->bind(1);
-    // shader->setUniformValue("u_MetallicRoughnessSampler", 2);
-    // mat->metalnessMap->bind(2);
-    // shader->setUniformValue("u_EmissiveSampler", 2);
-    // mat->emissiveMap->bind(3);
-
-    // pbr maps - they start at 8
-    // https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/master/source/Renderer/renderer.js#L732
-    shader->setUniformValue("u_LambertianEnvSampler", 8);
-    // iblSampler->lambertianTexture->bind(8);
-    gl->glActiveTexture(GL_TEXTURE0 + 8);
-    gl->glBindTexture(GL_TEXTURE_CUBE_MAP, iblSampler->lambertianTextureID);
-    shader->setUniformValue("u_GGXEnvSampler", 9);
-    // iblSampler->ggxTexture->bind(9);
-    gl->glActiveTexture(GL_TEXTURE0 + 9);
-    gl->glBindTexture(GL_TEXTURE_CUBE_MAP, iblSampler->ggxTextureID);
-    shader->setUniformValue("u_GGXLUT", 10);
-    // iblSampler->ggxLutTexture->bind(10);
-    gl->glActiveTexture(GL_TEXTURE0 + 10);
-    gl->glBindTexture(GL_TEXTURE_2D, iblSampler->ggxLutTextureID);
-    shader->setUniformValue("u_CharlieEnvSampler", 11);
-    // iblSampler->sheenTexture->bind(11);
-    gl->glActiveTexture(GL_TEXTURE0 + 11);
-    gl->glBindTexture(GL_TEXTURE_CUBE_MAP, iblSampler->sheenTextureID);
-    shader->setUniformValue("u_CharlieLUT", 12);
-    // iblSampler->charlieLutTexture->bind(12);
-    gl->glActiveTexture(GL_TEXTURE0 + 12);
-    gl->glBindTexture(GL_TEXTURE_2D, iblSampler->charlieLutTextureID);
-
-    shader->setUniformValue("u_MipCount", iblSampler->mipmapLevels);
-    QMatrix3x3 envRot;
-    envRot.setToIdentity();
-    shader->setUniformValue("u_EnvRotation", envRot);
-    shader->setUniformValue("u_EnvIntensity", 1.0f);
-
-    // render mesh
-    mesh->vao->bind();
-    tinygltf::Primitive primitive = mesh->primitive;
-    tinygltf::Accessor indexAccessor = mesh->indexAccessor;
-
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
-    mesh->indexBuffer->bind();
-
-    gl->glEnableVertexAttribArray((int)VertexUsage::Position);
-    gl->glEnableVertexAttribArray((int)VertexUsage::Normal);
-    gl->glEnableVertexAttribArray((int)VertexUsage::Tangent);
-    gl->glEnableVertexAttribArray((int)VertexUsage::TexCoord0);
-
-    glDrawElements(primitive.mode, indexAccessor.count,
-                   indexAccessor.componentType,
-                   BUFFER_OFFSET(indexAccessor.byteOffset));
-
-    mesh->vao->release();
-}
-
-bool loadGltfModel(tinygltf::Model& model, const QString& filename)
-{
-    QFile file(filename);
-    if (!file.open(QIODevice::ReadOnly)) {
-        qDebug() << "filenot opened \n";
-        return false;
-    }
-
-    auto text = file.readAll().toStdString();
-
-    tinygltf::TinyGLTF loader;
-    std::string err;
-    std::string warn;
-
-    bool res = loader.LoadASCIIFromString(&model, &err, &warn, text.c_str(),
-                                          text.length(), "");
-    // bool res = loader.LoadASCIIFromFile(&model, &err, &warn, text.c_str(),
-    //                                     text.length());
-    if (!warn.empty()) {
-        std::cout << "WARN: " << warn << std::endl;
-    }
-
-    if (!err.empty()) {
-        std::cout << "ERR: " << err << std::endl;
-    }
-
-    if (!res)
-        std::cout << "Failed to load glTF: " << filename.toStdString()
-                  << std::endl;
-    else
-        std::cout << "Loaded glTF: " << filename.toStdString() << std::endl;
-
-    return res;
-}
-
 Material* Viewer3D::loadMaterial()
 {
     auto mat = new Material();
@@ -672,11 +405,11 @@ Material* Viewer3D::loadMaterial()
     mat->shader = shader;
 
     // textures
-    // mat->albedoMap = loadTexture(":assets/brick.jpg");
-    mat->albedoMap = loadTexture(":assets/Default_albedo.jpg");
-    mat->normalMap = loadTexture(":assets/Default_normal.jpg");
-    mat->metalnessMap = loadTexture(":assets/Default_metalRoughness.jpg");
-    mat->emissiveMap = loadTexture(":assets/Default_emissive.jpg");
+    mat->albedoMap = loadTexture(":assets/brick.jpg");
+    // mat->albedoMap = loadTexture(":assets/Default_albedo.jpg");
+    // mat->normalMap = loadTexture(":assets/Default_normal.jpg");
+    // mat->metalnessMap = loadTexture(":assets/Default_metalRoughness.jpg");
+    // mat->emissiveMap = loadTexture(":assets/Default_emissive.jpg");
 
     return mat;
 }

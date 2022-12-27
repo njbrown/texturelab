@@ -24,26 +24,8 @@ class Mesh;
 class ShaderCache;
 
 class IblSampler;
-
-struct Material {
-    QOpenGLShaderProgram* shader = nullptr;
-
-    QOpenGLTexture* albedoMap = nullptr;
-    QOpenGLTexture* normalMap = nullptr;
-    QOpenGLTexture* metalnessMap = nullptr;
-    QOpenGLTexture* roughnessMap = nullptr;
-    QOpenGLTexture* heightMap = nullptr;
-    QOpenGLTexture* aoMap = nullptr;
-    QOpenGLTexture* emissiveMap = nullptr;
-    QOpenGLTexture* alphaMap = nullptr;
-
-    QVector3D albedo = QVector3D(1, 1, 1);
-    float normalIntensity = 1.0;
-    float roughness = 1.0;
-    float heightScale = 1.0;
-    float alpha = 1.0;
-    QVector3D emission = QVector3D(1, 1, 1);
-};
+class Material;
+class Renderer;
 
 class Viewer3D : public QOpenGLWidget {
     QOpenGLTexture* texture = nullptr;
@@ -51,6 +33,8 @@ class Viewer3D : public QOpenGLWidget {
     QOpenGLBuffer* mesh = nullptr;
     QOpenGLVertexArrayObject* vao = nullptr;
 
+    Renderer* renderer;
+    Material* material;
     Mesh* gltfMesh;
 
     QOpenGLFunctions* gl = nullptr;

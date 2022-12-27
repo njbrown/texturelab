@@ -15,11 +15,16 @@ set(SRCS
     viewer3d.cpp
     iblsampler.cpp
     shadercache.cpp
+    gltf/gltf.cpp
+    geometry/sphere.cpp
+    renderer/renderer.cpp
 )
 set(HEADERS
     viewer3d.h
     iblsampler.h
     shadercache.h
+    geometry/geometry.h
+    renderer/renderer.h
     gltf/json.hpp
     gltf/tiny_gltf.h
     gltf/stb_image.h
