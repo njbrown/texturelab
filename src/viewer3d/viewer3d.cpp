@@ -104,7 +104,9 @@ void Viewer3D::paintGL()
 {
     buildView();
 
-    gl->glViewport(0, 0, this->width(), this->height());
+    // this is already done by QOpenGLWidget
+    // also, the supplied width and height are incorrect
+    // gl->glViewport(0, 0, this->width(), this->height());
     gl->glClearDepthf(1.0);
     gl->glClearColor(0.1, 0.1, 0.1, 1);
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

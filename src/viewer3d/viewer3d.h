@@ -91,13 +91,19 @@ public:
 
     // public functions exposed to main app
     void setAlbedoTexture(GLuint texId);
+    void clearAlbedoTexture();
     void setNormalTexture(GLuint texId);
+    void clearNormalTexture();
     void setMetalnessTexture(GLuint texId);
+    void clearMetalnessTexture();
     void setRoughnessTexture(GLuint texId);
-    void setAlphaTexture(GLuint texId);
-    void setAoTexture(GLuint texId);
-    void setEmissiveTexture(GLuint texId);
-    void setHeightTexture(GLuint texId);
+    void clearRoughnessTexture();
+    void resetMaterial();
+
+    // void setAlphaTexture(GLuint texId);
+    // void setAoTexture(GLuint texId);
+    // void setEmissiveTexture(GLuint texId);
+    // void setHeightTexture(GLuint texId);
 
     void resetTextures();
     void resetCamera();
