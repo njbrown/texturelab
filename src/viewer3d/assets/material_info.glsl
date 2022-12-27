@@ -224,6 +224,17 @@ MaterialInfo getMetallicRoughnessInfo(MaterialInfo info)
     info.metallic *= mrSample.b;
 #endif
 
+// split maps into separate textures (use same UV for them for now)
+#ifdef HAS_ROUGHNESS_MAP
+    vec4 rSample = texture(u_RoughnessSampler, getRoughnessUV());
+    info.perceptualRoughness *= rSample.r;
+#endif
+
+#ifdef HAS_METALNESS_MAP
+    vec4 mSample = texture(u_MetalnessSampler, getMetalnessUV());
+    info.metallic *= mSample.r;
+#endif
+
     // Achromatic f0 based on IOR.
     info.c_diff = mix(info.baseColor.rgb,  vec3(0), info.metallic);
     info.f0 = mix(info.f0, info.baseColor.rgb, info.metallic);

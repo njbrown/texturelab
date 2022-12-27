@@ -83,6 +83,14 @@ uniform sampler2D u_MetallicRoughnessSampler;
 uniform int u_MetallicRoughnessUVSet;
 uniform mat3 u_MetallicRoughnessUVTransform;
 
+uniform sampler2D u_MetalnessSampler;
+uniform int u_MetalnessUVSet;
+uniform mat3 u_MetalnessUVTransform;
+
+uniform sampler2D u_RoughnessSampler;
+uniform int u_RoughnessUVSet;
+uniform mat3 u_RoughnessUVTransform;
+
 vec2 getBaseColorUV()
 {
     vec3 uv = vec3(u_BaseColorUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);
@@ -100,6 +108,28 @@ vec2 getMetallicRoughnessUV()
 
 #ifdef HAS_METALLICROUGHNESS_UV_TRANSFORM
     uv = u_MetallicRoughnessUVTransform * uv;
+#endif
+
+    return uv.xy;
+}
+
+vec2 getMetalnessUV()
+{
+    vec3 uv = vec3(u_MetalnessUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);
+
+#ifdef HAS_METALNESS_UV_TRANSFORM
+    uv = u_MetalnessUVTransform * uv;
+#endif
+
+    return uv.xy;
+}
+
+vec2 getRoughnessUV()
+{
+    vec3 uv = vec3(u_RoughnessUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);
+
+#ifdef HAS_ROUGHNESS_UV_TRANSFORM
+    uv = u_RoughnessUVTransform * uv;
 #endif
 
     return uv.xy;
