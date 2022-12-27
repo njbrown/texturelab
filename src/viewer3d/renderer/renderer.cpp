@@ -211,12 +211,14 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
 
     // default mat props
     shader->setUniformValue("u_BaseColorFactor", QVector4D(1, 1, 1, 1));
-    shader->setUniformValue("u_MetallicFactor", 0.f);
-    shader->setUniformValue("u_RoughnessFactor", 1.f);
-    shader->setUniformValue("u_EmissiveStrength", 1.f);
+    shader->setUniformValue("u_MetallicFactor", 1.f);
+    shader->setUniformValue("u_RoughnessFactor", 0.f);
+    shader->setUniformValue("u_EmissiveStrength", 0.f);
     shader->setUniformValue("u_NormalScale", 1.0f);
     shader->setUniformValue("u_BaseColorUVSet", 0);
     shader->setUniformValue("u_NormalUVSet", 0);
+    shader->setUniformValue("u_MetalnessUVSet", 0);
+    shader->setUniformValue("u_RoughnessUVSet", 0);
     shader->setUniformValue("u_EmissiveUVSet", 0);
     shader->setUniformValue("u_MetallicRoughnessUVSet", 0);
 
@@ -226,10 +228,10 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
     mat->albedoMap->bind(0);
     // shader->setUniformValue("u_NormalSampler", 1);
     // mat->normalMap->bind(1);
-    // shader->setUniformValue("u_MetallicRoughnessSampler", 2);
+    // shader->setUniformValue("u_MetalnessSampler", 2);
     // mat->metalnessMap->bind(2);
-    // shader->setUniformValue("u_EmissiveSampler", 2);
-    // mat->emissiveMap->bind(3);
+    // shader->setUniformValue("u_RoughnessSampler", 3);
+    // mat->roughnessMap->bind(3);
 
     // pbr maps - they start at 8
     // https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/master/source/Renderer/renderer.js#L732

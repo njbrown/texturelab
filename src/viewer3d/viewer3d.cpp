@@ -342,6 +342,8 @@ Material* Viewer3D::loadMaterial()
     flags << "HAS_TEXCOORD_0_VEC2 1";
     flags << "HAS_BASE_COLOR_MAP 1";
     // flags << "HAS_NORMAL_MAP 1";
+    // flags << "HAS_ROUGHNESS_MAP 1";
+    // flags << "HAS_METALNESS_MAP 1";
     // flags << "HAS_METALLIC_ROUGHNESS_MAP 1";
     // flags << "HAS_EMISSIVE_MAP 1";
     flags << "MATERIAL_METALLICROUGHNESS 1"; // MR mode
@@ -376,10 +378,10 @@ Material* Viewer3D::loadMaterial()
 
     // textures
     mat->albedoMap = loadTexture(":assets/brick.jpg");
-    // mat->albedoMap = loadTexture(":assets/Default_albedo.jpg");
-    // mat->normalMap = loadTexture(":assets/Default_normal.jpg");
-    // mat->metalnessMap = loadTexture(":assets/Default_metalRoughness.jpg");
-    // mat->emissiveMap = loadTexture(":assets/Default_emissive.jpg");
+    // mat->albedoMap = loadTexture(":assets/albedo.jpg");
+    // mat->normalMap = loadTexture(":assets/normal.jpg");
+    // mat->metalnessMap = loadTexture(":assets/metalness.jpg");
+    // mat->roughnessMap = loadTexture(":assets/roughness.jpg");
 
     return mat;
 }
