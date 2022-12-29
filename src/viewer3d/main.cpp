@@ -33,6 +33,10 @@ int main(int argc, char* argv[])
 
     auto viewer = new Viewer3D();
 
+    // use viewer as you would in texturlab project
+    // auto albedoId = loadTexture();
+    // viewer->setAlbedoTexture(albedoId);
+
     w.setCentralWidget(viewer);
     w.resize(800, 600);
 

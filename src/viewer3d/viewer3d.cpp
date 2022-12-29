@@ -112,7 +112,6 @@ void Viewer3D::paintGL()
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     gl->glEnable(GL_DEPTH_TEST);
-    // gl->glEnable(GL_DEPTH_TEST);
     // gl->glDisable(GL_CULL_FACE);
 
     vao->bind();
@@ -120,6 +119,8 @@ void Viewer3D::paintGL()
     // render gltf mesh
     renderer->renderGltfMesh(gltfMesh, material, camPos, worldMatrix,
                              viewMatrix, projMatrix);
+
+    vao->bind();
 }
 
 void Viewer3D::resizeGL(int w, int h)
@@ -379,7 +380,8 @@ Material* Viewer3D::loadMaterial()
     mat->shader = shader;
 
     // textures
-    mat->albedoMap = loadTexture(":assets/brick.jpg");
+    // mat->albedoMapId = loadTextureId(":assets/brick.jpg");
+    // mat->albedoMap = loadTexture(":assets/brick.jpg");
     // mat->albedoMap = loadTexture(":assets/albedo.jpg");
     // mat->normalMap = loadTexture(":assets/normal.jpg");
     // mat->metalnessMap = loadTexture(":assets/metalness.jpg");
@@ -398,6 +400,20 @@ QOpenGLTexture* Viewer3D::loadTexture(const QString& path)
     return tex;
 }
 
-// void Viewer3D::renderMesh(Mesh* mesh) {
+GLuint Viewer3D::loadTextureId(const QString& path)
+{
+    QImage image(path);
+    auto tex = new QOpenGLTexture(image);
+    tex->setMinMagFilters(QOpenGLTexture::LinearMipMapLinear,
+                          QOpenGLTexture::Linear);
+    tex->generateMipMaps();
 
-// }
+    return tex->textureId();
+}
+
+void Viewer3D::setAlbedoTexture(GLuint texId)
+{
+    this->material->albedoMapId = texId;
+}
+
+void Viewer3D::clearAlbedoTexture() { this->material->albedoMapId = 0; }

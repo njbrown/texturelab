@@ -53,7 +53,7 @@ class Viewer3D : public QOpenGLWidget {
     // QVector3D m_target = {0, 0, -1};
 
     // trackball params
-    float zoom = 5;
+    float zoom = 7;
     float zoomSpeed = 0.3f;
     QPoint prevPos;
     QVector3D center = {0, 0, 0};
@@ -83,6 +83,7 @@ protected:
 
     Material* loadMaterial();
     QOpenGLTexture* loadTexture(const QString& path);
+    GLuint loadTextureId(const QString& path);
     // void renderMesh(Mesh* mesh);
     void renderGltfMesh(Mesh* mesh);
 

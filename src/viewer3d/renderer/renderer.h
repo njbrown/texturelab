@@ -16,6 +16,8 @@ class QOpenGLShaderProgram;
 class IblSampler;
 class ShaderCache;
 
+typedef unsigned int GLuint;
+
 enum class VertexUsage : int {
     Position = 0,
     Color = 1,
@@ -52,31 +54,35 @@ public:
     // determines how to render (for now)
     // in the future, all meshes should be rendered the same
     MeshType meshType;
-
-    // MeshPrivate* priv = nullptr;
 };
 
 struct Material {
     QOpenGLShaderProgram* shader = nullptr;
 
-    QOpenGLTexture* albedoMap = nullptr;
-    QOpenGLTexture* normalMap = nullptr;
-    QOpenGLTexture* metalnessMap = nullptr;
-    QOpenGLTexture* roughnessMap = nullptr;
-    QOpenGLTexture* heightMap = nullptr;
-    QOpenGLTexture* aoMap = nullptr;
-    QOpenGLTexture* emissiveMap = nullptr;
-    QOpenGLTexture* alphaMap = nullptr;
+    GLuint albedoMapId = 0;
+    GLuint normalMapId = 0;
+    GLuint metalnessMapId = 0;
+    GLuint roughnessMapId = 0;
 
-    QVector3D albedo = QVector3D(1, 1, 1);
+    // QOpenGLTexture* albedoMap = nullptr;
+    // QOpenGLTexture* normalMap = nullptr;
+    // QOpenGLTexture* metalnessMap = nullptr;
+    // QOpenGLTexture* roughnessMap = nullptr;
+    // QOpenGLTexture* heightMap = nullptr;
+    // QOpenGLTexture* aoMap = nullptr;
+    // QOpenGLTexture* emissiveMap = nullptr;
+    // QOpenGLTexture* alphaMap = nullptr;
+
+    QVector4D albedo = QVector4D(1, 1, 1, 1);
+    float metalness = 0.0;
     float normalIntensity = 1.0;
-    float roughness = 1.0;
+    float roughness = 0.9;
     float heightScale = 1.0;
     float alpha = 1.0;
     QVector3D emission = QVector3D(1, 1, 1);
 
     QStringList flags;
-    bool needsUpdate = false;
+    bool needsUpdate = true;
 };
 
 class Renderer {

@@ -60,7 +60,73 @@ void Renderer::loadEnvironment(const QString& path)
 
 void Renderer::renderMesh(Mesh* mesh, Material* material) {}
 
-void Renderer::updateMaterial(Material* material) {}
+void Renderer::updateMaterial(Material* material)
+{
+    if (material->shader) {
+        material->shader->deleteLater();
+    }
+
+    // flags
+    QStringList flags;
+
+    // the default
+    // todo: make this dynamic instead of using flags
+    flags << "USE_IBL 1";
+
+    // determine attribs from mesh
+    flags << "HAS_NORMAL_VEC3 1";
+    flags << "HAS_TEXCOORD_0_VEC2 1";
+    // flags << "HAS_TANGENT_VEC4 1";
+
+    flags << "DEBUG_NONE 1"; // IMPORTANT!! caused many headaches..
+    flags << "DEBUG DEBUG_NONE";
+
+    if (material->albedoMapId != 0)
+        flags << "HAS_BASE_COLOR_MAP 1";
+    if (material->normalMapId != 0)
+        flags << "HAS_NORMAL_MAP 1";
+    if (material->metalnessMapId != 0)
+        flags << "HAS_METALNESS_MAP 1";
+    if (material->roughnessMapId != 0)
+        flags << "HAS_ROUGHNESS_MAP 1";
+    // flags << "HAS_NORMAL_MAP 1";
+    // flags << "HAS_ROUGHNESS_MAP 1";
+    // flags << "HAS_METALNESS_MAP 1";
+    // flags << "HAS_METALLIC_ROUGHNESS_MAP 1";
+    // flags << "HAS_EMISSIVE_MAP 1";
+    flags << "MATERIAL_METALLICROUGHNESS 1"; // MR mode
+
+    // blending
+    flags << "ALPHAMODE_OPAQUE 0";
+    flags << "ALPHAMODE_MASK 1";
+    flags << "ALPHAMODE_BLEND 2";
+    flags << "ALPHAMODE ALPHAMODE_OPAQUE";
+
+    // tone mapping
+    flags << "TONEMAP_ACES_NARKOWICZ 1";
+
+    // build shader
+    auto vertShader =
+        shaderCache->generateShaderSource("primitive.vert", flags);
+    auto fragShader = shaderCache->generateShaderSource("pbr.frag", flags);
+
+    auto shader = new QOpenGLShaderProgram;
+    shader->bind();
+    shader->addShaderFromSourceCode(QOpenGLShader::Vertex, vertShader);
+    shader->addShaderFromSourceCode(QOpenGLShader::Fragment, fragShader);
+
+    shader->bindAttributeLocation("a_position", (int)VertexUsage::Position);
+    shader->bindAttributeLocation("a_normal", (int)VertexUsage::Normal);
+    shader->bindAttributeLocation("a_tangent", (int)VertexUsage::Tangent);
+    shader->bindAttributeLocation("a_color_0", (int)VertexUsage::Color);
+    shader->bindAttributeLocation("a_texcoord_0", (int)VertexUsage::TexCoord0);
+    shader->bindAttributeLocation("a_texcoord_1", (int)VertexUsage::TexCoord1);
+
+    shader->link();
+
+    material->shader = shader;
+    material->needsUpdate = false;
+}
 
 #define BUFFER_OFFSET(i) ((char*)NULL + (i))
 bool loadGltfModel(tinygltf::Model& model, const QString& filename);
@@ -108,19 +174,6 @@ Mesh* loadMeshFromRc(const QString& path)
         vbo->release();
 
         vbos[i] = vbo;
-
-        // GLuint vbo;
-        // glGenBuffers(1, &vbo);
-        // vbos[i] = vbo;
-        // glBindBuffer(bufferView.target, vbo);
-
-        // std::cout << "buffer.data.size = " << buffer.data.size()
-        //           << ", bufferview.byteOffset = " << bufferView.byteOffset
-        //           << std::endl;
-
-        // glBufferData(bufferView.target, bufferView.byteLength,
-        //              &buffer.data.at(0) + bufferView.byteOffset,
-        //              GL_STATIC_DRAW);
     }
 
     tinygltf::Primitive primitive = mesh.primitives[0];
@@ -192,8 +245,12 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
                               const QMatrix4x4& projMatrix)
 {
     // setup material
-    auto& mat = material;
-    auto& shader = mat->shader;
+    auto mat = material;
+    if (mat->needsUpdate) {
+        this->updateMaterial(mat);
+    }
+
+    auto shader = mat->shader;
     shader->bind();
 
     QMatrix4x4 mvp;
@@ -210,11 +267,12 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
     shader->setUniformValue("u_Camera", camPos);
 
     // default mat props
-    shader->setUniformValue("u_BaseColorFactor", QVector4D(1, 1, 1, 1));
-    shader->setUniformValue("u_MetallicFactor", 1.f);
-    shader->setUniformValue("u_RoughnessFactor", 0.f);
+    shader->setUniformValue("u_BaseColorFactor", material->albedo);
+    shader->setUniformValue("u_MetallicFactor", material->metalness);
+    shader->setUniformValue("u_RoughnessFactor", material->roughness);
     shader->setUniformValue("u_EmissiveStrength", 0.f);
-    shader->setUniformValue("u_NormalScale", 1.0f);
+    shader->setUniformValue("u_NormalScale", material->normalIntensity);
+    // uv sets
     shader->setUniformValue("u_BaseColorUVSet", 0);
     shader->setUniformValue("u_NormalUVSet", 0);
     shader->setUniformValue("u_MetalnessUVSet", 0);
@@ -222,10 +280,16 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
     shader->setUniformValue("u_EmissiveUVSet", 0);
     shader->setUniformValue("u_MetallicRoughnessUVSet", 0);
 
+    if (mat->albedoMapId != 0) {
+        shader->setUniformValue("u_BaseColorSampler", 0);
+        gl->glActiveTexture(GL_TEXTURE0);
+        gl->glBindTexture(GL_TEXTURE_2D, mat->albedoMapId);
+    }
+
     // albedo
     // mainProgram->setUniformValue("u_BaseColorFactor", mat->albedo);
-    shader->setUniformValue("u_BaseColorSampler", 0);
-    mat->albedoMap->bind(0);
+    // shader->setUniformValue("u_BaseColorSampler", 0);
+    // mat->albedoMap->bind(0);
     // shader->setUniformValue("u_NormalSampler", 1);
     // mat->normalMap->bind(1);
     // shader->setUniformValue("u_MetalnessSampler", 2);
@@ -257,6 +321,7 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
     gl->glBindTexture(GL_TEXTURE_2D, iblSampler->charlieLutTextureID);
 
     shader->setUniformValue("u_MipCount", iblSampler->mipmapLevels);
+
     QMatrix3x3 envRot;
     envRot.setToIdentity();
     shader->setUniformValue("u_EnvRotation", envRot);
