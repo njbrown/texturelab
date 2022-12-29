@@ -65,11 +65,13 @@ target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
                                          Qt${QT_VERSION_MAJOR}::OpenGL 
                                          Qt${QT_VERSION_MAJOR}::OpenGLWidgets 
                                          qtadvanceddocking 
-                                         nodegraph)
+                                         nodegraph
+                                         viewer3d)
                                          
 target_include_directories(texturelab PUBLIC
                             ../ads/src
                             ../nodegraph
+                            ../viewer3d
                             )
 
 set_target_properties(texturelab PROPERTIES

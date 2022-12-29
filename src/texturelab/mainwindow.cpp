@@ -15,6 +15,9 @@
 #include "widgets/librarywidget.h"
 #include "widgets/properties/propertieswidget.h"
 #include "widgets/view2dwidget.h"
+#include "widgets/view3dwidget.h"
+
+#include "viewer3d.h"
 
 #include "models.h"
 #include "project.h"
@@ -64,6 +67,31 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
                 }
 
                 this->view2DWidget->reRenderNode();
+                this->view3DWidget->reRender();
+            });
+
+    connect(this->propWidget, &PropertiesWidget::textureChannelUpdated,
+            [this](const TextureChannel& name, const TextureNodePtr& node) {
+                if (this->renderer && !!this->project) {
+                    this->renderer->update();
+                }
+
+                if (!!this->project) {
+                    if (name == TextureChannel::None) {
+                        // todo: clear channel
+                    }
+                    else {
+
+                        this->project->textureChannels[name] = node->id;
+                    }
+
+                    // assign channel to viewer
+                    // do this crudely by just reassigning all node textures
+                    this->passTextureChannelsToViewer3D();
+                }
+
+                // this->view3DWidget->update();
+                this->view3DWidget->reRender();
             });
 
     // set default empty project
@@ -73,6 +101,26 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     // test texture rendering
     //     auto renderer = new TextureRenderer();
     //     renderer->testRendering();
+}
+
+void MainWindow::passTextureChannelsToViewer3D()
+{
+    auto viewer = this->view3DWidget->viewer;
+    viewer->clearTextures();
+
+    for (auto channel : this->project->textureChannels.keys()) {
+        auto nodeId = this->project->textureChannels[channel];
+
+        auto node = this->project->getNodeById(nodeId);
+        if (!node)
+            continue;
+
+        switch (channel) {
+        case TextureChannel::Albedo:
+            viewer->setAlbedoTexture(node->textureId());
+            break;
+        }
+    }
 }
 
 void MainWindow::setProject(TextureProjectPtr project)
@@ -169,6 +217,8 @@ void MainWindow::setupDocks()
     // graph goes in the center
     this->graphWidget = new GraphWidget();
     this->view2DWidget = new View2DWidget();
+    this->view3DWidget = new View3DWidget();
+
     auto graphArea =
         addDock("Graph", ads::CenterDockWidgetArea, graphWidget, nullptr);
     auto leftArea = addDock("2D View", ads::LeftDockWidgetArea,
@@ -181,7 +231,7 @@ void MainWindow::setupDocks()
     this->libraryWidget = new LibraryWidget();
     setWidgetRatiosInArea(graphArea, {1.0f / 5, 3.0f / 5, 1.0f / 5});
 
-    addDock("3D View", ads::BottomDockWidgetArea, new QWidget(this), leftArea);
+    addDock("3D View", ads::BottomDockWidgetArea, this->view3DWidget, leftArea);
     addDock("Library", ads::BottomDockWidgetArea, this->libraryWidget,
             rightArea);
     setWidgetRatiosInArea(leftArea, {0.5f, 0.5f});

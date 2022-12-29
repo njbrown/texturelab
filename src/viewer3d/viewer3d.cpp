@@ -37,7 +37,11 @@ Viewer3D::Viewer3D() : QOpenGLWidget()
     // context->setFormat(QSurfaceFormat::defaultFormat());
     // context->create();
     // this->setContext(context);
+
+    Q_INIT_RESOURCE(viewerassets);
 }
+
+void Viewer3D::reRender() { this->update(); }
 
 void Viewer3D::initializeGL()
 {
@@ -414,6 +418,13 @@ GLuint Viewer3D::loadTextureId(const QString& path)
 void Viewer3D::setAlbedoTexture(GLuint texId)
 {
     this->material->albedoMapId = texId;
+    this->material->needsUpdate = true;
 }
 
-void Viewer3D::clearAlbedoTexture() { this->material->albedoMapId = 0; }
+void Viewer3D::clearAlbedoTexture()
+{
+    this->material->albedoMapId = 0;
+    this->material->needsUpdate = true;
+}
+
+void Viewer3D::clearTextures() { this->clearAlbedoTexture(); }

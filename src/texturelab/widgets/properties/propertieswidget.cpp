@@ -9,6 +9,12 @@ PropertiesWidget::PropertiesWidget() : QWidget()
 {
     displayMode = PropertyDisplayMode::None;
 
+    textureChannelProp = new EnumProp();
+    textureChannelProp->displayName = "Texture Channel";
+    textureChannelProp->values = {"None",      "Albedo", "Normal", "Metalness",
+                                  "Roughness", "Height", "Alpha"};
+    textureChannelProp->setValue(0);
+
     auto layout = new QVBoxLayout(this);
     layout->addStretch(1);
     this->setLayout(layout);
@@ -17,11 +23,15 @@ PropertiesWidget::PropertiesWidget() : QWidget()
 void PropertiesWidget::setSelectedNode(const TextureNodePtr& node)
 {
     qDebug() << "Displaying properties for node: " << node->title;
+    this->selectedNode = node;
 
     // clear current properties
     this->clearSelection();
 
     auto layout = (QVBoxLayout*)this->layout();
+
+    // add base props
+    this->addBasePropsToLayout();
 
     // add new props to layout
     for (auto prop : node->props) {
@@ -80,6 +90,36 @@ void PropertiesWidget::setSelectedNode(const TextureNodePtr& node)
     layout->addStretch(1);
 }
 
+void PropertiesWidget::addBasePropsToLayout()
+{
+    auto layout = (QVBoxLayout*)this->layout();
+
+    // texture channel
+    auto widget = new EnumPropWidget();
+
+    // determine value of prop
+    auto& channels = this->project->textureChannels;
+    int channelVal = 0;
+    for (auto key : channels.keys()) {
+        if (channels[key] == selectedNode->id) {
+            channelVal = (int)key;
+            break;
+        }
+    }
+    textureChannelProp->setValue(channelVal);
+
+    widget->setProp(textureChannelProp);
+    propWidgets.append(widget);
+
+    connect(widget, &EnumPropWidget::valueChanged, [=](int value) {
+        emit this->textureChannelUpdated((TextureChannel)value,
+                                         this->selectedNode);
+    });
+    layout->addWidget(widget);
+
+    // todo: random seed
+}
+
 void PropertiesWidget::clearSelection()
 {
     displayMode = PropertyDisplayMode::None;
@@ -92,9 +132,15 @@ void PropertiesWidget::clearSelection()
         widget->deleteLater();
     }
 
-    // remove all items
-    while (layout->count() > 0)
-        layout->removeItem(layout->itemAt(0));
+    // remove all other items (todo: delete them)
+    while (layout->count() > 0) {
+        auto item = layout->itemAt(0);
+        layout->removeItem(item);
+
+        auto widget = item->widget();
+        if (widget)
+            widget->deleteLater();
+    }
 
     propWidgets.clear();
 }

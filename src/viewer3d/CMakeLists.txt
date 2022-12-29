@@ -31,10 +31,10 @@ set(HEADERS
 )
 
 set(RESOURCES
-    ./assets.qrc)
+    ./viewerassets.qrc)
 
 # library
-add_library(viewer3d STATIC ${SRCS} ${HEADERS})
+add_library(viewer3d STATIC ${SRCS} ${HEADERS} ${RESOURCES})
 target_link_libraries(viewer3d PRIVATE Qt${QT_VERSION_MAJOR}::Core 
                                         Qt${QT_VERSION_MAJOR}::Gui 
                                         Qt${QT_VERSION_MAJOR}::OpenGLWidgets 

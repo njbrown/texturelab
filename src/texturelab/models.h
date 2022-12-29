@@ -35,6 +35,16 @@ class ImageProp;
 
 enum class PackageFileType { Texture, Image };
 
+enum class TextureChannel : int {
+    None = 0,
+    Albedo = 1,
+    Normal = 2,
+    Metalness = 3,
+    Roughness = 4,
+    Height = 5,
+    Alpha = 6
+};
+
 class ProjectFile {
 public:
     QByteArray contents();
@@ -45,6 +55,9 @@ public:
     int randomSeed;
     int textureWidth = 1024;
     int textureHeight = 1024;
+
+    // texturechannel:nodeid
+    QMap<TextureChannel, QString> textureChannels;
 
     Library* library = nullptr;
 
@@ -112,6 +125,8 @@ public:
     {
         return texture != nullptr && shader != nullptr;
     }
+
+    unsigned int textureId();
 
     // add prop functions
     IntProp* addIntProp(const QString& name, const QString& displayName,

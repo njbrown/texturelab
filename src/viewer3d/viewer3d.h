@@ -90,6 +90,8 @@ protected:
 public:
     Viewer3D();
 
+    void reRender();
+
     // public functions exposed to main app
     void setAlbedoTexture(GLuint texId);
     void clearAlbedoTexture();
@@ -106,7 +108,7 @@ public:
     // void setEmissiveTexture(GLuint texId);
     // void setHeightTexture(GLuint texId);
 
-    void resetTextures();
+    void clearTextures();
     void resetCamera();
     void loadEnvironment(const QString path);
 };

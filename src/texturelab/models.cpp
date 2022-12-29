@@ -1,6 +1,7 @@
 #include "models.h"
 #include "libraries/library.h"
 #include "props.h"
+#include <QOpenGLFramebufferObject>
 #include <QQueue>
 
 TextureNodePtr TextureProject::getNodeById(const QString& id)
@@ -139,6 +140,8 @@ void TextureNode::setProp(QString propName, QVariant value)
         this->isDirty = true;
     }
 }
+
+unsigned int TextureNode::textureId() { return this->texture->texture(); }
 
 IntProp* TextureNode::addIntProp(const QString& name,
                                  const QString& displayName, int defaultVal,

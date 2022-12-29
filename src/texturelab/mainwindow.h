@@ -33,6 +33,8 @@ protected:
     void openProject();
     void newProject();
 
+    void passTextureChannelsToViewer3D();
+
     void setProject(TextureProjectPtr project);
 
     ads::CDockAreaWidget* addDock(const QString& title,

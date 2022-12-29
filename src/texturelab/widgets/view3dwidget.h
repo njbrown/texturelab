@@ -1,9 +1,13 @@
 #pragma once
 
 #include <QFrame>
+#include <QMainWindow>
 
-class View3DWidget : public QFrame
-{
+class Viewer3D;
+class View3DWidget : public QMainWindow {
 public:
     View3DWidget();
+    Viewer3D* viewer;
+
+    void reRender();
 };
