@@ -330,6 +330,12 @@ void TextureRenderer::initializeNodeGraphicsResources(
         qFatal("FBO could not be created");
     }
 
+    // make texture wrap
+    gl->glBindTexture(GL_TEXTURE_2D, node->textureId());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    gl->glBindTexture(GL_TEXTURE_2D, 0);
+
     // build and compile shaders
     node->shader = buildShaderForNode(node);
     ctx->doneCurrent();
