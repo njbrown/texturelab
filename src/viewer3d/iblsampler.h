@@ -18,7 +18,7 @@ public:
     QOpenGLFunctions* gl;
 
     int textureSize = 256;
-    int ggxSampleCount = 1024;
+    int ggxSampleCount = 1024 * 4;
     int lambertianSampleCount = 2048;
     int sheenSamplCount = 64;
     float lodBias = 0.0;

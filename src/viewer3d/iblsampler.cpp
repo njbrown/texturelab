@@ -180,10 +180,11 @@ void IblSampler::loadPanorama(const QString& path)
         &height, &numComponents, 3);
     QOpenGLTexture* text = new QOpenGLTexture(QOpenGLTexture::Target2D);
     text->setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear);
+    text->setWrapMode(QOpenGLTexture::MirroredRepeat);
     text->create();
 
     // given some `width`, `height` and `data_ptr`
-    text->setSize(width, height, 3);
+    text->setSize(width, height, 1);
     text->setFormat(QOpenGLTexture::RGB32F);
     text->allocateStorage();
     text->setData(QOpenGLTexture::RGB, QOpenGLTexture::Float32, textureData);
@@ -245,8 +246,8 @@ GLuint IblSampler::createCubemap(bool withMipmaps)
     gl->glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
 
     for (unsigned int i = 0; i < 6; ++i) {
-        gl->glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F,
-                         textureSize, textureSize, 0, GL_RGB, GL_FLOAT,
+        gl->glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB32F,
+                         textureSize, textureSize, 0, GL_RGBA, GL_FLOAT,
                          nullptr);
     }
     gl->glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S,
@@ -276,7 +277,7 @@ GLuint IblSampler::createLut()
     gl->glGenTextures(1, &tex);
     gl->glBindTexture(GL_TEXTURE_2D, tex);
 
-    gl->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, lutResolution, lutResolution,
+    gl->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, lutResolution, lutResolution,
                      0, GL_RGBA, GL_FLOAT, nullptr);
 
     gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -389,7 +390,7 @@ void IblSampler::applyFilter(int distribution, float roughness,
                                    targetTexture, targetMipLevel);
 
         gl->glViewport(0, 0, currentTextureSize, currentTextureSize);
-        gl->glClearColor(0, 0, 0, 1);
+        gl->glClearColor(1, 0, 0, 0);
         gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader->bind();
@@ -435,7 +436,7 @@ void IblSampler::cubeMapToGGX()
 {
     for (int currentMipLevel = 0; currentMipLevel <= this->mipmapLevels;
          ++currentMipLevel) {
-        auto roughness = (currentMipLevel) / (this->mipmapLevels - 1);
+        auto roughness = ((float)currentMipLevel) / (this->mipmapLevels - 1);
         this->applyFilter(1, roughness, currentMipLevel, this->ggxTextureID,
                           this->ggxSampleCount);
     }

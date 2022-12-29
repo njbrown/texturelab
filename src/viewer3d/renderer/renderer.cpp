@@ -103,7 +103,7 @@ void Renderer::updateMaterial(Material* material)
     flags << "ALPHAMODE ALPHAMODE_OPAQUE";
 
     // tone mapping
-    flags << "TONEMAP_ACES_NARKOWICZ 1";
+    // flags << "TONEMAP_ACES_NARKOWICZ 1";
 
     // build shader
     auto vertShader =

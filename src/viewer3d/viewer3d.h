@@ -36,6 +36,7 @@ class Viewer3D : public QOpenGLWidget {
     Renderer* renderer;
     Material* material;
     Mesh* gltfMesh;
+    QString defaultEnvPath;
 
     QOpenGLFunctions* gl = nullptr;
 
@@ -111,4 +112,7 @@ public:
     void clearTextures();
     void resetCamera();
     void loadEnvironment(const QString path);
+
+    // sets env to use on load
+    void setDefaultEnvironment(const QString path);
 };

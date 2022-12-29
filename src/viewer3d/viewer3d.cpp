@@ -80,6 +80,8 @@ void Viewer3D::initializeGL()
 
     // mesh = loadMesh();
     auto mat = this->loadMaterial();
+    mat->roughness = 1.0;
+    mat->metalness = 0.0;
     // gltfMesh = loadMeshFromRc(":assets/cube.gltf");
     gltfMesh = createSphere(this->gl, 2, 64, 64);
     this->material = mat;
@@ -101,7 +103,15 @@ void Viewer3D::initializeGL()
 
     renderer = new Renderer();
     renderer->init(this->gl);
-    renderer->loadEnvironment(":assets/panorama.hdr");
+    if (!defaultEnvPath.isEmpty())
+        renderer->loadEnvironment(defaultEnvPath);
+    else
+        renderer->loadEnvironment(":assets/panorama.hdr");
+}
+
+void Viewer3D::setDefaultEnvironment(const QString path)
+{
+    this->defaultEnvPath = path;
 }
 
 void Viewer3D::paintGL()
@@ -359,7 +369,7 @@ Material* Viewer3D::loadMaterial()
     flags << "ALPHAMODE_MASK 1";
     flags << "ALPHAMODE_BLEND 2";
     flags << "ALPHAMODE ALPHAMODE_OPAQUE";
-    flags << "TONEMAP_ACES_NARKOWICZ 1";
+    // flags << "TONEMAP_ACES_NARKOWICZ 1";
     // flags << "TONEMAP_ACES_HILL_EXPOSURE_BOOST 1";
 
     auto vertShader =
