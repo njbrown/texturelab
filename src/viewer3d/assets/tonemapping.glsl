@@ -3,8 +3,8 @@ uniform float u_Exposure;
 
 // NOTE: I suspect Qt applies gamma to its FBOs
 // so i'm removing gamma correction here
-// const float GAMMA = 2.2;
-const float GAMMA = 1.0;
+const float GAMMA = 2.2;
+// const float GAMMA = 1.0;
 const float INV_GAMMA = 1.0 / GAMMA;
 
 
