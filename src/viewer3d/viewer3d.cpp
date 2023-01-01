@@ -80,6 +80,7 @@ void Viewer3D::initializeGL()
 
     // mesh = loadMesh();
     auto mat = this->loadMaterial();
+    // mat->albedo = QVector4D(0.7, 0.7, 0.7, 1.0);
     mat->roughness = 1.0;
     mat->metalness = 0.0;
     // gltfMesh = loadMeshFromRc(":assets/cube.gltf");
@@ -133,6 +134,25 @@ void Viewer3D::paintGL()
     // render gltf mesh
     renderer->renderGltfMesh(gltfMesh, material, camPos, worldMatrix,
                              viewMatrix, projMatrix);
+
+    // test several in a row
+    // int totalSpheres = 6;
+    // float roughness = 0;
+    // float rinc = 1.0 / (totalSpheres - 1);
+    // float x = -8;
+    // material->metalness = 1;
+    // material->roughness = 0;
+    // for (int i = 0; i < totalSpheres; i++) {
+
+    //     worldMatrix.setColumn(3, QVector4D(x, 0, 0, 1));
+    //     x += 3;
+
+    //     material->roughness = roughness * roughness;
+    //     renderer->renderGltfMesh(gltfMesh, material, camPos, worldMatrix,
+    //                              viewMatrix, projMatrix);
+
+    //     roughness += rinc;
+    // }
 
     vao->bind();
 }
