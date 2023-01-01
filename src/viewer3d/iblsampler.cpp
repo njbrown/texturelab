@@ -61,6 +61,10 @@ IblSampler::IblSampler()
 
 void IblSampler::init(const QString& panoramaPath)
 {
+    // THIS SOLVES THE ISSUE CAUSING BANDING TO SHOW
+    // AROUND BRIGHT AREAS NEAR SEEMS IN LAMBERTIAN CUBEMAP!!!
+    gl->glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
     mipmapLevels =
         std::floor(std::log2(this->textureSize)) + 1 - this->lowestMipLevel;
 
@@ -179,7 +183,8 @@ void IblSampler::loadPanorama(const QString& path)
         (unsigned char*)byteArray.constData(), byteArray.length(), &width,
         &height, &numComponents, 3);
     QOpenGLTexture* text = new QOpenGLTexture(QOpenGLTexture::Target2D);
-    text->setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear);
+    text->setMinMagFilters(QOpenGLTexture::LinearMipMapLinear,
+                           QOpenGLTexture::Linear);
     text->setWrapMode(QOpenGLTexture::MirroredRepeat);
     text->create();
 
@@ -300,14 +305,14 @@ void IblSampler::panoramaToCubemap()
     auto shader = createShader(vertSource, fragSource);
 
     // render each face
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 6; ++i) {
         gl->glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->handle());
         gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                    GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
                                    cubemapTextureID, 0);
 
         gl->glViewport(0, 0, textureSize, textureSize);
-        gl->glClearColor(0, 0, 0, 1);
+        gl->glClearColor(1.0, 0, 0, 0);
         gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader->bind();
@@ -325,7 +330,7 @@ void IblSampler::panoramaToCubemap()
                                   GL_FALSE, 5 * sizeof(float),
                                   reinterpret_cast<void*>(3 * sizeof(float)));
 
-        gl->glDrawArrays(GL_TRIANGLES, 0, 6);
+        gl->glDrawArrays(GL_TRIANGLES, 0, 3);
 
         vbo->release();
     }
@@ -333,8 +338,10 @@ void IblSampler::panoramaToCubemap()
     // gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
     auto ctx = QOpenGLContext::currentContext();
     gl->glBindFramebuffer(GL_FRAMEBUFFER, ctx->defaultFramebufferObject());
+
     gl->glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTextureID);
     gl->glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+    gl->glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
 
 QOpenGLShaderProgram* IblSampler::createShader(const QString& vertSource,
@@ -383,11 +390,13 @@ void IblSampler::applyFilter(int distribution, float roughness,
     auto shader = createShader(vertSource, fragSource);
 
     // render each face
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 6; ++i) {
         gl->glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->handle());
         gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                    GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
                                    targetTexture, targetMipLevel);
+
+        gl->glBindTexture(GL_TEXTURE_CUBE_MAP, targetTexture);
 
         gl->glViewport(0, 0, currentTextureSize, currentTextureSize);
         gl->glClearColor(1, 0, 0, 0);
@@ -416,7 +425,7 @@ void IblSampler::applyFilter(int distribution, float roughness,
                                   GL_FALSE, 5 * sizeof(float),
                                   reinterpret_cast<void*>(3 * sizeof(float)));
 
-        gl->glDrawArrays(GL_TRIANGLES, 0, 6);
+        gl->glDrawArrays(GL_TRIANGLES, 0, 3);
 
         vbo->release();
     }
@@ -430,6 +439,10 @@ void IblSampler::cubeMapToLambertian()
 {
     this->applyFilter(0, 0.0, 0, this->lambertianTextureID,
                       this->lambertianSampleCount);
+
+    gl->glBindTexture(GL_TEXTURE_CUBE_MAP, lambertianTextureID);
+    gl->glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+    gl->glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
 
 void IblSampler::cubeMapToGGX()
