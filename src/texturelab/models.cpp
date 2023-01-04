@@ -143,6 +143,15 @@ void TextureNode::setProp(QString propName, QVariant value)
 
 unsigned int TextureNode::textureId() { return this->texture->texture(); }
 
+PropertyGroup* TextureNode::createGroup(const QString& name)
+{
+    auto group = new PropertyGroup();
+    group->name = name;
+    this->propertyGroups.append(group);
+
+    return group;
+}
+
 IntProp* TextureNode::addIntProp(const QString& name,
                                  const QString& displayName, int defaultVal,
                                  int minVal, int maxVal, int increment)

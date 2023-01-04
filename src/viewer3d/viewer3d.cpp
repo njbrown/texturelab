@@ -139,13 +139,13 @@ void Viewer3D::paintGL()
     // int totalSpheres = 6;
     // float roughness = 0;
     // float rinc = 1.0 / (totalSpheres - 1);
-    // float x = -8;
+    // float x = -12;
     // material->metalness = 1;
     // material->roughness = 0;
     // for (int i = 0; i < totalSpheres; i++) {
 
     //     worldMatrix.setColumn(3, QVector4D(x, 0, 0, 1));
-    //     x += 3;
+    //     x += 4;
 
     //     material->roughness = roughness * roughness;
     //     renderer->renderGltfMesh(gltfMesh, material, camPos, worldMatrix,

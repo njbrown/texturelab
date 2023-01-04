@@ -1,5 +1,6 @@
 #include "library.h"
 #include "../models.h"
+#include "libv1.h"
 #include "libv2.h"
 
 #include <QMap>
@@ -50,6 +51,8 @@ Library* createLibraryV2()
     lib->addNode<BlendNode>("blend", "Blend", ":nodes/blend.png");
     lib->addNode<OutputNode>("output", "Output", ":nodes/output.png");
     lib->addNode<NormalMapNode>("normalmap", "Normal Map", ":nodes/output.png");
+    lib->addNode<BrickGeneratorNode>("brickgenerator", "Brick Generator",
+                                     ":nodes/brickgenerator.png");
 
     return lib;
 }

@@ -11,6 +11,7 @@
 #include <QUuid>
 
 class Prop;
+class PropertyGroup;
 
 // http://techiesolves.blogspot.com/2018/01/base64-qstring-to-qimage-to-qstring-in.html
 QString createGuid();
@@ -33,18 +34,14 @@ public:
     static Value fromString(QString propType);
 };
 
-class PropertyGroup {
-public:
-    QString name;
-    QList<Prop*> props;
-};
-
 class Prop {
 public:
     QString id;
     QString name;
     QString displayName;
     PropType::Value type;
+
+    PropertyGroup* group = nullptr;
 
     Prop();
 
@@ -55,6 +52,19 @@ public:
     virtual void fromJson(const QJsonObject& obj);
 
     virtual ~Prop() {}
+};
+
+class PropertyGroup {
+public:
+    QString name;
+    QList<Prop*> props;
+    bool collapsed = true;
+
+    void add(Prop* prop)
+    {
+        this->props.append(prop);
+        prop->group = this;
+    }
 };
 
 class FloatProp : public Prop {

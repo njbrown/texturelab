@@ -23,6 +23,7 @@ typedef QSharedPointer<Frame> FramePtr;
 typedef QSharedPointer<Connection> ConnectionPtr;
 
 class Prop;
+class PropertyGroup;
 class Library;
 
 class IntProp;
@@ -101,6 +102,7 @@ public:
     QString exportName;
 
     QMap<QString, Prop*> props;
+    QList<PropertyGroup*> propertyGroups;
 
     // texture needs updating
     bool isDirty;
@@ -127,6 +129,8 @@ public:
     }
 
     unsigned int textureId();
+
+    PropertyGroup* createGroup(const QString& name);
 
     // add prop functions
     IntProp* addIntProp(const QString& name, const QString& displayName,

@@ -25,9 +25,11 @@ set(PROJECT_SOURCES
         ./project.cpp
         ./props.h
         ./props.cpp
+        ./libraries/libv1.h
         ./libraries/libv2.h
         ./libraries/library.h
         ./libraries/library.cpp
+        ./libraries/v1/brickgenerator.cpp
         ./widgets/graphwidget.h
         ./widgets/graphwidget.cpp
         ./widgets/librarywidget.h
