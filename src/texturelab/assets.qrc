@@ -5,6 +5,12 @@
     <file alias="nodes/blend.png">../../public/assets/nodes/blend.png</file>
     <file alias="nodes/output.png">../../public/assets/nodes/output.png</file>
     <file alias="nodes/brickgenerator.png">../../public/assets/nodes/brickgenerator.png</file>
+    <file alias="nodes/brightnesscontrast.png">../../public/assets/nodes/brightnesscontrast.png</file>
+    <file alias="nodes/cell.png">../../public/assets/nodes/cell.png</file>
+    <file alias="nodes/checkerboard.png">../../public/assets/nodes/checkerboard.png</file>
+    <file alias="nodes/copy.png">../../public/assets/nodes/copy.png</file>
+    <file alias="nodes/directionalwarp.png">../../public/assets/nodes/directionalwarp.png</file>
+    <file alias="nodes/fractalnoise.png">../../public/assets/nodes/fractalnoise.png</file>
     
     <file alias="env/cave_wall_1k.hdr">../../public/assets/env/cave_wall/cave_wall_1k.hdr</file>
     </qresource>

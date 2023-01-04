@@ -14,6 +14,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets OpenGL)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets OpenGLWidgets)
 
+set(LIBRARYv1
+    ./libraries/v1/brickgenerator.cpp
+    ./libraries/v1/brightnesscontrast.cpp
+    ./libraries/v1/cell.cpp
+    ./libraries/v1/checkerboard.cpp
+    ./libraries/v1/copy.cpp
+    ./libraries/v1/directionalwarp.cpp
+    ./libraries/v1/fractalnoise.cpp
+)
+
 set(PROJECT_SOURCES
         ./main.cpp
         ./mainwindow.cpp
@@ -29,7 +39,6 @@ set(PROJECT_SOURCES
         ./libraries/libv2.h
         ./libraries/library.h
         ./libraries/library.cpp
-        ./libraries/v1/brickgenerator.cpp
         ./widgets/graphwidget.h
         ./widgets/graphwidget.cpp
         ./widgets/librarywidget.h
@@ -44,6 +53,7 @@ set(PROJECT_SOURCES
         ./widgets/view3dwidget.cpp
         ./graphics/texturerenderer.h
         ./graphics/texturerenderer.cpp
+        ${LIBRARYv1}
 )
 
 set(PROJECT_RESOURCES

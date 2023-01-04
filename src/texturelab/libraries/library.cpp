@@ -54,5 +54,17 @@ Library* createLibraryV2()
     lib->addNode<BrickGeneratorNode>("brickgenerator", "Brick Generator",
                                      ":nodes/brickgenerator.png");
 
+    lib->addNode<BrightnessContrastNode>("brightnesscontrast",
+                                         "Brick Generator",
+                                         ":nodes/brightnesscontrast.png");
+    lib->addNode<CellNode>("cell", "Cell", ":nodes/cell.png");
+    lib->addNode<CheckerboardNode>("checkerboard", "Checkerboard",
+                                   ":nodes/checkerboard.png");
+    lib->addNode<CopyNode>("copy", "Copy", ":nodes/copy.png");
+    lib->addNode<DirectionalWarpNode>("directionalwarp", "Directional Warp",
+                                      ":nodes/directionalwarp.png");
+    lib->addNode<FractalNoiseNode>("fractalnoise", "Fractal Noise",
+                                   ":nodes/fractalnoise.png");
+
     return lib;
 }
