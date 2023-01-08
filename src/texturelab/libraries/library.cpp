@@ -50,7 +50,8 @@ Library* createLibraryV2()
     lib->addNode<ColorNode>("color", "Color", ":nodes/color.png");
     lib->addNode<BlendNode>("blend", "Blend", ":nodes/blend.png");
     lib->addNode<OutputNode>("output", "Output", ":nodes/output.png");
-    lib->addNode<NormalMapNode>("normalmap", "Normal Map", ":nodes/output.png");
+    lib->addNode<NormalMapNode>("normalmap", "Normal Map",
+                                ":nodes/normalmap.png");
     lib->addNode<BrickGeneratorNode>("brickgenerator", "Brick Generator",
                                      ":nodes/brickgenerator.png");
 
@@ -65,6 +66,31 @@ Library* createLibraryV2()
                                       ":nodes/directionalwarp.png");
     lib->addNode<FractalNoiseNode>("fractalnoise", "Fractal Noise",
                                    ":nodes/fractalnoise.png");
+
+    lib->addNode<GradientNode>("gradient", "Gradient", ":nodes/gradient.png");
+    // lib->addNode<GradientMapNode>("gradientmap", "Gradient Map",
+    //                               ":nodes/gradientmap.png");
+    lib->addNode<HeightShiftNode>("heightshift", "Height Shift",
+                                  ":nodes/heightshift.png");
+    lib->addNode<HexagonNode>("hexagon", "Hexagon", ":nodes/hexagon.png");
+    lib->addNode<InvertNode>("invert", "Invert", ":nodes/invert.png");
+    lib->addNode<LineCellNode>("linecell", "Line Cell", ":nodes/linecell.png");
+    lib->addNode<MapRangeNode>("maprange", "Map Range", ":nodes/maprange.png");
+    lib->addNode<MaskNode>("mask", "Mask", ":nodes/mask.png");
+    lib->addNode<MirrorNode>("mirror", "Mirror", ":nodes/mirror.png");
+    // lib->addNode<BlendNode>("normalmap", "Normal Map",
+    // ":nodes/normalmap.png");
+    lib->addNode<Perlin3DNode>("perlin3d", "Perlin 3D", ":nodes/perlin3d.png");
+    lib->addNode<SolidCellNode>("solidcell", "Solid Cell",
+                                ":nodes/solidcell.png");
+    lib->addNode<SplatNode>("splat", "Splat", ":nodes/splat.png");
+    lib->addNode<ThresholdNode>("threshold", "Threshold",
+                                ":nodes/threshold.png");
+    lib->addNode<TileNode>("tile", "Tile", ":nodes/tile.png");
+    lib->addNode<Transform2DNode>("transform2d", "Transform2D",
+                                  ":nodes/transform2d.png");
+    lib->addNode<WarpNode>("warp", "Warp", ":nodes/warp.png");
+    lib->addNode<WaveNode>("wave", "Wave", ":nodes/wave.png");
 
     return lib;
 }

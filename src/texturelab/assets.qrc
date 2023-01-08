@@ -9,6 +9,7 @@
     <file alias="nodes/cell.png">../../public/assets/nodes/cell.png</file>
     <file alias="nodes/checkerboard.png">../../public/assets/nodes/checkerboard.png</file>
     <file alias="nodes/copy.png">../../public/assets/nodes/copy.png</file>
+    <file alias="nodes/fractalnoise.png">../../public/assets/nodes/fractalnoise.png</file>
     <file alias="nodes/directionalwarp.png">../../public/assets/nodes/directionalwarp.png</file>
     <file alias="nodes/gradient.png">../../public/assets/nodes/gradient.png</file>
     <file alias="nodes/gradientmap.png">../../public/assets/nodes/gradientmap.png</file>
