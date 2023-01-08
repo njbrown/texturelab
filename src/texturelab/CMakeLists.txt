@@ -22,6 +22,25 @@ set(LIBRARYv1
     ./libraries/v1/copy.cpp
     ./libraries/v1/directionalwarp.cpp
     ./libraries/v1/fractalnoise.cpp
+    ./libraries/v1/gradient.cpp
+    ./libraries/v1/gradientmap.cpp
+    ./libraries/v1/heightshift.cpp
+    ./libraries/v1/hexagon.cpp
+    ./libraries/v1/invert.cpp
+    ./libraries/v1/linecell.cpp
+    ./libraries/v1/maprange.cpp
+    ./libraries/v1/mask.cpp
+    ./libraries/v1/mirror.cpp
+    ./libraries/v1/normalmap.cpp
+    ./libraries/v1/output.cpp
+    ./libraries/v1/perlin3d.cpp
+    ./libraries/v1/solidcell.cpp
+    ./libraries/v1/splat.cpp
+    ./libraries/v1/threshold.cpp
+    ./libraries/v1/tile.cpp
+    ./libraries/v1/transform2d.cpp
+    ./libraries/v1/warp.cpp
+    ./libraries/v1/wave.cpp
 )
 
 set(PROJECT_SOURCES
