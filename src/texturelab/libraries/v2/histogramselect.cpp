@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-HistogramSelectNode::init()
+void HistogramSelectNode::init()
 {
     this->title = "Histogram Select";
 

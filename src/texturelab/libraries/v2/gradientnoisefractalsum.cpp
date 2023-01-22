@@ -3,7 +3,7 @@
 #include "../libv2.h"
 
 // https://www.shadertoy.com/view/XdXGW8
-GradientNoiseFractalSumNode::init()
+void GradientNoiseFractalSumNode::init()
 {
     this->title = "Gradient Noise Fractal Sum";
 

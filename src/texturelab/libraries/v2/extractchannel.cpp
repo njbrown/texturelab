@@ -2,16 +2,16 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-ExtractChannelNode::init()
+void ExtractChannelNode::init()
 {
     this->title = "Extract Channel";
 
     this->addInput("image");
 
     // Red
-    let prop =
+    auto prop =
         this->addEnumProp("channel", "Channel",
-                          [ "Red", "Green", "Blue", "Alpha", "Average (RGB)" ]);
+                          {"Red", "Green", "Blue", "Alpha", "Average (RGB)"});
 
     auto source = R""""(
 

@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-StripesNode::init()
+void StripesNode::init()
 {
     this->title = "Stripes";
 

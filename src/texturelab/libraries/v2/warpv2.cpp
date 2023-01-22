@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-WarpNodeV2::init()
+void WarpNodeV2::init()
 {
     this->title = "Warp";
 

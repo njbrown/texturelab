@@ -2,7 +2,9 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-FloodFillSamplerNode::init()
+#include <QColor>
+
+void FloodFillSamplerNode::init()
 {
     this->title = "Flood Fill Sampler";
 
@@ -21,7 +23,7 @@ FloodFillSamplerNode::init()
 
     this->addIntProp("precision", "Precision", 2, 1, 3, 1);
 
-    this.addColorProperty("bg", "Background Color", new Color());
+    this->addColorProp("bg", "Background Color", QColor());
 
     auto source = R""""(
 

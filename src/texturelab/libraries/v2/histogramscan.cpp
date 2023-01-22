@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-HistogramScanNode::init()
+void HistogramScanNode::init()
 {
     this->title = "Histogram Scan";
 

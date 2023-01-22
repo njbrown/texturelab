@@ -3,7 +3,7 @@
 #include "../libv2.h"
 
 // https://www.shadertoy.com/view/XdXGW8
-ValueNoiseFractalSumNode::init()
+void ValueNoiseFractalSumNode::init()
 {
     this->title = "Value Noise Fractal Sum";
 

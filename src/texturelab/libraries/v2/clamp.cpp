@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-ClampNode::init()
+void ClampNode::init()
 {
     this->title = "Clamp";
 

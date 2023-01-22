@@ -3,7 +3,7 @@
 #include "../libv2.h"
 
 // https://www.shadertoy.com/view/lsf3WH
-ValueNoiseNode::init()
+void ValueNoiseNode::init()
 {
     this->title = "Value Noise";
 

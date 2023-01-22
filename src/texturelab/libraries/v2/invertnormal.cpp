@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-InvertNormalNode::init()
+void InvertNormalNode::init()
 {
     this->title = "Invert Normal";
 
@@ -30,5 +30,4 @@ InvertNormalNode::init()
           )"""";
 
     this->setShaderSource(source);
-}
 }

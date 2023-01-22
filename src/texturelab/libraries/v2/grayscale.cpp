@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-GrayscaleNode::init()
+void GrayscaleNode::init()
 {
     this->title = "Grayscale";
 

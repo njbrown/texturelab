@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-Transform2DNodeV2::init()
+void Transform2DV2Node::init()
 {
     this->title = "Transform2D";
 

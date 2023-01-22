@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-CircleNode::init()
+void CircleNode::init()
 {
     this->title = "Circle";
 

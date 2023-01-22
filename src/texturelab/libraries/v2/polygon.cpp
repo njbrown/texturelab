@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-PolygonNode::init()
+void PolygonNode::init()
 {
     this->title = "Polygon";
 

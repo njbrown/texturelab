@@ -2,12 +2,12 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-BevelNode::init()
+void BevelNode::init()
 {
     this->addInput("image");
 
     // this->distanceProp =
-    this->addFloatProperty("distance", "Distance", 50.0, 0.0, 100.0, 0.01);
+    this->addFloatProp("distance", "Distance", 50.0, 0.0, 100.0, 0.01);
 
     auto source = R""""(
         vec4 process(vec2 uv)

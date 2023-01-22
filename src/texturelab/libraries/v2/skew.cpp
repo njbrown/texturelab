@@ -2,13 +2,13 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-SkewNode::init()
+void SkewNode::init()
 {
     this->title = "Skew";
 
     this->addInput("image");
 
-    this->addEnumProp("axis", "Axis", [ "Horizontal", "Vertical" ]);
+    this->addEnumProp("axis", "Axis", {"Horizontal", "Vertical"});
     this->addFloatProp("skew", "skew", 0.5, -1.0, 1.0, 0.01);
     this->addFloatProp("position", "Position", 0.5, 0.0, 1.0, 0.01);
 

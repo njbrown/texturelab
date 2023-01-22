@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-TileSamplerNode::init()
+void TileSamplerNode::init()
 {
     this->title = "Tile Sampler";
 
@@ -12,35 +12,35 @@ TileSamplerNode::init()
     this->addInput("intensity");
     this->addInput("vector");
 
-    this->addEnumProp("blendType", "Blend Type", [ "Max", "Add" ]);
+    this->addEnumProp("blendType", "Blend Type", {"Max", "Add"});
 
     this->addIntProp("rows", "Row Count", 8, 0, 15, 1);
     this->addIntProp("columns", "Column Count", 8, 0, 15, 1);
 
-    const posProps = this.createGroup("Position");
-    posProps.add(this->addFloatProp("offset", "Offset", 0.5, 0, 1, 0.1));
-    posProps.add(this->addEnumProp("offset_axis", "Offset Axis",
-                                   [ "X Axis", "Y Axis" ]));
-    posProps.add(
+    auto posProps = this->createGroup("Position");
+    posProps->add(this->addFloatProp("offset", "Offset", 0.5, 0, 1, 0.1));
+    posProps->add(
+        this->addEnumProp("offset_axis", "Offset Axis", {"X Axis", "Y Axis"}));
+    posProps->add(
         this->addIntProp("offset_interval", "Offset Interval", 1, 1, 5, 1));
 
-    const rotProps = this.createGroup("Rotation");
-    rotProps.add(this->addFloatProp("rot", "Rotation", 0, 0, 360, 0.1));
-    rotProps.add(
+    auto rotProps = this->createGroup("Rotation");
+    rotProps->add(this->addFloatProp("rot", "Rotation", 0, 0, 360, 0.1));
+    rotProps->add(
         this->addFloatProp("rotRand", "Random Rotation", 0, 0, 1.0, 0.01));
-    rotProps.add(
+    rotProps->add(
         this->addFloatProp("posRand", "Random Position", 0, 0, 1.0, 0.01));
-    rotProps.add(this->addFloatProp("intensityRand", "Random Intensity", 0, 0,
-                                    1.0, 0.01));
+    rotProps->add(this->addFloatProp("intensityRand", "Random Intensity", 0, 0,
+                                     1.0, 0.01));
 
-    rotProps.add(this->addFloatProp("vector_influence",
-                                    "Vector Rotation Influence", 1, 0, 1, 0.1));
+    rotProps->add(this->addFloatProp(
+        "vector_influence", "Vector Rotation Influence", 1, 0, 1, 0.1));
 
-    const scaleProps = this.createGroup("Scale");
-    scaleProps.add(this->addEnumProp("sizeMode", "Size Mode",
-                                     [ "Normal", "Keep Aspect" ]));
-    scaleProps.add(this->addFloatProp("scale", "Scale", 1, 0, 4, 0.1));
-    scaleProps.add(
+    auto scaleProps = this->createGroup("Scale");
+    scaleProps->add(
+        this->addEnumProp("sizeMode", "Size Mode", {"Normal", "Keep Aspect"}));
+    scaleProps->add(this->addFloatProp("scale", "Scale", 1, 0, 4, 0.1));
+    scaleProps->add(
         this->addFloatProp("scaleRand", "Scale random", 0, 0, 1, 0.1));
 
     auto source = R""""(

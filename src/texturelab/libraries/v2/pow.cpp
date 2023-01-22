@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-PowNode::init()
+void PowNode::init()
 {
     this->title = "Pow";
 

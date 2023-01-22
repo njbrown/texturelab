@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-CircularSplatterNode::init()
+void CircularSplatterNode::init()
 {
     this->title = "Circular Splatter";
 
@@ -14,7 +14,7 @@ CircularSplatterNode::init()
     this->addIntProp("count", "Count", 10, 0, 50, 1);
     this->addIntProp("rings", "Rings", 1, 0, 5, 1);
 
-    this->addEnumProp("blendType", "Blend Type", [ "Max", "Add" ]);
+    this->addEnumProp("blendType", "Blend Type", {"Max", "Add"});
 
     this->addFloatProp("radius", "Radius", 0.3, 0, 1.0, 0.01);
     this->addFloatProp("spacing", "Spacing", 1.0, 0, 2.0, 0.01);
@@ -23,50 +23,51 @@ CircularSplatterNode::init()
     this->addBoolProp("reverseSpiral", "Reverse Spiral Direction", false);
 
     // ROTATION
-    const rotProp = this.createGroup("Rotation");
-    rotProp.collapsed = false;
-    rotProp.add(this->addFloatProp("rot", "Rotation", 0, 0, 360, 0.1));
-    rotProp.add(
+    auto rotProp = this->createGroup("Rotation");
+    rotProp->collapsed = false;
+    rotProp->add(this->addFloatProp("rot", "Rotation", 0, 0, 360, 0.1));
+    rotProp->add(
         this->addFloatProp("rotRand", "Random Rotation", 0.0, 0.0, 1.0, 0.01));
-    rotProp.add(this->addFloatProp("ringRot", "Ring Rotation", 0, 0, 360, 0.1));
-    rotProp.add(this->addFloatProp("ringRotRand", "Ring Rotation Random", 0.0,
-                                   0.0, 1.0, 0.01));
-    rotProp.add(this->addFloatProp("ringRotOffset", "Ring Rotation Offset", 0.0,
-                                   0.0, 1.0, 0.01));
-    rotProp.add(this->addBoolProp("pivotCenter",
-                                  "Pivot Orientation From Center", true));
+    rotProp->add(
+        this->addFloatProp("ringRot", "Ring Rotation", 0, 0, 360, 0.1));
+    rotProp->add(this->addFloatProp("ringRotRand", "Ring Rotation Random", 0.0,
+                                    0.0, 1.0, 0.01));
+    rotProp->add(this->addFloatProp("ringRotOffset", "Ring Rotation Offset",
+                                    0.0, 0.0, 1.0, 0.01));
+    rotProp->add(this->addBoolProp("pivotCenter",
+                                   "Pivot Orientation From Center", true));
 
     // INTENSITY
-    const intensityProp = this.createGroup("Intensity");
-    intensityProp.collapsed = false;
-    intensityProp.add(this->addFloatProp("intensityRand", "Random Intensity", 0,
-                                         0, 1.0, 0.01));
-    intensityProp.add(this->addFloatProp("intensityByRing", "Intensity By Ring",
-                                         0, 0, 1.0, 0.01));
-    intensityProp.add(this->addBoolProp("invertIntensityByRing",
-                                        "Invert Intensity By Ring", true));
-    intensityProp.add(this->addFloatProp(
+    auto intensityProp = this->createGroup("Intensity");
+    intensityProp->collapsed = false;
+    intensityProp->add(this->addFloatProp("intensityRand", "Random Intensity",
+                                          0, 0, 1.0, 0.01));
+    intensityProp->add(this->addFloatProp(
+        "intensityByRing", "Intensity By Ring", 0, 0, 1.0, 0.01));
+    intensityProp->add(this->addBoolProp("invertIntensityByRing",
+                                         "Invert Intensity By Ring", true));
+    intensityProp->add(this->addFloatProp(
         "intensityByAngle", "Intensity By Angle", 0, 0, 1.0, 0.01));
-    intensityProp.add(this->addBoolProp("invertIntensityByAngle",
-                                        "Invert Intensity By Angle", true));
+    intensityProp->add(this->addBoolProp("invertIntensityByAngle",
+                                         "Invert Intensity By Angle", true));
 
     // SCALE
-    const scaleProp = this.createGroup("Scale");
-    scaleProp.collapsed = false;
-    scaleProp.add(
+    auto scaleProp = this->createGroup("Scale");
+    scaleProp->collapsed = false;
+    scaleProp->add(
         this->addFloatProp("inputSize", "Input Size", 0.1, 0, 1, 0.01));
-    scaleProp.add(this->addFloatProp("scale", "Scale", 1, 0, 1, 0.01));
-    scaleProp.add(
+    scaleProp->add(this->addFloatProp("scale", "Scale", 1, 0, 1, 0.01));
+    scaleProp->add(
         this->addFloatProp("scaleRand", "Scale random", 0, 0, 1, 0.01));
 
-    scaleProp.add(
+    scaleProp->add(
         this->addFloatProp("scaleByRing", "Scale By Ring", 0, 0, 1.0, 0.01));
-    scaleProp.add(this->addBoolProp("invertScaleByRing",
-                                    "Scale Intensity By Ring", true));
-    scaleProp.add(
+    scaleProp->add(this->addBoolProp("invertScaleByRing",
+                                     "Scale Intensity By Ring", true));
+    scaleProp->add(
         this->addFloatProp("scaleByAngle", "Scale By Angle", 0, 0, 1.0, 0.01));
-    scaleProp.add(this->addBoolProp("invertScaleByAngle",
-                                    "Scale Intensity By Angle", true));
+    scaleProp->add(this->addBoolProp("invertScaleByAngle",
+                                     "Scale Intensity By Angle", true));
 
     auto source = R""""(
         mat3 transMat(vec2 t)

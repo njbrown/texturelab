@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-FloodFillNode::init()
+void FloodFillNode::init()
 {
     this->title = "Copy";
 

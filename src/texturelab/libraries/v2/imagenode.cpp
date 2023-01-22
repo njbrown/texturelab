@@ -2,9 +2,9 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-ImageNode::init()
+void ImageNode::init()
 {
     this->title = "Image";
 
-    this->imageProp = this->addImageProperty("image", "Image");
+    this->imageProp = this->addImageProp("image", "Image");
 }

@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-FloodFillToRandomIntensityNode::init()
+void FloodFillToRandomIntensityNode::init()
 {
     this->title = "Flood Fill To Random Intensity";
 

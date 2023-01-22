@@ -3,7 +3,7 @@
 #include "../libv2.h"
 
 // multiple pass warp
-SlopeBlurNode::init()
+void SlopeBlurNode::init()
 {
     this->title = "Slope Blur";
 

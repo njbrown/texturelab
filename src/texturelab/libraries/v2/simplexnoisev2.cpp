@@ -4,7 +4,7 @@
 
 // https://www.shadertoy.com/view/Msf3WH
 // previous implementation was actually value noise
-SimplexNoiseNodeV2::init()
+void SimplexNoiseNodeV2::init()
 {
     this->title = "Simplex Noise";
 

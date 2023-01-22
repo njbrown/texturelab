@@ -5,17 +5,17 @@
 // https://blog.selfshadow.com/publications/blending-in-detail/
 // https://blog.selfshadow.com/sandbox/normals.html
 // https://www.shadertoy.com/view/4t2SzR
-CombineNormalsNode::init()
+void CombineNormalsNode::init()
 {
     this->title = "Combine Normals";
 
     this->addInput("detail");
     this->addInput("base");
 
-    let prop = this->addEnumProp("technique", "Technique", [
-        "Linear Blending", "Overlay Blending", "Whiteout", "Detail Oriented"
-    ]);
-    prop.setValue(3);
+    auto prop = this->addEnumProp(
+        "technique", "Technique",
+        {"Linear Blending", "Overlay Blending", "Whiteout", "Detail Oriented"});
+    prop->setValue(3);
 
     auto source = R""""(
 

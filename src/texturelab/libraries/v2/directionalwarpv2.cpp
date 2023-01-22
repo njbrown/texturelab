@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-DirectionalWarpNodeV2::init()
+void DirectionalWarpV2Node::init()
 {
     this->title = "Directional Warp";
 

@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-FloodFillToColorNode::init()
+void FloodFillToColorNode::init()
 {
     this->title = "Flood Fill To Color";
 
@@ -11,8 +11,8 @@ FloodFillToColorNode::init()
 
     this->addIntProp("precision", "Precision", 2, 1, 3, 1);
 
-    let prop =
-        this->addEnumProp("source", "Sample Origin", [ "Top-Left", "Center" ]);
+    auto prop =
+        this->addEnumProp("source", "Sample Origin", {"Top-Left", "Center"});
 
     auto source = R""""(
         vec2 calcFloodFillOrigin(vec2 uv, vec4 pixelData)

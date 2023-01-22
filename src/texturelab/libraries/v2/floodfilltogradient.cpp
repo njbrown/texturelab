@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-FloodFillToGradientNode::init()
+void FloodFillToGradientNode::init()
 {
     this->title = "Flood Fill To Gradient";
 

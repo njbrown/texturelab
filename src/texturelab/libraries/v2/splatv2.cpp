@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-SplatNodeV2::init()
+void SplatV2Node::init()
 {
     this->title = "Splat";
 
@@ -10,7 +10,7 @@ SplatNodeV2::init()
 
     this->addIntProp("count", "Count", 50, 0, 1000, 1);
 
-    this->addEnumProp("blendType", "Blend Type", [ "Max", "Add" ]);
+    this->addEnumProp("blendType", "Blend Type", {"Max", "Add"});
 
     auto source = R""""(
         // https://github.com/glslify/glsl-inverse/blob/master/index.glsl

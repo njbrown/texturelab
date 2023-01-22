@@ -5,7 +5,7 @@
 // uses single pass gaussian
 // https://www.shadertoy.com/view/4tSyzy
 // https://stackoverflow.com/questions/2157920/why-define-pi-4atan1-d0
-AnisotropicBlurNode::init()
+void AnisotropicBlurNode::init()
 {
     this->title = "Anisotropic Blur";
 
@@ -70,5 +70,5 @@ AnisotropicBlurNode::init()
         }
         )"""";
 
-    this.buildShader(source);
+    this->setShaderSource(source);
 }

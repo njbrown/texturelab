@@ -5,7 +5,7 @@
 // uses single pass gaussian
 // https://www.shadertoy.com/view/4tSyzy
 // https://stackoverflow.com/questions/2157920/why-define-pi-4atan1-d0
-BlurNodeV2::init()
+void BlurNodeV2::init()
 {
     this->title = "Blur";
 

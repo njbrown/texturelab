@@ -3,7 +3,7 @@
 #include "../libv2.h"
 
 // https://www.mathsisfun.com/polar-cartesian-coordinates.html
-CartesianToPolarNode::init()
+void CartesianToPolarNode::init()
 {
     this->title = "Cartesian To Polar";
 

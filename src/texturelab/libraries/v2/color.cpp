@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-ColorNode::init()
+void ColorNode::init()
 {
     this->title = "Color";
 

@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-void AdvanceSplattrNode::init()
+void AdvanceSplatterNode::init()
 {
     this->title = "Advance Splatter";
 
@@ -19,7 +19,7 @@ void AdvanceSplattrNode::init()
     this->addFloatProp("scale", "Scale", 1, 0, 4, 0.1);
     this->addFloatProp("scaleRand", "Scale random", 0, 0, 1, 0.1);
 
-    this->addEnumProp("blendType", "Blend Type", [ "Max", "Add" ]);
+    this->addEnumProp("blendType", "Blend Type", {"Max", "Add"});
 
     auto source = R""""(
         // https://github.com/glslify/glsl-inverse/blob/master/index.glsl

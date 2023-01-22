@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-FloodFillToRandomColorNode::init()
+void FloodFillToRandomColorNode::init()
 {
     this->title = "Flood Fill To Random Color";
 

@@ -2,14 +2,14 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-FloodFillToBBoxNode::init()
+void FloodFillToBBoxNode::init()
 {
     this->title = "Flood Fill To BBox";
 
     this->addInput("floodfill");
 
     this->addEnumProp("function", "Function",
-                      [ "max(x,y)", "min(x,y)", "x", "y", "length(x,y)" ]);
+                      {"max(x,y)", "min(x,y)", "x", "y", "length(x,y)"});
 
     auto source = R""""(
         vec4 process(vec2 uv)

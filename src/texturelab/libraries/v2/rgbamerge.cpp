@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-RgbaMergeNode::init()
+void RgbaMergeNode::init()
 {
     this->title = "RGBA Merge";
 
@@ -12,28 +12,28 @@ RgbaMergeNode::init()
     this->addInput("alphaSource");
 
     // Red
-    let prop =
+    auto prop =
         this->addEnumProp("redSource", "Red Source",
-                          [ "Red", "Green", "Blue", "Alpha", "Average (RGB)" ]);
-    prop.setValue(0);
+                          {"Red", "Green", "Blue", "Alpha", "Average (RGB)"});
+    prop->setValue(0);
 
     // Green
     prop =
         this->addEnumProp("greenSource", "Green Source",
-                          [ "Red", "Green", "Blue", "Alpha", "Average (RGB)" ]);
-    prop.setValue(1);
+                          {"Red", "Green", "Blue", "Alpha", "Average (RGB)"});
+    prop->setValue(1);
 
     // Blue
     prop =
         this->addEnumProp("blueSource", "Blue Source",
-                          [ "Red", "Green", "Blue", "Alpha", "Average (RGB)" ]);
-    prop.setValue(2);
+                          {"Red", "Green", "Blue", "Alpha", "Average (RGB)"});
+    prop->setValue(2);
 
     // Alpha
     prop =
         this->addEnumProp("alphaSource", "Alpha Source",
-                          [ "Red", "Green", "Blue", "Alpha", "Average (RGB)" ]);
-    prop.setValue(3);
+                          {"Red", "Green", "Blue", "Alpha", "Average (RGB)"});
+    prop->setValue(3);
 
     auto source = R""""(
 

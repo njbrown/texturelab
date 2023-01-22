@@ -3,7 +3,7 @@
 #include "../libv2.h"
 
 // https://thebookofshaders.com/07/
-CapsuleNode::init()
+void CapsuleNode::init()
 {
     this->title = "Capsule";
 

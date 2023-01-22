@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-QuantizeNode::init()
+void QuantizeNode::init()
 {
     this->title = "Quantize";
 

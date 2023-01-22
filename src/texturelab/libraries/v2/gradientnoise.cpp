@@ -3,7 +3,7 @@
 #include "../libv2.h"
 
 // https://www.shadertoy.com/view/XdXGW8
-GradientNoiseNode::init()
+void GradientNoiseNode::init()
 {
     this->title = "Gradient Noise";
 

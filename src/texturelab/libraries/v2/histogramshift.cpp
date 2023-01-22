@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-HistogramShiftNode::init()
+void HistogramShiftNode::init()
 {
     this->title = "Histogram Shift";
 

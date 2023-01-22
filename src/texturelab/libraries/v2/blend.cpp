@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-BlendNode::init()
+void BlendNode::init()
 {
     this->title = "Blend";
 

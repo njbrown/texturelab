@@ -2,7 +2,7 @@
 #include "../../props.h"
 #include "../libv2.h"
 
-GradientDynamicNode::init()
+void GradientDynamicNode::init()
 {
     this->title = "Gradient Dynamic";
 
@@ -12,7 +12,7 @@ GradientDynamicNode::init()
     this->addFloatProp("position", "Position", 0, 0, 1, 0.01);
 
     this->addEnumProp("orientation", "Gradient Direction",
-                      [ "Vertical", "Horizontal" ]);
+                      {"Vertical", "Horizontal"});
 
     auto source = R""""(
         vec4 process(vec2 uv)

@@ -5,14 +5,14 @@
 // https://www.shadertoy.com/view/XljGzV
 // https://www.rapidtables.com/convert/color/rgb-to-hsl.html
 // https://gist.github.com/yiwenl/745bfea7f04c456e0101
-HslExtractNode::init()
+void HslExtractNode::init()
 {
     this->title = "HSL Extract";
 
     this->addInput("image");
 
-    let prop = this->addEnumProp("source", "Source",
-                                 [ "Hue", "Saturation", "Lightness" ]);
+    auto prop = this->addEnumProp("source", "Source",
+                                  {"Hue", "Saturation", "Lightness"});
 
     auto source = R""""(
 

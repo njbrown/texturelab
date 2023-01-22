@@ -3,7 +3,7 @@
 #include "../libv2.h"
 
 // https://thebookofshaders.com/07/
-SoftFlowerNode::init()
+void SoftFlowerNode::init()
 {
     this->title = "Soft Flower";
 

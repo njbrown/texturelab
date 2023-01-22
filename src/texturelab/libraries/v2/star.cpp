@@ -3,7 +3,7 @@
 #include "../libv2.h"
 
 // https://thebookofshaders.com/07/
-StarNode::init()
+void StarNode::init()
 {
     this->title = "Star";
 
