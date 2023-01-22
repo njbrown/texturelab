@@ -17,11 +17,6 @@ public:
     virtual void init() override;
 };
 
-class BlendNode : public TextureNode {
-public:
-    virtual void init() override;
-};
-
 class BlurNodeV2 : public TextureNode {
 public:
     virtual void init() override;
@@ -37,22 +32,12 @@ public:
     virtual void init() override;
 };
 
-class CircleNode : public TextureNode {
-public:
-    virtual void init() override;
-};
-
 class CircularSplatterNode : public TextureNode {
 public:
     virtual void init() override;
 };
 
 class ClampNode : public TextureNode {
-public:
-    virtual void init() override;
-};
-
-class ColorNode : public TextureNode {
 public:
     virtual void init() override;
 };

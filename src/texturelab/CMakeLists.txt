@@ -15,11 +15,13 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets OpenGL)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets OpenGLWidgets)
 
 set(LIBRARYV1
+    ./libraries/v1/blend.cpp
     ./libraries/v1/brickgenerator.cpp
     ./libraries/v1/brightnesscontrast.cpp
     ./libraries/v1/cell.cpp
     ./libraries/v1/checkerboard.cpp
     ./libraries/v1/copy.cpp
+    ./libraries/v1/color.cpp
     ./libraries/v1/directionalwarp.cpp
     ./libraries/v1/fractalnoise.cpp
     ./libraries/v1/gradient.cpp
@@ -34,6 +36,7 @@ set(LIBRARYV1
     ./libraries/v1/normalmap.cpp
     ./libraries/v1/output.cpp
     ./libraries/v1/perlin3d.cpp
+    ./libraries/v1/shapes.cpp
     ./libraries/v1/solidcell.cpp
     ./libraries/v1/splat.cpp
     ./libraries/v1/threshold.cpp

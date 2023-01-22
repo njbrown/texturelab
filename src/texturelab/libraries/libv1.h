@@ -2,6 +2,11 @@
 
 #include "../models.h"
 
+class BlendNode : public TextureNode {
+public:
+    virtual void init() override;
+};
+
 class BrickGeneratorNode : public TextureNode {
 public:
     virtual void init() override;
@@ -18,6 +23,16 @@ public:
 };
 
 class CheckerboardNode : public TextureNode {
+public:
+    virtual void init() override;
+};
+
+class CircleNode : public TextureNode {
+public:
+    virtual void init() override;
+};
+
+class ColorNode : public TextureNode {
 public:
     virtual void init() override;
 };
@@ -88,6 +103,11 @@ public:
 };
 
 class OutputNode : public TextureNode {
+public:
+    virtual void init() override;
+};
+
+class PolygonNode : public TextureNode {
 public:
     virtual void init() override;
 };
