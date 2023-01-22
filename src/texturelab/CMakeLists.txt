@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets OpenGL)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets OpenGLWidgets)
 
-set(LIBRARYv1
+set(LIBRARYV1
     ./libraries/v1/brickgenerator.cpp
     ./libraries/v1/brightnesscontrast.cpp
     ./libraries/v1/cell.cpp
@@ -43,6 +43,57 @@ set(LIBRARYv1
     ./libraries/v1/wave.cpp
 )
 
+set(LIBRARYV2
+    ./libraries/v2/advancesplatter.cpp
+    ./libraries/v2/anisotropicblur.cpp
+    ./libraries/v2/bevel.cpp
+    ./libraries/v2/blur.cpp
+    ./libraries/v2/capsule.cpp
+    ./libraries/v2/cartesiantopolar.cpp
+    ./libraries/v2/circularsplatter.cpp
+    ./libraries/v2/clamp.cpp
+    ./libraries/v2/combinenormals.cpp
+    ./libraries/v2/directionalblur.cpp
+    ./libraries/v2/directionalwarpv2.cpp
+    ./libraries/v2/extractchannel.cpp
+    ./libraries/v2/floodfill.cpp
+    ./libraries/v2/floodfillsampler.cpp
+    ./libraries/v2/floodfilltobbox.cpp
+    ./libraries/v2/floodfilltocolor.cpp
+    ./libraries/v2/floodfilltogradient.cpp
+    ./libraries/v2/floodfilltorandomcolor.cpp
+    ./libraries/v2/floodfilltorandomintensity.cpp
+    ./libraries/v2/gradientdynamic.cpp
+    ./libraries/v2/gradientnoise.cpp
+    ./libraries/v2/gradientnoisefractalsum.cpp
+    ./libraries/v2/grayscale.cpp
+    ./libraries/v2/histogramscan.cpp
+    ./libraries/v2/histogramselect.cpp
+    ./libraries/v2/histogramshift.cpp
+    ./libraries/v2/hsl.cpp
+    ./libraries/v2/hslextract.cpp
+    ./libraries/v2/imagenode.cpp
+    ./libraries/v2/invertnormal.cpp
+    ./libraries/v2/normalmapv2.cpp
+    ./libraries/v2/polartocartesian.cpp
+    ./libraries/v2/pow.cpp
+    ./libraries/v2/quantize.cpp
+    ./libraries/v2/rgbamerge.cpp
+    ./libraries/v2/rgbashuffle.cpp
+    ./libraries/v2/simplexnoisev2.cpp
+    ./libraries/v2/skew.cpp
+    ./libraries/v2/slopeblur.cpp
+    ./libraries/v2/softflower.cpp
+    ./libraries/v2/splatv2.cpp
+    ./libraries/v2/star.cpp
+    ./libraries/v2/stripes.cpp
+    ./libraries/v2/tilesampler.cpp
+    ./libraries/v2/transform2dv2.cpp
+    ./libraries/v2/valuenoise.cpp
+    ./libraries/v2/valuenoisefractalsum.cpp
+    ./libraries/v2/warpv2.cpp
+)
+
 set(PROJECT_SOURCES
         ./main.cpp
         ./mainwindow.cpp
@@ -54,7 +105,7 @@ set(PROJECT_SOURCES
         ./project.cpp
         ./props.h
         ./props.cpp
-        ./libraries/libv1.h
+        ./libraries/libv2.h
         ./libraries/libv2.h
         ./libraries/library.h
         ./libraries/library.cpp
@@ -72,7 +123,8 @@ set(PROJECT_SOURCES
         ./widgets/view3dwidget.cpp
         ./graphics/texturerenderer.h
         ./graphics/texturerenderer.cpp
-        ${LIBRARYv1}
+        ${LIBRARYV1}
+        ${LIBRARYV2}
 )
 
 set(PROJECT_RESOURCES
