@@ -4,172 +4,22 @@
 
 class CircleNode : public TextureNode {
 public:
-    virtual void init() override
-    {
-        this->title = "Circle";
-
-        this->addFloatProp("radius", "Radius", 0.2, 0, 1, 0.01);
-        this->addEnumProp("color_gen", "Color Generation",
-                          {"Flat", "Linear", "Exponential"});
-
-        this->setShaderSource(R""""(
-        vec4 process(vec2 uv)
-        {
-            float dist = distance(uv, vec2(0.5));
-            if( dist <= prop_radius) {
-                if (prop_color_gen==0)
-                    return vec4(vec3(1.0), 1.0);
-                else if (prop_color_gen==1)
-                    return vec4(vec3(1.0 - dist / prop_radius), 1.0);
-                else if (prop_color_gen==2)
-                {
-                    float val = dist / prop_radius;
-                    return vec4(vec3(1.0 - val * val), 1.0);
-                }
-                
-            }
-
-            return vec4(vec3(0.0), 1.0);
-        }
-        )"""");
-    }
+    virtual void init() override;
 };
 
 class PolygonNode : public TextureNode {
 public:
-    virtual void init() override
-    {
-        this->title = "Polygon";
-
-        this->addFloatProp("radius", "Radius", 0.2, 0, 1, 0.01);
-        this->addFloatProp("angle", "Angle", 0, 0, 360, 0.1);
-        this->addIntProp("sides", "Sides", 5, 0, 20, 1);
-        this->addFloatProp("gradient", "Gradient", 0, 0, 1.0, 0.01);
-
-        // todo: add props
-        this->setShaderSource(R""""(
-        #define PI 3.14159265359
-        #define TWO_PI 6.28318530718
-
-        float linearstep(float a, float b, float t)
-        {
-            if (t <= a) return 0.0;
-            if (t >= b) return 1.0;
-
-            return (t-a)/(b-a);
-        }
-
-        vec4 process(vec2 uv)
-        {
-            uv = uv *2.-1.;
-
-            // Angle and radius from the current pixel
-            float a = atan(uv.x,uv.y)+radians(prop_angle);
-            float r = TWO_PI/float(prop_sides);
-
-            float d = cos(floor(.5+a/r)*r-a)*length(uv) / prop_radius;
-
-            vec3 color = vec3(1.0-linearstep(0.8-prop_gradient,0.8,d));
-
-            return vec4(color, 1.0);
-        }
-        )"""");
-    }
+    virtual void init() override;
 };
 
 class ColorNode : public TextureNode {
 public:
-    virtual void init() override
-    {
-        this->title = "Color";
-
-        this->addInput("image");
-
-        // todo: add props
-        this->setShaderSource(R""""(
-        vec4 process(vec2 uv)
-        {
-            vec4 prop_color = vec4(1,1,1,1);
-            return texture(image,uv) * prop_color;
-            //return vec4(uv, vec2(0.0,1.0));// * prop_color;
-        }
-        )"""");
-    }
+    virtual void init() override;
 };
 
 class BlendNode : public TextureNode {
 public:
-    virtual void init() override
-    {
-        this->title = "Blend";
-
-        this->addInput("colorA");
-        this->addInput("colorB");
-        this->addInput("opacity");
-
-        this->addEnumProp("type", "Type",
-                          {"Multiply", "Add", "Subtract", "Divide",
-                           //   "Add Sub",
-                           "Max", "Min", "Switch", "Overlay", "Screen"});
-        this->addFloatProp("opacity", "Opacity", 1.0, 0.0, 1.0, 0.01);
-
-        // todo: add props
-        this->setShaderSource(R""""(
-        float screen(float fg, float bg) {
-            float res = (1.0 - fg) * (1.0 - bg);
-            return 1.0 - res;
-        }
-        vec4 process(vec2 uv)
-        {
-            float finalOpacity = prop_opacity;
-            if (opacity_connected)
-                finalOpacity *= texture(opacity, uv).r;
-
-            vec4 colA = texture(colorA,uv);
-            vec4 colB = texture(colorB,uv);
-            vec4 col = vec4(1.0);
-
-            if (prop_type==0){ // multiply
-                col.rgb = colA.rgb * colB.rgb;
-            }
-            if (prop_type==1) // add
-                col.rgb = colA.rgb + colB.rgb;
-            if (prop_type==2) // subtract
-                col.rgb = colB.rgb - colA.rgb;
-            if (prop_type==3) // divide
-                col.rgb = colB.rgb / colA.rgb;
-            // if (prop_type==4) {// add sub
-            //     if (colA.r > 0.5) col.r = colB.r + colA.r; else col.r = colB.r - colA.r;
-            //     if (colA.g > 0.5) col.g = colB.g + colA.g; else col.g = colB.g - colA.g;
-            //     if (colA.b > 0.5) col.b = colB.b + colA.b; else col.b = colB.b - colA.b;
-            // }
-            if (prop_type==4) { // max
-                col.rgb = max(colA.rgb, colB.rgb);
-            }
-            if (prop_type==5) { // min
-                col.rgb = min(colA.rgb, colB.rgb);
-            }
-            if (prop_type==6) { // switch
-                col.rgb = colA.rgb;
-            }
-            if (prop_type==7) { // overlay
-                if (colB.r < 0.5) col.r = colB.r * colA.r; else col.r = screen(colB.r, colA.r);
-                if (colB.g < 0.5) col.g = colB.g * colA.g; else col.g = screen(colB.g, colA.g);
-                if (colB.b < 0.5) col.b = colB.b * colA.b; else col.b = screen(colB.b, colA.b);
-            }
-            if (prop_type==8) { // screen
-                col.r = screen(colA.r, colB.r);
-                col.g = screen(colA.g, colB.g);
-                col.b = screen(colA.b, colB.b);
-            }
-
-            // apply opacity
-            col.rgb = mix(colB.rgb, col.rgb, vec3(finalOpacity));
-
-            return col;
-        }
-        )"""");
-    }
+    virtual void init() override;
 };
 
 // class OutputNode : public TextureNode {
