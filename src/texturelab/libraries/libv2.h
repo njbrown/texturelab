@@ -183,7 +183,7 @@ public:
     virtual void init() override;
 };
 
-class SimplexNoiseNodeV2 : public TextureNode {
+class SimplexNoiseV2Node : public TextureNode {
 public:
     virtual void init() override;
 };
