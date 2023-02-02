@@ -12,6 +12,9 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/nodegraph)
 # 3D Viewer
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/viewer3d)
 
+# 3D Viewer
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/colorpicker)
+
 # Main App
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/texturelab)
 
