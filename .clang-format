@@ -1,0 +1,8 @@
+# https://github.com/microsoft/vscode-cpptools/issues/932
+NamespaceIndentation: None
+IndentWidth: 4
+AccessModifierOffset: -4
+PointerAlignment: Left
+
+# https://stackoverflow.com/questions/29477654/how-to-make-clang-format-add-new-line-before-opening-brace-of-a-function
+BreakBeforeBraces: Stroustrup

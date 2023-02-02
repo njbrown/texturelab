@@ -1,0 +1,21 @@
+<RCC>
+    <qresource prefix="/">
+    <file alias="assets/brick.jpg">assets/brick.jpg</file>
+    <file alias="assets/cube.gltf">assets/cube.gltf</file>
+    <file alias="assets/panorama.hdr">assets/panorama.hdr</file>
+    <file>assets/fullscreen.vert</file>
+    <file>assets/panorama_to_cubemap.frag</file>
+    <file>assets/ibl_filtering.frag</file>
+    <file>assets/animation.glsl</file>
+    <file>assets/brdf.glsl</file>
+    <file>assets/functions.glsl</file>
+    <file>assets/ibl.glsl</file>
+    <file>assets/iridiscence.glsl</file>
+    <file>assets/material_info.glsl</file>
+    <file>assets/pbr.frag</file>
+    <file>assets/primitive.vert</file>
+    <file>assets/punctual.glsl</file>
+    <file>assets/textures.glsl</file>
+    <file>assets/tonemapping.glsl</file>
+    </qresource>
+</RCC>

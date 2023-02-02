@@ -1,3 +1,6 @@
 [submodule "public/assets"]
 	path = public/assets
 	url = https://github.com/njbrown/texturelabdata.git
+[submodule "src/ads"]
+	path = src/ads
+	url = https://github.com/githubuser0xFFFF/Qt-Advanced-Docking-System.git
