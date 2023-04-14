@@ -73,6 +73,7 @@ import { GradientNoiseFractalSum } from "./v2/gradientnoisefractalsum";
 import { SimplexNoiseV2 } from "./v2/simplexnoise";
 import { DirectionalWarpNodeV2 } from "./v2/directionalwarpv2";
 import { ImageNode } from "./v2/imagenode";
+import { Layout2x2 } from "./lgd/layout2x2";
 
 export function createLibrary() {
 	const lib = new DesignerLibrary();
@@ -183,6 +184,7 @@ export function createLibrary() {
 	lib.addNode("image", "Image", ImageNode);
 	//lib.addNode("simplexnoise", "Simplex Noise", SimplexNoiseV2);
 	// lib.addNode("betterwarp", "Better Warp", BetterWarpNode);
+	lib.addNode("layout2x2", "Layout2x2", Layout2x2);
 
 	return lib;
 }
