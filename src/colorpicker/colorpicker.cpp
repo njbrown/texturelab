@@ -178,8 +178,8 @@ protected:
         float barHeight = height();
         float barWidth = width();
 
-        // if (!selectorDrawn) {
-        if (true) {
+        if (!selectorDrawn) {
+            // if (true) {
             selectorPixmap = QPixmap(barWidth, barHeight);
             QPainter huePainter(&selectorPixmap);
 
@@ -217,6 +217,8 @@ protected:
         painter.setBrush(Qt::white);
         painter.drawEllipse(QPointF(hue * width(), height() / 2), 5, 5);
     }
+
+    void resizeEvent(QResizeEvent* event) override { selectorDrawn = false; }
 
     void mousePressEvent(QMouseEvent* event) override
     {
