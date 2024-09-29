@@ -1,5 +1,3 @@
-
-
 <h1 align="center">
   TextureLab
 </h1>
@@ -17,22 +15,27 @@
 ![Screenshot](https://user-images.githubusercontent.com/1708550/123368911-4ceb9f00-d542-11eb-87b5-b0fc3ea3cc3d.png)
 
 # NOTE!
+
 Texturelab will soon be converted to a qt project. All issues will be addressed after the conversion is complete.
 
 ## Building
+
+Prerequisites
+
+```
+install qt
+
+//apt-get install libmesa-dev
+sudo apt install libgl1-mesa-dev
+
+```
 
 Building is done with `yarn`. Install it [here](https://classic.yarnpkg.com/en/docs/install) if you havent already.
 
 ```
 git clone https://github.com/njbrown/texturelab.git
-
 cd texturelab
-
-# if you want to pull down assets (textures and node icons)
-git submodule update --init
-
-yarn install
-yarn electron:serve
+git submodule update --init --recursive
 ```
 
 ## Feedback

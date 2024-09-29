@@ -3,6 +3,7 @@
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QMouseEvent>
+#include <QPainter>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -139,11 +140,97 @@ signals:
     void onSVChanged(float saturation, float value);
 };
 
+// https://github.com/mortalis13/Qt-Color-Picker-Qt/blob/master/Widgets/ColorWidgets/hselector.cpp
 class HueSlider : public QWidget {
+    float hue;
+    bool selectorDrawn;
+    QColor color;
+    QPixmap selectorPixmap;
+
 public:
-    HueSlider() {}
-    void setHue(float hue);
-    void setColor(const QColor& color) {}
+    HueSlider()
+    {
+        selectorDrawn = false;
+        hue = 0;
+        // this->setFixedSize(400, 20);
+        setFixedHeight(20);
+
+        this->setStyleSheet("border-radius: 5px;");
+    }
+    void setHue(float hue)
+    {
+        this->hue = hue;
+        update();
+    }
+    void setColor(const QColor& color)
+    {
+        this->color = color;
+        this->hue = color.hueF();
+        update();
+    }
+
+protected:
+    void paintEvent(QPaintEvent* event) override
+    {
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        float barHeight = height();
+        float barWidth = width();
+
+        // if (!selectorDrawn) {
+        if (true) {
+            selectorPixmap = QPixmap(barWidth, barHeight);
+            QPainter huePainter(&selectorPixmap);
+
+            QPointF p1(0, 0);
+            QPointF p2(width(), 0);
+            // QPointF p1(0, 0);
+            // QPointF p2(100, 100);
+            QLinearGradient grad(p1, p2);
+            // QLinearGradient grad(p1, p2);
+
+            float ratio = 1.0 / 360.0f;
+
+            QColor gradientColor;
+            for (qreal hs = 0; hs < 1.0; hs += ratio) {
+                gradientColor.setHsvF(hs, 1.0f, 1.0f);
+                grad.setColorAt(hs, gradientColor);
+            }
+
+            // grad.setColorAt(0.0, Qt::red);
+            // grad.setColorAt(0.5, Qt::green);
+            // grad.setColorAt(1.0, Qt::blue);
+
+            huePainter.setPen(Qt::NoPen);
+            huePainter.setBrush(QBrush(grad));
+            huePainter.drawRect(0, 0, barWidth, barHeight);
+
+            selectorDrawn = true;
+        }
+
+        // selectorPixmap.save("./selector.png");
+        painter.drawPixmap(0, 0, selectorPixmap);
+
+        // draw selector
+        painter.setPen(QPen(Qt::black, 2));
+        painter.setBrush(Qt::white);
+        painter.drawEllipse(QPointF(hue * width(), height() / 2), 5, 5);
+    }
+
+    void mousePressEvent(QMouseEvent* event) override
+    {
+        hue = event->pos().x() / (float)width();
+        update();
+        // emit onHueChanged(hue);
+    }
+
+    void mouseMoveEvent(QMouseEvent* event) override
+    {
+        hue = event->pos().x() / (float)width();
+        hue = std::clamp(hue, 0.0f, 1.0f);
+        update();
+    }
 signals:
     void onHueChanged(float hue);
 };
@@ -169,11 +256,14 @@ ColorPicker::ColorPicker()
     vlayout->addWidget(alphaSlider);
 
     this->setLayout(vlayout);
+
+    // this->setBaseSize(400, 500);
+    this->resize(400, 330);
 }
 
 void ColorPicker::setColor(const QColor& color)
 {
     svBox->setColor(color);
-    // hueSlider->setColor(color);
+    hueSlider->setColor(color);
     alphaSlider->setColor(color);
 }
