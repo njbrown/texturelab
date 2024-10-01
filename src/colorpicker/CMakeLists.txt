@@ -12,9 +12,15 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(SRCS
     colorpicker.cpp
+    gradient.cpp
+    gradientpicker.cpp
+    widgets.cpp
 )
 set(HEADERS
     colorpicker.h
+    gradient.h
+    gradientpicker.h
+    widgets.h
 )
 
 # library
