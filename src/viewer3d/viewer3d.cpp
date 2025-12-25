@@ -2,6 +2,7 @@
 #include <QMatrix4x4>
 #include <QOpenGLWindow>
 #include <QVector3D>
+#include <QQuaternion>
 
 #include <QFile>
 #include <QImage>
