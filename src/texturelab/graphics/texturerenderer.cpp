@@ -392,7 +392,7 @@ void TextureRenderer::renderNode(const TextureNodePtr& node)
 
         // pass seed
         shader->setUniformValue(
-            "_seed", (GLint)(project->randomSeed + node->randomSeed));
+            "_seed", (GLfloat)(project->randomSeed + node->randomSeed));
 
         // texture size
         shader->setUniformValue(
