@@ -28,7 +28,7 @@ install Qt 6 and required dependencies
 Note: Linux needs libmesa:
 https://doc.qt.io/qt-6/linux.html
 
-sudo apt install build-essential libgl1-mesa-dev
+sudo apt install build-essential libgl1-mesa-dev libxkbcommon-dev libvulkan-dev
 
 ```
 
@@ -41,6 +41,18 @@ git submodule update --init --recursive
 ```
 
 Ensure Qt6 is added to your CMAKE_PREFIX_PATH env
+
+generate build files:
+
+```
+cmake -G "Unix Makefiles"
+```
+
+build
+
+```
+make texturelab
+```
 
 ## Feedback
 
