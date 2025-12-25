@@ -23,10 +23,12 @@ Texturelab will soon be converted to a qt project. All issues will be addressed 
 Prerequisites
 
 ```
-install qt
+install Qt 6 and required dependencies
 
-//apt-get install libmesa-dev
-sudo apt install libgl1-mesa-dev
+Note: Linux needs libmesa:
+https://doc.qt.io/qt-6/linux.html
+
+sudo apt install build-essential libgl1-mesa-dev
 
 ```
 
@@ -37,6 +39,8 @@ git clone https://github.com/njbrown/texturelab.git
 cd texturelab
 git submodule update --init --recursive
 ```
+
+Ensure Qt6 is added to your CMAKE_PREFIX_PATH env
 
 ## Feedback
 
