@@ -60,6 +60,9 @@ class RenderWorker : public QObject {
     QOpenGLShader* fshader;
     QOpenGLFramebufferObject* fbo;
 
+    // use custom dbo that gets shared across render textures
+    GLuint fboId;
+
     QMutex mutex;
     std::atomic<bool> running;
     QQueue<RenderCommand> renderQueue;

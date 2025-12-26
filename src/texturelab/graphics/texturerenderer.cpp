@@ -547,6 +547,8 @@ void TextureRenderer::queueNextNodeToRender()
         cmd.shaderLinked = nextNode->shader->isLinked();
         cmd.randomSeed = project->randomSeed + nextNode->randomSeed;
 
+        cmd.totalInputs = nextNode->inputs.size();
+
         // inputs
         auto nodeInputs = getNodeInputs(nextNode);
         for (auto input : nodeInputs) {

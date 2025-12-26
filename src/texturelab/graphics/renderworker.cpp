@@ -92,7 +92,11 @@ void RenderWorker::setup()
 
     QObject::connect(logger, &QOpenGLDebugLogger::messageLogged,
                      [=](const QOpenGLDebugMessage& debugMessage) {
-                         qDebug() << debugMessage;
+                         if (debugMessage.type() ==
+                             QOpenGLDebugMessage::ErrorType)
+                             qFatal() << debugMessage;
+                         //  else
+                         //      qDebug() << debugMessage;
                      });
 
     logger->startLogging();
@@ -169,6 +173,14 @@ void RenderWorker::setup()
     if (!fbo->isValid()) {
         qFatal("FBO could not be created");
     }
+
+    // create FBO with no color attachment for depth-only rendering
+    fboId = 0;
+    gl->glGenFramebuffers(1, &fboId);
+    gl->glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+    // gl->glDrawBuffer(GL_NONE);
+    // gl->glReadBuffer(GL_NONE);
+    gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void RenderWorker::processRenderCommand(const RenderCommand& command)
@@ -180,13 +192,27 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
     GLuint renderedTextureId =
         0; // Replace with actual texture ID after rendering
 
-    gl->glBindFramebuffer(GL_FRAMEBUFFER, command.fboId);
+    qDebug() << "RenderWorker: Processing render command for node:"
+             << command.nodeId;
+
+    gl->glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+    gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_2D, command.fboId, 0);
+
+    GLenum status = gl->glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+        qFatal("FRAMEBUFFER IS NOT COMPLETE!");
+        // qWarning("%s Framebuffer is not complete!", command.nodeId);
+    }
+    // fbo->bind();
+
     gl->glViewport(0, 0, command.textureWidth, command.textureHeight);
 
     gl->glClearColor(0, 0, 0, 1);
     gl->glClearDepth(0);
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    qDebug() << "RenderWorker: Cleared framebuffer for node:" << command.nodeId;
     vao->bind();
 
     if (command.shaderLinked) {
@@ -318,7 +344,9 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
     // auto img = node->texture->toImage();
     // img.save(node->id + ".png");
 
-    gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // fbo->release();
+    gl->glBindFramebuffer(GL_FRAMEBUFFER, ctx->defaultFramebufferObject());
 
     // Emit signal that node has been rendered
     emit nodeRendered(command.nodeId, renderedTextureId);
