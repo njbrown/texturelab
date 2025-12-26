@@ -255,28 +255,38 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
             auto propCString = ("prop_" + prop.propName.toStdString());
             auto propName = propCString.c_str();
             // qDebug() << "glsl prop: " << propName;
+
             switch (prop.propType) {
             case PropType::Int: {
-                auto intVal = ((IntProp*)prop)->value;
-                shader->setUniformValue(propName, (GLint)intVal);
+                GLint intVal = prop.value.toInt();
+                gl->glUniform1i(
+                    gl->glGetUniformLocation(command.shaderId, propName),
+                    intVal);
             } break;
             case PropType::Float: {
-                auto floatVal = ((FloatProp*)prop)->value;
-                shader->setUniformValue(propName, (GLfloat)floatVal);
+                GLfloat floatVal = prop.value.toFloat();
+                gl->glUniform1f(
+                    gl->glGetUniformLocation(command.shaderId, propName),
+                    floatVal);
             } break;
             case PropType::Bool: {
-                auto boolVal = ((BoolProp*)prop)->value;
-                shader->setUniformValue(propName, (GLint)boolVal == true);
+                GLint boolVal = prop.value.toBool() ? 1 : 0;
+                gl->glUniform1i(
+                    gl->glGetUniformLocation(command.shaderId, propName),
+                    boolVal);
             } break;
             case PropType::Enum: {
-                auto enumVal = ((EnumProp*)prop)->index;
-                shader->setUniformValue(propName, (GLint)enumVal);
+                GLint enumVal = prop.value.toInt();
+                gl->glUniform1i(
+                    gl->glGetUniformLocation(command.shaderId, propName),
+                    enumVal);
             } break;
             case PropType::Color: {
-                auto colorVal = ((ColorProp*)prop)->value;
-                shader->setUniformValue(
-                    propName, QVector4D(colorVal.redF(), colorVal.greenF(),
-                                        colorVal.blueF(), colorVal.alphaF()));
+                auto colorVal = prop.value.value<QColor>();
+                gl->glUniform4f(
+                    gl->glGetUniformLocation(command.shaderId, propName),
+                    colorVal.redF(), colorVal.greenF(), colorVal.blueF(),
+                    colorVal.alphaF());
             } break;
             case PropType::Gradient:
                 // todo: pass gradient
