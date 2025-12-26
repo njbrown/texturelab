@@ -38,14 +38,15 @@ class TextureRenderer : public QObject {
     QOpenGLShader* fshader;
     QOpenGLFramebufferObject* fbo;
 
-    QThread *renderThread;
-    RenderWorker *renderWorker;
+    QThread* renderThread;
+    RenderWorker* renderWorker;
 
 public:
     TextureRenderer();
     void setup();
     void setProject(TextureProjectPtr project);
     void update();
+    void updateOld();
     void testRendering();
 
     void initializeNodeGraphicsResources(const TextureNodePtr& node);
@@ -54,6 +55,10 @@ public:
     TextureProjectPtr project;
 
 private:
+    void initRenderWorker();
+    void nodeRendered(const QString& nodeId, GLuint texId);
+    void queueNextNodeToRender();
+
     QVector<NodeInput> getNodeInputs(const TextureNodePtr& node);
     TextureNodePtr getNextUpdatableNode() const;
     QOpenGLShaderProgram* buildShaderForNode(const TextureNodePtr& node);
@@ -61,6 +66,7 @@ private:
     QString createGradientLib();
     QString createCodeForInputs(const TextureNodePtr& node);
     QString createCodeForProps(const TextureNodePtr& node);
+
 signals:
     void thumbnailGenerated(const QString& nodeId, GLuint texId,
                             const QPixmap& pixmap);
