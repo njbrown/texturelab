@@ -31,6 +31,8 @@ struct RenderProp {
 
 struct RenderCommand {
     QString nodeId;
+
+    GLuint textureId;
     GLuint shaderId;
     bool shaderLinked;
 

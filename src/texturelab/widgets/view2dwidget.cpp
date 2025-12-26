@@ -157,7 +157,7 @@ void View2DGraph::setSelectedNode(const TextureNodePtr& node)
     this->scene()->invalidate();
 };
 
-void View2DGraph::clearSelection(){};
+void View2DGraph::clearSelection() {};
 
 void View2DGraph::drawBackground(QPainter* painter, const QRectF& r)
 {
@@ -242,11 +242,14 @@ void NodePreviewGraphicsItem::paint(QPainter* painter,
         // // https://doc.qt.io/qt-5/qpainter.html#beginNativePainting
         painter->beginNativePainting();
 
-        // glColor4f(1.0f, 0.0f, 0.0f, 1.0);
+        glDisable(GL_BLEND);
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0);
         glEnable(GL_TEXTURE_2D);
 
         glActiveTexture(0);
-        glBindTexture(GL_TEXTURE_2D, node->texture->texture());
+        // qDebug() << "rendering preview for tex id " << node->textureId();
+        glBindTexture(GL_TEXTURE_2D, node->textureId());
+        // glBindTexture(GL_TEXTURE_2D, node->texture->texture());
         glBegin(GL_QUADS);
         glTexCoord2f(0, 0);
         glVertex2f(0, 0);
@@ -261,6 +264,7 @@ void NodePreviewGraphicsItem::paint(QPainter* painter,
         glVertex2f(0, rect.height());
         glEnd();
 
+        glEnable(GL_BLEND);
         painter->endNativePainting();
     }
 }

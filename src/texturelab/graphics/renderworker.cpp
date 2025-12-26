@@ -14,7 +14,15 @@
 #include <QOpenGLVersionFunctionsFactory>
 #include <renderer/renderer.h>
 
+// https://renderdoc.org/docs/in_application_api.html
+#include "renderdoc_app.h"
+#ifdef __linux__
+#include <dlfcn.h>
+#endif
+
 const int TEXTURE_SIZE = 1024;
+
+RENDERDOC_API_1_1_2* rdoc_api = NULL;
 
 RenderWorker::RenderWorker()
     : QObject(), surface(nullptr), ctx(nullptr), gl(nullptr), vao(nullptr),
@@ -181,6 +189,15 @@ void RenderWorker::setup()
     // gl->glDrawBuffer(GL_NONE);
     // gl->glReadBuffer(GL_NONE);
     gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+#ifdef __linux__
+    // setup renderdoc
+    if (void* mod = dlopen("librenderdoc.so", RTLD_NOW | RTLD_NOLOAD)) {
+        pRENDERDOC_GetAPI RENDERDOC_GetAPI =
+            (pRENDERDOC_GetAPI)dlsym(mod, "RENDERDOC_GetAPI");
+        RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void**)&rdoc_api);
+    }
+#endif
 }
 
 void RenderWorker::processRenderCommand(const RenderCommand& command)
@@ -188,16 +205,19 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
     // Here you would bind the shader, set up inputs and props, and render to a
     // texture. This is a placeholder implementation.
 
+    if (rdoc_api)
+        rdoc_api->StartFrameCapture(NULL, NULL);
+
     // Simulate rendering process
     GLuint renderedTextureId =
         0; // Replace with actual texture ID after rendering
 
-    qDebug() << "RenderWorker: Processing render command for node:"
-             << command.nodeId;
+    // qDebug() << "RenderWorker: Processing render command for node:"
+    //          << command.nodeId;
 
     gl->glBindFramebuffer(GL_FRAMEBUFFER, fboId);
     gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                               GL_TEXTURE_2D, command.fboId, 0);
+                               GL_TEXTURE_2D, command.textureId, 0);
 
     GLenum status = gl->glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {
@@ -208,11 +228,12 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
 
     gl->glViewport(0, 0, command.textureWidth, command.textureHeight);
 
-    gl->glClearColor(0, 0, 0, 1);
+    gl->glClearColor(0, 1, 0, 1);
     gl->glClearDepth(0);
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    qDebug() << "RenderWorker: Cleared framebuffer for node:" << command.nodeId;
+    // qDebug() << "RenderWorker: Cleared framebuffer for node:" <<
+    // command.nodeId;
     vao->bind();
 
     if (command.shaderLinked) {
@@ -346,10 +367,15 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
 
     // gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
     // fbo->release();
+
+    gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_2D, 0, 0);
     gl->glBindFramebuffer(GL_FRAMEBUFFER, ctx->defaultFramebufferObject());
 
+    if (rdoc_api)
+        rdoc_api->EndFrameCapture(NULL, NULL);
     // Emit signal that node has been rendered
-    emit nodeRendered(command.nodeId, renderedTextureId);
+    emit nodeRendered(command.nodeId, command.textureId);
 }
 
 void RenderWorker::kill() { running = false; }

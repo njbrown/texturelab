@@ -523,6 +523,9 @@ void TextureRenderer::initRenderWorker()
     QObject::connect(renderThread, &QThread::started, renderWorker,
                      &RenderWorker::run);
 
+    QObject::connect(renderWorker, &RenderWorker::nodeRendered, this,
+                     &TextureRenderer::nodeRendered);
+
     renderThread->start();
 }
 
@@ -542,6 +545,7 @@ void TextureRenderer::queueNextNodeToRender()
         cmd.textureWidth = nextNode->textureWidth;
         cmd.textureHeight = nextNode->textureHeight;
         cmd.fboId = nextNode->texture->handle();
+        cmd.textureId = nextNode->textureId();
         cmd.nodeId = nextNode->id;
         cmd.shaderId = nextNode->shader->programId();
         cmd.shaderLinked = nextNode->shader->isLinked();
