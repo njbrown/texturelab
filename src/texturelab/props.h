@@ -47,6 +47,7 @@ public:
 
     virtual QVariant getValue() = 0;
     virtual void setValue(QVariant val) = 0;
+    virtual Prop* clone() const = 0;
 
     virtual QJsonObject toJson();
     virtual void fromJson(const QJsonObject& obj);
@@ -81,6 +82,13 @@ public:
         maxValue = 1;
         step = 0.1;
         type = PropType::Float;
+    }
+
+    Prop* clone() const override
+    {
+        auto* copy = new FloatProp(*this);
+        copy->group = nullptr;
+        return copy;
     }
 
     QVariant getValue() override { return QVariant::fromValue(value); }
@@ -123,6 +131,13 @@ public:
         type = PropType::Int;
     }
 
+    Prop* clone() const override
+    {
+        auto* copy = new IntProp(*this);
+        copy->group = nullptr;
+        return copy;
+    }
+
     QVariant getValue() override { return QVariant::fromValue(value); }
 
     void setValue(QVariant val) override { value = (long)val.toLongLong(); }
@@ -157,6 +172,13 @@ public:
         value = false;
     }
 
+    Prop* clone() const override
+    {
+        auto* copy = new BoolProp(*this);
+        copy->group = nullptr;
+        return copy;
+    }
+
     QVariant getValue() override { return value; }
 
     void setValue(QVariant val) override { value = val.toBool(); }
@@ -184,6 +206,13 @@ public:
     {
         type = PropType::Enum;
         index = 0;
+    }
+
+    Prop* clone() const override
+    {
+        auto* copy = new EnumProp(*this);
+        copy->group = nullptr;
+        return copy;
     }
 
     QVariant getValue() override { return index; }
@@ -223,6 +252,13 @@ struct ColorProp : public Prop {
 
     ColorProp() : Prop() { type = PropType::Color; }
 
+    Prop* clone() const override
+    {
+        auto* copy = new ColorProp(*this);
+        copy->group = nullptr;
+        return copy;
+    }
+
     QVariant getValue() override { return value; }
 
     void setValue(QVariant val) override { value = val.value<QColor>(); }
@@ -257,6 +293,13 @@ public:
 
     StringProp() : Prop() { type = PropType::Color; }
 
+    Prop* clone() const override
+    {
+        auto* copy = new StringProp(*this);
+        copy->group = nullptr;
+        return copy;
+    }
+
     QVariant getValue() override { return value; }
 
     void setValue(QVariant val) override { value = val.value<QString>(); }
@@ -280,6 +323,13 @@ public:
     QImage value;
 
     ImageProp() : Prop() { type = PropType::Image; }
+
+    Prop* clone() const override
+    {
+        auto* copy = new ImageProp(*this);
+        copy->group = nullptr;
+        return copy;
+    }
 
     QVariant getValue() override { return value; }
 
