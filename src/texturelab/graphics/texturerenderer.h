@@ -3,6 +3,7 @@
 #include <QOpenGLContext>
 #include <QPixmap>
 #include <QSharedPointer>
+#include <QThread>
 
 class QOffscreenSurface;
 class QOpenGLContext;
@@ -13,6 +14,7 @@ class QOpenGLShader;
 class QOpenGLShaderProgram;
 class QOpenGLFramebufferObject;
 
+class RenderWorker;
 class TextureProject;
 typedef QSharedPointer<TextureProject> TextureProjectPtr;
 class TextureNode;
@@ -35,6 +37,9 @@ class TextureRenderer : public QObject {
     QOpenGLShader* vshader;
     QOpenGLShader* fshader;
     QOpenGLFramebufferObject* fbo;
+
+    QThread *renderThread;
+    RenderWorker *renderWorker;
 
 public:
     TextureRenderer();

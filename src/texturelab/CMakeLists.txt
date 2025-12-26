@@ -126,6 +126,8 @@ set(PROJECT_SOURCES
         ./widgets/view3dwidget.cpp
         ./graphics/texturerenderer.h
         ./graphics/texturerenderer.cpp
+        ./graphics/renderworker.h
+        ./graphics/renderworker.cpp
         ${LIBRARYV1}
         ${LIBRARYV2}
 )
