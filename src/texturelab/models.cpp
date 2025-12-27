@@ -3,6 +3,7 @@
 #include "props.h"
 #include <QOpenGLFramebufferObject>
 #include <QQueue>
+#include <QRandomGenerator>
 
 TextureNodePtr TextureProject::getNodeById(const QString& id)
 {

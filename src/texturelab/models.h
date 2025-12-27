@@ -98,7 +98,7 @@ public:
 
     QList<QString> inputs;
 
-    long randomSeed;
+    long randomSeed = 0;
     QString exportName;
 
     QMap<QString, Prop*> props;
