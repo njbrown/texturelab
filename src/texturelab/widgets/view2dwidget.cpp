@@ -37,14 +37,19 @@ void View2DWidget::setSelectedNode(const TextureNodePtr& node)
 
 void View2DWidget::clearSelection() {}
 
-void View2DWidget::reRenderNode() { this->graph->scene()->invalidate(); }
+void View2DWidget::reRenderNode()
+{
+    // this->graph->scene()->invalidate();
+    this->graph->updatePreview();
+}
 
 void View2DWidget::setTextureRenderer(TextureRenderer* renderer)
 {
     connect(renderer, &TextureRenderer::thumbnailGenerated,
             [=](const QString& nodeId, GLint texId, const QPixmap& pixmap) {
                 if (!!node && node->id == nodeId) {
-                    this->graph->scene()->invalidate();
+                    // this->graph->scene()->invalidate();
+                    this->graph->updatePreview();
                 }
             });
 }
@@ -154,8 +159,11 @@ void View2DGraph::mouseReleaseEvent(QMouseEvent* event)
 void View2DGraph::setSelectedNode(const TextureNodePtr& node)
 {
     this->preview->setNode(node);
-    this->scene()->invalidate();
+    this->preview->update();
+    // this->scene()->invalidate();
 };
+
+void View2DGraph::updatePreview() { this->preview->update(); }
 
 void View2DGraph::clearSelection() {};
 

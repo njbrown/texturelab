@@ -55,6 +55,7 @@ public:
     void scaleDown();
 
     void setSelectedNode(const TextureNodePtr& node);
+    void updatePreview();
     void clearSelection();
 
 protected:

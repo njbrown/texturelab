@@ -539,6 +539,7 @@ void TextureRenderer::initRenderWorker()
 
 void TextureRenderer::nodeRendered(const QString& nodeId, GLuint texId)
 {
+    qDebug() << "TextureRenderer: Node rendered:" << nodeId;
     // queue up next node to render
     emit thumbnailGenerated(nodeId, texId, QPixmap());
 

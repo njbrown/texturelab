@@ -105,7 +105,7 @@ public:
     QList<PropertyGroup*> propertyGroups;
 
     // texture needs updating
-    bool isDirty;
+    bool isDirty = true;
 
     int textureWidth;
     int textureHeight;
@@ -115,7 +115,7 @@ public:
 
     TextureNode();
 
-    virtual void init(){};
+    virtual void init() {};
 
     void addInput(const QString& inputName);
 
