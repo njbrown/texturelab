@@ -534,7 +534,7 @@ void TextureRenderer::initRenderWorker()
         &RenderWorker::run);
             
     renderThread->start();
-    #endif    
+    #endif
 }
 
 void TextureRenderer::nodeRendered(const QString& nodeId, GLuint texId)
