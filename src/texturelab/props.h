@@ -140,7 +140,7 @@ public:
 
     QVariant getValue() override { return QVariant::fromValue(value); }
 
-    void setValue(QVariant val) override { value = (long)val.toLongLong(); }
+    void setValue(QVariant val) override { value = (long)val.toDouble(); }
 
     QJsonObject toJson() override
     {

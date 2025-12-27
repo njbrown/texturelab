@@ -194,8 +194,8 @@ void GraphWidget::setTextureRenderer(TextureRenderer* renderer)
                 // scene->setNodeThumbnail(nodeId, pixmap);
                 auto node = scene->getNodeById(nodeId);
                 if (node) {
-                    node->setThumbnail(pixmap);
                     node->setTextureId(texId);
+                    node->setThumbnail(pixmap);
                 }
             });
 }

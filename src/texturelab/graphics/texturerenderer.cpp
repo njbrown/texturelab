@@ -1,4 +1,5 @@
 #include "texturerenderer.h"
+#include "renderworker.h"
 // #include "../models.h"
 
 // https://forum.qt.io/topic/84779/how-to-create-a-qoffscreensurface-correctly/4
@@ -13,6 +14,7 @@
 #include <QOpenGLShader>
 #include <QOpenGLTexture>
 #include <QOpenGLVertexArrayObject>
+#include <QTimer>
 // Qt6 only!!
 #include <QOpenGLVersionFunctionsFactory>
 // #include <QOpenGLPaintDevice>
@@ -20,6 +22,8 @@
 
 #include "../props.h"
 #include "models.h"
+
+// #define RENDER_IN_MAIN_THREAD
 
 enum class VertexUsage : int {
     Position = 0,
@@ -253,6 +257,8 @@ void TextureRenderer::setup()
     if (!fbo->isValid()) {
         qFatal("FBO could not be created");
     }
+
+    this->initRenderWorker();
 }
 
 TextureRenderer::TextureRenderer() { this->setup(); }
@@ -263,6 +269,56 @@ void TextureRenderer::setProject(TextureProjectPtr project)
 }
 
 void TextureRenderer::update()
+{
+    if (!project)
+        return;
+
+    // check for nodes that need updating and update
+    for (auto& node : project->nodes) {
+        if (!node->isGraphicsResourcesInitialized()) {
+            // create texture
+            initializeNodeGraphicsResources(node);
+        }
+
+        // if the resolution has changed, resize texture
+        if (project->textureWidth != node->textureWidth ||
+            project->textureHeight != node->textureHeight) {
+            // resize
+            // resizeNodeTexture(node);
+            node->textureWidth = project->textureWidth;
+            node->textureHeight = project->textureHeight;
+            node->texture = new QOpenGLFramebufferObject(node->textureWidth,
+                                                         node->textureHeight);
+
+            // clear pixmap and emit thumbnail changed?
+        }
+    }
+
+    this->queueNextNodeToRender();
+
+    // ctx->makeCurrent(surface);
+    // // todo: use quota
+    // while (true) {
+    //     auto nextNode = getNextUpdatableNode();
+    //     if (!nextNode)
+    //         break;
+
+    //     qDebug() << "Rendering node: " << nextNode->id;
+    //     renderNode(nextNode);
+
+    //     nextNode->isDirty = false;
+
+    //     // auto img = nextNode->texture->toImage();
+    //     // emit thumbnailGenerated(nextNode->id,  QPixmap::fromImage(img));
+
+    //     auto texId = nextNode->texture->texture();
+    //     emit thumbnailGenerated(nextNode->id, texId, QPixmap());
+    // }
+
+    // ctx->doneCurrent();
+}
+
+void TextureRenderer::updateOld()
 {
     if (!project)
         return;
@@ -458,6 +514,90 @@ void TextureRenderer::renderNode(const TextureNodePtr& node)
     // img.save(node->id + ".png");
 
     node->texture->release();
+}
+
+void TextureRenderer::initRenderWorker()
+{
+    renderWorker = new RenderWorker();
+    QObject::connect(renderWorker, &RenderWorker::nodeRendered, this,
+            &TextureRenderer::nodeRendered);
+
+    #ifdef RENDER_IN_MAIN_THREAD
+    // ensure it creates its own context and resources on main thread
+    renderWorker->setup();
+    #else
+    renderThread = new QThread();
+    
+    renderWorker->moveToThread(renderThread);
+    
+    QObject::connect(renderThread, &QThread::started, renderWorker,
+        &RenderWorker::run);
+            
+    renderThread->start();
+    #endif
+}
+
+void TextureRenderer::nodeRendered(const QString& nodeId, GLuint texId)
+{
+    qDebug() << "TextureRenderer: Node rendered:" << nodeId;
+    // queue up next node to render
+    emit thumbnailGenerated(nodeId, texId, QPixmap());
+
+    this->queueNextNodeToRender();
+    // QTimer::singleShot(0, this, &TextureRenderer::queueNextNodeToRender);
+}
+
+void TextureRenderer::queueNextNodeToRender()
+{
+    auto nextNode = getNextUpdatableNode();
+    if (!!nextNode) {
+        RenderCommand cmd;
+        cmd.textureWidth = nextNode->textureWidth;
+        cmd.textureHeight = nextNode->textureHeight;
+        cmd.fboId = nextNode->texture->handle();
+        cmd.textureId = nextNode->textureId();
+        cmd.nodeId = nextNode->id;
+        cmd.shaderId = nextNode->shader->programId();
+        cmd.shaderLinked = nextNode->shader->isLinked();
+        cmd.randomSeed = project->randomSeed + nextNode->randomSeed;
+
+        cmd.totalInputs = nextNode->inputs.size();
+
+        // inputs
+        auto nodeInputs = getNodeInputs(nextNode);
+        for (auto input : nodeInputs) {
+            RenderNodeInput rin;
+            rin.nodeId = input.node->id;
+            rin.inputName = input.name;
+            rin.textureId = input.node->textureId();
+            cmd.inputs.append(rin);
+        }
+
+        // props
+        for (auto prop : nextNode->props) {
+            RenderProp rnp;
+            rnp.propName = prop->name;
+            rnp.propType = prop->type;
+            rnp.value = prop->getValue();
+
+            cmd.props.append(rnp);
+        }
+
+        QQueue<RenderCommand> queue;
+        queue.enqueue(cmd);
+
+        // pass to render worker to process
+        renderWorker->setRenderQueue(queue);
+
+        // mark node as clean before rendering to avoid double-queuing
+        nextNode->isDirty = false;
+
+        #ifdef RENDER_IN_MAIN_THREAD
+        renderWorker->renderNextInQueue();
+        #endif
+
+        
+    }
 }
 
 QVector<NodeInput> TextureRenderer::getNodeInputs(const TextureNodePtr& node)

@@ -98,14 +98,14 @@ public:
 
     QList<QString> inputs;
 
-    long randomSeed;
+    long randomSeed = 0;
     QString exportName;
 
     QMap<QString, Prop*> props;
     QList<PropertyGroup*> propertyGroups;
 
     // texture needs updating
-    bool isDirty;
+    bool isDirty = true;
 
     int textureWidth;
     int textureHeight;
@@ -115,7 +115,7 @@ public:
 
     TextureNode();
 
-    virtual void init(){};
+    virtual void init() {};
 
     void addInput(const QString& inputName);
 
