@@ -1,11 +1,14 @@
 #include "mainwindow.h"
 
+#include <QDebug>
 #include <QFileDialog>
 #include <QLayout>
 #include <QList>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QOpenGLContext>
+#include <QOpenGLFunctions>
 #include <QToolBar>
 
 #include "DockAreaWidget.h"
@@ -97,6 +100,24 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     // set default empty project
     auto project = TextureProject::createEmpty();
     this->setProject(project);
+
+    // Print GPU information
+    QOpenGLContext* context = QOpenGLContext::currentContext();
+    if (context) {
+        QOpenGLFunctions* f = context->functions();
+        const GLubyte* vendor = f->glGetString(GL_VENDOR);
+        const GLubyte* renderer = f->glGetString(GL_RENDERER);
+        const GLubyte* version = f->glGetString(GL_VERSION);
+
+        qDebug() << "=== GPU Information ===";
+        qDebug() << "GPU Vendor:" << reinterpret_cast<const char*>(vendor);
+        qDebug() << "GPU Renderer:" << reinterpret_cast<const char*>(renderer);
+        qDebug() << "OpenGL Version:" << reinterpret_cast<const char*>(version);
+        qDebug() << "======================";
+    }
+    else {
+        qDebug() << "Warning: No OpenGL context available yet";
+    }
 
     // test texture rendering
     //     auto renderer = new TextureRenderer();
