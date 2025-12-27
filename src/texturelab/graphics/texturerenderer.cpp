@@ -22,6 +22,8 @@
 #include "../props.h"
 #include "models.h"
 
+#define RENDER_IN_MAIN_THREAD
+
 enum class VertexUsage : int {
     Position = 0,
     Color = 1,
@@ -516,17 +518,22 @@ void TextureRenderer::renderNode(const TextureNodePtr& node)
 void TextureRenderer::initRenderWorker()
 {
     renderWorker = new RenderWorker();
-    renderThread = new QThread();
-
-    renderWorker->moveToThread(renderThread);
-
-    QObject::connect(renderThread, &QThread::started, renderWorker,
-                     &RenderWorker::run);
-
     QObject::connect(renderWorker, &RenderWorker::nodeRendered, this,
-                     &TextureRenderer::nodeRendered);
+            &TextureRenderer::nodeRendered);
 
+    #ifdef RENDER_IN_MAIN_THREAD
+    // ensure it creates its own context and resources on main thread
+    renderWorker->setup();
+    #else
+    renderThread = new QThread();
+    
+    renderWorker->moveToThread(renderThread);
+    
+    QObject::connect(renderThread, &QThread::started, renderWorker,
+        &RenderWorker::run);
+            
     renderThread->start();
+    #endif    
 }
 
 void TextureRenderer::nodeRendered(const QString& nodeId, GLuint texId)
@@ -579,8 +586,14 @@ void TextureRenderer::queueNextNodeToRender()
         // pass to render worker to process
         renderWorker->setRenderQueue(queue);
 
-        // mark node as clean
+        // mark node as clean before rendering to avoid double-queuing
         nextNode->isDirty = false;
+
+        #ifdef RENDER_IN_MAIN_THREAD
+        renderWorker->renderNextInQueue();
+        #endif
+
+        
     }
 }
 

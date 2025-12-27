@@ -42,16 +42,19 @@ void RenderWorker::run()
     this->setup();
 
     while (running) {
-        mutex.lock();
-        if (!renderQueue.isEmpty()) {
-            RenderCommand command = renderQueue.dequeue();
-            mutex.unlock();
-            this->processRenderCommand(command);
-        }
-        else {
-            mutex.unlock();
-            // QThread::msleep(10);
-        }
+        this->renderNextInQueue();
+    }
+}
+
+void RenderWorker::renderNextInQueue()
+{
+    mutex.lock();
+    if (!renderQueue.isEmpty()) {
+        RenderCommand command = renderQueue.dequeue();
+        mutex.unlock();
+        this->processRenderCommand(command);
+    } else {
+        mutex.unlock();
     }
 }
 
@@ -198,6 +201,8 @@ void RenderWorker::setup()
         RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void**)&rdoc_api);
     }
 #endif
+
+    ctx->doneCurrent();
 }
 
 void RenderWorker::processRenderCommand(const RenderCommand& command)
@@ -207,6 +212,8 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
 
     if (rdoc_api)
         rdoc_api->StartFrameCapture(NULL, NULL);
+
+    ctx->makeCurrent(surface);
 
     // Simulate rendering process
     GLuint renderedTextureId =
@@ -371,6 +378,8 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
     gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                GL_TEXTURE_2D, 0, 0);
     gl->glBindFramebuffer(GL_FRAMEBUFFER, ctx->defaultFramebufferObject());
+
+    // ctx->doneCurrent();
 
     if (rdoc_api)
         rdoc_api->EndFrameCapture(NULL, NULL);

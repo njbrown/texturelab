@@ -76,9 +76,11 @@ public:
     void run();
     void kill();
     void processRenderCommand(const RenderCommand& command);
+    void renderNextInQueue();
 
-private:
     void setup();
+    
+private:
 
 signals:
     void nodeRendered(QString nodeId, GLuint textureId);
