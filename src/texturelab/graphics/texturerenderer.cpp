@@ -14,6 +14,7 @@
 #include <QOpenGLShader>
 #include <QOpenGLTexture>
 #include <QOpenGLVertexArrayObject>
+#include <QTimer>
 // Qt6 only!!
 #include <QOpenGLVersionFunctionsFactory>
 // #include <QOpenGLPaintDevice>
@@ -22,7 +23,7 @@
 #include "../props.h"
 #include "models.h"
 
-#define RENDER_IN_MAIN_THREAD
+// #define RENDER_IN_MAIN_THREAD
 
 enum class VertexUsage : int {
     Position = 0,
@@ -542,6 +543,7 @@ void TextureRenderer::nodeRendered(const QString& nodeId, GLuint texId)
     emit thumbnailGenerated(nodeId, texId, QPixmap());
 
     this->queueNextNodeToRender();
+    // QTimer::singleShot(0, this, &TextureRenderer::queueNextNodeToRender);
 }
 
 void TextureRenderer::queueNextNodeToRender()

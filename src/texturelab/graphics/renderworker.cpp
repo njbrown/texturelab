@@ -75,6 +75,7 @@ void RenderWorker::setup()
     format.setProfile(QSurfaceFormat::CoreProfile);
     format.setSamples(1);
     format.setSwapInterval(0);
+    format.setSwapBehavior(QSurfaceFormat::SingleBuffer);
     format.setOption(QSurfaceFormat::DebugContext); // for debugging
 
     surface->setFormat(format);
@@ -379,7 +380,7 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
                                GL_TEXTURE_2D, 0, 0);
     gl->glBindFramebuffer(GL_FRAMEBUFFER, ctx->defaultFramebufferObject());
 
-    // ctx->doneCurrent();
+    ctx->doneCurrent();
 
     if (rdoc_api)
         rdoc_api->EndFrameCapture(NULL, NULL);
