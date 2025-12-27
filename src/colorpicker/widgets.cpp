@@ -54,6 +54,7 @@ SVBox::SVBox()
 
 void SVBox::setColor(const QColor& color)
 {
+    this->color = color;
     h = color.hueF();
     s = color.saturationF();
     v = color.valueF();
@@ -66,8 +67,12 @@ void SVBox::setColor(const QColor& color)
     auto formatted = style.arg(hue);
 
     // qDebug() << formatted;
-    this->setStyleSheet(formatted);
+    colorWidget->setStyleSheet(formatted);
+    this->update();
+    colorWidget->update();
 }
+
+QColor SVBox::getColor() const { return QColor::fromHsvF(h, s, v); }
 
 bool SVBox::eventFilter(QObject* object, QEvent* event)
 {
@@ -120,6 +125,7 @@ void SVBox::moveSelector(QMouseEvent* evt)
                  1.0f);
 
     // qDebug() << s << " " << v << "\n";
+    emit onSVChanged(s, v);
 }
 
 // https://github.com/mortalis13/Qt-Color-Picker-Qt/blob/master/Widgets/ColorWidgets/hselector.cpp
@@ -199,7 +205,7 @@ void HueSlider::mousePressEvent(QMouseEvent* event)
 {
     hue = event->pos().x() / (float)width();
     update();
-    // emit onHueChanged(hue);
+    emit onHueChanged(hue);
 }
 
 void HueSlider::mouseMoveEvent(QMouseEvent* event)
@@ -207,4 +213,5 @@ void HueSlider::mouseMoveEvent(QMouseEvent* event)
     hue = event->pos().x() / (float)width();
     hue = std::clamp(hue, 0.0f, 1.0f);
     update();
+    emit onHueChanged(hue);
 }
