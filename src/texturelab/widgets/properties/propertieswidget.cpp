@@ -99,6 +99,21 @@ void PropertiesWidget::setSelectedNode(const TextureNodePtr& node)
             layout->addWidget(widget);
 
         } break;
+        case PropType::Image: {
+            auto widget = new ImagePropWidget();
+            widget->setProp((ImageProp*)prop);
+            propWidgets.append(widget);
+
+            connect(widget, &ImagePropWidget::valueChanged,
+                    [=](const QImage& value) {
+                        node->setProp(prop->name, value);
+                        project->markNodeAsDirty(node);
+
+                        emit propertyUpdated(prop->name, value);
+                    });
+            layout->addWidget(widget);
+
+        } break;
         }
     }
 

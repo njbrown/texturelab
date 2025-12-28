@@ -7,4 +7,11 @@ void ImageNode::init()
     this->title = "Image";
 
     this->imageProp = this->addImageProp("image", "Image");
+
+    this->setShaderSource(R""""(
+        vec4 process(vec2 uv)
+        {
+            return texture(prop_image,uv);
+        }
+        )"""");
 }

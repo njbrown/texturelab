@@ -13,6 +13,7 @@ class IntProp;
 class EnumProp;
 class BoolProp;
 class ColorProp;
+class ImageProp;
 
 // https://stackoverflow.com/a/19007951
 class FloatPropWidget : public QWidget {
@@ -96,4 +97,24 @@ public:
     bool eventFilter(QObject* obj, QEvent* event) override;
 signals:
     void valueChanged(QColor);
+};
+
+class ImagePropWidget : public QWidget {
+    Q_OBJECT
+
+    QLabel* label;
+    QLabel* imagePreview;
+    QPushButton* clearButton;
+
+    ImageProp* prop;
+    QString filePath;
+
+    void updateImagePreview();
+
+public:
+    ImagePropWidget();
+    void setProp(ImageProp* prop);
+    bool eventFilter(QObject* obj, QEvent* event) override;
+signals:
+    void valueChanged(QImage);
 };

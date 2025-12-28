@@ -68,3 +68,39 @@ void Prop::fromJson(const QJsonObject& obj)
     name = obj["name"].toString();
     displayName = obj["displayName"].toString();
 }
+
+void ImageProp::updateTexture()
+{
+    // If value is null, clear the texture
+    if (value.isNull()) {
+        if (texture != nullptr) {
+            delete texture;
+            texture = nullptr;
+        }
+        _textureDirty = false;
+        return;
+    }
+
+    // Only upload texture if dirty or not yet created
+    if (!_textureDirty && texture != nullptr)
+        return;
+
+    // Delete old texture if it exists
+    if (texture != nullptr) {
+        delete texture;
+        texture = nullptr;
+    }
+
+    // Create and upload new texture
+    texture = new QOpenGLTexture(value);
+    texture->setMinificationFilter(QOpenGLTexture::Nearest);
+    texture->setMagnificationFilter(QOpenGLTexture::Nearest);
+    texture->setWrapMode(QOpenGLTexture::Repeat);
+
+    _textureDirty = false;
+}
+
+GLuint ImageProp::getTextureId() const
+{
+    return texture ? texture->textureId() : 0;
+}

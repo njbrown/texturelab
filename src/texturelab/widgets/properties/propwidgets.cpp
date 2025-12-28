@@ -4,10 +4,14 @@
 #include "colorpicker.h"
 
 #include <QComboBox>
+#include <QDir>
 #include <QDoubleSpinBox>
 #include <QEvent>
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPixmap>
 #include <QPushButton>
 #include <QSlider>
 #include <QSpinBox>
@@ -295,6 +299,95 @@ bool ColorPropWidget::eventFilter(QObject* obj, QEvent* event)
 
         picker->exec();
         delete picker;
+
+        return true;
+    }
+    return QWidget::eventFilter(obj, event);
+}
+
+ImagePropWidget::ImagePropWidget()
+{
+    prop = nullptr;
+
+    auto vlayout = new QVBoxLayout(this);
+    this->setLayout(vlayout);
+
+    // label
+    label = new QLabel(this);
+    label->setText("");
+    vlayout->addWidget(label);
+
+    // image preview
+    imagePreview = new QLabel(this);
+    imagePreview->setFixedHeight(100);
+    imagePreview->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    imagePreview->setAlignment(Qt::AlignCenter);
+    imagePreview->setCursor(Qt::PointingHandCursor);
+    imagePreview->setStyleSheet(
+        "QLabel { background-color: #333; border: 1px solid #888; }");
+    imagePreview->setText("Click to select image");
+    imagePreview->setScaledContents(false);
+    imagePreview->installEventFilter(this);
+    vlayout->addWidget(imagePreview);
+
+    // clear button
+    clearButton = new QPushButton("Clear Image", this);
+    vlayout->addWidget(clearButton);
+
+    connect(clearButton, &QPushButton::clicked, [this]() {
+        if (prop) {
+            prop->value = QImage();
+            filePath.clear();
+            updateImagePreview();
+            emit valueChanged(QImage());
+        }
+    });
+
+    this->setFixedHeight(180);
+}
+
+void ImagePropWidget::setProp(ImageProp* prop)
+{
+    label->setText(prop->displayName);
+    this->prop = prop;
+    updateImagePreview();
+}
+
+void ImagePropWidget::updateImagePreview()
+{
+    if (prop && !prop->value.isNull()) {
+        QPixmap pixmap = QPixmap::fromImage(prop->value);
+        imagePreview->setPixmap(pixmap.scaled(imagePreview->size(),
+                                              Qt::KeepAspectRatio,
+                                              Qt::SmoothTransformation));
+    }
+    else {
+        imagePreview->setPixmap(QPixmap());
+        imagePreview->setText("Click to select image");
+    }
+}
+
+bool ImagePropWidget::eventFilter(QObject* obj, QEvent* event)
+{
+    if (obj == imagePreview && event->type() == QEvent::MouseButtonPress) {
+        QString fileName = QFileDialog::getOpenFileName(
+            this, "Select Image",
+            filePath.isEmpty() ? QDir::homePath()
+                               : QFileInfo(filePath).absolutePath(),
+            "Image Files (*.png *.jpg *.jpeg *.bmp *.tiff *.tga *.webp);;All "
+            "Files (*)");
+
+        if (!fileName.isEmpty()) {
+            filePath = fileName;
+            QImage image(fileName);
+            if (!image.isNull()) {
+                if (prop) {
+                    prop->value = image;
+                    updateImagePreview();
+                    emit valueChanged(image);
+                }
+            }
+        }
 
         return true;
     }

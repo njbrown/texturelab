@@ -7,11 +7,14 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QList>
+#include <QOpenGLTexture>
 #include <QString>
 #include <QUuid>
+#include <atomic>
 
 class Prop;
 class PropertyGroup;
+class QOpenGLTexture;
 
 // http://techiesolves.blogspot.com/2018/01/base64-qstring-to-qimage-to-qstring-in.html
 QString createGuid();
@@ -319,8 +322,16 @@ public:
 };
 
 class ImageProp : public Prop {
+
 public:
     QImage value;
+
+    // when this is true, the next render should update the texture
+    // with the image data
+    // std::atomic<bool> _textureDirty = true;
+    bool _textureDirty = true;
+    // GLuint textureId = 0;
+    QOpenGLTexture* texture = nullptr;
 
     ImageProp() : Prop() { type = PropType::Image; }
 
@@ -331,9 +342,22 @@ public:
         return copy;
     }
 
+    bool isTextureDirty() const { return _textureDirty; }
+    void setTextureClean() { _textureDirty = false; }
+
+    // Updates or creates the OpenGL texture from the image data
+    // Should be called from the main OpenGL context thread
+    void updateTexture();
+
+    GLuint getTextureId() const;
+
     QVariant getValue() override { return value; }
 
-    void setValue(QVariant val) override { value = val.value<QImage>(); }
+    void setValue(QVariant val) override
+    {
+        value = val.value<QImage>();
+        _textureDirty = true; // Mark texture as dirty when value changes
+    }
 
     QJsonObject toJson() override
     {

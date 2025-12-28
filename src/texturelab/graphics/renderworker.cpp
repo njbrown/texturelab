@@ -53,7 +53,8 @@ void RenderWorker::renderNextInQueue()
         RenderCommand command = renderQueue.dequeue();
         mutex.unlock();
         this->processRenderCommand(command);
-    } else {
+    }
+    else {
         mutex.unlock();
     }
 }
@@ -346,6 +347,27 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
             case PropType::Gradient:
                 // todo: pass gradient
                 break;
+            case PropType::Image: {
+                // Use pre-uploaded texture ID from main thread
+                if (prop.textureId != 0) {
+                    gl->glActiveTexture(GL_TEXTURE0 + texIndex);
+                    gl->glBindTexture(GL_TEXTURE_2D, prop.textureId);
+                    gl->glUniform1i(
+                        gl->glGetUniformLocation(command.shaderId, propName),
+                        texIndex);
+                    texIndex++;
+                }
+                else {
+                    // No texture provided, bind a default texture (e.g., white)
+                    gl->glActiveTexture(GL_TEXTURE0 + texIndex);
+                    gl->glBindTexture(GL_TEXTURE_2D, 0); // Bind to 0 or a
+                                                         // default texture
+                    gl->glUniform1i(
+                        gl->glGetUniformLocation(command.shaderId, propName),
+                        texIndex);
+                    texIndex++;
+                }
+            } break;
             }
         }
 
