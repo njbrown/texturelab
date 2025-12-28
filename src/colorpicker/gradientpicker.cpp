@@ -241,6 +241,14 @@ void GradientSlider::mousePressEvent(QMouseEvent* event)
             }
 
             addControlPoint(position, color);
+
+            // Select the newly added control point and prepare for dragging
+            selectedPointIndex = gradient.points.size() - 1;
+            draggingPointIndex = selectedPointIndex;
+            dragStartPos = scenePos;
+
+            emit onActivePointChanged(selectedPointIndex, color);
+
             event->accept();
             return;
         }
