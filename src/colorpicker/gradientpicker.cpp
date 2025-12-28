@@ -14,7 +14,7 @@ GradientControlPoint::GradientControlPoint(int index, qreal x, qreal y,
 {
     setPos(x, y);
     setAcceptedMouseButtons(Qt::NoButton);
-    setCacheMode(QGraphicsItem::NoCache);
+    // setCacheMode(QGraphicsItem::NoCache);
 }
 
 QRectF GradientControlPoint::boundingRect() const
@@ -28,6 +28,22 @@ void GradientControlPoint::paint(QPainter* painter,
 {
     Q_UNUSED(option);
     Q_UNUSED(widget);
+
+    // Draw upward-pointing triangle
+    qreal centerX = size / 2.0;
+    qreal triangleHeight = size * 0.5;
+    qreal triangleWidth = size;
+
+    QPolygonF triangle;
+    triangle << QPointF(centerX, -3) // Top point
+             << QPointF(centerX - triangleWidth / 2,
+                        triangleHeight) // Bottom left
+             << QPointF(centerX + triangleWidth / 2,
+                        triangleHeight); // Bottom right
+
+    painter->setBrush(QBrush(Qt::black));
+    painter->setPen(Qt::NoPen);
+    painter->drawPolygon(triangle);
 
     painter->setBrush(QBrush(Qt::white));
     painter->setPen(QPen(Qt::black, 2));
@@ -94,9 +110,9 @@ void GradientSlider::updateGradientDisplay()
     // Create control points
     for (int i = 0; i < gradient.points.size(); ++i) {
         qreal x = xFromPosition(gradient.points[i].position);
-        qreal pointSize = 10;
+        qreal pointSize = 12;
         GradientControlPoint* controlPoint = new GradientControlPoint(
-            i, x - pointSize / 2, sliderY - pointSize, pointSize);
+            i, x - pointSize / 2, sliderY + sliderHeight, pointSize);
         controlPoints.append(controlPoint);
         scene->addItem(controlPoint);
     }
@@ -241,7 +257,7 @@ void GradientSlider::mouseMoveEvent(QMouseEvent* event)
         // Update control point position
         qreal pointSize = 10;
         controlPoints[draggingPointIndex]->setPos(newX - pointSize / 2,
-                                                  sliderY - pointSize);
+                                                  sliderY + sliderHeight);
 
         controlPoints[draggingPointIndex]->update();
         qDebug() << "Control point scenePos:"
