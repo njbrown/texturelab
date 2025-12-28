@@ -38,6 +38,7 @@ public:
     qreal sliderWidth = 380;
     qreal sliderHeight = 30;
     qreal sliderY = 35;
+    static constexpr qreal pointSize = 12;
 
     GradientSlider();
     void setGradient(const Gradient& gradient);

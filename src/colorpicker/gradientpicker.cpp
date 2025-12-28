@@ -110,7 +110,6 @@ void GradientSlider::updateGradientDisplay()
     // Create control points
     for (int i = 0; i < gradient.points.size(); ++i) {
         qreal x = xFromPosition(gradient.points[i].position);
-        qreal pointSize = 12;
         GradientControlPoint* controlPoint = new GradientControlPoint(
             i, x - pointSize / 2, sliderY + sliderHeight, pointSize);
         controlPoints.append(controlPoint);
@@ -252,17 +251,16 @@ void GradientSlider::mouseMoveEvent(QMouseEvent* event)
         qreal minX = 10;
         qreal maxX = sliderWidth + 10;
         qreal newX = qBound(minX, scenePos.x(), maxX);
-        qDebug() << "Dragging to X:" << newX;
+        // qDebug() << "Dragging to X:" << newX;
 
         // Update control point position
-        qreal pointSize = 10;
         controlPoints[draggingPointIndex]->setPos(newX - pointSize / 2,
                                                   sliderY + sliderHeight);
 
         controlPoints[draggingPointIndex]->update();
-        qDebug() << "Control point scenePos:"
-                 << controlPoints[draggingPointIndex]->scenePos()
-                 << "pos:" << controlPoints[draggingPointIndex]->pos();
+        // qDebug() << "Control point scenePos:"
+        //          << controlPoints[draggingPointIndex]->scenePos()
+        //          << "pos:" << controlPoints[draggingPointIndex]->pos();
 
         // Update gradient point position
         gradient.points[draggingPointIndex].position = positionFromX(newX);
