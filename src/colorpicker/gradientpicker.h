@@ -1,19 +1,26 @@
 #pragma once
 #include "gradient.h"
 #include <QDialog>
-#include <QGraphicsEllipseItem>
+#include <QGraphicsObject>
 #include <QGraphicsRectItem>
 #include <QGraphicsScene>
 #include <QGraphicsView>
+#include <QPainter>
 #include <QWidget>
 
 // class QWidget;
 
-class GradientControlPoint : public QGraphicsEllipseItem {
+class GradientControlPoint : public QGraphicsObject {
+    Q_OBJECT
 public:
     int index;
+    qreal size;
 
-    GradientControlPoint(int index, qreal x, qreal y, qreal w, qreal h);
+    GradientControlPoint(int index, qreal x, qreal y, qreal size);
+
+    QRectF boundingRect() const override;
+    void paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
+               QWidget* widget = nullptr) override;
 };
 
 class GradientSlider : public QGraphicsView {

@@ -8,15 +8,30 @@
 #include <QVBoxLayout>
 
 // GradientControlPoint implementation
-GradientControlPoint::GradientControlPoint(int index, qreal x, qreal y, qreal w,
-                                           qreal h)
-    : QGraphicsEllipseItem(x, y, w, h), index(index)
+GradientControlPoint::GradientControlPoint(int index, qreal x, qreal y,
+                                           qreal size)
+    : QGraphicsObject(), index(index), size(size)
 {
-    setBrush(QBrush(Qt::white));
-    setPen(QPen(Qt::black, 2));
+    setPos(x, y);
     setAcceptedMouseButtons(Qt::NoButton);
     setCacheMode(QGraphicsItem::NoCache);
-    setParentItem(nullptr);
+}
+
+QRectF GradientControlPoint::boundingRect() const
+{
+    return QRectF(0, 0, size, size);
+}
+
+void GradientControlPoint::paint(QPainter* painter,
+                                 const QStyleOptionGraphicsItem* option,
+                                 QWidget* widget)
+{
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
+
+    painter->setBrush(QBrush(Qt::white));
+    painter->setPen(QPen(Qt::black, 2));
+    painter->drawEllipse(boundingRect());
 }
 
 // GradientSlider implementation
@@ -81,7 +96,7 @@ void GradientSlider::updateGradientDisplay()
         qreal x = xFromPosition(gradient.points[i].position);
         qreal pointSize = 10;
         GradientControlPoint* controlPoint = new GradientControlPoint(
-            i, x - pointSize / 2, sliderY - pointSize, pointSize, pointSize);
+            i, x - pointSize / 2, sliderY - pointSize, pointSize);
         controlPoints.append(controlPoint);
         scene->addItem(controlPoint);
     }
@@ -225,8 +240,8 @@ void GradientSlider::mouseMoveEvent(QMouseEvent* event)
 
         // Update control point position
         qreal pointSize = 10;
-        controlPoints[draggingPointIndex]->setPos(newX - dragStartPos.x(),
-                                                  sliderY - dragStartPos.y());
+        controlPoints[draggingPointIndex]->setPos(newX - pointSize / 2,
+                                                  sliderY - pointSize);
 
         controlPoints[draggingPointIndex]->update();
         qDebug() << "Control point scenePos:"
