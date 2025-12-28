@@ -2,6 +2,7 @@
 
 #include <QColor>
 #include <QVector>
+#include <algorithm>
 
 class GradientPoint {
 public:

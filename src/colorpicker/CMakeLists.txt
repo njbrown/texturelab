@@ -65,7 +65,7 @@ set_target_properties(colorpicker_app PROPERTIES
     AUTOMOC ON
     AUTORCC ON
     CXX_EXTENSIONS OFF
-    EXPORT_NAME "Viewer Sample App"
+    EXPORT_NAME "Color Picker App"
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
@@ -77,6 +77,37 @@ if(QT_VERSION_MAJOR STREQUAL "5")
         CXX_STANDARD_REQUIRED ON)
 elseif(QT_VERSION_MAJOR STREQUAL "6")
     set_target_properties(colorpicker_app PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON)
+endif()
+
+# EXE for testing purposes
+add_executable(gradientpicker_app
+            ${HEADERS}
+            ${SRCS}
+            gradient_app.cpp
+        )
+target_link_libraries(gradientpicker_app PRIVATE Qt${QT_VERSION_MAJOR}::Core
+                                            Qt${QT_VERSION_MAJOR}::Gui
+                                            Qt${QT_VERSION_MAJOR}::Widgets)
+
+
+set_target_properties(gradientpicker_app PROPERTIES
+    AUTOMOC ON
+    AUTORCC ON
+    CXX_EXTENSIONS OFF
+    EXPORT_NAME "Gradient Example App"
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+
+if(QT_VERSION_MAJOR STREQUAL "5")
+    set_target_properties(gradientpicker_app PROPERTIES
+        CXX_STANDARD 14
+        CXX_STANDARD_REQUIRED ON)
+elseif(QT_VERSION_MAJOR STREQUAL "6")
+    set_target_properties(gradientpicker_app PROPERTIES
         CXX_STANDARD 17
         CXX_STANDARD_REQUIRED ON)
 endif()
