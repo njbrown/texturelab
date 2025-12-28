@@ -1,7 +1,9 @@
 #include "gradientpicker.h"
 #include "gradient.h"
 #include <QBrush>
+#include <QColorDialog>
 #include <QGraphicsSceneMouseEvent>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLinearGradient>
 #include <QMouseEvent>
@@ -9,8 +11,8 @@
 
 // GradientControlPoint implementation
 GradientControlPoint::GradientControlPoint(int index, qreal x, qreal y,
-                                           qreal size)
-    : QGraphicsObject(), index(index), size(size)
+                                           qreal size, const QColor& color)
+    : QGraphicsObject(), index(index), size(size), color(color)
 {
     setPos(x, y);
     setAcceptedMouseButtons(Qt::NoButton);
@@ -45,7 +47,7 @@ void GradientControlPoint::paint(QPainter* painter,
     painter->setPen(Qt::NoPen);
     painter->drawPolygon(triangle);
 
-    painter->setBrush(QBrush(Qt::white));
+    painter->setBrush(QBrush(color));
     painter->setPen(QPen(Qt::black, 2));
     painter->drawEllipse(boundingRect());
 }
@@ -62,9 +64,21 @@ void GradientSlider::setGradient(const Gradient& gradient)
 void GradientSlider::setPointColor(const QColor& color)
 {
     if (selectedPointIndex >= 0 &&
-        selectedPointIndex < gradient.points.size()) {
+        selectedPointIndex < gradient.points.size() &&
+        selectedPointIndex < controlPoints.size()) {
         gradient.points[selectedPointIndex].color = color;
-        updateGradientDisplay();
+
+        // Update control point color
+        controlPoints[selectedPointIndex]->color = color;
+        controlPoints[selectedPointIndex]->update();
+
+        // Update gradient display
+        QLinearGradient linearGrad(10, 0, sliderWidth + 10, 0);
+        for (const auto& point : gradient.points) {
+            linearGrad.setColorAt(point.position, point.color);
+        }
+        gradientRect->setBrush(QBrush(linearGrad));
+
         emit onGradientChanged(gradient);
     }
 }
@@ -111,7 +125,8 @@ void GradientSlider::updateGradientDisplay()
     for (int i = 0; i < gradient.points.size(); ++i) {
         qreal x = xFromPosition(gradient.points[i].position);
         GradientControlPoint* controlPoint = new GradientControlPoint(
-            i, x - pointSize / 2, sliderY + sliderHeight, pointSize);
+            i, x - pointSize / 2, sliderY + sliderHeight, pointSize,
+            gradient.points[i].color);
         controlPoints.append(controlPoint);
         scene->addItem(controlPoint);
     }
@@ -303,18 +318,51 @@ void GradientPickerDialog::setGradient(const Gradient& gradient)
 void GradientPickerDialog::initUI()
 {
     setWindowTitle("Gradient Picker");
-    setFixedSize(460, 160);
+    setFixedSize(460, 180);
 
     QVBoxLayout* layout = new QVBoxLayout(this);
-
-    // Add title label
-    QLabel* titleLabel = new QLabel("Gradient Editor", this);
-    titleLabel->setAlignment(Qt::AlignCenter);
-    layout->addWidget(titleLabel);
 
     // Create and add gradient slider
     gradientSlider = new GradientSlider();
     layout->addWidget(gradientSlider);
 
+    // Add color display button
+    colorButton = new QPushButton(this);
+    colorButton->setFixedHeight(30);
+    colorButton->setEnabled(false);
+    colorButton->setStyleSheet(
+        "background-color: #808080; border: 1px solid black;");
+    layout->addWidget(colorButton);
+
     setLayout(layout);
+
+    // Connect signals
+    connect(gradientSlider, &GradientSlider::onActivePointChanged, this,
+            &GradientPickerDialog::onControlPointSelected);
+    connect(colorButton, &QPushButton::clicked, this,
+            &GradientPickerDialog::onColorButtonClicked);
+}
+
+void GradientPickerDialog::onControlPointSelected(int index,
+                                                  const QColor& color)
+{
+    Q_UNUSED(index);
+    colorButton->setEnabled(true);
+    colorButton->setStyleSheet(
+        QString("background-color: %1; border: 2px solid black;")
+            .arg(color.name()));
+}
+
+void GradientPickerDialog::onColorButtonClicked()
+{
+    QColor currentColor = colorButton->palette().button().color();
+    QColor newColor =
+        QColorDialog::getColor(currentColor, this, "Select Color");
+
+    if (newColor.isValid()) {
+        colorButton->setStyleSheet(
+            QString("background-color: %1; border: 2px solid black;")
+                .arg(newColor.name()));
+        gradientSlider->setPointColor(newColor);
+    }
 }

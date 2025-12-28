@@ -6,6 +6,7 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QPainter>
+#include <QPushButton>
 #include <QWidget>
 
 // class QWidget;
@@ -15,8 +16,10 @@ class GradientControlPoint : public QGraphicsObject {
 public:
     int index;
     qreal size;
+    QColor color;
 
-    GradientControlPoint(int index, qreal x, qreal y, qreal size);
+    GradientControlPoint(int index, qreal x, qreal y, qreal size,
+                         const QColor& color);
 
     QRectF boundingRect() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
@@ -64,8 +67,10 @@ signals:
 };
 
 class GradientPickerDialog : public QDialog {
-    // Gradient gradient;
+    Q_OBJECT
+
     GradientSlider* gradientSlider = nullptr;
+    QPushButton* colorButton = nullptr;
 
 public:
     GradientPickerDialog();
@@ -73,4 +78,6 @@ public:
 
 private:
     void initUI();
+    void onColorButtonClicked();
+    void onControlPointSelected(int index, const QColor& color);
 };
