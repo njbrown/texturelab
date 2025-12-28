@@ -84,6 +84,21 @@ void PropertiesWidget::setSelectedNode(const TextureNodePtr& node)
             layout->addWidget(widget);
 
         } break;
+        case PropType::Color: {
+            auto widget = new ColorPropWidget();
+            widget->setProp((ColorProp*)prop);
+            propWidgets.append(widget);
+
+            connect(widget, &ColorPropWidget::valueChanged,
+                    [=](const QColor& value) {
+                        node->setProp(prop->name, value);
+                        project->markNodeAsDirty(node);
+
+                        emit propertyUpdated(prop->name, value);
+                    });
+            layout->addWidget(widget);
+
+        } break;
         }
     }
 

@@ -12,6 +12,7 @@ class FloatProp;
 class IntProp;
 class EnumProp;
 class BoolProp;
+class ColorProp;
 
 // https://stackoverflow.com/a/19007951
 class FloatPropWidget : public QWidget {
@@ -77,4 +78,22 @@ public:
     void setProp(BoolProp* prop);
 signals:
     void valueChanged(bool);
+};
+
+class ColorPropWidget : public QWidget {
+    Q_OBJECT
+
+    QLabel* label;
+    QWidget* colorPreview;
+
+    ColorProp* prop;
+
+    void updateColorPreview();
+
+public:
+    ColorPropWidget();
+    void setProp(ColorProp* prop);
+    bool eventFilter(QObject* obj, QEvent* event) override;
+signals:
+    void valueChanged(QColor);
 };

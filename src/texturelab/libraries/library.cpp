@@ -48,6 +48,7 @@ Library* createLibraryV2()
     lib->addNode<PolygonNode>("polygon", "Polygon", ":nodes/bevel.png");
     lib->addNode<CircleNode>("circle", "Circle", ":nodes/circle.png");
     lib->addNode<ColorNode>("color", "Color", ":nodes/color.png");
+    lib->addNode<ColorizeNode>("colorize", "Colorize", ":nodes/colorize.png");
     lib->addNode<BlendNode>("blend", "Blend", ":nodes/blend.png");
     lib->addNode<OutputNode>("output", "Output", ":nodes/output.png");
     lib->addNode<NormalMapNode>("normalmap", "Normal Map",

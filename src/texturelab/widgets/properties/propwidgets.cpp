@@ -1,9 +1,11 @@
 #include "propwidgets.h"
 #include "../../models.h"
 #include "../../props.h"
+#include "colorpicker.h"
 
 #include <QComboBox>
 #include <QDoubleSpinBox>
+#include <QEvent>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
@@ -227,4 +229,74 @@ void BoolPropWidget::setValue(bool value)
     else {
         button->setText("False");
     }
+}
+
+ColorPropWidget::ColorPropWidget()
+{
+    prop = nullptr;
+
+    auto vlayout = new QVBoxLayout(this);
+    this->setLayout(vlayout);
+
+    // label
+    label = new QLabel(this);
+    label->setText("");
+    vlayout->addWidget(label);
+
+    // color preview
+    colorPreview = new QWidget(this);
+    colorPreview->setFixedHeight(20);
+    colorPreview->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    colorPreview->setCursor(Qt::PointingHandCursor);
+    colorPreview->installEventFilter(this);
+    vlayout->addWidget(colorPreview);
+
+    this->setFixedHeight(80);
+}
+
+void ColorPropWidget::setProp(ColorProp* prop)
+{
+    label->setText(prop->displayName);
+    this->prop = prop;
+    updateColorPreview();
+}
+
+void ColorPropWidget::updateColorPreview()
+{
+    if (prop) {
+        QString styleSheet = QString("background-color: rgba(%1, %2, %3, %4); "
+                                     "border: 1px solid #888;")
+                                 .arg(prop->value.red())
+                                 .arg(prop->value.green())
+                                 .arg(prop->value.blue())
+                                 .arg(prop->value.alpha());
+        colorPreview->setStyleSheet(styleSheet);
+    }
+}
+
+bool ColorPropWidget::eventFilter(QObject* obj, QEvent* event)
+{
+    if (obj == colorPreview && event->type() == QEvent::MouseButtonPress) {
+        auto picker = new ColorPicker();
+        picker->setColor(prop->value);
+
+        // Position dialog below the colorPreview widget
+        QPoint globalPos = colorPreview->mapToGlobal(QPoint(0, 0));
+        picker->move(globalPos.x(), globalPos.y() + colorPreview->height());
+
+        connect(picker, &ColorPicker::onColorChanged, this,
+                [this](const QColor& color) {
+                    if (prop) {
+                        prop->value = color;
+                        updateColorPreview();
+                        emit valueChanged(color); // signal value changed
+                    }
+                });
+
+        picker->exec();
+        delete picker;
+
+        return true;
+    }
+    return QWidget::eventFilter(obj, event);
 }

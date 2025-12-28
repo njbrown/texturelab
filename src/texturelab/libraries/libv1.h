@@ -37,6 +37,11 @@ public:
     virtual void init() override;
 };
 
+class ColorizeNode : public TextureNode {
+public:
+    virtual void init() override;
+};
+
 class CopyNode : public TextureNode {
 public:
     virtual void init() override;
