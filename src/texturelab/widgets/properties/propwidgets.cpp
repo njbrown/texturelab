@@ -368,11 +368,21 @@ bool GradientPropWidget::eventFilter(QObject* obj, QEvent* event)
 {
     if (obj == gradientPreview && event->type() == QEvent::MouseButtonPress) {
         auto picker = new GradientPickerDialog();
-        picker->setGradient(prop->value);
+        Gradient initialGradient = prop->value;
+        picker->setGradient(initialGradient);
 
         // Position dialog below the gradientPreview widget
         QPoint globalPos = gradientPreview->mapToGlobal(QPoint(0, 0));
         picker->move(globalPos.x(), globalPos.y() + gradientPreview->height());
+
+        connect(picker, &GradientPickerDialog::onGradientChanged, this,
+                [this](const Gradient& gradient) {
+                    if (prop) {
+                        prop->value = gradient;
+                        updateGradientPreview();
+                        emit valueChanged(gradient); // signal value changed
+                    }
+                });
 
         connect(picker, &GradientPickerDialog::onGradientAccepted, this,
                 [this](const Gradient& gradient) {
@@ -382,6 +392,14 @@ bool GradientPropWidget::eventFilter(QObject* obj, QEvent* event)
                         emit valueChanged(gradient); // signal value changed
                     }
                 });
+
+        connect(picker, &QDialog::rejected, this, [this, initialGradient]() {
+            if (prop) {
+                prop->value = initialGradient;
+                updateGradientPreview();
+                emit valueChanged(initialGradient); // revert to initial value
+            }
+        });
 
         picker->exec();
         delete picker;

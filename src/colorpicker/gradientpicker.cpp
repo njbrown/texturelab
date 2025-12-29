@@ -83,7 +83,7 @@ void GradientSlider::setPointColor(const QColor& color)
         }
         gradientRect->setBrush(QBrush(linearGrad));
 
-        emit onGradientChanged(gradient);
+        emitGradientUpdate();
     }
 }
 
@@ -153,7 +153,7 @@ void GradientSlider::addControlPoint(float position, const QColor& color)
 {
     gradient.addPoint(GradientPoint(position, color));
     updateGradientDisplay();
-    emit onGradientChanged(gradient);
+    emitGradientUpdate();
 }
 
 void GradientSlider::removeControlPoint(int index)
@@ -161,7 +161,7 @@ void GradientSlider::removeControlPoint(int index)
     if (index >= 0 && index < gradient.points.size()) {
         gradient.points.remove(index);
         updateGradientDisplay();
-        emit onGradientChanged(gradient);
+        emitGradientUpdate();
         selectedPointIndex = -1;
     }
 }
@@ -174,7 +174,14 @@ void GradientSlider::updateControlPointPositions()
         gradient.points[i].position = positionFromX(x);
     }
     updateGradientDisplay();
-    emit onGradientChanged(gradient);
+    emitGradientUpdate();
+}
+
+void GradientSlider::emitGradientUpdate()
+{
+    Gradient sortedGradient(gradient);
+    sortedGradient.sort();
+    emit onGradientChanged(sortedGradient);
 }
 
 float GradientSlider::positionFromX(qreal x)
@@ -278,6 +285,9 @@ void GradientSlider::mouseMoveEvent(QMouseEvent* event)
         }
         gradientRect->setBrush(QBrush(linearGrad));
 
+        // Emit change during drag
+        emitGradientUpdate();
+
         event->accept();
     }
     else {
@@ -290,7 +300,7 @@ void GradientSlider::mouseReleaseEvent(QMouseEvent* event)
     if (event->button() == Qt::LeftButton && draggingPointIndex >= 0) {
         draggingPointIndex = -1;
         updateGradientDisplay();
-        emit onGradientChanged(gradient);
+        emitGradientUpdate();
     }
     QGraphicsView::mouseReleaseEvent(event);
 }
@@ -358,7 +368,10 @@ void GradientPickerDialog::initUI()
 
     // Connect signals
     connect(gradientSlider, &GradientSlider::onGradientChanged, this,
-            [this](const Gradient& gradient) { currentGradient = gradient; });
+            [this](const Gradient& gradient) {
+                currentGradient = gradient;
+                emit onGradientChanged(gradient);
+            });
     connect(gradientSlider, &GradientSlider::onActivePointChanged, this,
             &GradientPickerDialog::onControlPointSelected);
     connect(svBox, &SVBox::onSVChanged, this,

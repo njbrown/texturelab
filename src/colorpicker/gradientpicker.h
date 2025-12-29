@@ -55,6 +55,7 @@ private:
     void addControlPoint(float position, const QColor& color);
     void removeControlPoint(int index);
     void updateControlPointPositions();
+    void emitGradientUpdate();
     float positionFromX(qreal x);
     qreal xFromPosition(float position);
 
@@ -84,6 +85,7 @@ public:
 
 signals:
     void onGradientAccepted(const Gradient& gradient);
+    void onGradientChanged(const Gradient& gradient);
 
 private:
     void initUI();
