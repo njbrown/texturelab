@@ -196,7 +196,7 @@ void GradientSlider::mousePressEvent(QMouseEvent* event)
     GradientControlPoint* controlPoint =
         dynamic_cast<GradientControlPoint*>(item);
 
-    const int SLIDER_BOTTOM_MARGIN = 10;
+    const int SLIDER_BOTTOM_MARGIN = 15;
 
     if (event->button() == Qt::LeftButton) {
         if (controlPoint) {
