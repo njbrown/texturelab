@@ -56,6 +56,10 @@ public:
     virtual QJsonObject toJson();
     virtual void fromJson(const QJsonObject& obj);
 
+    // for old style direct value parsing
+    virtual QJsonValue toJsonValue();
+    virtual void fromJsonValue(const QJsonValue& obj);
+
     virtual ~Prop() {}
 };
 
@@ -199,6 +203,10 @@ public:
         Prop::fromJson(obj);
         value = obj["value"].toBool();
     }
+
+    QJsonValue toJsonValue() override { return value; }
+
+    void fromJsonValue(const QJsonValue& val) override { value = val.toBool(); }
 };
 
 class EnumProp : public Prop {
@@ -249,6 +257,10 @@ public:
             values.append(item.toString());
         }
     }
+
+    QJsonValue toJsonValue() override { return index; }
+
+    void fromJsonValue(const QJsonValue& val) override { index = val.toInt(); }
 };
 
 struct ColorProp : public Prop {
@@ -271,10 +283,10 @@ struct ColorProp : public Prop {
     {
         auto obj = Prop::toJson();
         QJsonObject colObj;
-        colObj["r"] = value.red();
-        colObj["g"] = value.green();
-        colObj["b"] = value.blue();
-        colObj["a"] = value.alpha();
+        colObj["r"] = value.redF();
+        colObj["g"] = value.greenF();
+        colObj["b"] = value.blueF();
+        colObj["a"] = value.alphaF();
         obj["value"] = colObj;
 
         return obj;
@@ -284,10 +296,29 @@ struct ColorProp : public Prop {
     {
         Prop::fromJson(obj);
         auto colorObj = obj["value"].toObject();
-        value.setRed(colorObj["r"].toInt());
-        value.setGreen(colorObj["g"].toInt());
-        value.setBlue(colorObj["b"].toInt());
-        value.setAlpha(colorObj["a"].toInt());
+        value.setRedF(colorObj["r"].toDouble());
+        value.setGreenF(colorObj["g"].toDouble());
+        value.setBlueF(colorObj["b"].toDouble());
+        value.setAlphaF(colorObj["a"].toDouble());
+    }
+
+    QJsonValue toJsonValue() override
+    {
+        QJsonObject colObj;
+        colObj["r"] = value.redF();
+        colObj["g"] = value.greenF();
+        colObj["b"] = value.blueF();
+        colObj["a"] = value.alphaF();
+        return colObj;
+    }
+
+    void fromJsonValue(const QJsonValue& val) override
+    {
+        auto colorObj = val.toObject();
+        value.setRedF(colorObj["r"].toDouble());
+        value.setGreenF(colorObj["g"].toDouble());
+        value.setBlueF(colorObj["b"].toDouble());
+        value.setAlphaF(colorObj["a"].toDouble());
     }
 };
 
@@ -319,6 +350,13 @@ public:
     {
         Prop::fromJson(obj);
         value = obj["value"].toString();
+    }
+
+    QJsonValue toJsonValue() override { return value; }
+
+    void fromJsonValue(const QJsonValue& val) override
+    {
+        value = val.toString();
     }
 };
 
@@ -370,6 +408,45 @@ public:
         Prop::fromJson(obj);
 
         auto pointsArray = obj["points"].toArray();
+        value.points.clear();
+
+        for (const auto& pointValue : pointsArray) {
+            auto pointObj = pointValue.toObject();
+            float position = pointObj["t"].toDouble();
+            auto colorObj = pointObj["color"].toObject();
+            QColor color;
+            color.setRedF(colorObj["r"].toDouble());
+            color.setGreenF(colorObj["g"].toDouble());
+            color.setBlueF(colorObj["b"].toDouble());
+            color.setAlphaF(colorObj["a"].toDouble());
+
+            value.addPoint(GradientPoint(position, color));
+        }
+    }
+
+    QJsonValue toJsonValue() override
+    {
+        QJsonObject obj;
+        QJsonArray pointsArray;
+        for (const auto& point : value.points) {
+            QJsonObject pointObj;
+            pointObj["t"] = point.position;
+            QJsonObject colorObj;
+            colorObj["r"] = point.color.redF();
+            colorObj["g"] = point.color.greenF();
+            colorObj["b"] = point.color.blueF();
+            colorObj["a"] = point.color.alphaF();
+            pointObj["color"] = colorObj;
+            pointsArray.append(pointObj);
+        }
+        obj["points"] = pointsArray;
+
+        return obj;
+    }
+
+    void fromJsonValue(const QJsonValue& val) override
+    {
+        auto pointsArray = val.toObject()["points"].toArray();
         value.points.clear();
 
         for (const auto& pointValue : pointsArray) {
@@ -447,6 +524,37 @@ public:
         Prop::fromJson(obj);
 
         auto stringData = obj["value"].toString();
+        if (stringData.isNull() || stringData.isEmpty())
+            return;
+
+        auto parts = stringData.split(";base64,");
+        if (parts.length() == 0 || parts.length() == 1)
+            return;
+
+        auto bytes = QByteArray::fromBase64(parts[0].toUtf8());
+
+        QImage image;
+        image.loadFromData(QByteArray::fromBase64(stringData.toUtf8()));
+        this->value = value;
+    }
+
+    QJsonValue toJsonValue() override
+    {
+        if (value.isNull()) {
+            return "";
+        }
+
+        QBuffer buffer;
+        buffer.open(QIODevice::WriteOnly);
+        value.save(&buffer, "PNG");
+        QString encoded = buffer.data().toBase64();
+
+        return "data:image/png;base64," + encoded;
+    }
+
+    void fromJsonValue(const QJsonValue& val) override
+    {
+        auto stringData = val.toString();
         if (stringData.isNull() || stringData.isEmpty())
             return;
 

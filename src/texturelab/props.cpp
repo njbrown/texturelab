@@ -61,12 +61,24 @@ QJsonObject Prop::toJson()
     // obj["id"] = id;
     // obj["name"] = name;
     // obj["displayName"] = displayName;
+    return obj;
 }
 void Prop::fromJson(const QJsonObject& obj)
 {
     // id = obj["id"].toString();
     // name = obj["name"].toString();
     // displayName = obj["displayName"].toString();
+}
+
+QJsonValue Prop::toJsonValue()
+{
+    // Default implementation returns null
+    return QJsonValue();
+}
+
+void Prop::fromJsonValue(const QJsonValue& obj)
+{
+    // Default implementation does nothing
 }
 
 void ImageProp::updateTexture()

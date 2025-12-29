@@ -55,7 +55,12 @@ TextureProjectPtr Project::loadTexture(QString path)
             if (prop == nullptr)
                 continue;
 
-            prop->fromJson(propObj[key].toObject());
+            auto jsonProp = propObj[key];
+            prop->fromJsonValue(jsonProp);
+            // if (jsonProp.isObject())
+            //     prop->fromJsonValue(jsonProp.toObject());
+            // else
+            //     prop->setValue(jsonProp.toVariant());
         }
 
         texture->nodes[node->id] = node;
