@@ -220,45 +220,8 @@ void GradientSlider::mousePressEvent(QMouseEvent* event)
             // Add new control point
             float position = positionFromX(scenePos.x());
 
-            // Interpolate color at this position
-            QColor color = Qt::white;
-            if (gradient.points.size() >= 2) {
-                // Find surrounding points
-                int leftIdx = -1, rightIdx = -1;
-                for (int i = 0; i < gradient.points.size(); ++i) {
-                    if (gradient.points[i].position <= position) {
-                        leftIdx = i;
-                    }
-                    if (gradient.points[i].position >= position &&
-                        rightIdx == -1) {
-                        rightIdx = i;
-                        break;
-                    }
-                }
-
-                if (leftIdx >= 0 && rightIdx >= 0 && leftIdx != rightIdx) {
-                    // Interpolate between the two colors
-                    float t = (position - gradient.points[leftIdx].position) /
-                              (gradient.points[rightIdx].position -
-                               gradient.points[leftIdx].position);
-                    QColor leftColor = gradient.points[leftIdx].color;
-                    QColor rightColor = gradient.points[rightIdx].color;
-
-                    color =
-                        QColor(leftColor.red() +
-                                   t * (rightColor.red() - leftColor.red()),
-                               leftColor.green() +
-                                   t * (rightColor.green() - leftColor.green()),
-                               leftColor.blue() +
-                                   t * (rightColor.blue() - leftColor.blue()));
-                }
-                else if (leftIdx >= 0) {
-                    color = gradient.points[leftIdx].color;
-                }
-                else if (rightIdx >= 0) {
-                    color = gradient.points[rightIdx].color;
-                }
-            }
+            // Sample color at this position
+            QColor color = gradient.sample(position);
 
             addControlPoint(position, color);
 

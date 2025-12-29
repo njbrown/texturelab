@@ -204,7 +204,6 @@ void HueSlider::paintEvent(QPaintEvent* event)
     painter.setPen(QPen(Qt::black, 2));
     painter.setBrush(Qt::white);
     const QPointF point(hue * width(), height() / 2);
-    qDebug() << "Drawing selector at: " << point;
     painter.drawEllipse(point, 5, 5);
 }
 

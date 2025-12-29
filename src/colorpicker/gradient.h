@@ -25,6 +25,7 @@ public:
 
     void addPoint(GradientPoint point) { points.append(point); }
     void sort();
+    QColor sample(float position) const;
 
     static Gradient defaultGradient();
 };
