@@ -6,10 +6,10 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QPainter>
-#include <QPushButton>
 #include <QWidget>
 
-// class QWidget;
+class SVBox;
+class HueSlider;
 
 class GradientControlPoint : public QGraphicsObject {
     Q_OBJECT
@@ -45,7 +45,9 @@ public:
 
     GradientSlider();
     void setGradient(const Gradient& gradient);
+    Gradient getGradient() const { return gradient; }
     void setPointColor(const QColor& color);
+    void selectFirstPoint();
 
 private:
     void initUI();
@@ -71,14 +73,23 @@ class GradientPickerDialog : public QDialog {
     Q_OBJECT
 
     GradientSlider* gradientSlider = nullptr;
-    QPushButton* colorButton = nullptr;
+    SVBox* svBox = nullptr;
+    HueSlider* hueSlider = nullptr;
+    bool updatingFromControlPoint = false;
+    Gradient currentGradient;
 
 public:
     GradientPickerDialog();
     void setGradient(const Gradient& gradient);
 
+signals:
+    void onGradientAccepted(const Gradient& gradient);
+
 private:
     void initUI();
-    void onColorButtonClicked();
     void onControlPointSelected(int index, const QColor& color);
+    void onSVChanged(float saturation, float value);
+    void onHueChanged(float hue);
+    void onAccepted();
+    void onRejected();
 };

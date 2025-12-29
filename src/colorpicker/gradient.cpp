@@ -11,7 +11,7 @@ void Gradient::sort()
 Gradient Gradient::defaultGradient()
 {
     Gradient gradient;
-    gradient.addPoint(GradientPoint(0.0, QColor(0, 0, 0)));
-    gradient.addPoint(GradientPoint(1.0, QColor(255, 255, 255)));
+    gradient.addPoint(GradientPoint(0.0, QColor(0, 0, 0, 255)));
+    gradient.addPoint(GradientPoint(1.0, QColor(255, 255, 255, 255)));
     return gradient;
 }

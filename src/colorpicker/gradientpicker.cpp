@@ -1,7 +1,8 @@
 #include "gradientpicker.h"
 #include "gradient.h"
+#include "widgets.h"
 #include <QBrush>
-#include <QColorDialog>
+#include <QDialogButtonBox>
 #include <QGraphicsSceneMouseEvent>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -9,6 +10,7 @@
 #include <QMouseEvent>
 #include <QResizeEvent>
 #include <QVBoxLayout>
+#include <QVector>
 
 // GradientControlPoint implementation
 GradientControlPoint::GradientControlPoint(int index, qreal x, qreal y,
@@ -60,6 +62,7 @@ void GradientSlider::setGradient(const Gradient& gradient)
 {
     this->gradient = gradient;
     updateGradientDisplay();
+    selectFirstPoint();
 }
 
 void GradientSlider::setPointColor(const QColor& color)
@@ -81,6 +84,14 @@ void GradientSlider::setPointColor(const QColor& color)
         gradientRect->setBrush(QBrush(linearGrad));
 
         emit onGradientChanged(gradient);
+    }
+}
+
+void GradientSlider::selectFirstPoint()
+{
+    if (gradient.points.size() > 0) {
+        selectedPointIndex = 0;
+        emit onActivePointChanged(0, gradient.points[0].color);
     }
 }
 
@@ -107,6 +118,7 @@ void GradientSlider::initUI()
     // Initialize with default gradient
     gradient = Gradient::defaultGradient();
     updateGradientDisplay();
+    // selectFirstPoint();
 }
 
 void GradientSlider::updateGradientDisplay()
@@ -336,63 +348,105 @@ GradientPickerDialog::GradientPickerDialog() { this->initUI(); }
 
 void GradientPickerDialog::setGradient(const Gradient& gradient)
 {
-    // this->gradient = gradient;
+    currentGradient = gradient;
     this->gradientSlider->setGradient(gradient);
 
-    // update ui
-    // this->update();
+    // Enable and update color pickers with first point
+    if (gradient.points.size() > 0) {
+        onControlPointSelected(0, gradient.points[0].color);
+    }
 }
 
 void GradientPickerDialog::initUI()
 {
     setWindowTitle("Gradient Picker");
-    setMinimumSize(300, 180);
-    resize(460, 180);
+    setMinimumSize(400, 290);
+    resize(460, 290);
 
     QVBoxLayout* layout = new QVBoxLayout(this);
-    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setContentsMargins(5, 5, 5, 5);
 
     // Create and add gradient slider
     gradientSlider = new GradientSlider();
     layout->addWidget(gradientSlider);
 
-    // Add color display button
-    colorButton = new QPushButton(this);
-    colorButton->setFixedHeight(30);
-    colorButton->setEnabled(false);
-    colorButton->setStyleSheet(
-        "background-color: #808080; border: 1px solid black;");
-    layout->addWidget(colorButton);
+    // Add SVBox and HueSlider
+    svBox = new SVBox();
+    svBox->setEnabled(false);
+    svBox->setMaximumHeight(150); // 60% reduction from default 300px
+    svBox->setFixedHeight(150);
+    layout->addWidget(svBox);
+
+    hueSlider = new HueSlider();
+    hueSlider->setEnabled(false);
+    hueSlider->setFixedHeight(30);
+    layout->addWidget(hueSlider);
+
+    // Add OK and Cancel buttons
+    auto buttonBox =
+        new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    layout->addWidget(buttonBox);
 
     setLayout(layout);
 
     // Connect signals
+    connect(gradientSlider, &GradientSlider::onGradientChanged, this,
+            [this](const Gradient& gradient) { currentGradient = gradient; });
     connect(gradientSlider, &GradientSlider::onActivePointChanged, this,
             &GradientPickerDialog::onControlPointSelected);
-    connect(colorButton, &QPushButton::clicked, this,
-            &GradientPickerDialog::onColorButtonClicked);
+    connect(svBox, &SVBox::onSVChanged, this,
+            &GradientPickerDialog::onSVChanged);
+    connect(hueSlider, &HueSlider::onHueChanged, this,
+            &GradientPickerDialog::onHueChanged);
+    connect(buttonBox, &QDialogButtonBox::accepted, this,
+            &GradientPickerDialog::onAccepted);
+    connect(buttonBox, &QDialogButtonBox::rejected, this,
+            &GradientPickerDialog::onRejected);
+
+    setGradient(Gradient::defaultGradient());
 }
 
 void GradientPickerDialog::onControlPointSelected(int index,
                                                   const QColor& color)
 {
     Q_UNUSED(index);
-    colorButton->setEnabled(true);
-    colorButton->setStyleSheet(
-        QString("background-color: %1; border: 2px solid black;")
-            .arg(color.name()));
+    updatingFromControlPoint = true;
+    svBox->setEnabled(true);
+    svBox->setColor(color);
+    hueSlider->setEnabled(true);
+    hueSlider->setColor(color);
+    updatingFromControlPoint = false;
 }
 
-void GradientPickerDialog::onColorButtonClicked()
+void GradientPickerDialog::onSVChanged(float saturation, float value)
 {
-    QColor currentColor = colorButton->palette().button().color();
-    QColor newColor =
-        QColorDialog::getColor(currentColor, this, "Select Color");
+    if (updatingFromControlPoint)
+        return;
 
-    if (newColor.isValid()) {
-        colorButton->setStyleSheet(
-            QString("background-color: %1; border: 2px solid black;")
-                .arg(newColor.name()));
-        gradientSlider->setPointColor(newColor);
-    }
+    QColor currentColor = svBox->getColor();
+    gradientSlider->setPointColor(currentColor);
 }
+
+void GradientPickerDialog::onHueChanged(float hue)
+{
+    if (updatingFromControlPoint)
+        return;
+
+    QColor currentColor = svBox->getColor();
+    currentColor.setHsvF(hue, currentColor.saturationF(),
+                         currentColor.valueF());
+    svBox->setColor(currentColor);
+    gradientSlider->setPointColor(currentColor);
+}
+
+void GradientPickerDialog::onAccepted()
+{
+    // Create a sorted clone of the gradient
+    Gradient sortedGradient(currentGradient);
+    sortedGradient.sort();
+
+    emit onGradientAccepted(sortedGradient);
+    accept();
+}
+
+void GradientPickerDialog::onRejected() { reject(); }
