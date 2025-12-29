@@ -1,5 +1,6 @@
 #include "project.h"
 #include "libraries/library.h"
+#include "props.h"
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -50,7 +51,11 @@ TextureProjectPtr Project::loadTexture(QString path)
         // add props
         auto propObj = nodeDef["properties"].toObject();
         for (auto key : propObj.keys()) {
-            node->setProp(key, propObj[key].toVariant());
+            auto prop = node->getProp(key);
+            if (prop == nullptr)
+                continue;
+
+            prop->fromJson(propObj[key].toObject());
         }
 
         texture->nodes[node->id] = node;

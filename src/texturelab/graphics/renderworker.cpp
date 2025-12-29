@@ -1,4 +1,5 @@
 #include "renderworker.h"
+#include "gradient.h"
 #include "texturerenderer.h"
 #include <QImage>
 #include <QOffscreenSurface>
@@ -344,9 +345,37 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
                     colorVal.redF(), colorVal.greenF(), colorVal.blueF(),
                     colorVal.alphaF());
             } break;
-            case PropType::Gradient:
-                // todo: pass gradient
-                break;
+            case PropType::Gradient: {
+                auto gradientVal = prop.value.value<Gradient>();
+                auto numPoints = gradientVal.points.size();
+
+                // Set number of gradient points
+                gl->glUniform1i(
+                    gl->glGetUniformLocation(
+                        command.shaderId, (propCString + ".numPoints").c_str()),
+                    numPoints);
+
+                // Pass each gradient point (color and position)
+                for (int i = 0; i < numPoints; i++) {
+                    const auto& point = gradientVal.points[i];
+                    const auto& color = point.color;
+
+                    // Set color for this point
+                    std::string colorPath =
+                        propCString + ".colors[" + std::to_string(i) + "]";
+                    gl->glUniform3f(gl->glGetUniformLocation(command.shaderId,
+                                                             colorPath.c_str()),
+                                    color.redF(), color.greenF(),
+                                    color.blueF());
+
+                    // Set position for this point
+                    std::string posPath =
+                        propCString + ".positions[" + std::to_string(i) + "]";
+                    gl->glUniform1f(gl->glGetUniformLocation(command.shaderId,
+                                                             posPath.c_str()),
+                                    point.position);
+                }
+            } break;
             case PropType::Image: {
                 // Use pre-uploaded texture ID from main thread
                 if (prop.textureId != 0) {

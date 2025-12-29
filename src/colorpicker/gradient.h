@@ -10,6 +10,7 @@ public:
     float position;
     QColor color;
 
+    GradientPoint() : position(0.0f), color(Qt::black) {}
     GradientPoint(float position, const QColor& color)
         : position(position), color(color)
     {

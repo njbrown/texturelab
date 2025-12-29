@@ -123,6 +123,10 @@ public:
 
     void setProp(QString propName, QVariant value);
 
+    Prop* getProp(QString propName);
+
+    bool hasProp(QString propName);
+
     void setShaderSource(const QString& source) { shaderSource = source; }
 
     bool isGraphicsResourcesInitialized()

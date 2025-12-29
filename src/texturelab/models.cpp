@@ -142,6 +142,17 @@ void TextureNode::setProp(QString propName, QVariant value)
     }
 }
 
+Prop* TextureNode::getProp(QString propName)
+{
+    if (props.contains(propName)) {
+        return props[propName];
+    }
+
+    return nullptr;
+}
+
+bool TextureNode::hasProp(QString propName) { return props.contains(propName); }
+
 unsigned int TextureNode::textureId() { return this->texture->texture(); }
 
 PropertyGroup* TextureNode::createGroup(const QString& name)

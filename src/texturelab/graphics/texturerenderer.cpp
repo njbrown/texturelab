@@ -919,7 +919,7 @@ QString TextureRenderer::createCodeForProps(const TextureNodePtr& node)
             code += "uniform vec4 prop_" + prop->name + ";\n";
             break;
         case PropType::Gradient:
-            code += "uniform int prop_" + prop->name + ";\n";
+            code += "uniform Gradient prop_" + prop->name + ";\n";
             break;
         case PropType::Image:
             code += "uniform sampler2D prop_" + prop->name + ";\n";

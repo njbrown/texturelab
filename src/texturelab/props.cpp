@@ -58,15 +58,15 @@ Prop::Prop() { id = createGuid(); }
 QJsonObject Prop::toJson()
 {
     QJsonObject obj;
-    obj["id"] = id;
-    obj["name"] = name;
-    obj["displayName"] = displayName;
+    // obj["id"] = id;
+    // obj["name"] = name;
+    // obj["displayName"] = displayName;
 }
 void Prop::fromJson(const QJsonObject& obj)
 {
-    id = obj["id"].toString();
-    name = obj["name"].toString();
-    displayName = obj["displayName"].toString();
+    // id = obj["id"].toString();
+    // name = obj["name"].toString();
+    // displayName = obj["displayName"].toString();
 }
 
 void ImageProp::updateTexture()
