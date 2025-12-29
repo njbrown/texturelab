@@ -99,6 +99,22 @@ void PropertiesWidget::setSelectedNode(const TextureNodePtr& node)
             layout->addWidget(widget);
 
         } break;
+        case PropType::Gradient: {
+            auto widget = new GradientPropWidget();
+            widget->setProp((GradientProp*)prop);
+            propWidgets.append(widget);
+
+            connect(widget, &GradientPropWidget::valueChanged,
+                    [=](const Gradient& value) {
+                        node->setProp(prop->name, QVariant::fromValue(value));
+                        project->markNodeAsDirty(node);
+
+                        emit propertyUpdated(prop->name,
+                                             QVariant::fromValue(value));
+                    });
+            layout->addWidget(widget);
+
+        } break;
         case PropType::Image: {
             auto widget = new ImagePropWidget();
             widget->setProp((ImageProp*)prop);

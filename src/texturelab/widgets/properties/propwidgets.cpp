@@ -2,6 +2,7 @@
 #include "../../models.h"
 #include "../../props.h"
 #include "colorpicker.h"
+#include "gradientpicker.h"
 
 #include <QComboBox>
 #include <QDir>
@@ -11,6 +12,7 @@
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPainter>
 #include <QPixmap>
 #include <QPushButton>
 #include <QSlider>
@@ -303,6 +305,96 @@ bool ColorPropWidget::eventFilter(QObject* obj, QEvent* event)
         return true;
     }
     return QWidget::eventFilter(obj, event);
+}
+
+// GRADIENT PROP WIDGET
+GradientPropWidget::GradientPropWidget()
+{
+    prop = nullptr;
+
+    auto vlayout = new QVBoxLayout(this);
+    this->setLayout(vlayout);
+
+    // label
+    label = new QLabel(this);
+    label->setText("");
+    vlayout->addWidget(label);
+
+    // gradient preview
+    gradientPreview = new QWidget(this);
+    gradientPreview->setFixedHeight(20);
+    gradientPreview->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    gradientPreview->setCursor(Qt::PointingHandCursor);
+    gradientPreview->installEventFilter(this);
+    vlayout->addWidget(gradientPreview);
+
+    this->setFixedHeight(80);
+}
+
+void GradientPropWidget::setProp(GradientProp* prop)
+{
+    label->setText(prop->displayName);
+    this->prop = prop;
+    updateGradientPreview();
+}
+
+void GradientPropWidget::updateGradientPreview()
+{
+    if (prop) {
+        // Create a gradient preview using QLinearGradient
+        QLinearGradient gradient(0, 0, 1, 0);
+        gradient.setCoordinateMode(QGradient::StretchToDeviceMode);
+        for (const auto& point : prop->value.points) {
+            gradient.setColorAt(point.position, point.color);
+        }
+
+        QPalette palette;
+        QPixmap pixmap(gradientPreview->width(), gradientPreview->height());
+        QPainter painter(&pixmap);
+        painter.fillRect(pixmap.rect(), gradient);
+        painter.end();
+
+        QString styleSheet = QString("border: 1px solid #888;");
+        gradientPreview->setStyleSheet(styleSheet);
+
+        // Set as background using palette
+        palette.setBrush(gradientPreview->backgroundRole(), QBrush(pixmap));
+        gradientPreview->setAutoFillBackground(true);
+        gradientPreview->setPalette(palette);
+    }
+}
+
+bool GradientPropWidget::eventFilter(QObject* obj, QEvent* event)
+{
+    if (obj == gradientPreview && event->type() == QEvent::MouseButtonPress) {
+        auto picker = new GradientPickerDialog();
+        picker->setGradient(prop->value);
+
+        // Position dialog below the gradientPreview widget
+        QPoint globalPos = gradientPreview->mapToGlobal(QPoint(0, 0));
+        picker->move(globalPos.x(), globalPos.y() + gradientPreview->height());
+
+        connect(picker, &GradientPickerDialog::onGradientAccepted, this,
+                [this](const Gradient& gradient) {
+                    if (prop) {
+                        prop->value = gradient;
+                        updateGradientPreview();
+                        emit valueChanged(gradient); // signal value changed
+                    }
+                });
+
+        picker->exec();
+        delete picker;
+
+        return true;
+    }
+    return QWidget::eventFilter(obj, event);
+}
+
+void GradientPropWidget::resizeEvent(QResizeEvent* event)
+{
+    QWidget::resizeEvent(event);
+    updateGradientPreview();
 }
 
 ImagePropWidget::ImagePropWidget()

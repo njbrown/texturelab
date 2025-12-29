@@ -1,3 +1,4 @@
+#include "../../colorpicker/gradient.h"
 #include <QVector>
 #include <QWidget>
 
@@ -14,6 +15,8 @@ class EnumProp;
 class BoolProp;
 class ColorProp;
 class ImageProp;
+class GradientProp;
+class Gradient;
 
 // https://stackoverflow.com/a/19007951
 class FloatPropWidget : public QWidget {
@@ -97,6 +100,25 @@ public:
     bool eventFilter(QObject* obj, QEvent* event) override;
 signals:
     void valueChanged(QColor);
+};
+
+class GradientPropWidget : public QWidget {
+    Q_OBJECT
+
+    QLabel* label;
+    QWidget* gradientPreview;
+
+    GradientProp* prop;
+
+    void updateGradientPreview();
+
+public:
+    GradientPropWidget();
+    void setProp(GradientProp* prop);
+    bool eventFilter(QObject* obj, QEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
+signals:
+    void valueChanged(Gradient);
 };
 
 class ImagePropWidget : public QWidget {
