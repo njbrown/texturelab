@@ -1,6 +1,7 @@
 #ifndef MODELS_H
 #define MODELS_H
 
+#include "gradient.h"
 #include <QEnableSharedFromThis>
 #include <QList>
 #include <QMap>
@@ -32,6 +33,7 @@ class BoolProp;
 class EnumProp;
 class ColorProp;
 class StringProp;
+class GradientProp;
 class ImageProp;
 
 enum class PackageFileType { Texture, Image };
@@ -148,9 +150,9 @@ public:
     StringProp* addStringProp(const QString& name, const QString& displayName,
                               const QString& defaultVal = "");
 
-    // GradientProp* addGradientProp(const QString& id, const QString&
-    // displayName,
-    //                               Gradient defaultVal);
+    GradientProp* addGradientProp(const QString& name,
+                                  const QString& displayName,
+                                  const Gradient& defaultVal);
 
     ImageProp* addImageProp(const QString& name, const QString& displayName);
 };

@@ -244,9 +244,19 @@ StringProp* TextureNode::addStringProp(const QString& name,
     return prop;
 }
 
-// GradientProp* addGradientProp(const QString& name, const QString&
-// displayName,
-//                               Gradient defaultVal);
+GradientProp* TextureNode::addGradientProp(const QString& name,
+                                           const QString& displayName,
+                                           const Gradient& defaultVal)
+{
+    auto prop = new GradientProp();
+    prop->name = name;
+    prop->displayName = displayName;
+    prop->setValue(QVariant::fromValue(Gradient(defaultVal)));
+
+    props[name] = prop;
+
+    return prop;
+}
 
 ImageProp* TextureNode::addImageProp(const QString& name,
                                      const QString& displayName)

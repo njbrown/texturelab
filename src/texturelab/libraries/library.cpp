@@ -69,8 +69,8 @@ Library* createLibraryV2()
                                    ":nodes/fractalnoise.png");
 
     lib->addNode<GradientNode>("gradient", "Gradient", ":nodes/gradient.png");
-    // lib->addNode<GradientMapNode>("gradientmap", "Gradient Map",
-    //                               ":nodes/gradientmap.png");
+    lib->addNode<GradientMapNode>("gradientmap", "Gradient Map",
+                                  ":nodes/gradientmap.png");
     lib->addNode<HeightShiftNode>("heightshift", "Height Shift",
                                   ":nodes/heightshift.png");
     lib->addNode<HexagonNode>("hexagon", "Hexagon", ":nodes/hexagon.png");

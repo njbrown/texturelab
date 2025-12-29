@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QColor>
+#include <QMetaType>
 #include <QVector>
 #include <algorithm>
 
@@ -29,3 +30,6 @@ public:
 
     static Gradient defaultGradient();
 };
+
+Q_DECLARE_METATYPE(Gradient)
+Q_DECLARE_METATYPE(GradientPoint)

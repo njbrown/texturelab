@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../colorpicker/gradient.h"
 #include <QBuffer>
 #include <QColor>
 #include <QIODevice>
@@ -318,6 +319,71 @@ public:
     {
         Prop::fromJson(obj);
         value = obj["value"].toString();
+    }
+};
+
+class GradientProp : public Prop {
+public:
+    Gradient value;
+
+    GradientProp() : Prop()
+    {
+        type = PropType::Gradient;
+        value = Gradient::defaultGradient();
+    }
+
+    Prop* clone() const override
+    {
+        auto* copy = new GradientProp(*this);
+        copy->group = nullptr;
+        return copy;
+    }
+
+    QVariant getValue() override { return QVariant::fromValue(value); }
+
+    void setValue(QVariant val) override { value = val.value<Gradient>(); }
+
+    QJsonObject toJson() override
+    {
+        auto obj = Prop::toJson();
+
+        // Serialize gradient points
+        QJsonArray pointsArray;
+        for (const auto& point : value.points) {
+            QJsonObject pointObj;
+            pointObj["t"] = point.position;
+            QJsonObject colorObj;
+            colorObj["r"] = point.color.redF();
+            colorObj["g"] = point.color.greenF();
+            colorObj["b"] = point.color.blueF();
+            colorObj["a"] = point.color.alphaF();
+            pointObj["color"] = colorObj;
+            pointsArray.append(pointObj);
+        }
+        obj["points"] = pointsArray;
+
+        return obj;
+    }
+
+    void fromJson(const QJsonObject& obj) override
+    {
+        Prop::fromJson(obj);
+
+        auto pointsArray = obj["points"].toArray();
+        value.points.clear();
+
+        for (const auto& pointValue : pointsArray) {
+            auto pointObj = pointValue.toObject();
+            float position = pointObj["t"].toDouble();
+            auto colorObj = pointObj["color"].toObject();
+            QColor color;
+            color.setRedF(colorObj["r"].toDouble());
+            color.setGreenF(colorObj["g"].toDouble());
+            color.setBlueF(colorObj["b"].toDouble());
+            color.setAlphaF(colorObj["a"].toDouble());
+
+            value.addPoint(GradientPoint(position, color));
+        }
     }
 };
 
