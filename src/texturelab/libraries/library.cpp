@@ -63,8 +63,8 @@ Library* createLibraryV2()
     lib->addNode<CheckerboardNode>("checkerboard", "Checkerboard",
                                    ":nodes/checkerboard.png");
     lib->addNode<CopyNode>("copy", "Copy", ":nodes/copy.png");
-    // lib->addNode<DirectionalWarpNode>("directionalwarp", "Directional Warp",
-    //                                   ":nodes/directionalwarp.png");
+    lib->addNode<DirectionalWarpNode>("directionalwarp", "Directional Warp",
+                                      ":nodes/directionalwarp.png");
     lib->addNode<FractalNoiseNode>("fractalnoise", "Fractal Noise",
                                    ":nodes/fractalnoise.png");
 
@@ -79,8 +79,6 @@ Library* createLibraryV2()
     lib->addNode<MapRangeNode>("maprange", "Map Range", ":nodes/maprange.png");
     lib->addNode<MaskNode>("mask", "Mask", ":nodes/mask.png");
     lib->addNode<MirrorNode>("mirror", "Mirror", ":nodes/mirror.png");
-    // lib->addNode<BlendNode>("normalmap", "Normal Map",
-    // ":nodes/normalmap.png");
     lib->addNode<Perlin3DNode>("perlin3d", "Perlin 3D", ":nodes/perlin3d.png");
     lib->addNode<SolidCellNode>("solidcell", "Solid Cell",
                                 ":nodes/solidcell.png");
