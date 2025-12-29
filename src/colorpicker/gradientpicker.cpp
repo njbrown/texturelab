@@ -196,6 +196,8 @@ void GradientSlider::mousePressEvent(QMouseEvent* event)
     GradientControlPoint* controlPoint =
         dynamic_cast<GradientControlPoint*>(item);
 
+    const int SLIDER_BOTTOM_MARGIN = 10;
+
     if (event->button() == Qt::LeftButton) {
         if (controlPoint) {
             // Select and start dragging the control point
@@ -212,8 +214,9 @@ void GradientSlider::mousePressEvent(QMouseEvent* event)
             return;
         }
         else if (scenePos.y() >= sliderY &&
-                 scenePos.y() <= sliderY + sliderHeight && scenePos.x() >= 10 &&
-                 scenePos.x() <= sliderWidth + 10) {
+                 scenePos.y() <=
+                     sliderY + sliderHeight + SLIDER_BOTTOM_MARGIN &&
+                 scenePos.x() >= 10 && scenePos.x() <= sliderWidth + 10) {
             // Add new control point
             float position = positionFromX(scenePos.x());
 

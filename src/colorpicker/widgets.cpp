@@ -55,11 +55,11 @@ SVBox::SVBox()
 void SVBox::setColor(const QColor& color)
 {
     this->color = color;
-    h = color.hueF();
+    h = std::clamp(color.hueF(), 0.0f, 1.0f);
     s = color.saturationF();
     v = color.valueF();
 
-    auto hue = color.hueF() * 100;
+    auto hue = h * 100;
     QString style = "background-color: qlineargradient(x1:1, x2:0, "
                     "stop:0 hsl(%1%,100%,50%),"
                     "stop:1 #fff);"
@@ -154,7 +154,7 @@ void HueSlider::setHue(float hue)
 void HueSlider::setColor(const QColor& color)
 {
     this->color = color;
-    this->hue = color.hueF();
+    this->hue = std::clamp(color.hueF(), 0.0f, 1.0f);
     update();
 }
 
