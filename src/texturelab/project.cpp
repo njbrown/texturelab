@@ -57,6 +57,7 @@ TextureProjectPtr Project::loadTexture(QString path)
 
             auto jsonProp = propObj[key];
             prop->fromJsonValue(jsonProp);
+            qDebug() << "Loaded prop" << key << "for node" << prop->getValue();
             // if (jsonProp.isObject())
             //     prop->fromJsonValue(jsonProp.toObject());
             // else

@@ -121,6 +121,18 @@ public:
         maxValue = obj["maxValue"].toDouble();
         step = obj["step"].toDouble();
     }
+
+    QJsonValue toJsonValue() override { return value; }
+
+    void fromJsonValue(const QJsonValue& val) override
+    {
+        if (val.isString()) {
+            value = val.toString().toDouble();
+        }
+        else {
+            value = val.toDouble();
+        }
+    }
 };
 
 class IntProp : public Prop {
@@ -168,6 +180,18 @@ public:
         maxValue = obj["maxValue"].toDouble();
         step = obj["step"].toDouble();
     }
+
+    QJsonValue toJsonValue() override { return (qlonglong)value; }
+
+    void fromJsonValue(const QJsonValue& val) override
+    {
+        if (val.isString()) {
+            value = (long)val.toString().toDouble();
+        }
+        else {
+            value = (long)val.toDouble();
+        }
+    }
 };
 
 class BoolProp : public Prop {
@@ -206,7 +230,16 @@ public:
 
     QJsonValue toJsonValue() override { return value; }
 
-    void fromJsonValue(const QJsonValue& val) override { value = val.toBool(); }
+    void fromJsonValue(const QJsonValue& val) override
+    {
+        if (val.isString()) {
+            QString str = val.toString().toLower();
+            value = (str == "true" || str == "1");
+        }
+        else {
+            value = val.toBool();
+        }
+    }
 };
 
 class EnumProp : public Prop {
