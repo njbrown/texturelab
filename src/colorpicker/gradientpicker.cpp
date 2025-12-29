@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QLinearGradient>
 #include <QMouseEvent>
+#include <QResizeEvent>
 #include <QVBoxLayout>
 
 // GradientControlPoint implementation
@@ -85,13 +86,17 @@ void GradientSlider::setPointColor(const QColor& color)
 
 void GradientSlider::initUI()
 {
-    setFixedSize(420, 100);
+    setMinimumSize(200, 60);
+    setFixedHeight(60);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     scene = new QGraphicsScene(this);
-    scene->setSceneRect(0, 0, 400, 80);
     setScene(scene);
+
+    // Update slider width based on initial size
+    sliderWidth = qMax(200.0, width() - 40.0);
+    scene->setSceneRect(0, 0, width() - 20, 40);
 
     // Create gradient display rectangle
     gradientRect =
@@ -312,6 +317,21 @@ void GradientSlider::mouseReleaseEvent(QMouseEvent* event)
     QGraphicsView::mouseReleaseEvent(event);
 }
 
+void GradientSlider::resizeEvent(QResizeEvent* event)
+{
+    QGraphicsView::resizeEvent(event);
+
+    // Update slider width based on new size
+    sliderWidth = qMax(200.0, width() - 40.0);
+    scene->setSceneRect(0, 0, width() - 20, 40);
+
+    // Update gradient rectangle size
+    if (gradientRect) {
+        gradientRect->setRect(10, sliderY, sliderWidth, sliderHeight);
+        updateGradientDisplay();
+    }
+}
+
 GradientPickerDialog::GradientPickerDialog() { this->initUI(); }
 
 void GradientPickerDialog::setGradient(const Gradient& gradient)
@@ -326,9 +346,11 @@ void GradientPickerDialog::setGradient(const Gradient& gradient)
 void GradientPickerDialog::initUI()
 {
     setWindowTitle("Gradient Picker");
-    setFixedSize(460, 180);
+    setMinimumSize(300, 180);
+    resize(460, 180);
 
     QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->setContentsMargins(0, 0, 0, 0);
 
     // Create and add gradient slider
     gradientSlider = new GradientSlider();

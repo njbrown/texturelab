@@ -40,7 +40,7 @@ class GradientSlider : public QGraphicsView {
 public:
     qreal sliderWidth = 380;
     qreal sliderHeight = 30;
-    qreal sliderY = 35;
+    qreal sliderY = 0;
     static constexpr qreal pointSize = 12;
 
     GradientSlider();
@@ -60,6 +60,7 @@ protected:
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
 
 signals:
     void onGradientChanged(const Gradient& gradient);
