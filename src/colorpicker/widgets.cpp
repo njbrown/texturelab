@@ -12,7 +12,7 @@
 SVBox::SVBox()
 {
     // this->setFixedSize(400, 300);
-    this->setMinimumHeight(300);
+    // this->setMinimumHeight(150);
 
     auto layout = new QGridLayout(this);
     colorWidget = new QWidget();
@@ -68,6 +68,13 @@ void SVBox::setColor(const QColor& color)
 
     // qDebug() << formatted;
     colorWidget->setStyleSheet(formatted);
+
+    // Update selector position based on saturation and value
+    int x = s * this->width() - selectorDiameter / 2;
+    int y = (1.0f - v) * this->height() - selectorDiameter / 2;
+    selector->move(x, y);
+
+    this->selector->update();
     this->update();
     colorWidget->update();
 }
@@ -196,7 +203,9 @@ void HueSlider::paintEvent(QPaintEvent* event)
     // draw selector
     painter.setPen(QPen(Qt::black, 2));
     painter.setBrush(Qt::white);
-    painter.drawEllipse(QPointF(hue * width(), height() / 2), 5, 5);
+    const QPointF point(hue * width(), height() / 2);
+    qDebug() << "Drawing selector at: " << point;
+    painter.drawEllipse(point, 5, 5);
 }
 
 void HueSlider::resizeEvent(QResizeEvent* event) { selectorDrawn = false; }

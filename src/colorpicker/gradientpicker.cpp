@@ -374,6 +374,7 @@ void GradientPickerDialog::initUI()
     svBox = new SVBox();
     svBox->setEnabled(false);
     svBox->setMaximumHeight(150); // 60% reduction from default 300px
+    svBox->setMinimumHeight(150); // 60% reduction from default 300px
     svBox->setFixedHeight(150);
     layout->addWidget(svBox);
 
