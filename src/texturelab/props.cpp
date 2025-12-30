@@ -104,7 +104,7 @@ void ImageProp::updateTexture()
     }
 
     // Create and upload new texture
-    texture = new QOpenGLTexture(value);
+    texture = new QOpenGLTexture(value.mirrored(false, true));
     texture->setMinificationFilter(QOpenGLTexture::Nearest);
     texture->setMagnificationFilter(QOpenGLTexture::Nearest);
     texture->setWrapMode(QOpenGLTexture::Repeat);

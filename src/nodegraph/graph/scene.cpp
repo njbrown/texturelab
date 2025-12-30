@@ -359,16 +359,16 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
         glActiveTexture(0);
         glBindTexture(GL_TEXTURE_2D, texId);
         glBegin(GL_QUADS);
-        glTexCoord2f(0, 0);
+        glTexCoord2f(0, 1);
         glVertex2f(0, 0);
 
-        glTexCoord2f(1, 0);
+        glTexCoord2f(1, 1);
         glVertex2f(100, 0);
 
-        glTexCoord2f(1, 1);
+        glTexCoord2f(1, 0);
         glVertex2f(100, 100);
 
-        glTexCoord2f(0, 1);
+        glTexCoord2f(0, 0);
         glVertex2f(0, 100);
         glEnd();
 

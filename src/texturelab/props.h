@@ -293,7 +293,15 @@ public:
 
     QJsonValue toJsonValue() override { return index; }
 
-    void fromJsonValue(const QJsonValue& val) override { index = val.toInt(); }
+    void fromJsonValue(const QJsonValue& val) override
+    {
+        if (val.isString()) {
+            index = (long)val.toString().toDouble();
+        }
+        else {
+            index = (long)val.toDouble();
+        }
+    }
 };
 
 struct ColorProp : public Prop {
