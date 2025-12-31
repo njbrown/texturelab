@@ -85,6 +85,9 @@
     <!-- v3 nodes -->
     <!-- <file alias="nodes/crop.png">../../public/assets/nodes/crop.png</file> -->
     
+    <!-- icons -->
+    <file alias="icons/save.svg">../icons/save.svg</file>
+    
     <file alias="env/cave_wall_1k.hdr">../../public/assets/env/cave_wall/cave_wall_1k.hdr</file>
     </qresource>
 </RCC>

@@ -2,8 +2,13 @@
 #include <QLayout>
 
 #include <QtGui/QBrush>
+#include <QtGui/QIcon>
+#include <QtGui/QImage>
 #include <QtGui/QPen>
+#include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMenu>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QToolBar>
 
 #include <QtCore/QPointF>
 #include <QtCore/QRectF>
@@ -25,6 +30,18 @@ const QColor CoarseGridColor(25, 25, 25);
 
 View2DWidget::View2DWidget() : QMainWindow()
 {
+    // Create toolbar
+    toolbar = new QToolBar(this);
+    toolbar->setMovable(false);
+    toolbar->setIconSize(QSize(24, 24));
+    this->addToolBar(Qt::TopToolBarArea, toolbar);
+
+    // Add save button
+    QAction* saveAction =
+        toolbar->addAction(QIcon(":/icons/save.svg"), "Save Texture");
+    connect(saveAction, &QAction::triggered, this,
+            &View2DWidget::saveTextureAsImage);
+
     graph = new View2DGraph(this);
     this->setCentralWidget(graph);
 }
@@ -52,6 +69,47 @@ void View2DWidget::setTextureRenderer(TextureRenderer* renderer)
                     this->graph->updatePreview();
                 }
             });
+}
+
+void View2DWidget::saveTextureAsImage()
+{
+    if (!node) {
+        return;
+    }
+
+    QString fileName = QFileDialog::getSaveFileName(
+        this, tr("Save Texture"), "", tr("PNG Images (*.png);;All Files (*)"));
+
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    // Ensure .png extension
+    if (!fileName.endsWith(".png", Qt::CaseInsensitive)) {
+        fileName += ".png";
+    }
+
+    // Get the texture ID
+    GLuint texId = node->textureId();
+    if (texId == 0) {
+        return;
+    }
+
+    // Bind the texture and get its dimensions
+    glBindTexture(GL_TEXTURE_2D, texId);
+    GLint width, height;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+
+    // Read texture data
+    QImage image(width, height, QImage::Format_RGBA8888);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
+
+    // Flip image vertically (OpenGL coordinates are bottom-up)
+    image = image.mirrored(false, true);
+
+    // Save the image
+    image.save(fileName);
 }
 
 View2DWidget::~View2DWidget() { delete graph; }

@@ -3,6 +3,7 @@
 #include <QGraphicsItem>
 #include <QGraphicsView>
 #include <QMainWindow>
+#include <QToolBar>
 #include <QWidget>
 
 class QWidget;
@@ -25,7 +26,10 @@ class View2DGraph;
 class NodePreviewGraphicsItem;
 
 class View2DWidget : public QMainWindow {
+    Q_OBJECT
+
     TextureNodePtr node;
+    QToolBar* toolbar;
 
 public:
     View2DWidget();
@@ -40,6 +44,9 @@ public:
     View2DGraph* graph = nullptr;
 
     virtual ~View2DWidget();
+
+private slots:
+    void saveTextureAsImage();
 };
 
 class View2DGraph : public QGraphicsView {
