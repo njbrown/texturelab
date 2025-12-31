@@ -12,6 +12,7 @@
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLineEdit>
 #include <QPainter>
 #include <QPixmap>
 #include <QPushButton>
@@ -189,6 +190,37 @@ void EnumPropWidget::setProp(EnumProp* prop)
     }
 
     comboBox->setCurrentIndex(prop->index);
+
+    this->prop = prop;
+}
+
+// STRING PROP WIDGET
+StringPropWidget::StringPropWidget()
+{
+    prop = nullptr;
+
+    auto vlayout = new QVBoxLayout(this);
+    this->setLayout(vlayout);
+
+    // label
+    label = new QLabel(this);
+    label->setText("");
+    vlayout->addWidget(label);
+
+    // line edit
+    lineEdit = new QLineEdit(this);
+    vlayout->addWidget(lineEdit);
+
+    this->setFixedHeight(80);
+
+    connect(lineEdit, &QLineEdit::textChanged,
+            [=](const QString& text) { emit valueChanged(text); });
+}
+
+void StringPropWidget::setProp(StringProp* prop)
+{
+    label->setText(prop->displayName);
+    lineEdit->setText(prop->value);
 
     this->prop = prop;
 }

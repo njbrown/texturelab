@@ -8,6 +8,7 @@ class QDoubleSpinBox;
 class QSpinBox;
 class QComboBox;
 class QPushButton;
+class QLineEdit;
 
 class FloatProp;
 class IntProp;
@@ -16,6 +17,7 @@ class BoolProp;
 class ColorProp;
 class ImageProp;
 class GradientProp;
+class StringProp;
 class Gradient;
 
 // https://stackoverflow.com/a/19007951
@@ -64,6 +66,21 @@ public:
     void setProp(EnumProp* prop);
 signals:
     void valueChanged(int);
+};
+
+class StringPropWidget : public QWidget {
+    Q_OBJECT
+
+    QLabel* label;
+    QLineEdit* lineEdit;
+
+    StringProp* prop;
+
+public:
+    StringPropWidget();
+    void setProp(StringProp* prop);
+signals:
+    void valueChanged(QString);
 };
 
 class BoolPropWidget : public QWidget {

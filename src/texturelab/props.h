@@ -367,7 +367,7 @@ class StringProp : public Prop {
 public:
     QString value;
 
-    StringProp() : Prop() { type = PropType::Color; }
+    StringProp() : Prop() { type = PropType::String; }
 
     Prop* clone() const override
     {

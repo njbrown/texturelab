@@ -130,6 +130,21 @@ void PropertiesWidget::setSelectedNode(const TextureNodePtr& node)
             layout->addWidget(widget);
 
         } break;
+        case PropType::String: {
+            auto widget = new StringPropWidget();
+            widget->setProp((StringProp*)prop);
+            propWidgets.append(widget);
+
+            connect(widget, &StringPropWidget::valueChanged,
+                    [=](const QString& value) {
+                        node->setProp(prop->name, value);
+                        project->markNodeAsDirty(node);
+
+                        emit propertyUpdated(prop->name, value);
+                    });
+            layout->addWidget(widget);
+
+        } break;
         }
     }
 
