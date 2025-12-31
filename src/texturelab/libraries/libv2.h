@@ -15,8 +15,7 @@ public:
 class BevelNode : public TextureNode {
 public:
     virtual void init() override;
-    void cpuProcess(void* gl, int width, int height,
-                    GLuint inputTextureId) override;
+    void cpuProcess(void* gl, const RenderCommand& command) override;
 };
 
 class BlurNodeV2 : public TextureNode {

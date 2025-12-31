@@ -1,3 +1,4 @@
+#include "../../graphics/renderworker.h"
 #include "../../models.h"
 #include "../../props.h"
 #include "../libv2.h"
@@ -41,14 +42,22 @@ void BevelNode::init()
     this->setShaderSource(source);
 }
 
-void BevelNode::cpuProcess(void* glPtr, int width, int height,
-                           GLuint inputTextureId)
+void BevelNode::cpuProcess(void* glPtr, const RenderCommand& command)
 {
+    // Cast to QOpenGLFunctions_3_2_Core
+    auto gl = static_cast<QOpenGLFunctions_3_2_Core*>(glPtr);
+
+    // Get the first input texture if available
+    GLuint inputTextureId = 0;
+    if (!command.inputs.isEmpty()) {
+        inputTextureId = command.inputs[0].textureId;
+    }
+
     if (inputTextureId == 0)
         return;
 
-    // Cast to QOpenGLFunctions_3_2_Core
-    auto gl = static_cast<QOpenGLFunctions_3_2_Core*>(glPtr);
+    int width = command.textureWidth;
+    int height = command.textureHeight;
 
     // Allocate buffers
     int gridSize = width * height;
@@ -97,12 +106,12 @@ void BevelNode::cpuProcess(void* glPtr, int width, int height,
     edt(gridOuter, width, height, f, v, z);
     edt(gridInner, width, height, f, v, z);
 
-    // Get distance property
+    // Get distance property from RenderCommand props
     float radius = 50.0f;
-    if (hasProp("distance")) {
-        auto prop = dynamic_cast<FloatProp*>(getProp("distance"));
-        if (prop) {
-            radius = prop->value;
+    for (const auto& prop : command.props) {
+        if (prop.propName == "distance" && prop.propType == PropType::Float) {
+            radius = prop.value.toFloat();
+            break;
         }
     }
     float offset = 0.25f;
@@ -135,7 +144,7 @@ void BevelNode::cpuProcess(void* glPtr, int width, int height,
     }
 
     // Upload result to texture
-    gl->glBindTexture(GL_TEXTURE_2D, this->textureId());
+    gl->glBindTexture(GL_TEXTURE_2D, command.textureId);
     gl->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA,
                      GL_FLOAT, resultPixels.data());
     gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

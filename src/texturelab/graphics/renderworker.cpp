@@ -226,15 +226,8 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
         // Cast back to TextureNode and call cpuProcess
         TextureNode* node = static_cast<TextureNode*>(command.nodePtr);
 
-        // Get the first input texture if available
-        GLuint inputTextureId = 0;
-        if (!command.inputs.isEmpty()) {
-            inputTextureId = command.inputs[0].textureId;
-        }
-
-        // Call the CPU processing method
-        node->cpuProcess(gl, command.textureWidth, command.textureHeight,
-                         inputTextureId);
+        // Call the CPU processing method with the full command
+        node->cpuProcess(gl, command);
 
         ctx->doneCurrent();
 

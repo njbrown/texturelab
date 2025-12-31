@@ -13,6 +13,8 @@
 class QOpenGLFramebufferObject;
 class QOpenGLShaderProgram;
 
+struct RenderCommand;
+
 class TextureProject;
 class TextureNode;
 class Comment;
@@ -124,8 +126,7 @@ public:
     virtual void init() {};
 
     // Virtual method for CPU processing
-    virtual void cpuProcess(void* gl, int width, int height,
-                            GLuint inputTextureId) {};
+    virtual void cpuProcess(void* gl, const struct RenderCommand& command) {};
 
     void addInput(const QString& inputName);
 
