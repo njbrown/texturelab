@@ -14,6 +14,7 @@
 #include "DockAreaWidget.h"
 #include "DockSplitter.h"
 
+#include "widgets/exportdialog.h"
 #include "widgets/graphwidget.h"
 #include "widgets/librarywidget.h"
 #include "widgets/properties/propertieswidget.h"
@@ -35,6 +36,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     this->setupToolbar();
 
     this->renderer = nullptr;
+    this->exportDialog = nullptr;
 
     this->dockManager = new ads::CDockManager(this);
 
@@ -201,7 +203,9 @@ void MainWindow::setupToolbar()
     toolBar->addWidget(spacer);
 
     // export
-    toolBar->addAction("Export");
+    auto exportAction = toolBar->addAction("Export");
+    connect(exportAction, &QAction::triggered, this,
+            &MainWindow::showExportDialog);
 
     // behavior
     toolBar->setMovable(false);
@@ -289,5 +293,40 @@ void MainWindow::openProject()
 }
 
 void MainWindow::newProject() { setProject(TextureProject::createEmpty()); }
+
+void MainWindow::showExportDialog()
+{
+    if (!this->exportDialog) {
+        this->exportDialog = new ExportDialog(this);
+        connect(this->exportDialog, &ExportDialog::exportRequested, this,
+                &MainWindow::handleExport);
+    }
+
+    if (this->project) {
+        this->exportDialog->setProject(this->project);
+    }
+
+    this->exportDialog->show();
+    this->exportDialog->raise();
+    this->exportDialog->activateWindow();
+}
+
+void MainWindow::handleExport(const QString& destination,
+                              const QString& pattern)
+{
+    if (!this->project || !this->renderer) {
+        QMessageBox::warning(this, "Export Error",
+                             "No project loaded or renderer not initialized.");
+        return;
+    }
+
+    // TODO: Implement actual export functionality
+    // For now, just show a message
+    QString message = QString("Export functionality to be implemented.\n\n") +
+                      "Destination: " + destination + "\n" +
+                      "Pattern: " + pattern;
+
+    QMessageBox::information(this, "Export", message);
+}
 
 MainWindow::~MainWindow() {}

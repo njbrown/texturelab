@@ -12,6 +12,7 @@ class PropertiesWidget;
 class View2DWidget;
 class View3DWidget;
 class TextureRenderer;
+class ExportDialog;
 
 class TextureProject;
 typedef QSharedPointer<TextureProject> TextureProjectPtr;
@@ -32,6 +33,8 @@ protected:
     // menu callbacks
     void openProject();
     void newProject();
+    void showExportDialog();
+    void handleExport(const QString& destination, const QString& pattern);
 
     void passTextureChannelsToViewer3D();
 
@@ -51,6 +54,7 @@ private:
     PropertiesWidget* propWidget;
     View2DWidget* view2DWidget;
     View3DWidget* view3DWidget;
+    ExportDialog* exportDialog;
 
     TextureRenderer* renderer;
 

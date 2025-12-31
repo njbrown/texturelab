@@ -1,0 +1,153 @@
+#include "exportdialog.h"
+#include "../models.h"
+#include "../project.h"
+
+#include <QFileDialog>
+#include <QFormLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
+#include <QMessageBox>
+#include <QPushButton>
+#include <QVBoxLayout>
+
+ExportDialog::ExportDialog(QWidget* parent)
+    : QDialog(parent), exportPattern("${project}_${name}")
+{
+    setWindowTitle("Export Settings");
+    setModal(true);
+    setMinimumWidth(500);
+
+    setupUI();
+}
+
+ExportDialog::~ExportDialog() {}
+
+void ExportDialog::setProject(TextureProjectPtr project)
+{
+    this->project = project;
+}
+
+void ExportDialog::setupUI()
+{
+    auto mainLayout = new QVBoxLayout(this);
+    mainLayout->setSpacing(15);
+
+    // Destination section
+    auto destLabel = new QLabel("<b>Destination:</b>");
+    mainLayout->addWidget(destLabel);
+
+    auto destLayout = new QHBoxLayout();
+    destinationLabel = new QLabel("No destination selected");
+    destinationLabel->setStyleSheet(
+        "QLabel { padding: 5px; background-color: #f0f0f0; border-radius: "
+        "3px; }");
+    destinationLabel->setWordWrap(true);
+    destLayout->addWidget(destinationLabel, 1);
+
+    chooseDestinationBtn = new QPushButton("Choose Folder");
+    connect(chooseDestinationBtn, &QPushButton::clicked, this,
+            &ExportDialog::onChooseDestination);
+    destLayout->addWidget(chooseDestinationBtn);
+
+    mainLayout->addLayout(destLayout);
+
+    // Pattern section
+    auto patternLabel = new QLabel("<b>Pattern:</b>");
+    mainLayout->addWidget(patternLabel);
+
+    auto patternLayout = new QHBoxLayout();
+    patternEdit = new QLineEdit(exportPattern);
+    patternLayout->addWidget(patternEdit, 1);
+
+    resetPatternBtn = new QPushButton("Reset");
+    connect(resetPatternBtn, &QPushButton::clicked, this,
+            &ExportDialog::onResetPattern);
+    patternLayout->addWidget(resetPatternBtn);
+
+    mainLayout->addLayout(patternLayout);
+
+    // Help text
+    auto helpLabel = new QLabel(
+        "<small><i>${project} - Project Name<br>${name} - Output Node "
+        "Name</i></small>");
+    helpLabel->setStyleSheet("QLabel { color: #666; }");
+    mainLayout->addWidget(helpLabel);
+
+    // Spacer
+    mainLayout->addStretch();
+
+    // Buttons
+    auto buttonLayout = new QHBoxLayout();
+    buttonLayout->addStretch();
+
+    cancelBtn = new QPushButton("Cancel");
+    connect(cancelBtn, &QPushButton::clicked, this, &QDialog::reject);
+    buttonLayout->addWidget(cancelBtn);
+
+    exportBtn = new QPushButton("Export");
+    exportBtn->setDefault(true);
+    connect(exportBtn, &QPushButton::clicked, this, &ExportDialog::onExport);
+    buttonLayout->addWidget(exportBtn);
+
+    mainLayout->addLayout(buttonLayout);
+}
+
+void ExportDialog::updateDestinationDisplay()
+{
+    if (exportDestination.isEmpty()) {
+        destinationLabel->setText("No destination selected");
+        destinationLabel->setStyleSheet(
+            "QLabel { padding: 5px; background-color: #f0f0f0; border-radius: "
+            "3px; color: #999; }");
+        chooseDestinationBtn->setText("Choose Folder");
+    }
+    else {
+        destinationLabel->setText(exportDestination);
+        destinationLabel->setStyleSheet(
+            "QLabel { padding: 5px; background-color: #e8f5e9; border-radius: "
+            "3px; }");
+        chooseDestinationBtn->setText("...");
+    }
+}
+
+void ExportDialog::onChooseDestination()
+{
+    QString dir = QFileDialog::getExistingDirectory(
+        this, "Select Export Destination", exportDestination,
+        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+    if (!dir.isEmpty()) {
+        exportDestination = dir;
+        updateDestinationDisplay();
+    }
+}
+
+void ExportDialog::onResetPattern()
+{
+    exportPattern = "${project}_${name}";
+    patternEdit->setText(exportPattern);
+}
+
+void ExportDialog::onExport()
+{
+    // Get current pattern from the input
+    exportPattern = patternEdit->text().trimmed();
+
+    // Validate inputs
+    if (exportDestination.isEmpty()) {
+        QMessageBox::warning(this, "Export Error",
+                             "Please select an export destination folder.");
+        return;
+    }
+
+    if (exportPattern.isEmpty()) {
+        QMessageBox::warning(this, "Export Error",
+                             "Please specify an export pattern.");
+        return;
+    }
+
+    // Emit signal and close dialog
+    emit exportRequested(exportDestination, exportPattern);
+    accept();
+}
