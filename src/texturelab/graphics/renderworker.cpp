@@ -1,4 +1,5 @@
 #include "renderworker.h"
+#include "../models.h"
 #include "gradient.h"
 #include "texturerenderer.h"
 #include <QImage>
@@ -219,6 +220,23 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
         rdoc_api->StartFrameCapture(NULL, NULL);
 
     ctx->makeCurrent(surface);
+
+    // Handle CPU processing nodes differently
+    if (command.usesCpuProcessing && command.nodePtr != nullptr) {
+        // Cast back to TextureNode and call cpuProcess
+        TextureNode* node = static_cast<TextureNode*>(command.nodePtr);
+
+        // Call the CPU processing method with the full command
+        node->cpuProcess(gl, command);
+
+        ctx->doneCurrent();
+
+        if (rdoc_api)
+            rdoc_api->EndFrameCapture(NULL, NULL);
+
+        emit nodeRendered(command.nodeId, command.textureId);
+        return;
+    }
 
     // Simulate rendering process
     GLuint renderedTextureId =

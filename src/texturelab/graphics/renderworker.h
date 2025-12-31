@@ -43,6 +43,10 @@ struct RenderCommand {
     int textureHeight;
     float randomSeed;
 
+    // CPU processing support
+    bool usesCpuProcessing = false;
+    void* nodePtr = nullptr; // TextureNode* pointer for CPU processing
+
     // all expected inputs need to be cleared
     int totalInputs;
     QList<RenderNodeInput> inputs;
