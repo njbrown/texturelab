@@ -253,7 +253,9 @@ void TextureRenderer::setup()
     // create fbo
     // https://doc.qt.io/qt-6/qopenglframebufferobject.html
     // https://www.qt.io/blog/2015/09/21/using-modern-opengl-es-features-with-qopenglframebufferobject-in-qt-5-6
-    fbo = new QOpenGLFramebufferObject(TEXTURE_SIZE, TEXTURE_SIZE);
+    QOpenGLFramebufferObjectFormat fboFormat;
+    fboFormat.setInternalTextureFormat(GL_RGBA32F);
+    fbo = new QOpenGLFramebufferObject(TEXTURE_SIZE, TEXTURE_SIZE, fboFormat);
     if (!fbo->isValid()) {
         qFatal("FBO could not be created");
     }
@@ -295,27 +297,6 @@ void TextureRenderer::update()
     }
 
     this->queueNextNodeToRender();
-
-    // ctx->makeCurrent(surface);
-    // // todo: use quota
-    // while (true) {
-    //     auto nextNode = getNextUpdatableNode();
-    //     if (!nextNode)
-    //         break;
-
-    //     qDebug() << "Rendering node: " << nextNode->id;
-    //     renderNode(nextNode);
-
-    //     nextNode->isDirty = false;
-
-    //     // auto img = nextNode->texture->toImage();
-    //     // emit thumbnailGenerated(nextNode->id,  QPixmap::fromImage(img));
-
-    //     auto texId = nextNode->texture->texture();
-    //     emit thumbnailGenerated(nextNode->id, texId, QPixmap());
-    // }
-
-    // ctx->doneCurrent();
 }
 
 void TextureRenderer::updateOld()
@@ -337,8 +318,10 @@ void TextureRenderer::updateOld()
             // resizeNodeTexture(node);
             node->textureWidth = project->textureWidth;
             node->textureHeight = project->textureHeight;
-            node->texture = new QOpenGLFramebufferObject(node->textureWidth,
-                                                         node->textureHeight);
+            QOpenGLFramebufferObjectFormat fboFormat;
+            fboFormat.setInternalTextureFormat(GL_RGBA32F);
+            node->texture = new QOpenGLFramebufferObject(
+                node->textureWidth, node->textureHeight, fboFormat);
 
             // clear pixmap and emit thumbnail changed?
         }
@@ -377,8 +360,10 @@ void TextureRenderer::initializeNodeGraphicsResources(
     ctx->makeCurrent(surface);
 
     // create fbo
-    node->texture = new QOpenGLFramebufferObject(project->textureWidth,
-                                                 project->textureWidth);
+    QOpenGLFramebufferObjectFormat fboFormat;
+    fboFormat.setInternalTextureFormat(GL_RGBA32F);
+    node->texture = new QOpenGLFramebufferObject(
+        project->textureWidth, project->textureWidth, fboFormat);
     node->textureWidth = project->textureWidth;
     node->textureHeight = project->textureHeight;
 
@@ -560,6 +545,10 @@ void TextureRenderer::queueNextNodeToRender()
         cmd.shaderId = nextNode->shader->programId();
         cmd.shaderLinked = nextNode->shader->isLinked();
         cmd.randomSeed = project->randomSeed + nextNode->randomSeed;
+
+        // CPU processing support
+        cmd.usesCpuProcessing = nextNode->usesCpuProcessing;
+        cmd.nodePtr = nextNode.data(); // Store raw pointer for CPU processing
 
         cmd.totalInputs = nextNode->inputs.size();
 

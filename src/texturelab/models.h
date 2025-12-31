@@ -8,6 +8,7 @@
 #include <QSharedPointer>
 #include <QString>
 #include <QVector2D>
+#include <QtOpenGL>
 
 class QOpenGLFramebufferObject;
 class QOpenGLShaderProgram;
@@ -109,6 +110,9 @@ public:
     // texture needs updating
     bool isDirty = true;
 
+    // flag to indicate this node processes on CPU instead of GPU shader
+    bool usesCpuProcessing = false;
+
     int textureWidth;
     int textureHeight;
     QOpenGLFramebufferObject* texture = nullptr;
@@ -118,6 +122,10 @@ public:
     TextureNode();
 
     virtual void init() {};
+
+    // Virtual method for CPU processing
+    virtual void cpuProcess(void* gl, int width, int height,
+                            GLuint inputTextureId) {};
 
     void addInput(const QString& inputName);
 
