@@ -8,6 +8,8 @@ class AlphaSlider;
 
 // https://github.com/yjg30737/pyqt-color-picker/blob/main/pyqt_color_picker/colorSquareWidget.py
 class SVBox : public QWidget {
+    Q_OBJECT
+
     QColor color;
 
     QWidget* colorWidget;
@@ -23,6 +25,7 @@ class SVBox : public QWidget {
 public:
     SVBox();
     void setColor(const QColor& color);
+    QColor getColor() const;
     bool eventFilter(QObject* object, QEvent* event);
     void moveSelector(QMouseEvent* evt);
 
@@ -32,6 +35,8 @@ signals:
 
 // https://github.com/mortalis13/Qt-Color-Picker-Qt/blob/master/Widgets/ColorWidgets/hselector.cpp
 class HueSlider : public QWidget {
+    Q_OBJECT
+
     float hue;
     bool selectorDrawn;
     QColor color;

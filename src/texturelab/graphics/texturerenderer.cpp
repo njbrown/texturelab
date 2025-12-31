@@ -520,21 +520,21 @@ void TextureRenderer::initRenderWorker()
 {
     renderWorker = new RenderWorker();
     QObject::connect(renderWorker, &RenderWorker::nodeRendered, this,
-            &TextureRenderer::nodeRendered);
+                     &TextureRenderer::nodeRendered);
 
-    #ifdef RENDER_IN_MAIN_THREAD
+#ifdef RENDER_IN_MAIN_THREAD
     // ensure it creates its own context and resources on main thread
     renderWorker->setup();
-    #else
+#else
     renderThread = new QThread();
-    
+
     renderWorker->moveToThread(renderThread);
-    
+
     QObject::connect(renderThread, &QThread::started, renderWorker,
-        &RenderWorker::run);
-            
+                     &RenderWorker::run);
+
     renderThread->start();
-    #endif
+#endif
 }
 
 void TextureRenderer::nodeRendered(const QString& nodeId, GLuint texId)
@@ -578,7 +578,24 @@ void TextureRenderer::queueNextNodeToRender()
             RenderProp rnp;
             rnp.propName = prop->name;
             rnp.propType = prop->type;
-            rnp.value = prop->getValue();
+            rnp.textureId = 0;
+
+            // Upload ImageProp textures to GPU on main thread
+            if (prop->type == PropType::Image) {
+                auto imageProp = (ImageProp*)prop;
+
+                if (!imageProp->value.isNull()) {
+                    ctx->makeCurrent(surface);
+                    imageProp->updateTexture();
+
+                    rnp.textureId = imageProp->getTextureId();
+
+                    ctx->doneCurrent();
+                }
+            }
+            else {
+                rnp.value = prop->getValue();
+            }
 
             cmd.props.append(rnp);
         }
@@ -592,11 +609,9 @@ void TextureRenderer::queueNextNodeToRender()
         // mark node as clean before rendering to avoid double-queuing
         nextNode->isDirty = false;
 
-        #ifdef RENDER_IN_MAIN_THREAD
+#ifdef RENDER_IN_MAIN_THREAD
         renderWorker->renderNextInQueue();
-        #endif
-
-        
+#endif
     }
 }
 
@@ -904,7 +919,10 @@ QString TextureRenderer::createCodeForProps(const TextureNodePtr& node)
             code += "uniform vec4 prop_" + prop->name + ";\n";
             break;
         case PropType::Gradient:
-            code += "uniform int prop_" + prop->name + ";\n";
+            code += "uniform Gradient prop_" + prop->name + ";\n";
+            break;
+        case PropType::Image:
+            code += "uniform sampler2D prop_" + prop->name + ";\n";
             break;
         }
     }

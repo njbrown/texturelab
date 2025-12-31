@@ -6,6 +6,7 @@ class HueSlider;
 class AlphaSlider;
 
 class ColorPicker : public QDialog {
+    Q_OBJECT
 public:
     ColorPicker();
 
@@ -23,4 +24,5 @@ private:
     SVBox* svBox;
     HueSlider* hueSlider;
     AlphaSlider* alphaSlider;
+    QColor originalColor;
 };

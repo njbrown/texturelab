@@ -1,3 +1,4 @@
+#include "../../colorpicker/gradient.h"
 #include <QVector>
 #include <QWidget>
 
@@ -7,11 +8,17 @@ class QDoubleSpinBox;
 class QSpinBox;
 class QComboBox;
 class QPushButton;
+class QLineEdit;
 
 class FloatProp;
 class IntProp;
 class EnumProp;
 class BoolProp;
+class ColorProp;
+class ImageProp;
+class GradientProp;
+class StringProp;
+class Gradient;
 
 // https://stackoverflow.com/a/19007951
 class FloatPropWidget : public QWidget {
@@ -61,6 +68,21 @@ signals:
     void valueChanged(int);
 };
 
+class StringPropWidget : public QWidget {
+    Q_OBJECT
+
+    QLabel* label;
+    QLineEdit* lineEdit;
+
+    StringProp* prop;
+
+public:
+    StringPropWidget();
+    void setProp(StringProp* prop);
+signals:
+    void valueChanged(QString);
+};
+
 class BoolPropWidget : public QWidget {
     Q_OBJECT
 
@@ -77,4 +99,61 @@ public:
     void setProp(BoolProp* prop);
 signals:
     void valueChanged(bool);
+};
+
+class ColorPropWidget : public QWidget {
+    Q_OBJECT
+
+    QLabel* label;
+    QWidget* colorPreview;
+
+    ColorProp* prop;
+
+    void updateColorPreview();
+
+public:
+    ColorPropWidget();
+    void setProp(ColorProp* prop);
+    bool eventFilter(QObject* obj, QEvent* event) override;
+signals:
+    void valueChanged(QColor);
+};
+
+class GradientPropWidget : public QWidget {
+    Q_OBJECT
+
+    QLabel* label;
+    QWidget* gradientPreview;
+
+    GradientProp* prop;
+
+    void updateGradientPreview();
+
+public:
+    GradientPropWidget();
+    void setProp(GradientProp* prop);
+    bool eventFilter(QObject* obj, QEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
+signals:
+    void valueChanged(Gradient);
+};
+
+class ImagePropWidget : public QWidget {
+    Q_OBJECT
+
+    QLabel* label;
+    QLabel* imagePreview;
+    QPushButton* clearButton;
+
+    ImageProp* prop;
+    QString filePath;
+
+    void updateImagePreview();
+
+public:
+    ImagePropWidget();
+    void setProp(ImageProp* prop);
+    bool eventFilter(QObject* obj, QEvent* event) override;
+signals:
+    void valueChanged(QImage);
 };

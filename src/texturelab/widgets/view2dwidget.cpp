@@ -259,16 +259,16 @@ void NodePreviewGraphicsItem::paint(QPainter* painter,
         glBindTexture(GL_TEXTURE_2D, node->textureId());
         // glBindTexture(GL_TEXTURE_2D, node->texture->texture());
         glBegin(GL_QUADS);
-        glTexCoord2f(0, 0);
+        glTexCoord2f(0, 1);
         glVertex2f(0, 0);
 
-        glTexCoord2f(1, 0);
+        glTexCoord2f(1, 1);
         glVertex2f(rect.width(), 0);
 
-        glTexCoord2f(1, 1);
+        glTexCoord2f(1, 0);
         glVertex2f(rect.width(), rect.height());
 
-        glTexCoord2f(0, 1);
+        glTexCoord2f(0, 0);
         glVertex2f(0, rect.height());
         glEnd();
 

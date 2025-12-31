@@ -12,7 +12,7 @@
 SVBox::SVBox()
 {
     // this->setFixedSize(400, 300);
-    this->setMinimumHeight(300);
+    // this->setMinimumHeight(150);
 
     auto layout = new QGridLayout(this);
     colorWidget = new QWidget();
@@ -54,11 +54,12 @@ SVBox::SVBox()
 
 void SVBox::setColor(const QColor& color)
 {
-    h = color.hueF();
+    this->color = color;
+    h = std::clamp(color.hueF(), 0.0f, 1.0f);
     s = color.saturationF();
     v = color.valueF();
 
-    auto hue = color.hueF() * 100;
+    auto hue = h * 100;
     QString style = "background-color: qlineargradient(x1:1, x2:0, "
                     "stop:0 hsl(%1%,100%,50%),"
                     "stop:1 #fff);"
@@ -66,8 +67,19 @@ void SVBox::setColor(const QColor& color)
     auto formatted = style.arg(hue);
 
     // qDebug() << formatted;
-    this->setStyleSheet(formatted);
+    colorWidget->setStyleSheet(formatted);
+
+    // Update selector position based on saturation and value
+    int x = s * this->width() - selectorDiameter / 2;
+    int y = (1.0f - v) * this->height() - selectorDiameter / 2;
+    selector->move(x, y);
+
+    this->selector->update();
+    this->update();
+    colorWidget->update();
 }
+
+QColor SVBox::getColor() const { return QColor::fromHsvF(h, s, v); }
 
 bool SVBox::eventFilter(QObject* object, QEvent* event)
 {
@@ -120,6 +132,7 @@ void SVBox::moveSelector(QMouseEvent* evt)
                  1.0f);
 
     // qDebug() << s << " " << v << "\n";
+    emit onSVChanged(s, v);
 }
 
 // https://github.com/mortalis13/Qt-Color-Picker-Qt/blob/master/Widgets/ColorWidgets/hselector.cpp
@@ -141,7 +154,7 @@ void HueSlider::setHue(float hue)
 void HueSlider::setColor(const QColor& color)
 {
     this->color = color;
-    this->hue = color.hueF();
+    this->hue = std::clamp(color.hueF(), 0.0f, 1.0f);
     update();
 }
 
@@ -190,7 +203,8 @@ void HueSlider::paintEvent(QPaintEvent* event)
     // draw selector
     painter.setPen(QPen(Qt::black, 2));
     painter.setBrush(Qt::white);
-    painter.drawEllipse(QPointF(hue * width(), height() / 2), 5, 5);
+    const QPointF point(hue * width(), height() / 2);
+    painter.drawEllipse(point, 5, 5);
 }
 
 void HueSlider::resizeEvent(QResizeEvent* event) { selectorDrawn = false; }
@@ -199,7 +213,7 @@ void HueSlider::mousePressEvent(QMouseEvent* event)
 {
     hue = event->pos().x() / (float)width();
     update();
-    // emit onHueChanged(hue);
+    emit onHueChanged(hue);
 }
 
 void HueSlider::mouseMoveEvent(QMouseEvent* event)
@@ -207,4 +221,5 @@ void HueSlider::mouseMoveEvent(QMouseEvent* event)
     hue = event->pos().x() / (float)width();
     hue = std::clamp(hue, 0.0f, 1.0f);
     update();
+    emit onHueChanged(hue);
 }

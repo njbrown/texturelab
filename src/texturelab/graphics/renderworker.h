@@ -27,6 +27,7 @@ struct RenderProp {
     QString propName;
     PropType::Value propType;
     QVariant value;
+    GLuint textureId; // For ImageProp: pre-uploaded texture ID
 };
 
 struct RenderCommand {
@@ -79,9 +80,8 @@ public:
     void renderNextInQueue();
 
     void setup();
-    
-private:
 
+private:
 signals:
     void nodeRendered(QString nodeId, GLuint textureId);
 };

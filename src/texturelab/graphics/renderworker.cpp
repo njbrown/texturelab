@@ -1,4 +1,5 @@
 #include "renderworker.h"
+#include "gradient.h"
 #include "texturerenderer.h"
 #include <QImage>
 #include <QOffscreenSurface>
@@ -53,7 +54,8 @@ void RenderWorker::renderNextInQueue()
         RenderCommand command = renderQueue.dequeue();
         mutex.unlock();
         this->processRenderCommand(command);
-    } else {
+    }
+    else {
         mutex.unlock();
     }
 }
@@ -177,6 +179,8 @@ void RenderWorker::setup()
     vbo->bind();
     vbo->allocate(data.constData(), data.count() * sizeof(float));
     vbo->release();
+
+    vao->release();
 
     // create fbo
     // https://doc.qt.io/qt-6/qopenglframebufferobject.html
@@ -343,9 +347,58 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
                     colorVal.redF(), colorVal.greenF(), colorVal.blueF(),
                     colorVal.alphaF());
             } break;
-            case PropType::Gradient:
-                // todo: pass gradient
-                break;
+            case PropType::Gradient: {
+                auto gradientVal = prop.value.value<Gradient>();
+                auto numPoints = gradientVal.points.size();
+
+                // Set number of gradient points
+                gl->glUniform1i(
+                    gl->glGetUniformLocation(
+                        command.shaderId, (propCString + ".numPoints").c_str()),
+                    numPoints);
+
+                // Pass each gradient point (color and position)
+                for (int i = 0; i < numPoints; i++) {
+                    const auto& point = gradientVal.points[i];
+                    const auto& color = point.color;
+
+                    // Set color for this point
+                    std::string colorPath =
+                        propCString + ".colors[" + std::to_string(i) + "]";
+                    gl->glUniform3f(gl->glGetUniformLocation(command.shaderId,
+                                                             colorPath.c_str()),
+                                    color.redF(), color.greenF(),
+                                    color.blueF());
+
+                    // Set position for this point
+                    std::string posPath =
+                        propCString + ".positions[" + std::to_string(i) + "]";
+                    gl->glUniform1f(gl->glGetUniformLocation(command.shaderId,
+                                                             posPath.c_str()),
+                                    point.position);
+                }
+            } break;
+            case PropType::Image: {
+                // Use pre-uploaded texture ID from main thread
+                if (prop.textureId != 0) {
+                    gl->glActiveTexture(GL_TEXTURE0 + texIndex);
+                    gl->glBindTexture(GL_TEXTURE_2D, prop.textureId);
+                    gl->glUniform1i(
+                        gl->glGetUniformLocation(command.shaderId, propName),
+                        texIndex);
+                    texIndex++;
+                }
+                else {
+                    // No texture provided, bind a default texture (e.g., white)
+                    gl->glActiveTexture(GL_TEXTURE0 + texIndex);
+                    gl->glBindTexture(GL_TEXTURE_2D, 0); // Bind to 0 or a
+                                                         // default texture
+                    gl->glUniform1i(
+                        gl->glGetUniformLocation(command.shaderId, propName),
+                        texIndex);
+                    texIndex++;
+                }
+            } break;
             }
         }
 

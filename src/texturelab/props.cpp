@@ -58,13 +58,61 @@ Prop::Prop() { id = createGuid(); }
 QJsonObject Prop::toJson()
 {
     QJsonObject obj;
-    obj["id"] = id;
-    obj["name"] = name;
-    obj["displayName"] = displayName;
+    // obj["id"] = id;
+    // obj["name"] = name;
+    // obj["displayName"] = displayName;
+    return obj;
 }
 void Prop::fromJson(const QJsonObject& obj)
 {
-    id = obj["id"].toString();
-    name = obj["name"].toString();
-    displayName = obj["displayName"].toString();
+    // id = obj["id"].toString();
+    // name = obj["name"].toString();
+    // displayName = obj["displayName"].toString();
+}
+
+QJsonValue Prop::toJsonValue()
+{
+    // Default implementation returns null
+    return QJsonValue();
+}
+
+void Prop::fromJsonValue(const QJsonValue& obj)
+{
+    // Default implementation does nothing
+}
+
+void ImageProp::updateTexture()
+{
+    // If value is null, clear the texture
+    if (value.isNull()) {
+        if (texture != nullptr) {
+            delete texture;
+            texture = nullptr;
+        }
+        _textureDirty = false;
+        return;
+    }
+
+    // Only upload texture if dirty or not yet created
+    if (!_textureDirty && texture != nullptr)
+        return;
+
+    // Delete old texture if it exists
+    if (texture != nullptr) {
+        delete texture;
+        texture = nullptr;
+    }
+
+    // Create and upload new texture
+    texture = new QOpenGLTexture(value.mirrored(false, true));
+    texture->setMinificationFilter(QOpenGLTexture::Nearest);
+    texture->setMagnificationFilter(QOpenGLTexture::Nearest);
+    texture->setWrapMode(QOpenGLTexture::Repeat);
+
+    _textureDirty = false;
+}
+
+GLuint ImageProp::getTextureId() const
+{
+    return texture ? texture->textureId() : 0;
 }

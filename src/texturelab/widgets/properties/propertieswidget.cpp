@@ -84,6 +84,67 @@ void PropertiesWidget::setSelectedNode(const TextureNodePtr& node)
             layout->addWidget(widget);
 
         } break;
+        case PropType::Color: {
+            auto widget = new ColorPropWidget();
+            widget->setProp((ColorProp*)prop);
+            propWidgets.append(widget);
+
+            connect(widget, &ColorPropWidget::valueChanged,
+                    [=](const QColor& value) {
+                        node->setProp(prop->name, value);
+                        project->markNodeAsDirty(node);
+
+                        emit propertyUpdated(prop->name, value);
+                    });
+            layout->addWidget(widget);
+
+        } break;
+        case PropType::Gradient: {
+            auto widget = new GradientPropWidget();
+            widget->setProp((GradientProp*)prop);
+            propWidgets.append(widget);
+
+            connect(widget, &GradientPropWidget::valueChanged,
+                    [=](const Gradient& value) {
+                        node->setProp(prop->name, QVariant::fromValue(value));
+                        project->markNodeAsDirty(node);
+
+                        emit propertyUpdated(prop->name,
+                                             QVariant::fromValue(value));
+                    });
+            layout->addWidget(widget);
+
+        } break;
+        case PropType::Image: {
+            auto widget = new ImagePropWidget();
+            widget->setProp((ImageProp*)prop);
+            propWidgets.append(widget);
+
+            connect(widget, &ImagePropWidget::valueChanged,
+                    [=](const QImage& value) {
+                        node->setProp(prop->name, value);
+                        project->markNodeAsDirty(node);
+
+                        emit propertyUpdated(prop->name, value);
+                    });
+            layout->addWidget(widget);
+
+        } break;
+        case PropType::String: {
+            auto widget = new StringPropWidget();
+            widget->setProp((StringProp*)prop);
+            propWidgets.append(widget);
+
+            connect(widget, &StringPropWidget::valueChanged,
+                    [=](const QString& value) {
+                        node->setProp(prop->name, value);
+                        project->markNodeAsDirty(node);
+
+                        emit propertyUpdated(prop->name, value);
+                    });
+            layout->addWidget(widget);
+
+        } break;
         }
     }
 

@@ -154,12 +154,15 @@ target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
                                          Qt${QT_VERSION_MAJOR}::OpenGLWidgets 
                                          qtadvanceddocking-qt6 
                                          nodegraph
-                                         viewer3d)
+                                         viewer3d
+                                         colorpicker
+                                         )
                                          
 target_include_directories(texturelab PUBLIC
                             ../ads/src
                             ../nodegraph
                             ../viewer3d
+                            ../colorpicker
                             )
 
 set_target_properties(texturelab PROPERTIES
