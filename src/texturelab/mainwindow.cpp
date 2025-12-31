@@ -2,6 +2,7 @@
 
 #include <QDebug>
 #include <QFileDialog>
+#include <QHBoxLayout>
 #include <QLayout>
 #include <QList>
 #include <QMenu>
@@ -9,7 +10,9 @@
 #include <QMessageBox>
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
+#include <QPushButton>
 #include <QToolBar>
+#include <QToolButton>
 
 #include "DockAreaWidget.h"
 #include "DockSplitter.h"
@@ -202,10 +205,27 @@ void MainWindow::setupToolbar()
     // spacer
     toolBar->addWidget(spacer);
 
-    // export
-    auto exportAction = toolBar->addAction("Export");
-    connect(exportAction, &QAction::triggered, this,
+    // Export button with dropdown menu
+    auto exportBtn = new QToolButton(this);
+    exportBtn->setText("Export");
+    exportBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+
+    auto directExportAction = new QAction("Export", this);
+    connect(directExportAction, &QAction::triggered, this,
+            &MainWindow::directExport);
+
+    auto settingsAction = new QAction("Export Settings...", this);
+    connect(settingsAction, &QAction::triggered, this,
             &MainWindow::showExportDialog);
+
+    auto exportMenu = new QMenu(this);
+    exportMenu->addAction(settingsAction);
+
+    exportBtn->setDefaultAction(directExportAction);
+    exportBtn->setMenu(exportMenu);
+    exportBtn->setPopupMode(QToolButton::MenuButtonPopup);
+
+    toolBar->addWidget(exportBtn);
 
     // behavior
     toolBar->setMovable(false);
@@ -309,6 +329,20 @@ void MainWindow::showExportDialog()
     this->exportDialog->show();
     this->exportDialog->raise();
     this->exportDialog->activateWindow();
+}
+
+void MainWindow::directExport()
+{
+    // If export settings exist (destination and pattern), export directly
+    // Otherwise, show the dialog first
+    if (this->exportDialog &&
+        !this->exportDialog->getExportDestination().isEmpty()) {
+        handleExport(this->exportDialog->getExportDestination(),
+                     this->exportDialog->getExportPattern());
+    }
+    else {
+        showExportDialog();
+    }
 }
 
 void MainWindow::handleExport(const QString& destination,

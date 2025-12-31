@@ -34,6 +34,7 @@ protected:
     void openProject();
     void newProject();
     void showExportDialog();
+    void directExport();
     void handleExport(const QString& destination, const QString& pattern);
 
     void passTextureChannelsToViewer3D();
