@@ -10,7 +10,8 @@
 
 // Constants for Euclidean Distance Transform
 static const double INF = 1e20;
-static const float VALUE_MAX = 15360.0f;
+// Use normalized float range [0.0, 1.0] for GL_RGBA32F textures
+static const float VALUE_MAX = 1.0f;
 
 // Forward declarations for EDT functions
 static void edt(std::vector<double>& data, int width, int height,

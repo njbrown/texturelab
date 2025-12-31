@@ -66,6 +66,7 @@ public:
 class FloodFillNode : public TextureNode {
 public:
     virtual void init() override;
+    void cpuProcess(void* gl, const RenderCommand& command) override;
 };
 
 class FloodFillSamplerNode : public TextureNode {
