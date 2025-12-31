@@ -50,6 +50,7 @@ private slots:
     void saveTextureAsImage();
     void toggleTileView();
     void recenterView();
+    void copyTextureToClipboard();
 };
 
 class View2DGraph : public QGraphicsView {

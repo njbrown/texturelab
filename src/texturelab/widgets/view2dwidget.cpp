@@ -2,9 +2,11 @@
 #include <QLayout>
 
 #include <QtGui/QBrush>
+#include <QtGui/QClipboard>
 #include <QtGui/QIcon>
 #include <QtGui/QImage>
 #include <QtGui/QPen>
+#include <QtWidgets/QApplication>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QPushButton>
@@ -41,6 +43,12 @@ View2DWidget::View2DWidget() : QMainWindow()
         toolbar->addAction(QIcon(":/icons/save.svg"), "Save Texture");
     connect(saveAction, &QAction::triggered, this,
             &View2DWidget::saveTextureAsImage);
+
+    // Add copy button
+    QAction* copyAction = toolbar->addAction(QIcon(":/icons/copy.svg"),
+                                             "Copy Texture to Clipboard");
+    connect(copyAction, &QAction::triggered, this,
+            &View2DWidget::copyTextureToClipboard);
 
     // Add tile toggle button
     QAction* tileAction =
@@ -145,6 +153,36 @@ void View2DWidget::recenterView()
         QRectF previewRect = graph->preview->boundingRect();
         graph->setSceneRect(previewRect);
     }
+}
+
+void View2DWidget::copyTextureToClipboard()
+{
+    if (!node) {
+        return;
+    }
+
+    // Get the texture ID
+    GLuint texId = node->textureId();
+    if (texId == 0) {
+        return;
+    }
+
+    // Bind the texture and get its dimensions
+    glBindTexture(GL_TEXTURE_2D, texId);
+    GLint width, height;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+
+    // Read texture data
+    QImage image(width, height, QImage::Format_RGBA8888);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
+
+    // Flip image vertically (OpenGL coordinates are bottom-up)
+    image = image.mirrored(false, true);
+
+    // Copy to clipboard
+    QClipboard* clipboard = QApplication::clipboard();
+    clipboard->setImage(image);
 }
 
 View2DWidget::~View2DWidget() { delete graph; }
