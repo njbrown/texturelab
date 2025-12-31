@@ -46,6 +46,9 @@ public:
 
     virtual ~View2DWidget();
 
+private:
+    void showToast(const QString& message, int duration = 2000);
+
 private slots:
     void saveTextureAsImage();
     void toggleTileView();

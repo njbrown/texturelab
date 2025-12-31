@@ -1,6 +1,8 @@
 #include "view2dwidget.h"
 #include <QLayout>
 
+#include <QtCore/QPropertyAnimation>
+#include <QtCore/QTimer>
 #include <QtGui/QBrush>
 #include <QtGui/QClipboard>
 #include <QtGui/QIcon>
@@ -8,8 +10,11 @@
 #include <QtGui/QPen>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QFileDialog>
+#include <QtWidgets/QGraphicsOpacityEffect>
+#include <QtWidgets/QLabel>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QStatusBar>
 #include <QtWidgets/QToolBar>
 
 #include <QtCore/QPointF>
@@ -183,6 +188,51 @@ void View2DWidget::copyTextureToClipboard()
     // Copy to clipboard
     QClipboard* clipboard = QApplication::clipboard();
     clipboard->setImage(image);
+
+    // Show confirmation toast
+    showToast("Texture copied to clipboard");
+}
+
+void View2DWidget::showToast(const QString& message, int duration)
+{
+    QLabel* toast = new QLabel(message, this);
+    toast->setStyleSheet("QLabel {"
+                         "  background-color: rgba(50, 50, 50, 200);"
+                         "  color: white;"
+                         "  padding: 10px 20px;"
+                         "  border-radius: 5px;"
+                         "}");
+    toast->setAlignment(Qt::AlignCenter);
+    toast->adjustSize();
+
+    // Position at bottom center
+    int x = (width() - toast->width()) / 2;
+    int y = height() - toast->height() - 50;
+    toast->move(x, y);
+
+    // Fade in
+    QGraphicsOpacityEffect* effect = new QGraphicsOpacityEffect(toast);
+    toast->setGraphicsEffect(effect);
+    QPropertyAnimation* fadeIn = new QPropertyAnimation(effect, "opacity");
+    fadeIn->setDuration(200);
+    fadeIn->setStartValue(0.0);
+    fadeIn->setEndValue(1.0);
+    fadeIn->start(QAbstractAnimation::DeleteWhenStopped);
+
+    toast->show();
+    toast->raise();
+
+    // Fade out and delete
+    QTimer::singleShot(duration, [toast]() {
+        QGraphicsOpacityEffect* effect = new QGraphicsOpacityEffect(toast);
+        toast->setGraphicsEffect(effect);
+        QPropertyAnimation* fadeOut = new QPropertyAnimation(effect, "opacity");
+        fadeOut->setDuration(200);
+        fadeOut->setStartValue(1.0);
+        fadeOut->setEndValue(0.0);
+        fadeOut->start(QAbstractAnimation::DeleteWhenStopped);
+        QTimer::singleShot(200, toast, &QLabel::deleteLater);
+    });
 }
 
 View2DWidget::~View2DWidget() { delete graph; }
