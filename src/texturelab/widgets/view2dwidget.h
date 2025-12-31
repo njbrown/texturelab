@@ -30,6 +30,7 @@ class View2DWidget : public QMainWindow {
 
     TextureNodePtr node;
     QToolBar* toolbar;
+    bool showTiled = false;
 
 public:
     View2DWidget();
@@ -47,6 +48,7 @@ public:
 
 private slots:
     void saveTextureAsImage();
+    void toggleTileView();
 };
 
 class View2DGraph : public QGraphicsView {
@@ -65,6 +67,8 @@ public:
     void updatePreview();
     void clearSelection();
 
+    NodePreviewGraphicsItem* preview = nullptr;
+
 protected:
     // view manipulation
     void wheelEvent(QWheelEvent* event) override;
@@ -78,16 +82,17 @@ protected:
 
 private:
     QPointF _clickPos;
-    NodePreviewGraphicsItem* preview = nullptr;
 };
 
 class NodePreviewGraphicsItem : public QGraphicsItem {
     TextureNodePtr node;
+    bool tiled = false;
 
 public:
     NodePreviewGraphicsItem();
     void setNode(const TextureNodePtr& node);
     void clearNode();
+    void setTiled(bool tiled);
     QRectF boundingRect() const override;
 
 protected:

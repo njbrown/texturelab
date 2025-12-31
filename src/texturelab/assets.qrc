@@ -87,6 +87,7 @@
     
     <!-- icons -->
     <file alias="icons/save.svg">../icons/save.svg</file>
+    <file alias="icons/grid.svg">../icons/grid.svg</file>
     
     <file alias="env/cave_wall_1k.hdr">../../public/assets/env/cave_wall/cave_wall_1k.hdr</file>
     </qresource>

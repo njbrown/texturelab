@@ -42,6 +42,13 @@ View2DWidget::View2DWidget() : QMainWindow()
     connect(saveAction, &QAction::triggered, this,
             &View2DWidget::saveTextureAsImage);
 
+    // Add tile toggle button
+    QAction* tileAction =
+        toolbar->addAction(QIcon(":/icons/grid.svg"), "Toggle 3x3 Tile View");
+    tileAction->setCheckable(true);
+    connect(tileAction, &QAction::triggered, this,
+            &View2DWidget::toggleTileView);
+
     graph = new View2DGraph(this);
     this->setCentralWidget(graph);
 }
@@ -110,6 +117,15 @@ void View2DWidget::saveTextureAsImage()
 
     // Save the image
     image.save(fileName);
+}
+
+void View2DWidget::toggleTileView()
+{
+    showTiled = !showTiled;
+    if (graph && graph->preview) {
+        graph->preview->setTiled(showTiled);
+        graph->preview->update();
+    }
 }
 
 View2DWidget::~View2DWidget() { delete graph; }
@@ -279,7 +295,11 @@ NodePreviewGraphicsItem::NodePreviewGraphicsItem() {}
 
 QRectF NodePreviewGraphicsItem::boundingRect() const
 {
-    return QRectF(0, 0, 1000, 1000);
+    if (tiled) {
+        // Center the 3x3 grid around origin
+        return QRectF(-1500, -1500, 3000, 3000);
+    }
+    return QRectF(-500, -500, 1000, 1000);
 }
 
 void NodePreviewGraphicsItem::setNode(const TextureNodePtr& node)
@@ -289,6 +309,14 @@ void NodePreviewGraphicsItem::setNode(const TextureNodePtr& node)
         this->show();
 }
 void NodePreviewGraphicsItem::clearNode() { this->node.reset(); }
+
+void NodePreviewGraphicsItem::setTiled(bool tiled)
+{
+    if (this->tiled != tiled) {
+        prepareGeometryChange();
+        this->tiled = tiled;
+    }
+}
 
 void NodePreviewGraphicsItem::paint(QPainter* painter,
                                     QStyleOptionGraphicsItem const* option,
@@ -316,19 +344,51 @@ void NodePreviewGraphicsItem::paint(QPainter* painter,
         // qDebug() << "rendering preview for tex id " << node->textureId();
         glBindTexture(GL_TEXTURE_2D, node->textureId());
         // glBindTexture(GL_TEXTURE_2D, node->texture->texture());
-        glBegin(GL_QUADS);
-        glTexCoord2f(0, 1);
-        glVertex2f(0, 0);
 
-        glTexCoord2f(1, 1);
-        glVertex2f(rect.width(), 0);
+        if (tiled) {
+            // Render as 3x3 tiled grid
+            float tileWidth = rect.width() / 3.0f;
+            float tileHeight = rect.height() / 3.0f;
 
-        glTexCoord2f(1, 0);
-        glVertex2f(rect.width(), rect.height());
+            for (int y = 0; y < 3; y++) {
+                for (int x = 0; x < 3; x++) {
+                    float x0 = rect.x() + x * tileWidth;
+                    float y0 = rect.y() + y * tileHeight;
+                    float x1 = rect.x() + (x + 1) * tileWidth;
+                    float y1 = rect.y() + (y + 1) * tileHeight;
 
-        glTexCoord2f(0, 0);
-        glVertex2f(0, rect.height());
-        glEnd();
+                    glBegin(GL_QUADS);
+                    glTexCoord2f(0, 1);
+                    glVertex2f(x0, y0);
+
+                    glTexCoord2f(1, 1);
+                    glVertex2f(x1, y0);
+
+                    glTexCoord2f(1, 0);
+                    glVertex2f(x1, y1);
+
+                    glTexCoord2f(0, 0);
+                    glVertex2f(x0, y1);
+                    glEnd();
+                }
+            }
+        }
+        else {
+            // Render single texture centered
+            glBegin(GL_QUADS);
+            glTexCoord2f(0, 1);
+            glVertex2f(rect.x(), rect.y());
+
+            glTexCoord2f(1, 1);
+            glVertex2f(rect.x() + rect.width(), rect.y());
+
+            glTexCoord2f(1, 0);
+            glVertex2f(rect.x() + rect.width(), rect.y() + rect.height());
+
+            glTexCoord2f(0, 0);
+            glVertex2f(rect.x(), rect.y() + rect.height());
+            glEnd();
+        }
 
         glEnable(GL_BLEND);
         painter->endNativePainting();
