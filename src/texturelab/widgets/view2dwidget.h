@@ -3,6 +3,7 @@
 #include <QGraphicsItem>
 #include <QGraphicsView>
 #include <QMainWindow>
+#include <QToolBar>
 #include <QWidget>
 
 class QWidget;
@@ -25,7 +26,11 @@ class View2DGraph;
 class NodePreviewGraphicsItem;
 
 class View2DWidget : public QMainWindow {
+    Q_OBJECT
+
     TextureNodePtr node;
+    QToolBar* toolbar;
+    bool showTiled = false;
 
 public:
     View2DWidget();
@@ -40,6 +45,15 @@ public:
     View2DGraph* graph = nullptr;
 
     virtual ~View2DWidget();
+
+private:
+    void showToast(const QString& message, int duration = 2000);
+
+private slots:
+    void saveTextureAsImage();
+    void toggleTileView();
+    void recenterView();
+    void copyTextureToClipboard();
 };
 
 class View2DGraph : public QGraphicsView {
@@ -58,6 +72,8 @@ public:
     void updatePreview();
     void clearSelection();
 
+    NodePreviewGraphicsItem* preview = nullptr;
+
 protected:
     // view manipulation
     void wheelEvent(QWheelEvent* event) override;
@@ -71,16 +87,17 @@ protected:
 
 private:
     QPointF _clickPos;
-    NodePreviewGraphicsItem* preview = nullptr;
 };
 
 class NodePreviewGraphicsItem : public QGraphicsItem {
     TextureNodePtr node;
+    bool tiled = false;
 
 public:
     NodePreviewGraphicsItem();
     void setNode(const TextureNodePtr& node);
     void clearNode();
+    void setTiled(bool tiled);
     QRectF boundingRect() const override;
 
 protected:

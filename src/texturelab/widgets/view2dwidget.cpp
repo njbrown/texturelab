@@ -1,9 +1,21 @@
 #include "view2dwidget.h"
 #include <QLayout>
 
+#include <QtCore/QPropertyAnimation>
+#include <QtCore/QTimer>
 #include <QtGui/QBrush>
+#include <QtGui/QClipboard>
+#include <QtGui/QIcon>
+#include <QtGui/QImage>
 #include <QtGui/QPen>
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QGraphicsOpacityEffect>
+#include <QtWidgets/QLabel>
 #include <QtWidgets/QMenu>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QStatusBar>
+#include <QtWidgets/QToolBar>
 
 #include <QtCore/QPointF>
 #include <QtCore/QRectF>
@@ -25,6 +37,37 @@ const QColor CoarseGridColor(25, 25, 25);
 
 View2DWidget::View2DWidget() : QMainWindow()
 {
+    // Create toolbar
+    toolbar = new QToolBar(this);
+    toolbar->setMovable(false);
+    toolbar->setIconSize(QSize(24, 24));
+    this->addToolBar(Qt::TopToolBarArea, toolbar);
+
+    // Add save button
+    QAction* saveAction =
+        toolbar->addAction(QIcon(":/icons/save.svg"), "Save Texture");
+    connect(saveAction, &QAction::triggered, this,
+            &View2DWidget::saveTextureAsImage);
+
+    // Add copy button
+    QAction* copyAction = toolbar->addAction(QIcon(":/icons/copy.svg"),
+                                             "Copy Texture to Clipboard");
+    connect(copyAction, &QAction::triggered, this,
+            &View2DWidget::copyTextureToClipboard);
+
+    // Add tile toggle button
+    QAction* tileAction =
+        toolbar->addAction(QIcon(":/icons/grid.svg"), "Toggle 3x3 Tile View");
+    tileAction->setCheckable(true);
+    connect(tileAction, &QAction::triggered, this,
+            &View2DWidget::toggleTileView);
+
+    // Add recenter button
+    QAction* recenterAction =
+        toolbar->addAction(QIcon(":/icons/crosshair.svg"), "Recenter View");
+    connect(recenterAction, &QAction::triggered, this,
+            &View2DWidget::recenterView);
+
     graph = new View2DGraph(this);
     this->setCentralWidget(graph);
 }
@@ -52,6 +95,144 @@ void View2DWidget::setTextureRenderer(TextureRenderer* renderer)
                     this->graph->updatePreview();
                 }
             });
+}
+
+void View2DWidget::saveTextureAsImage()
+{
+    if (!node) {
+        return;
+    }
+
+    QString fileName = QFileDialog::getSaveFileName(
+        this, tr("Save Texture"), "", tr("PNG Images (*.png);;All Files (*)"));
+
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    // Ensure .png extension
+    if (!fileName.endsWith(".png", Qt::CaseInsensitive)) {
+        fileName += ".png";
+    }
+
+    // Get the texture ID
+    GLuint texId = node->textureId();
+    if (texId == 0) {
+        return;
+    }
+
+    // Bind the texture and get its dimensions
+    glBindTexture(GL_TEXTURE_2D, texId);
+    GLint width, height;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+
+    // Read texture data
+    QImage image(width, height, QImage::Format_RGBA8888);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
+
+    // Flip image vertically (OpenGL coordinates are bottom-up)
+    image = image.mirrored(false, true);
+
+    // Save the image
+    image.save(fileName);
+}
+
+void View2DWidget::toggleTileView()
+{
+    showTiled = !showTiled;
+    if (graph && graph->preview) {
+        graph->preview->setTiled(showTiled);
+        graph->preview->update();
+    }
+}
+
+void View2DWidget::recenterView()
+{
+    if (graph && graph->preview) {
+        // Reset transform
+        graph->resetTransform();
+        // Set initial scale
+        graph->scale(0.3, 0.3);
+        // Reset scene rect to center on origin
+        QRectF previewRect = graph->preview->boundingRect();
+        graph->setSceneRect(previewRect);
+    }
+}
+
+void View2DWidget::copyTextureToClipboard()
+{
+    if (!node) {
+        return;
+    }
+
+    // Get the texture ID
+    GLuint texId = node->textureId();
+    if (texId == 0) {
+        return;
+    }
+
+    // Bind the texture and get its dimensions
+    glBindTexture(GL_TEXTURE_2D, texId);
+    GLint width, height;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+
+    // Read texture data
+    QImage image(width, height, QImage::Format_RGBA8888);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
+
+    // Flip image vertically (OpenGL coordinates are bottom-up)
+    image = image.mirrored(false, true);
+
+    // Copy to clipboard
+    QClipboard* clipboard = QApplication::clipboard();
+    clipboard->setImage(image);
+
+    // Show confirmation toast
+    showToast("Texture copied to clipboard");
+}
+
+void View2DWidget::showToast(const QString& message, int duration)
+{
+    QLabel* toast = new QLabel(message, this);
+    toast->setStyleSheet("QLabel {"
+                         "  background-color: rgba(50, 50, 50, 200);"
+                         "  color: white;"
+                         "  padding: 10px 20px;"
+                         "  border-radius: 5px;"
+                         "}");
+    toast->setAlignment(Qt::AlignCenter);
+    toast->adjustSize();
+
+    // Position at bottom center
+    int x = (width() - toast->width()) / 2;
+    int y = height() - toast->height() - 50;
+    toast->move(x, y);
+
+    // Fade in
+    QGraphicsOpacityEffect* effect = new QGraphicsOpacityEffect(toast);
+    toast->setGraphicsEffect(effect);
+    QPropertyAnimation* fadeIn = new QPropertyAnimation(effect, "opacity");
+    fadeIn->setDuration(200);
+    fadeIn->setStartValue(0.0);
+    fadeIn->setEndValue(1.0);
+    fadeIn->start(QAbstractAnimation::DeleteWhenStopped);
+
+    toast->show();
+    toast->raise();
+
+    // Fade out and delete
+    QTimer::singleShot(duration, [toast]() {
+        QGraphicsOpacityEffect* effect = new QGraphicsOpacityEffect(toast);
+        toast->setGraphicsEffect(effect);
+        QPropertyAnimation* fadeOut = new QPropertyAnimation(effect, "opacity");
+        fadeOut->setDuration(200);
+        fadeOut->setStartValue(1.0);
+        fadeOut->setEndValue(0.0);
+        fadeOut->start(QAbstractAnimation::DeleteWhenStopped);
+        QTimer::singleShot(200, toast, &QLabel::deleteLater);
+    });
 }
 
 View2DWidget::~View2DWidget() { delete graph; }
@@ -221,7 +402,11 @@ NodePreviewGraphicsItem::NodePreviewGraphicsItem() {}
 
 QRectF NodePreviewGraphicsItem::boundingRect() const
 {
-    return QRectF(0, 0, 1000, 1000);
+    if (tiled) {
+        // Center the 3x3 grid around origin
+        return QRectF(-1500, -1500, 3000, 3000);
+    }
+    return QRectF(-500, -500, 1000, 1000);
 }
 
 void NodePreviewGraphicsItem::setNode(const TextureNodePtr& node)
@@ -231,6 +416,14 @@ void NodePreviewGraphicsItem::setNode(const TextureNodePtr& node)
         this->show();
 }
 void NodePreviewGraphicsItem::clearNode() { this->node.reset(); }
+
+void NodePreviewGraphicsItem::setTiled(bool tiled)
+{
+    if (this->tiled != tiled) {
+        prepareGeometryChange();
+        this->tiled = tiled;
+    }
+}
 
 void NodePreviewGraphicsItem::paint(QPainter* painter,
                                     QStyleOptionGraphicsItem const* option,
@@ -258,19 +451,51 @@ void NodePreviewGraphicsItem::paint(QPainter* painter,
         // qDebug() << "rendering preview for tex id " << node->textureId();
         glBindTexture(GL_TEXTURE_2D, node->textureId());
         // glBindTexture(GL_TEXTURE_2D, node->texture->texture());
-        glBegin(GL_QUADS);
-        glTexCoord2f(0, 1);
-        glVertex2f(0, 0);
 
-        glTexCoord2f(1, 1);
-        glVertex2f(rect.width(), 0);
+        if (tiled) {
+            // Render as 3x3 tiled grid
+            float tileWidth = rect.width() / 3.0f;
+            float tileHeight = rect.height() / 3.0f;
 
-        glTexCoord2f(1, 0);
-        glVertex2f(rect.width(), rect.height());
+            for (int y = 0; y < 3; y++) {
+                for (int x = 0; x < 3; x++) {
+                    float x0 = rect.x() + x * tileWidth;
+                    float y0 = rect.y() + y * tileHeight;
+                    float x1 = rect.x() + (x + 1) * tileWidth;
+                    float y1 = rect.y() + (y + 1) * tileHeight;
 
-        glTexCoord2f(0, 0);
-        glVertex2f(0, rect.height());
-        glEnd();
+                    glBegin(GL_QUADS);
+                    glTexCoord2f(0, 1);
+                    glVertex2f(x0, y0);
+
+                    glTexCoord2f(1, 1);
+                    glVertex2f(x1, y0);
+
+                    glTexCoord2f(1, 0);
+                    glVertex2f(x1, y1);
+
+                    glTexCoord2f(0, 0);
+                    glVertex2f(x0, y1);
+                    glEnd();
+                }
+            }
+        }
+        else {
+            // Render single texture centered
+            glBegin(GL_QUADS);
+            glTexCoord2f(0, 1);
+            glVertex2f(rect.x(), rect.y());
+
+            glTexCoord2f(1, 1);
+            glVertex2f(rect.x() + rect.width(), rect.y());
+
+            glTexCoord2f(1, 0);
+            glVertex2f(rect.x() + rect.width(), rect.y() + rect.height());
+
+            glTexCoord2f(0, 0);
+            glVertex2f(rect.x(), rect.y() + rect.height());
+            glEnd();
+        }
 
         glEnable(GL_BLEND);
         painter->endNativePainting();
