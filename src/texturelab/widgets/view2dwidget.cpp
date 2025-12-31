@@ -49,6 +49,12 @@ View2DWidget::View2DWidget() : QMainWindow()
     connect(tileAction, &QAction::triggered, this,
             &View2DWidget::toggleTileView);
 
+    // Add recenter button
+    QAction* recenterAction =
+        toolbar->addAction(QIcon(":/icons/crosshair.svg"), "Recenter View");
+    connect(recenterAction, &QAction::triggered, this,
+            &View2DWidget::recenterView);
+
     graph = new View2DGraph(this);
     this->setCentralWidget(graph);
 }
@@ -125,6 +131,19 @@ void View2DWidget::toggleTileView()
     if (graph && graph->preview) {
         graph->preview->setTiled(showTiled);
         graph->preview->update();
+    }
+}
+
+void View2DWidget::recenterView()
+{
+    if (graph && graph->preview) {
+        // Reset transform
+        graph->resetTransform();
+        // Set initial scale
+        graph->scale(0.3, 0.3);
+        // Reset scene rect to center on origin
+        QRectF previewRect = graph->preview->boundingRect();
+        graph->setSceneRect(previewRect);
     }
 }
 

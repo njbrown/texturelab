@@ -49,6 +49,7 @@ public:
 private slots:
     void saveTextureAsImage();
     void toggleTileView();
+    void recenterView();
 };
 
 class View2DGraph : public QGraphicsView {
