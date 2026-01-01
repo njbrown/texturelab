@@ -81,7 +81,7 @@ void ExportDialog::setupUI()
     auto helpLabel = new QLabel(
         "<small><i>${project} - Project Name<br>${name} - Output Node "
         "Name</i></small>");
-    helpLabel->setStyleSheet("QLabel { color: #666; }");
+    helpLabel->setStyleSheet("QLabel { color: #999; }");
     mainLayout->addWidget(helpLabel);
 
     // Spacer
@@ -107,16 +107,14 @@ void ExportDialog::updateDestinationDisplay()
 {
     if (exportDestination.isEmpty()) {
         destinationLabel->setText("No destination selected");
-        destinationLabel->setStyleSheet(
-            "QLabel { padding: 5px; background-color: #f0f0f0; border-radius: "
-            "3px; color: #999; }");
+        destinationLabel->setStyleSheet("QLabel { padding: 5px; border-radius: "
+                                        "3px; color: #999; }");
         chooseDestinationBtn->setText("Choose Folder");
     }
     else {
         destinationLabel->setText(exportDestination);
-        destinationLabel->setStyleSheet(
-            "QLabel { padding: 5px; background-color: #e8f5e9; border-radius: "
-            "3px; }");
+        destinationLabel->setStyleSheet("QLabel { padding: 5px; border-radius: "
+                                        "3px; }");
         chooseDestinationBtn->setText("...");
     }
 }
