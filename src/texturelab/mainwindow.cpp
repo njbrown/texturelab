@@ -477,6 +477,8 @@ void MainWindow::handleExport(const QString& destination,
                 img = QImage(width, height, QImage::Format_Grayscale16);
 
                 for (int y = 0; y < height; y++) {
+                    quint16* scanLine =
+                        reinterpret_cast<quint16*>(img.scanLine(y));
                     for (int x = 0; x < width; x++) {
                         int idx = (y * width + x) * 4;
                         float value = 0.0f;
@@ -492,9 +494,8 @@ void MainWindow::handleExport(const QString& destination,
                             value = floatData[idx + 3]; // Alpha
 
                         // Convert to 16-bit (0-65535)
-                        quint16 val16 = qBound(
+                        scanLine[x] = qBound(
                             0, static_cast<int>(value * 65535.0f), 65535);
-                        img.setPixel(x, y, qGray(val16, val16, val16));
                     }
                 }
             }
@@ -503,6 +504,8 @@ void MainWindow::handleExport(const QString& destination,
                 img = QImage(width, height, QImage::Format_RGBX64);
 
                 for (int y = 0; y < height; y++) {
+                    QRgba64* scanLine =
+                        reinterpret_cast<QRgba64*>(img.scanLine(y));
                     for (int x = 0; x < width; x++) {
                         int idx = (y * width + x) * 4;
 
@@ -516,8 +519,7 @@ void MainWindow::handleExport(const QString& destination,
                             0, static_cast<int>(floatData[idx + 2] * 65535.0f),
                             65535);
 
-                        img.setPixelColor(x, y,
-                                          QColor::fromRgb(r, g, b, 65535));
+                        scanLine[x] = qRgba64(r, g, b, 65535);
                     }
                 }
             }
@@ -526,6 +528,8 @@ void MainWindow::handleExport(const QString& destination,
                 img = QImage(width, height, QImage::Format_RGBA64);
 
                 for (int y = 0; y < height; y++) {
+                    QRgba64* scanLine =
+                        reinterpret_cast<QRgba64*>(img.scanLine(y));
                     for (int x = 0; x < width; x++) {
                         int idx = (y * width + x) * 4;
 
@@ -542,7 +546,7 @@ void MainWindow::handleExport(const QString& destination,
                             0, static_cast<int>(floatData[idx + 3] * 65535.0f),
                             65535);
 
-                        img.setPixelColor(x, y, QColor::fromRgba64(r, g, b, a));
+                        scanLine[x] = qRgba64(r, g, b, a);
                     }
                 }
             }
@@ -571,7 +575,7 @@ void MainWindow::handleExport(const QString& destination,
                         // Convert to 8-bit (0-255)
                         quint8 val8 =
                             qBound(0, static_cast<int>(value * 255.0f), 255);
-                        img.setPixel(x, y, qGray(val8, val8, val8));
+                        img.setPixel(x, y, val8);
                     }
                 }
             }
