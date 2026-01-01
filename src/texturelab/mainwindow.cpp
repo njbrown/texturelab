@@ -28,6 +28,7 @@
 
 #include "models.h"
 #include "project.h"
+#include "props.h"
 
 #include "graphics/texturerenderer.h"
 
@@ -371,11 +372,73 @@ void MainWindow::handleExport(const QString& destination,
         return;
     }
 
-    // TODO: Implement actual export functionality
-    // For now, just show a message
-    QString message = QString("Export functionality to be implemented.\n\n") +
-                      "Destination: " + destination + "\n" +
-                      "Pattern: " + pattern;
+    // Find all output nodes
+    QVector<TextureNodePtr> outputNodes;
+    for (auto& node : this->project->nodes) {
+        // Check if this is an output node by checking the library name
+        if (node->title == "Output") {
+            outputNodes.append(node);
+        }
+    }
+
+    if (outputNodes.isEmpty()) {
+        QMessageBox::information(this, "Export",
+                                 "No output nodes found in the project.");
+        return;
+    }
+
+    // Export each output node
+    int successCount = 0;
+    int failCount = 0;
+
+    for (auto& node : outputNodes) {
+        // Get the output name from the node's property
+        QString outputName = "";
+        if (node->hasProp("name")) {
+            outputName = node->getProp("name")->getValue().toString();
+        }
+
+        // Use node title if name property is empty
+        if (outputName.isEmpty()) {
+            outputName = "output";
+        }
+
+        // Generate filename using pattern
+        QString filename = pattern;
+        filename.replace("${project}",
+                         "untitled"); // TODO: use actual project name
+        filename.replace("${name}", outputName);
+        filename += ".png";
+
+        QString fullPath = destination + "/" + filename;
+
+        // Get the texture from the node
+        if (!node->texture) {
+            qDebug() << "Node" << node->title << "has no texture";
+            failCount++;
+            continue;
+        }
+
+        // Convert texture to image and save
+        QImage img = node->texture->toImage();
+        if (img.save(fullPath)) {
+            qDebug() << "Exported:" << fullPath;
+            successCount++;
+        }
+        else {
+            qDebug() << "Failed to save:" << fullPath;
+            failCount++;
+        }
+    }
+
+    // Show result message
+    QString message =
+        QString("Export complete!\n\n") +
+        QString("Successfully exported: %1 file(s)\n").arg(successCount);
+
+    if (failCount > 0) {
+        message += QString("Failed: %1 file(s)").arg(failCount);
+    }
 
     QMessageBox::information(this, "Export", message);
 }
