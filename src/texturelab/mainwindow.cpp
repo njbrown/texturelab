@@ -438,8 +438,7 @@ void MainWindow::handleExport(const QString& destination,
 
         // Bind the FBO and read pixels
         node->texture->bind();
-        QOpenGLFunctions* gl =
-            QOpenGLContext::currentContext()->functions();
+        QOpenGLFunctions* gl = QOpenGLContext::currentContext()->functions();
 
         // Read as float data (since texture is GL_RGBA32F)
         std::vector<float> floatData(width * height * 4);
@@ -569,15 +568,15 @@ void MainWindow::handleExport(const QString& destination,
                     for (int x = 0; x < width; x++) {
                         int idx = (y * width + x) * 4;
 
-                        quint8 r =
-                            qBound(0, static_cast<int>(floatData[idx + 0] * 255.0f),
-                                   255);
-                        quint8 g =
-                            qBound(0, static_cast<int>(floatData[idx + 1] * 255.0f),
-                                   255);
-                        quint8 b =
-                            qBound(0, static_cast<int>(floatData[idx + 2] * 255.0f),
-                                   255);
+                        quint8 r = qBound(
+                            0, static_cast<int>(floatData[idx + 0] * 255.0f),
+                            255);
+                        quint8 g = qBound(
+                            0, static_cast<int>(floatData[idx + 1] * 255.0f),
+                            255);
+                        quint8 b = qBound(
+                            0, static_cast<int>(floatData[idx + 2] * 255.0f),
+                            255);
 
                         img.setPixelColor(x, y, QColor(r, g, b));
                     }
