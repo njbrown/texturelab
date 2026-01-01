@@ -25,8 +25,12 @@ ExportDialog::~ExportDialog() {}
 void ExportDialog::setProject(TextureProjectPtr project)
 {
     this->project = project;
-    if (project && patternEdit) {
-        patternEdit->setText(project->exportFilePattern);
+    if (project) {
+        if (patternEdit) {
+            patternEdit->setText(project->exportFilePattern);
+        }
+        exportDestination = project->exportDestination;
+        updateDestinationDisplay();
     }
 }
 
@@ -46,9 +50,8 @@ void ExportDialog::setupUI()
 
     auto destLayout = new QHBoxLayout();
     destinationLabel = new QLabel("No destination selected");
-    destinationLabel->setStyleSheet(
-        "QLabel { padding: 5px; background-color: #f0f0f0; border-radius: "
-        "3px; }");
+    destinationLabel->setStyleSheet("QLabel { padding: 5px; border-radius: "
+                                    "3px; }");
     destinationLabel->setWordWrap(true);
     destLayout->addWidget(destinationLabel, 1);
 
@@ -126,6 +129,9 @@ void ExportDialog::onChooseDestination()
 
     if (!dir.isEmpty()) {
         exportDestination = dir;
+        if (project) {
+            project->exportDestination = dir;
+        }
         updateDestinationDisplay();
     }
 }

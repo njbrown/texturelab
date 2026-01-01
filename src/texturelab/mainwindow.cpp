@@ -331,16 +331,35 @@ void MainWindow::showExportDialog()
 
 void MainWindow::directExport()
 {
-    // If export settings exist (destination and pattern), export directly
-    // Otherwise, show the dialog first
-    if (this->exportDialog &&
-        !this->exportDialog->getExportDestination().isEmpty()) {
-        handleExport(this->exportDialog->getExportDestination(),
-                     this->exportDialog->getExportPattern());
-    }
-    else {
+    // Check if we have a valid project
+    if (!this->project) {
         showExportDialog();
+        return;
     }
+
+    // If no export destination is set, prompt for one
+    if (this->project->exportDestination.isEmpty()) {
+        QString dir = QFileDialog::getExistingDirectory(
+            this, "Select Export Destination", "",
+            QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+        if (dir.isEmpty()) {
+            // User cancelled
+            return;
+        }
+
+        // Save destination to project
+        this->project->exportDestination = dir;
+
+        // Also update dialog if it exists
+        if (this->exportDialog) {
+            this->exportDialog->setProject(this->project);
+        }
+    }
+
+    // Perform export with project settings
+    handleExport(this->project->exportDestination,
+                 this->project->exportFilePattern);
 }
 
 void MainWindow::handleExport(const QString& destination,

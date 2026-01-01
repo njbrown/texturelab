@@ -78,6 +78,7 @@ public:
     QVector<TextureNodePtr> getNodeRightOfNode(const QString& id);
 
     QString exportFilePattern = "${project}_${name}";
+    QString exportDestination = "";
 
     void addNode(const TextureNodePtr& node);
 
