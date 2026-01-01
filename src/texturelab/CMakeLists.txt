@@ -101,6 +101,8 @@ set(PROJECT_SOURCES
         ./main.cpp
         ./mainwindow.cpp
         ./mainwindow.h
+        ./exporter.h
+        ./exporter.cpp
         ./utils.h
         ./models.h
         ./models.cpp

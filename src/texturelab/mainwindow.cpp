@@ -19,6 +19,7 @@
 #include "DockAreaWidget.h"
 #include "DockSplitter.h"
 
+#include "exporter.h"
 #include "widgets/exportdialog.h"
 #include "widgets/graphwidget.h"
 #include "widgets/librarywidget.h"
@@ -404,6 +405,9 @@ void MainWindow::handleExport(const QString& destination,
     // Make renderer context current
     this->renderer->ctx->makeCurrent(this->renderer->surface);
 
+    // Create exporter
+    Exporter exporter;
+
     // Export each output node
     int successCount = 0;
     int failCount = 0;
@@ -448,175 +452,14 @@ void MainWindow::handleExport(const QString& destination,
             continue;
         }
 
-        int width = node->texture->width();
-        int height = node->texture->height();
+        // Export using Exporter class
+        ExportResult result = exporter.exportTexture(node->texture, fullPath,
+                                                     precision, components);
 
-        // Bind the FBO and read pixels
-        node->texture->bind();
-        QOpenGLFunctions* gl = QOpenGLContext::currentContext()->functions();
-
-        // Read as float data (since texture is GL_RGBA32F)
-        std::vector<float> floatData(width * height * 4);
-        gl->glReadPixels(0, 0, width, height, GL_RGBA, GL_FLOAT,
-                         floatData.data());
-        node->texture->release();
-
-        QImage img;
-
-        // Determine number of channels for output
-        int outputChannels = 4;
-        if (components == 1)
-            outputChannels = 3; // RGB
-        else if (components >= 2 && components <= 5)
-            outputChannels = 1; // Single channel
-
-        if (precision == 1) {
-            // 16-bit precision
-            if (outputChannels == 1) {
-                // Grayscale 16-bit
-                img = QImage(width, height, QImage::Format_Grayscale16);
-
-                for (int y = 0; y < height; y++) {
-                    quint16* scanLine =
-                        reinterpret_cast<quint16*>(img.scanLine(y));
-                    for (int x = 0; x < width; x++) {
-                        int idx = (y * width + x) * 4;
-                        float value = 0.0f;
-
-                        // Extract the selected channel
-                        if (components == 2)
-                            value = floatData[idx + 0]; // Red
-                        else if (components == 3)
-                            value = floatData[idx + 1]; // Green
-                        else if (components == 4)
-                            value = floatData[idx + 2]; // Blue
-                        else if (components == 5)
-                            value = floatData[idx + 3]; // Alpha
-
-                        // Convert to 16-bit (0-65535)
-                        scanLine[x] = qBound(
-                            0, static_cast<int>(value * 65535.0f), 65535);
-                    }
-                }
-            }
-            else if (outputChannels == 3) {
-                // RGB 16-bit
-                img = QImage(width, height, QImage::Format_RGBX64);
-
-                for (int y = 0; y < height; y++) {
-                    QRgba64* scanLine =
-                        reinterpret_cast<QRgba64*>(img.scanLine(y));
-                    for (int x = 0; x < width; x++) {
-                        int idx = (y * width + x) * 4;
-
-                        quint16 r = qBound(
-                            0, static_cast<int>(floatData[idx + 0] * 65535.0f),
-                            65535);
-                        quint16 g = qBound(
-                            0, static_cast<int>(floatData[idx + 1] * 65535.0f),
-                            65535);
-                        quint16 b = qBound(
-                            0, static_cast<int>(floatData[idx + 2] * 65535.0f),
-                            65535);
-
-                        scanLine[x] = qRgba64(r, g, b, 65535);
-                    }
-                }
-            }
-            else {
-                // RGBA 16-bit
-                img = QImage(width, height, QImage::Format_RGBA64);
-
-                for (int y = 0; y < height; y++) {
-                    QRgba64* scanLine =
-                        reinterpret_cast<QRgba64*>(img.scanLine(y));
-                    for (int x = 0; x < width; x++) {
-                        int idx = (y * width + x) * 4;
-
-                        quint16 r = qBound(
-                            0, static_cast<int>(floatData[idx + 0] * 65535.0f),
-                            65535);
-                        quint16 g = qBound(
-                            0, static_cast<int>(floatData[idx + 1] * 65535.0f),
-                            65535);
-                        quint16 b = qBound(
-                            0, static_cast<int>(floatData[idx + 2] * 65535.0f),
-                            65535);
-                        quint16 a = qBound(
-                            0, static_cast<int>(floatData[idx + 3] * 65535.0f),
-                            65535);
-
-                        scanLine[x] = qRgba64(r, g, b, a);
-                    }
-                }
-            }
-        }
-        else {
-            // 8-bit precision
-            if (outputChannels == 1) {
-                // Grayscale 8-bit
-                img = QImage(width, height, QImage::Format_Grayscale8);
-
-                for (int y = 0; y < height; y++) {
-                    for (int x = 0; x < width; x++) {
-                        int idx = (y * width + x) * 4;
-                        float value = 0.0f;
-
-                        // Extract the selected channel
-                        if (components == 2)
-                            value = floatData[idx + 0]; // Red
-                        else if (components == 3)
-                            value = floatData[idx + 1]; // Green
-                        else if (components == 4)
-                            value = floatData[idx + 2]; // Blue
-                        else if (components == 5)
-                            value = floatData[idx + 3]; // Alpha
-
-                        // Convert to 8-bit (0-255)
-                        quint8 val8 =
-                            qBound(0, static_cast<int>(value * 255.0f), 255);
-                        img.setPixel(x, y, val8);
-                    }
-                }
-            }
-            else if (outputChannels == 3) {
-                // RGB 8-bit
-                img = QImage(width, height, QImage::Format_RGB888);
-
-                for (int y = 0; y < height; y++) {
-                    for (int x = 0; x < width; x++) {
-                        int idx = (y * width + x) * 4;
-
-                        quint8 r = qBound(
-                            0, static_cast<int>(floatData[idx + 0] * 255.0f),
-                            255);
-                        quint8 g = qBound(
-                            0, static_cast<int>(floatData[idx + 1] * 255.0f),
-                            255);
-                        quint8 b = qBound(
-                            0, static_cast<int>(floatData[idx + 2] * 255.0f),
-                            255);
-
-                        img.setPixelColor(x, y, QColor(r, g, b));
-                    }
-                }
-            }
-            else {
-                // RGBA 8-bit - use the simple toImage() conversion
-                img = node->texture->toImage();
-            }
-        }
-
-        // Flip image vertically (OpenGL reads bottom-to-top)
-        img = img.mirrored(false, true);
-
-        // Save image
-        if (img.save(fullPath)) {
-            qDebug() << "Exported:" << fullPath;
+        if (result.success) {
             successCount++;
         }
         else {
-            qDebug() << "Failed to save:" << fullPath;
             failCount++;
         }
     }
