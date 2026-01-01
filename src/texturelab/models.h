@@ -77,6 +77,8 @@ public:
     QVector<TextureNodePtr> getNodeDependencies(const QString& id);
     QVector<TextureNodePtr> getNodeRightOfNode(const QString& id);
 
+    QString exportFilePattern = "${project}_${name}";
+
     void addNode(const TextureNodePtr& node);
 
     // todo: make two port variant

@@ -23,15 +23,12 @@ public:
     void setProject(TextureProjectPtr project);
 
     QString getExportDestination() const { return exportDestination; }
-    QString getExportPattern() const { return exportPattern; }
-
-signals:
-    void exportRequested(const QString& destination, const QString& pattern);
+    QString getExportPattern() const;
 
 private slots:
     void onChooseDestination();
     void onResetPattern();
-    void onExport();
+    void onOk();
 
 private:
     void setupUI();
@@ -39,14 +36,13 @@ private:
 
     TextureProjectPtr project;
     QString exportDestination;
-    QString exportPattern;
 
     // UI components
     QLabel* destinationLabel;
     QPushButton* chooseDestinationBtn;
     QLineEdit* patternEdit;
     QPushButton* resetPatternBtn;
-    QPushButton* exportBtn;
+    QPushButton* okBtn;
     QPushButton* cancelBtn;
 };
 

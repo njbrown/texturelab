@@ -11,8 +11,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
-ExportDialog::ExportDialog(QWidget* parent)
-    : QDialog(parent), exportPattern("${project}_${name}")
+ExportDialog::ExportDialog(QWidget* parent) : QDialog(parent)
 {
     setWindowTitle("Export Settings");
     setModal(true);
@@ -26,6 +25,14 @@ ExportDialog::~ExportDialog() {}
 void ExportDialog::setProject(TextureProjectPtr project)
 {
     this->project = project;
+    if (project && patternEdit) {
+        patternEdit->setText(project->exportFilePattern);
+    }
+}
+
+QString ExportDialog::getExportPattern() const
+{
+    return project ? project->exportFilePattern : "${project}_${name}";
 }
 
 void ExportDialog::setupUI()
@@ -57,7 +64,7 @@ void ExportDialog::setupUI()
     mainLayout->addWidget(patternLabel);
 
     auto patternLayout = new QHBoxLayout();
-    patternEdit = new QLineEdit(exportPattern);
+    patternEdit = new QLineEdit("${project}_${name}");
     patternLayout->addWidget(patternEdit, 1);
 
     resetPatternBtn = new QPushButton("Reset");
@@ -85,10 +92,10 @@ void ExportDialog::setupUI()
     connect(cancelBtn, &QPushButton::clicked, this, &QDialog::reject);
     buttonLayout->addWidget(cancelBtn);
 
-    exportBtn = new QPushButton("Export");
-    exportBtn->setDefault(true);
-    connect(exportBtn, &QPushButton::clicked, this, &ExportDialog::onExport);
-    buttonLayout->addWidget(exportBtn);
+    okBtn = new QPushButton("OK");
+    okBtn->setDefault(true);
+    connect(okBtn, &QPushButton::clicked, this, &ExportDialog::onOk);
+    buttonLayout->addWidget(okBtn);
 
     mainLayout->addLayout(buttonLayout);
 }
@@ -125,29 +132,30 @@ void ExportDialog::onChooseDestination()
 
 void ExportDialog::onResetPattern()
 {
-    exportPattern = "${project}_${name}";
-    patternEdit->setText(exportPattern);
+    QString defaultPattern = "${project}_${name}";
+    patternEdit->setText(defaultPattern);
+    if (project) {
+        project->exportFilePattern = defaultPattern;
+    }
 }
 
-void ExportDialog::onExport()
+void ExportDialog::onOk()
 {
     // Get current pattern from the input
-    exportPattern = patternEdit->text().trimmed();
+    QString pattern = patternEdit->text().trimmed();
 
-    // Validate inputs
-    if (exportDestination.isEmpty()) {
-        QMessageBox::warning(this, "Export Error",
-                             "Please select an export destination folder.");
-        return;
-    }
-
-    if (exportPattern.isEmpty()) {
-        QMessageBox::warning(this, "Export Error",
+    // Validate pattern
+    if (pattern.isEmpty()) {
+        QMessageBox::warning(this, "Invalid Pattern",
                              "Please specify an export pattern.");
         return;
     }
 
-    // Emit signal and close dialog
-    emit exportRequested(exportDestination, exportPattern);
+    // Save pattern to project
+    if (project) {
+        project->exportFilePattern = pattern;
+    }
+
+    // Close dialog
     accept();
 }

@@ -318,8 +318,6 @@ void MainWindow::showExportDialog()
 {
     if (!this->exportDialog) {
         this->exportDialog = new ExportDialog(this);
-        connect(this->exportDialog, &ExportDialog::exportRequested, this,
-                &MainWindow::handleExport);
     }
 
     if (this->project) {
