@@ -389,6 +389,21 @@ void MainWindow::handleExport(const QString& destination,
         return;
     }
 
+    // Make renderer's context current for reading texture data
+    if (!this->renderer->ctx) {
+        QMessageBox::warning(this, "Export Error",
+                             "Renderer context not initialized.");
+        return;
+    }
+
+    // Store the previous context to restore it later
+    QOpenGLContext* previousContext = QOpenGLContext::currentContext();
+    QSurface* previousSurface =
+        previousContext ? previousContext->surface() : nullptr;
+
+    // Make renderer context current
+    this->renderer->ctx->makeCurrent(this->renderer->surface);
+
     // Export each output node
     int successCount = 0;
     int failCount = 0;
@@ -600,6 +615,14 @@ void MainWindow::handleExport(const QString& destination,
             qDebug() << "Failed to save:" << fullPath;
             failCount++;
         }
+    }
+
+    // Restore previous context
+    if (previousContext && previousSurface) {
+        previousContext->makeCurrent(previousSurface);
+    }
+    else {
+        this->renderer->ctx->doneCurrent();
     }
 
     // Show result message

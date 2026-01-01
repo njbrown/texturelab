@@ -29,8 +29,6 @@ struct NodeInput {
 class TextureRenderer : public QObject {
     Q_OBJECT
 
-    QOffscreenSurface* surface;
-    QOpenGLContext* ctx;
     QOpenGLFunctions_3_2_Core* gl;
     QOpenGLVertexArrayObject* vao;
     QOpenGLBuffer* vbo;
@@ -53,6 +51,8 @@ public:
     void renderNode(const TextureNodePtr& node);
 
     TextureProjectPtr project;
+    QOffscreenSurface* surface;
+    QOpenGLContext* ctx;
 
 private:
     void initRenderWorker();
