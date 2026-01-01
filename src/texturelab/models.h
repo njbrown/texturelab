@@ -58,6 +58,7 @@ public:
 
 class TextureProject : public QEnableSharedFromThis<TextureProject> {
 public:
+    QString name = "untitled";
     int randomSeed;
     int textureWidth = 1024;
     int textureHeight = 1024;

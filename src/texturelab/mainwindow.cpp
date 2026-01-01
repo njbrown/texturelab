@@ -168,6 +168,9 @@ void MainWindow::setProject(TextureProjectPtr project)
     this->view2DWidget->setTextureRenderer(renderer);
 
     renderer->update();
+
+    // Update window title with project name
+    setWindowTitle(project->name + " - TextureLab");
 }
 
 void MainWindow::setupMenus()
@@ -313,6 +316,10 @@ void MainWindow::openProject()
 
     auto project = Project::loadTexture(filePath);
 
+    // Extract filename without extension
+    QFileInfo fileInfo(filePath);
+    project->name = fileInfo.baseName();
+
     setProject(project);
 }
 
@@ -438,8 +445,7 @@ void MainWindow::handleExport(const QString& destination,
 
         // Generate filename using pattern
         QString filename = pattern;
-        filename.replace("${project}",
-                         "untitled"); // TODO: use actual project name
+        filename.replace("${project}", this->project->name);
         filename.replace("${name}", outputName);
         filename += ".png";
 
