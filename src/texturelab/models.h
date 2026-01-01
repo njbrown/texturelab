@@ -58,6 +58,7 @@ public:
 
 class TextureProject : public QEnableSharedFromThis<TextureProject> {
 public:
+    QString name = "untitled";
     int randomSeed;
     int textureWidth = 1024;
     int textureHeight = 1024;
@@ -76,6 +77,9 @@ public:
     ConnectionPtr getConnectionById(const QString& id);
     QVector<TextureNodePtr> getNodeDependencies(const QString& id);
     QVector<TextureNodePtr> getNodeRightOfNode(const QString& id);
+
+    QString exportFilePattern = "${project}_${name}";
+    QString exportDestination = "";
 
     void addNode(const TextureNodePtr& node);
 

@@ -82,6 +82,13 @@ TextureProjectPtr Project::loadTexture(QString path)
         texture->addConnection(leftNode, rightNode, rightNodeInputId);
     }
 
+    if (json["export"].isObject()) {
+        auto exportObj = json["export"].toObject();
+        texture->exportFilePattern =
+            exportObj["filePattern"].toString("${project}_${name}");
+        texture->exportDestination = exportObj["destination"].toString("");
+    }
+
     texture->library = lib;
 
     return texture;

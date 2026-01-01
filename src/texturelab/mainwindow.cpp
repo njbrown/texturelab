@@ -1,7 +1,10 @@
 #include "mainwindow.h"
 
+#include <vector>
+
 #include <QDebug>
 #include <QFileDialog>
+#include <QHBoxLayout>
 #include <QLayout>
 #include <QList>
 #include <QMenu>
@@ -9,11 +12,15 @@
 #include <QMessageBox>
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
+#include <QPushButton>
 #include <QToolBar>
+#include <QToolButton>
 
 #include "DockAreaWidget.h"
 #include "DockSplitter.h"
 
+#include "exporter.h"
+#include "widgets/exportdialog.h"
 #include "widgets/graphwidget.h"
 #include "widgets/librarywidget.h"
 #include "widgets/properties/propertieswidget.h"
@@ -24,6 +31,7 @@
 
 #include "models.h"
 #include "project.h"
+#include "props.h"
 
 #include "graphics/texturerenderer.h"
 
@@ -35,6 +43,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     this->setupToolbar();
 
     this->renderer = nullptr;
+    this->exportDialog = nullptr;
 
     this->dockManager = new ads::CDockManager(this);
 
@@ -159,6 +168,9 @@ void MainWindow::setProject(TextureProjectPtr project)
     this->view2DWidget->setTextureRenderer(renderer);
 
     renderer->update();
+
+    // Update window title with project name
+    setWindowTitle(project->name + " - TextureLab");
 }
 
 void MainWindow::setupMenus()
@@ -200,8 +212,27 @@ void MainWindow::setupToolbar()
     // spacer
     toolBar->addWidget(spacer);
 
-    // export
-    toolBar->addAction("Export");
+    // Export button with dropdown menu
+    auto exportBtn = new QToolButton(this);
+    exportBtn->setText("Export");
+    exportBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+
+    auto directExportAction = new QAction("Export", this);
+    connect(directExportAction, &QAction::triggered, this,
+            &MainWindow::directExport);
+
+    auto settingsAction = new QAction("Export Settings...", this);
+    connect(settingsAction, &QAction::triggered, this,
+            &MainWindow::showExportDialog);
+
+    auto exportMenu = new QMenu(this);
+    exportMenu->addAction(settingsAction);
+
+    exportBtn->setDefaultAction(directExportAction);
+    exportBtn->setMenu(exportMenu);
+    exportBtn->setPopupMode(QToolButton::MenuButtonPopup);
+
+    toolBar->addWidget(exportBtn);
 
     // behavior
     toolBar->setMovable(false);
@@ -285,9 +316,178 @@ void MainWindow::openProject()
 
     auto project = Project::loadTexture(filePath);
 
+    // Extract filename without extension
+    QFileInfo fileInfo(filePath);
+    project->name = fileInfo.baseName();
+
     setProject(project);
 }
 
 void MainWindow::newProject() { setProject(TextureProject::createEmpty()); }
+
+void MainWindow::showExportDialog()
+{
+    if (!this->exportDialog) {
+        this->exportDialog = new ExportDialog(this);
+    }
+
+    if (this->project) {
+        this->exportDialog->setProject(this->project);
+    }
+
+    this->exportDialog->show();
+    this->exportDialog->raise();
+    this->exportDialog->activateWindow();
+}
+
+void MainWindow::directExport()
+{
+    // Check if we have a valid project
+    if (!this->project) {
+        showExportDialog();
+        return;
+    }
+
+    // If no export destination is set, prompt for one
+    if (this->project->exportDestination.isEmpty()) {
+        QString dir = QFileDialog::getExistingDirectory(
+            this, "Select Export Destination", "",
+            QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+        if (dir.isEmpty()) {
+            // User cancelled
+            return;
+        }
+
+        // Save destination to project
+        this->project->exportDestination = dir;
+
+        // Also update dialog if it exists
+        if (this->exportDialog) {
+            this->exportDialog->setProject(this->project);
+        }
+    }
+
+    // Perform export with project settings
+    handleExport(this->project->exportDestination,
+                 this->project->exportFilePattern);
+}
+
+void MainWindow::handleExport(const QString& destination,
+                              const QString& pattern)
+{
+    if (!this->project || !this->renderer) {
+        QMessageBox::warning(this, "Export Error",
+                             "No project loaded or renderer not initialized.");
+        return;
+    }
+
+    // Find all output nodes
+    QVector<TextureNodePtr> outputNodes;
+    for (auto& node : this->project->nodes) {
+        // Check if this is an output node by checking the library name
+        if (node->title == "Output") {
+            outputNodes.append(node);
+        }
+    }
+
+    if (outputNodes.isEmpty()) {
+        QMessageBox::information(this, "Export",
+                                 "No output nodes found in the project.");
+        return;
+    }
+
+    // Make renderer's context current for reading texture data
+    if (!this->renderer->ctx) {
+        QMessageBox::warning(this, "Export Error",
+                             "Renderer context not initialized.");
+        return;
+    }
+
+    // Store the previous context to restore it later
+    QOpenGLContext* previousContext = QOpenGLContext::currentContext();
+    QSurface* previousSurface =
+        previousContext ? previousContext->surface() : nullptr;
+
+    // Make renderer context current
+    this->renderer->ctx->makeCurrent(this->renderer->surface);
+
+    // Create exporter
+    Exporter exporter;
+
+    // Export each output node
+    int successCount = 0;
+    int failCount = 0;
+
+    for (auto& node : outputNodes) {
+        // Get the output name from the node's property
+        QString outputName = "";
+        if (node->hasProp("name")) {
+            outputName = node->getProp("name")->getValue().toString();
+        }
+
+        // Use node title if name property is empty
+        if (outputName.isEmpty()) {
+            outputName = "output";
+        }
+
+        // Get precision setting (0 = 8-bit, 1 = 16-bit)
+        int precision = 0;
+        if (node->hasProp("precision")) {
+            precision = node->getProp("precision")->getValue().toInt();
+        }
+
+        // Get components setting (0=RGBA, 1=RGB, 2=R, 3=G, 4=B, 5=A)
+        int components = 0;
+        if (node->hasProp("components")) {
+            components = node->getProp("components")->getValue().toInt();
+        }
+
+        // Generate filename using pattern
+        QString filename = pattern;
+        filename.replace("${project}", this->project->name);
+        filename.replace("${name}", outputName);
+        filename += ".png";
+
+        QString fullPath = destination + "/" + filename;
+
+        // Get the texture from the node
+        if (!node->texture) {
+            qDebug() << "Node" << node->title << "has no texture";
+            failCount++;
+            continue;
+        }
+
+        // Export using Exporter class
+        ExportResult result = exporter.exportTexture(node->texture, fullPath,
+                                                     precision, components);
+
+        if (result.success) {
+            successCount++;
+        }
+        else {
+            failCount++;
+        }
+    }
+
+    // Restore previous context
+    if (previousContext && previousSurface) {
+        previousContext->makeCurrent(previousSurface);
+    }
+    else {
+        this->renderer->ctx->doneCurrent();
+    }
+
+    // Show result message
+    QString message =
+        QString("Export complete!\n\n") +
+        QString("Successfully exported: %1 file(s)\n").arg(successCount);
+
+    if (failCount > 0) {
+        message += QString("Failed: %1 file(s)").arg(failCount);
+    }
+
+    QMessageBox::information(this, "Export", message);
+}
 
 MainWindow::~MainWindow() {}
