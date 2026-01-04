@@ -1,45 +1,113 @@
-# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
-
-name: Update and build application
+name: Build
 
 on:
   push:
-    branches: [ master ]
+    branches: [main, master]
   pull_request:
-    branches: [ master ]
+    branches: [main, master]
+  workflow_dispatch:
 
 jobs:
-  build:
-
+  build-linux:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [12.x, 14.x]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.6.*"
+          host: "linux"
+          target: "desktop"
+          arch: "linux_gcc_64"
+          modules: "qtshadertools"
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libgl1-mesa-dev \
+            libxkbcommon-dev \
+            libvulkan-dev \
+            libxcb-cursor0 \
+            libxcb-shape0-dev
+
+      - name: Configure CMake
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --target texturelab --parallel $(nproc)
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: texturelab-linux
+          path: build/bin/texturelab
+
+  build-windows:
+    runs-on: windows-latest
 
     steps:
-    - name: Checkout source code
-      uses: actions/checkout@master
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - name: Setup cache
-      id: yarn-cache-dir-path
-      run: echo "::set-output name=dir::$(yarn cache dir)"
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.6.*"
+          host: "windows"
+          target: "desktop"
+          arch: "win64_msvc2019_64"
+          modules: "qtshadertools"
+          cache: true
 
-    - uses: actions/cache@master
-      id: yarn-cache
-      with:
-        path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-yarn-
+      - name: Configure CMake
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@master
-      with:
-        node-version: ${{ matrix.node-version }}
+      - name: Build
+        run: cmake --build build --target texturelab --config Release --parallel
 
-    - name: Install dependencies and build
-      run: |
-        yarn install
-        yarn electron:build --publish=never
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: texturelab-windows
+          path: build/bin/Release/texturelab.exe
+
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.6.*"
+          host: "mac"
+          target: "desktop"
+          arch: "clang_64"
+          modules: "qtshadertools"
+          cache: true
+
+      - name: Configure CMake
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --target texturelab --parallel $(sysctl -n hw.ncpu)
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: texturelab-macos
+          path: build/bin/texturelab
