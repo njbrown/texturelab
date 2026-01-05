@@ -3,6 +3,7 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsView>
 #include <QOpenGLContext>
+#include <QOpenGLFunctions>
 #include <QPaintEngine>
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
@@ -353,11 +354,13 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
         // // https://doc.qt.io/qt-5/qpainter.html#beginNativePainting
         painter->beginNativePainting();
 
+        auto* glFuncs = QOpenGLContext::currentContext()->functions();
+
         // glColor4f(1.0f, 0.0f, 0.0f, 1.0);
         glEnable(GL_TEXTURE_2D);
 
-        glActiveTexture(0);
-        glBindTexture(GL_TEXTURE_2D, texId);
+        glFuncs->glActiveTexture(GL_TEXTURE0);
+        glFuncs->glBindTexture(GL_TEXTURE_2D, texId);
         glBegin(GL_QUADS);
         glTexCoord2f(0, 1);
         glVertex2f(0, 0);
