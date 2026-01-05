@@ -45,11 +45,51 @@ jobs:
       - name: Build
         run: cmake --build build --target texturelab --parallel $(nproc)
 
+      - name: Install LinuxDeploy
+        uses: miurahr/install-linuxdeploy-action@v1
+        with:
+          plugins: qt appimage
+
+      - name: Create AppImage
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: 1
+        run: |
+          export QMAKE=${{ github.workspace }}/Qt/Qt/6.7.0/gcc_64/bin/qmake
+          export PATH=${{ github.workspace }}/Qt/Qt/6.7.0/gcc_64/bin:$PATH
+          export LD_LIBRARY_PATH=${{ github.workspace }}/Qt/Qt/6.7.0/gcc_64/lib:$LD_LIBRARY_PATH
+
+          # Create desktop file
+          mkdir -p AppDir/usr/share/applications
+          cat > AppDir/usr/share/applications/texturelab.desktop << EOF
+          [Desktop Entry]
+          Type=Application
+          Name=TextureLab
+          Exec=texturelab
+          Icon=texturelab
+          Categories=Graphics;
+          EOF
+
+          # Create icon (use placeholder if not found)
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+          if [ -f public/assets/icons/icon.png ]; then
+            cp public/assets/icons/icon.png AppDir/usr/share/icons/hicolor/256x256/apps/texturelab.png
+          else
+            # Create a simple placeholder icon
+            convert -size 256x256 xc:gray AppDir/usr/share/icons/hicolor/256x256/apps/texturelab.png 2>/dev/null || true
+          fi
+
+          linuxdeploy-x86_64.AppImage \
+            --appdir AppDir \
+            --executable build/src/texturelab/texturelab \
+            --desktop-file AppDir/usr/share/applications/texturelab.desktop \
+            --plugin qt \
+            --output appimage
+
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
           name: texturelab-linux
-          path: build/src/texturelab/texturelab
+          path: "*.AppImage"
 
   build-windows:
     runs-on: windows-latest
