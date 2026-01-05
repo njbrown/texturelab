@@ -59,8 +59,7 @@ jobs:
           export LD_LIBRARY_PATH=${{ github.workspace }}/Qt/Qt/6.7.0/gcc_64/lib:$LD_LIBRARY_PATH
 
           # Create desktop file
-          mkdir -p AppDir/usr/share/applications
-          cat > AppDir/usr/share/applications/texturelab.desktop << EOF
+          cat > texturelab.desktop << 'EOF'
           [Desktop Entry]
           Type=Application
           Name=TextureLab
@@ -69,19 +68,14 @@ jobs:
           Categories=Graphics;
           EOF
 
-          # Create icon (use placeholder if not found)
-          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
-          if [ -f public/assets/icons/icon.png ]; then
-            cp public/assets/icons/icon.png AppDir/usr/share/icons/hicolor/256x256/apps/texturelab.png
-          else
-            # Create a simple placeholder icon
-            convert -size 256x256 xc:gray AppDir/usr/share/icons/hicolor/256x256/apps/texturelab.png 2>/dev/null || true
-          fi
+          # Create a placeholder icon (256x256 PNG with "TL" text)
+          cp src/icons/logo.png texturelab.png
 
           linuxdeploy-x86_64.AppImage \
             --appdir AppDir \
             --executable build/src/texturelab/texturelab \
-            --desktop-file AppDir/usr/share/applications/texturelab.desktop \
+            --desktop-file texturelab.desktop \
+            --icon-file texturelab.png \
             --plugin qt \
             --output appimage
 
