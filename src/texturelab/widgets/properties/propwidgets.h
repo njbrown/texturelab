@@ -17,7 +17,7 @@ struct BoolProp;
 struct ColorProp;
 struct ImageProp;
 struct GradientProp;
-struct StringProp;
+class StringProp;
 class Gradient;
 
 // https://stackoverflow.com/a/19007951
