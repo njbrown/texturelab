@@ -112,4 +112,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: texturelab-macos
-          path: build/src/texturelab/texturelab
+          path: build/src/texturelab/texturelab.app
