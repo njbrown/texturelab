@@ -10,14 +10,14 @@ class QComboBox;
 class QPushButton;
 class QLineEdit;
 
-class FloatProp;
-class IntProp;
-class EnumProp;
-class BoolProp;
-class ColorProp;
-class ImageProp;
-class GradientProp;
-class StringProp;
+struct FloatProp;
+struct IntProp;
+struct EnumProp;
+struct BoolProp;
+struct ColorProp;
+struct ImageProp;
+struct GradientProp;
+struct StringProp;
 class Gradient;
 
 // https://stackoverflow.com/a/19007951
