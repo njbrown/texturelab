@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
 
     steps:
       - name: Checkout repository
@@ -53,6 +53,7 @@ jobs:
       - name: Create AppImage
         env:
           APPIMAGE_EXTRACT_AND_RUN: 1
+          DEPLOY_STDCXX: 1
         run: |
           export QMAKE=${{ github.workspace }}/Qt/Qt/6.7.0/gcc_64/bin/qmake
           export PATH=${{ github.workspace }}/Qt/Qt/6.7.0/gcc_64/bin:$PATH
