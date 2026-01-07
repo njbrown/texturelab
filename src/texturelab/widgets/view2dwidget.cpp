@@ -23,6 +23,8 @@
 #include <QGraphicsView>
 #include <QWheelEvent>
 
+#include <QOpenGLContext>
+#include <QOpenGLFunctions>
 #include <QOpenGLFramebufferObject>
 #include <QOpenGLWidget>
 #include <QPaintEngine>
@@ -447,7 +449,7 @@ void NodePreviewGraphicsItem::paint(QPainter* painter,
         glColor4f(1.0f, 1.0f, 1.0f, 1.0);
         glEnable(GL_TEXTURE_2D);
 
-        glActiveTexture(0);
+        QOpenGLContext::currentContext()->functions()->glActiveTexture(GL_TEXTURE0);
         // qDebug() << "rendering preview for tex id " << node->textureId();
         glBindTexture(GL_TEXTURE_2D, node->textureId());
         // glBindTexture(GL_TEXTURE_2D, node->texture->texture());

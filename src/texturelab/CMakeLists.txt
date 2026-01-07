@@ -13,6 +13,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets OpenGL)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets OpenGLWidgets)
+find_package(OpenGL REQUIRED)
 
 set(LIBRARYV1
     ./libraries/v1/blend.cpp
@@ -156,6 +157,7 @@ endif()
 target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets 
                                          Qt${QT_VERSION_MAJOR}::OpenGL 
                                          Qt${QT_VERSION_MAJOR}::OpenGLWidgets 
+                                         OpenGL::GL
                                          qtadvanceddocking-qt6 
                                          nodegraph
                                          viewer3d

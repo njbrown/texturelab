@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.5)
 
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} 5.5 COMPONENTS Core Gui Widgets OpenGLWidgets REQUIRED)
+find_package(OpenGL REQUIRED)
 if (UNIX AND NOT APPLE)
     include_directories(${Qt${QT_VERSION_MAJOR}Gui_PRIVATE_INCLUDE_DIRS})
 endif()
@@ -38,7 +39,8 @@ add_library(viewer3d STATIC ${SRCS} ${HEADERS} ${RESOURCES})
 target_link_libraries(viewer3d PRIVATE Qt${QT_VERSION_MAJOR}::Core 
                                         Qt${QT_VERSION_MAJOR}::Gui 
                                         Qt${QT_VERSION_MAJOR}::OpenGLWidgets 
-                                        Qt${QT_VERSION_MAJOR}::Widgets)
+                                        Qt${QT_VERSION_MAJOR}::Widgets
+                                        OpenGL::GL)
 
 
 set_target_properties(viewer3d PROPERTIES

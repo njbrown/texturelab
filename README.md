@@ -54,6 +54,17 @@ build
 make texturelab
 ```
 
+## Windows Setup
+If you dont want to or have MSVC installed, you can use g++ via MSYS2
+```
+winget install MSYS2.MSYS2
+```
+Then in MSYS2 UCRT64 terminal:
+```
+pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-ninja mingw-w64-ucrt-x86_64-cmake
+```
+Add `C:\msys64\ucrt64\bin` to your PATH
+
 ## Feedback
 
 Got ideas, suggestions or feedback? Reach out to me on [twitter](https://twitter.com/njbrown92)

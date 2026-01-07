@@ -113,11 +113,17 @@ jobs:
       - name: Build
         run: cmake --build build --target texturelab --config Release --parallel
 
+      - name: Deploy Qt dependencies
+        run: |
+          mkdir deploy
+          copy build\src\texturelab\Release\texturelab.exe deploy\
+          ${{ github.workspace }}\Qt\Qt\6.7.0\msvc2019_64\bin\windeployqt.exe deploy\texturelab.exe --release --no-translations
+
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: texturelab-windows
-          path: build/src/texturelab/Release/texturelab.exe
+          path: deploy/
 
   build-macos:
     runs-on: macos-latest

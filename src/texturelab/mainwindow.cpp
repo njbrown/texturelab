@@ -295,7 +295,8 @@ ads::CDockAreaWidget* MainWindow::addDock(const QString& title,
                                           QWidget* widget,
                                           ads::CDockAreaWidget* areaWidget)
 {
-    ads::CDockWidget* dockWidget = new ads::CDockWidget(title);
+    // ads::CDockWidget* dockWidget = new ads::CDockWidget(title);
+    ads::CDockWidget* dockWidget = dockManager->createDockWidget(title);
     if (widget != nullptr)
         dockWidget->setWidget(widget);
 
