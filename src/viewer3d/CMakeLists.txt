@@ -1,5 +1,4 @@
-
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
 
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core REQUIRED)

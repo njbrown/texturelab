@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
 project(qtcompleteapp VERSION 0.1 LANGUAGES CXX)
 
 # Find Qt6 with GuiPrivate before adding subdirectories that need it
-find_package(Qt6 COMPONENTS Core Gui GuiPrivate Widgets REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Widgets REQUIRED)
 
 # Advanced Docking System (build as static library)
 set(BUILD_STATIC ON CACHE BOOL "Build ADS as static library" FORCE)
