@@ -6,6 +6,9 @@
 #include <QList>
 #include <QMap>
 #include <QOpenGLContext>
+#include <QOpenGLShaderProgram>
+#include <QOpenGLBuffer>
+#include <QOpenGLVertexArrayObject>
 #include <QPixmap>
 #include <QRectF>
 #include <QSharedPointer>
@@ -70,6 +73,14 @@ class Node : public QGraphicsObject, public QEnableSharedFromThis<Node> {
     QColor defaultBorderColor;
     QColor highlightBorderColor;
     QColor selectedBorderColor;
+    
+    // Modern OpenGL resources
+    static QOpenGLShaderProgram* shaderProgram;
+    static QOpenGLBuffer* vbo;
+    static QOpenGLVertexArrayObject* vao;
+    static bool glInitialized;
+    static void initializeGL();
+    static void cleanupGL();
 
 public:
     QVector<PortPtr> inPorts;

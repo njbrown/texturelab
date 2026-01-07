@@ -4,6 +4,7 @@
 #include <QGraphicsView>
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
+#include <QOpenGLExtraFunctions>
 #include <QPaintEngine>
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
@@ -13,6 +14,81 @@
 #include <QUuid>
 
 namespace nodegraph {
+
+// Static member definitions for Node's OpenGL resources
+QOpenGLShaderProgram* Node::shaderProgram = nullptr;
+QOpenGLBuffer* Node::vbo = nullptr;
+QOpenGLVertexArrayObject* Node::vao = nullptr;
+bool Node::glInitialized = false;
+
+void Node::initializeGL()
+{
+    if (glInitialized) return;
+    
+    QOpenGLContext* ctx = QOpenGLContext::currentContext();
+    if (!ctx) return;
+    
+    // Create shader program
+    shaderProgram = new QOpenGLShaderProgram();
+    
+    const char* vertexShaderSource = R"(
+        #version 150
+        in vec2 position;
+        in vec2 texCoord;
+        out vec2 vTexCoord;
+        uniform mat4 projectionMatrix;
+        void main() {
+            gl_Position = projectionMatrix * vec4(position, 0.0, 1.0);
+            vTexCoord = texCoord;
+        }
+    )";
+    
+    const char* fragmentShaderSource = R"(
+        #version 150
+        in vec2 vTexCoord;
+        out vec4 fragColor;
+        uniform sampler2D textureSampler;
+        void main() {
+            fragColor = texture(textureSampler, vTexCoord);
+        }
+    )";
+    
+    shaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
+    shaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
+    shaderProgram->link();
+    
+    // Create VAO and VBO
+    vao = new QOpenGLVertexArrayObject();
+    vao->create();
+    
+    vbo = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+    vbo->create();
+    vbo->setUsagePattern(QOpenGLBuffer::DynamicDraw);
+    
+    glInitialized = true;
+}
+
+void Node::cleanupGL()
+{
+    if (!glInitialized) return;
+    
+    delete shaderProgram;
+    shaderProgram = nullptr;
+    
+    if (vbo) {
+        vbo->destroy();
+        delete vbo;
+        vbo = nullptr;
+    }
+    
+    if (vao) {
+        vao->destroy();
+        delete vao;
+        vao = nullptr;
+    }
+    
+    glInitialized = false;
+}
 
 Scene::Scene() : QGraphicsScene()
 {
@@ -354,26 +430,78 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
         // // https://doc.qt.io/qt-5/qpainter.html#beginNativePainting
         painter->beginNativePainting();
 
-        auto* glFuncs = QOpenGLContext::currentContext()->functions();
-
-        // glColor4f(1.0f, 0.0f, 0.0f, 1.0);
-        glEnable(GL_TEXTURE_2D);
-
-        glFuncs->glActiveTexture(GL_TEXTURE0);
-        glFuncs->glBindTexture(GL_TEXTURE_2D, texId);
-        glBegin(GL_QUADS);
-        glTexCoord2f(0, 1);
-        glVertex2f(0, 0);
-
-        glTexCoord2f(1, 1);
-        glVertex2f(100, 0);
-
-        glTexCoord2f(1, 0);
-        glVertex2f(100, 100);
-
-        glTexCoord2f(0, 0);
-        glVertex2f(0, 100);
-        glEnd();
+        // Initialize OpenGL resources if needed
+        initializeGL();
+        
+        if (glInitialized && shaderProgram && vao && vbo) {
+            QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
+            
+            // Get the current viewport and create orthographic projection
+            GLint viewport[4];
+            f->glGetIntegerv(GL_VIEWPORT, viewport);
+            
+            // Create orthographic projection matrix
+            QTransform transform = painter->combinedTransform();
+            QMatrix4x4 projectionMatrix;
+            projectionMatrix.ortho(0, viewport[2], viewport[3], 0, -1, 1);
+            
+            // Build vertex data - transform scene coordinates to device coordinates
+            QPointF p0 = transform.map(QPointF(0, 0));
+            QPointF p1 = transform.map(QPointF(100, 0));
+            QPointF p2 = transform.map(QPointF(100, 100));
+            QPointF p3 = transform.map(QPointF(0, 100));
+            
+            // Two triangles for a quad: position (x,y) + texcoord (u,v)
+            GLfloat vertices[] = {
+                // Triangle 1
+                (GLfloat)p0.x(), (GLfloat)p0.y(), 0.0f, 1.0f,
+                (GLfloat)p1.x(), (GLfloat)p1.y(), 1.0f, 1.0f,
+                (GLfloat)p2.x(), (GLfloat)p2.y(), 1.0f, 0.0f,
+                // Triangle 2
+                (GLfloat)p0.x(), (GLfloat)p0.y(), 0.0f, 1.0f,
+                (GLfloat)p2.x(), (GLfloat)p2.y(), 1.0f, 0.0f,
+                (GLfloat)p3.x(), (GLfloat)p3.y(), 0.0f, 0.0f,
+            };
+            
+            // Setup state
+            f->glDisable(GL_BLEND);
+            f->glDisable(GL_DEPTH_TEST);
+            
+            // Bind shader
+            shaderProgram->bind();
+            shaderProgram->setUniformValue("projectionMatrix", projectionMatrix);
+            shaderProgram->setUniformValue("textureSampler", 0);
+            
+            // Bind texture
+            f->glActiveTexture(GL_TEXTURE0);
+            f->glBindTexture(GL_TEXTURE_2D, texId);
+            
+            // Setup VAO and VBO
+            vao->bind();
+            vbo->bind();
+            vbo->allocate(vertices, sizeof(vertices));
+            
+            // Setup vertex attributes
+            int positionLoc = shaderProgram->attributeLocation("position");
+            int texCoordLoc = shaderProgram->attributeLocation("texCoord");
+            
+            shaderProgram->enableAttributeArray(positionLoc);
+            shaderProgram->enableAttributeArray(texCoordLoc);
+            shaderProgram->setAttributeBuffer(positionLoc, GL_FLOAT, 0, 2, 4 * sizeof(GLfloat));
+            shaderProgram->setAttributeBuffer(texCoordLoc, GL_FLOAT, 2 * sizeof(GLfloat), 2, 4 * sizeof(GLfloat));
+            
+            // Draw
+            f->glDrawArrays(GL_TRIANGLES, 0, 6);
+            
+            // Cleanup
+            shaderProgram->disableAttributeArray(positionLoc);
+            shaderProgram->disableAttributeArray(texCoordLoc);
+            vbo->release();
+            vao->release();
+            shaderProgram->release();
+            
+            f->glEnable(GL_BLEND);
+        }
 
         painter->endNativePainting();
     }
