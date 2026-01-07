@@ -23,7 +23,7 @@
 #include "../props.h"
 #include "models.h"
 
-// #define RENDER_IN_MAIN_THREAD
+#define RENDER_IN_MAIN_THREAD
 
 enum class VertexUsage : int {
     Position = 0,
@@ -160,7 +160,8 @@ void TextureRenderer::setup()
     // create context
     ctx = new QOpenGLContext();
     // https://doc.qt.io/qt-6/qopenglcontext.html#globalShareContext
-    ctx->setShareContext(QOpenGLContext::globalShareContext());
+    auto* globalContext = QOpenGLContext::globalShareContext();
+    ctx->setShareContext(globalContext);
     ctx->setFormat(format);
     if (!ctx->create()) {
         qFatal("unable to create surface!");
