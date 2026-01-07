@@ -5,6 +5,9 @@
 #include <QMainWindow>
 #include <QToolBar>
 #include <QWidget>
+#include <QOpenGLShaderProgram>
+#include <QOpenGLBuffer>
+#include <QOpenGLVertexArrayObject>
 
 class QWidget;
 class QWheelEvent;
@@ -92,9 +95,16 @@ private:
 class NodePreviewGraphicsItem : public QGraphicsItem {
     TextureNodePtr node;
     bool tiled = false;
+    
+    // Modern OpenGL resources
+    QOpenGLShaderProgram* shaderProgram = nullptr;
+    QOpenGLBuffer* vbo = nullptr;
+    QOpenGLVertexArrayObject* vao = nullptr;
+    bool glInitialized = false;
 
 public:
     NodePreviewGraphicsItem();
+    ~NodePreviewGraphicsItem();
     void setNode(const TextureNodePtr& node);
     void clearNode();
     void setTiled(bool tiled);
@@ -103,4 +113,8 @@ public:
 protected:
     void paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
                QWidget* widget = 0) override;
+
+private:
+    void initializeGL();
+    void cleanupGL();
 };

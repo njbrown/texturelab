@@ -28,6 +28,7 @@
 #include <QOpenGLFramebufferObject>
 #include <QOpenGLWidget>
 #include <QPaintEngine>
+#include <QOpenGLExtraFunctions>
 
 #include "./graphics/texturerenderer.h"
 #include "./models.h"
@@ -402,6 +403,82 @@ void View2DGraph::drawBackground(QPainter* painter, const QRectF& r)
 // NODE PREVIEW
 NodePreviewGraphicsItem::NodePreviewGraphicsItem() {}
 
+NodePreviewGraphicsItem::~NodePreviewGraphicsItem()
+{
+    cleanupGL();
+}
+
+void NodePreviewGraphicsItem::initializeGL()
+{
+    if (glInitialized) return;
+    
+    QOpenGLContext* ctx = QOpenGLContext::currentContext();
+    if (!ctx) return;
+    
+    QOpenGLFunctions* f = ctx->functions();
+    
+    // Create shader program
+    shaderProgram = new QOpenGLShaderProgram();
+    
+    const char* vertexShaderSource = R"(
+        #version 150
+        in vec2 position;
+        in vec2 texCoord;
+        out vec2 vTexCoord;
+        uniform mat4 projectionMatrix;
+        void main() {
+            gl_Position = projectionMatrix * vec4(position, 0.0, 1.0);
+            vTexCoord = texCoord;
+        }
+    )";
+    
+    const char* fragmentShaderSource = R"(
+        #version 150
+        in vec2 vTexCoord;
+        out vec4 fragColor;
+        uniform sampler2D textureSampler;
+        void main() {
+            fragColor = texture(textureSampler, vTexCoord);
+        }
+    )";
+    
+    shaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
+    shaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
+    shaderProgram->link();
+    
+    // Create VAO and VBO
+    vao = new QOpenGLVertexArrayObject();
+    vao->create();
+    
+    vbo = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+    vbo->create();
+    vbo->setUsagePattern(QOpenGLBuffer::DynamicDraw);
+    
+    glInitialized = true;
+}
+
+void NodePreviewGraphicsItem::cleanupGL()
+{
+    if (!glInitialized) return;
+    
+    delete shaderProgram;
+    shaderProgram = nullptr;
+    
+    if (vbo) {
+        vbo->destroy();
+        delete vbo;
+        vbo = nullptr;
+    }
+    
+    if (vao) {
+        vao->destroy();
+        delete vao;
+        vao = nullptr;
+    }
+    
+    glInitialized = false;
+}
+
 QRectF NodePreviewGraphicsItem::boundingRect() const
 {
     if (tiled) {
@@ -431,75 +508,114 @@ void NodePreviewGraphicsItem::paint(QPainter* painter,
                                     QStyleOptionGraphicsItem const* option,
                                     QWidget* widget)
 {
-    // // https://doc.qt.io/qt-5/qpainter.html#beginNativePainting
-    // https://github.com/liff-engineer/WeeklyARTS/blob/d8605aa3bfb2641d2a13621262024a1edff7b661/2018_9_4/Mixin2D%263DinQt.md
     auto type = painter->paintEngine()->type();
     if (type != QPaintEngine::OpenGL && type != QPaintEngine::OpenGL2) {
         qWarning() << "Paint engine needs to be OPENGL!";
-        // return;
+        return;
     }
+
+    if (!node) return;
 
     auto rect = boundingRect();
-
-    if (!!node) {
-        // // https://doc.qt.io/qt-5/qpainter.html#beginNativePainting
-        painter->beginNativePainting();
-
-        glDisable(GL_BLEND);
-        glColor4f(1.0f, 1.0f, 1.0f, 1.0);
-        glEnable(GL_TEXTURE_2D);
-
-        QOpenGLContext::currentContext()->functions()->glActiveTexture(GL_TEXTURE0);
-        // qDebug() << "rendering preview for tex id " << node->textureId();
-        glBindTexture(GL_TEXTURE_2D, node->textureId());
-        // glBindTexture(GL_TEXTURE_2D, node->texture->texture());
-
-        if (tiled) {
-            // Render as 3x3 tiled grid
-            float tileWidth = rect.width() / 3.0f;
-            float tileHeight = rect.height() / 3.0f;
-
-            for (int y = 0; y < 3; y++) {
-                for (int x = 0; x < 3; x++) {
-                    float x0 = rect.x() + x * tileWidth;
-                    float y0 = rect.y() + y * tileHeight;
-                    float x1 = rect.x() + (x + 1) * tileWidth;
-                    float y1 = rect.y() + (y + 1) * tileHeight;
-
-                    glBegin(GL_QUADS);
-                    glTexCoord2f(0, 1);
-                    glVertex2f(x0, y0);
-
-                    glTexCoord2f(1, 1);
-                    glVertex2f(x1, y0);
-
-                    glTexCoord2f(1, 0);
-                    glVertex2f(x1, y1);
-
-                    glTexCoord2f(0, 0);
-                    glVertex2f(x0, y1);
-                    glEnd();
-                }
+    
+    painter->beginNativePainting();
+    
+    // Initialize OpenGL resources if needed
+    initializeGL();
+    
+    if (!glInitialized || !shaderProgram || !vao || !vbo) {
+        painter->endNativePainting();
+        return;
+    }
+    
+    QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
+    
+    // Get the current viewport and create orthographic projection
+    GLint viewport[4];
+    f->glGetIntegerv(GL_VIEWPORT, viewport);
+    
+    // Create orthographic projection matrix matching the scene coordinates
+    // The painter's transform converts scene coords to device coords
+    QTransform transform = painter->combinedTransform();
+    QMatrix4x4 projectionMatrix;
+    projectionMatrix.ortho(0, viewport[2], viewport[3], 0, -1, 1);
+    
+    // Build vertex data
+    QVector<GLfloat> vertices;
+    
+    auto addQuad = [&](float x0, float y0, float x1, float y1) {
+        // Transform scene coordinates to device coordinates
+        QPointF p0 = transform.map(QPointF(x0, y0));
+        QPointF p1 = transform.map(QPointF(x1, y0));
+        QPointF p2 = transform.map(QPointF(x1, y1));
+        QPointF p3 = transform.map(QPointF(x0, y1));
+        
+        // Two triangles for a quad: position (x,y) + texcoord (u,v)
+        // Triangle 1
+        vertices << p0.x() << p0.y() << 0.0f << 1.0f;
+        vertices << p1.x() << p1.y() << 1.0f << 1.0f;
+        vertices << p2.x() << p2.y() << 1.0f << 0.0f;
+        // Triangle 2
+        vertices << p0.x() << p0.y() << 0.0f << 1.0f;
+        vertices << p2.x() << p2.y() << 1.0f << 0.0f;
+        vertices << p3.x() << p3.y() << 0.0f << 0.0f;
+    };
+    
+    if (tiled) {
+        float tileWidth = rect.width() / 3.0f;
+        float tileHeight = rect.height() / 3.0f;
+        
+        for (int y = 0; y < 3; y++) {
+            for (int x = 0; x < 3; x++) {
+                float x0 = rect.x() + x * tileWidth;
+                float y0 = rect.y() + y * tileHeight;
+                float x1 = rect.x() + (x + 1) * tileWidth;
+                float y1 = rect.y() + (y + 1) * tileHeight;
+                addQuad(x0, y0, x1, y1);
             }
         }
-        else {
-            // Render single texture centered
-            glBegin(GL_QUADS);
-            glTexCoord2f(0, 1);
-            glVertex2f(rect.x(), rect.y());
-
-            glTexCoord2f(1, 1);
-            glVertex2f(rect.x() + rect.width(), rect.y());
-
-            glTexCoord2f(1, 0);
-            glVertex2f(rect.x() + rect.width(), rect.y() + rect.height());
-
-            glTexCoord2f(0, 0);
-            glVertex2f(rect.x(), rect.y() + rect.height());
-            glEnd();
-        }
-
-        glEnable(GL_BLEND);
-        painter->endNativePainting();
+    } else {
+        addQuad(rect.x(), rect.y(), rect.x() + rect.width(), rect.y() + rect.height());
     }
+    
+    // Setup state
+    f->glDisable(GL_BLEND);
+    f->glDisable(GL_DEPTH_TEST);
+    
+    // Bind shader
+    shaderProgram->bind();
+    shaderProgram->setUniformValue("projectionMatrix", projectionMatrix);
+    shaderProgram->setUniformValue("textureSampler", 0);
+    
+    // Bind texture
+    f->glActiveTexture(GL_TEXTURE0);
+    f->glBindTexture(GL_TEXTURE_2D, node->textureId());
+    
+    // Setup VAO and VBO
+    vao->bind();
+    vbo->bind();
+    vbo->allocate(vertices.constData(), vertices.size() * sizeof(GLfloat));
+    
+    // Setup vertex attributes
+    int positionLoc = shaderProgram->attributeLocation("position");
+    int texCoordLoc = shaderProgram->attributeLocation("texCoord");
+    
+    shaderProgram->enableAttributeArray(positionLoc);
+    shaderProgram->enableAttributeArray(texCoordLoc);
+    shaderProgram->setAttributeBuffer(positionLoc, GL_FLOAT, 0, 2, 4 * sizeof(GLfloat));
+    shaderProgram->setAttributeBuffer(texCoordLoc, GL_FLOAT, 2 * sizeof(GLfloat), 2, 4 * sizeof(GLfloat));
+    
+    // Draw
+    f->glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 4);
+    
+    // Cleanup
+    shaderProgram->disableAttributeArray(positionLoc);
+    shaderProgram->disableAttributeArray(texCoordLoc);
+    vbo->release();
+    vao->release();
+    shaderProgram->release();
+    
+    f->glEnable(GL_BLEND);
+    
+    painter->endNativePainting();
 }
