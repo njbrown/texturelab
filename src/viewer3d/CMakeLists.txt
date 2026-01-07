@@ -12,7 +12,7 @@ endif()
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(SRCS
-    main.cpp
+    # main.cpp
     viewer3d.cpp
     iblsampler.cpp
     shadercache.cpp
