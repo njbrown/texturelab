@@ -155,6 +155,16 @@ void MainWindow::passTextureChannelsToViewer3D()
 
 void MainWindow::setProject(TextureProjectPtr project)
 {
+    // Clean up old renderer before creating new one
+    if (this->renderer) {
+        // Clear references to old renderer in widgets
+        this->graphWidget->setTextureRenderer(nullptr);
+        this->view2DWidget->setTextureRenderer(nullptr);
+
+        delete this->renderer;
+        this->renderer = nullptr;
+    }
+
     this->project = project;
     this->graphWidget->setTextureProject(project);
     this->libraryWidget->setLibrary(project->library);
@@ -491,4 +501,11 @@ void MainWindow::handleExport(const QString& destination,
     QMessageBox::information(this, "Export", message);
 }
 
-MainWindow::~MainWindow() {}
+MainWindow::~MainWindow()
+{
+    // Clean up renderer
+    if (this->renderer) {
+        delete this->renderer;
+        this->renderer = nullptr;
+    }
+}

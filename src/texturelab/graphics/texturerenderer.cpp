@@ -266,6 +266,64 @@ void TextureRenderer::setup()
 
 TextureRenderer::TextureRenderer() { this->setup(); }
 
+TextureRenderer::~TextureRenderer()
+{
+    // Stop and clean up render worker thread
+    if (renderWorker) {
+        renderWorker->kill();
+    }
+
+#ifndef RENDER_IN_MAIN_THREAD
+    if (renderThread) {
+        renderThread->quit();
+        renderThread->wait();
+        delete renderThread;
+        renderThread = nullptr;
+    }
+#endif
+
+    if (renderWorker) {
+        delete renderWorker;
+        renderWorker = nullptr;
+    }
+
+    // Clean up OpenGL resources (must have context current)
+    if (ctx && surface) {
+        ctx->makeCurrent(surface);
+
+        if (fbo) {
+            delete fbo;
+            fbo = nullptr;
+        }
+
+        if (vbo) {
+            vbo->destroy();
+            delete vbo;
+            vbo = nullptr;
+        }
+
+        if (vao) {
+            vao->destroy();
+            delete vao;
+            vao = nullptr;
+        }
+
+        ctx->doneCurrent();
+    }
+
+    // Clean up context and surface
+    if (ctx) {
+        delete ctx;
+        ctx = nullptr;
+    }
+
+    if (surface) {
+        surface->destroy();
+        delete surface;
+        surface = nullptr;
+    }
+}
+
 void TextureRenderer::setProject(TextureProjectPtr project)
 {
     this->project = project;
@@ -506,7 +564,7 @@ void TextureRenderer::initRenderWorker()
 {
     renderWorker = new RenderWorker();
     renderWorker->initSurface();
-    
+
     QObject::connect(renderWorker, &RenderWorker::nodeRendered, this,
                      &TextureRenderer::nodeRendered);
 

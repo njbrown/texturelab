@@ -41,6 +41,7 @@ class TextureRenderer : public QObject {
 
 public:
     TextureRenderer();
+    ~TextureRenderer();
     void setup();
     void setProject(TextureProjectPtr project);
     void update();
