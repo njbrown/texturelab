@@ -66,7 +66,7 @@ FloatPropWidget::FloatPropWidget()
     connect(spinbox, &QDoubleSpinBox::valueChanged, [=](double val) {
         if (prop) {
             auto range = prop->maxValue - prop->minValue;
-            auto finalValue = (val / range) * SLIDER_MAX;
+            auto finalValue = ((val - prop->minValue) / range) * SLIDER_MAX;
 
             slider->setValue(finalValue);
 
@@ -85,7 +85,7 @@ void FloatPropWidget::setProp(FloatProp* prop)
     spinbox->setValue(prop->value);
 
     auto range = prop->maxValue - prop->minValue;
-    auto finalValue = (prop->value / range) * SLIDER_MAX;
+    auto finalValue = ((prop->value - prop->minValue) / range) * SLIDER_MAX;
 
     slider->setValue(finalValue);
 
