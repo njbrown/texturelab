@@ -83,6 +83,8 @@ public:
     void processRenderCommand(const RenderCommand& command);
     void renderNextInQueue();
 
+    // Must be called from main thread before run() - Windows requires surface creation on GUI thread
+    void initSurface();
     void setup();
 
 private:

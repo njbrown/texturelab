@@ -23,7 +23,7 @@
 #include "../props.h"
 #include "models.h"
 
-#define RENDER_IN_MAIN_THREAD
+// #define RENDER_IN_MAIN_THREAD
 
 enum class VertexUsage : int {
     Position = 0,
@@ -505,6 +505,8 @@ void TextureRenderer::renderNode(const TextureNodePtr& node)
 void TextureRenderer::initRenderWorker()
 {
     renderWorker = new RenderWorker();
+    renderWorker->initSurface();
+    
     QObject::connect(renderWorker, &RenderWorker::nodeRendered, this,
                      &TextureRenderer::nodeRendered);
 

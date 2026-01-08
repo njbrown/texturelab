@@ -24,7 +24,7 @@
 
 const int TEXTURE_SIZE = 1024;
 
-RENDERDOC_API_1_1_2* rdoc_api = NULL;
+RENDERDOC_API_1_1_2* rdoc_api = nullptr;
 
 RenderWorker::RenderWorker()
     : QObject(), surface(nullptr), ctx(nullptr), gl(nullptr), vao(nullptr),
@@ -61,16 +61,9 @@ void RenderWorker::renderNextInQueue()
     }
 }
 
-void RenderWorker::setup()
+// Must be called from main/GUI thread before run() - Windows requires surface creation on GUI thread
+void RenderWorker::initSurface()
 {
-    running = true;
-    // Initialize OpenGL context or other necessary setups here
-    // create surface
-    surface = new QOffscreenSurface();
-    // QSurfaceFormat format = QSurfaceFormat::defaultFormat();
-    // format.setMajorVersion(3);
-    // format.setMinorVersion(2);
-
     QSurfaceFormat format;
     format.setDepthBufferSize(32);
     format.setMajorVersion(3);
@@ -81,8 +74,21 @@ void RenderWorker::setup()
     format.setSwapBehavior(QSurfaceFormat::SingleBuffer);
     format.setOption(QSurfaceFormat::DebugContext); // for debugging
 
+    surface = new QOffscreenSurface();
     surface->setFormat(format);
-    surface->create();
+    surface->create(); // Safe here - called from main thread
+}
+
+void RenderWorker::setup()
+{
+    running = true;
+
+    // Surface must already be created via initSurface() from main thread
+    if (!surface || !surface->isValid()) {
+        qFatal("Surface not initialized! Call initSurface() from main thread before run()");
+    }
+
+    QSurfaceFormat format = surface->format();
 
     // create context
     ctx = new QOpenGLContext();
