@@ -35,8 +35,8 @@ TextureProjectPtr Project::loadTexture(QString path)
     auto nodeArray = json["nodes"].toArray();
     for (auto item : nodeArray) {
         auto nodeDef = item.toObject();
-
-        auto node = lib->createNode(nodeDef["typeName"].toString());
+        auto nodeName = nodeDef["typeName"].toString();
+        auto node = lib->createNode(nodeName);
         node->exportName = nodeDef["exportName"].toString("");
         node->id = nodeDef["id"].toString();
         node->randomSeed = nodeDef["randomSeed"].toInteger(0);

@@ -131,7 +131,7 @@ Library* createLibraryV2()
         ":nodes/floodfilltorandomintensity.png");
     lib->addNode<GradientDynamicNode>("gradientdynamic", "Gradient Dynamic",
                                       ":nodes/gradientdynamic.png");
-    lib->addNode<GradientNoiseNode>("gradientnode", "Gradient Noise",
+    lib->addNode<GradientNoiseNode>("gradientnoise", "Gradient Noise",
                                     ":nodes/gradientnoise.png");
     lib->addNode<GradientNoiseFractalSumNode>(
         "gradientnoisefractalsum", "Gradient Noise Fractal Sum",
