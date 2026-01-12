@@ -15,6 +15,13 @@ PropertiesWidget::PropertiesWidget() : QWidget()
                                   "Roughness", "Height", "Alpha"};
     textureChannelProp->setValue(0);
 
+    randomSeedProp = new FloatProp();
+    randomSeedProp->displayName = "Random Seed";
+    randomSeedProp->minValue = 0;
+    randomSeedProp->maxValue = 50;
+    randomSeedProp->step = 1;
+    randomSeedProp->setValue(0);
+
     auto layout = new QVBoxLayout(this);
     layout->addStretch(1);
     this->setLayout(layout);
@@ -178,7 +185,18 @@ void PropertiesWidget::addBasePropsToLayout()
     });
     layout->addWidget(widget);
 
-    // todo: random seed
+    // todo: random seed 
+    randomSeedProp->setValue(this->selectedNode->randomSeed);
+
+    auto seedWidget = new FloatPropWidget();
+    seedWidget->setProp(randomSeedProp);
+    connect(seedWidget, &FloatPropWidget::valueChanged, [=](float value) {
+        this->selectedNode->randomSeed = value;
+        this->project->markNodeAsDirty(this->selectedNode);
+
+        emit this->propertyUpdated("randomSeed", value);
+    });
+    layout->addWidget(seedWidget);
 }
 
 void PropertiesWidget::clearSelection()
