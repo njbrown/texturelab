@@ -89,6 +89,31 @@ TextureProjectPtr Project::loadTexture(QString path)
         texture->exportDestination = exportObj["destination"].toString("");
     }
 
+    if (json["editor"].isObject()) {
+        auto editorObject = json["editor"].toObject();
+        auto channels = editorObject["textureChannels"].toObject();
+        for (auto key : channels.keys()) {
+            TextureChannel channel = TextureChannel::None;
+            if (key == "albedo")
+                channel = TextureChannel::Albedo;
+            else if (key == "normal")
+                channel = TextureChannel::Normal;
+            else if (key == "metalness")
+                channel = TextureChannel::Metalness;
+            else if (key == "roughness")
+                channel = TextureChannel::Roughness;
+            else if (key == "height")
+                channel = TextureChannel::Height;
+            else if (key == "alpha")
+                channel = TextureChannel::Alpha;
+
+            if (channel != TextureChannel::None) {
+                auto nodeId = channels[key].toString();
+                texture->textureChannels[channel] = nodeId;
+            }
+        }
+    }
+
     texture->library = lib;
 
     return texture;
