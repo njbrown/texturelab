@@ -149,6 +149,17 @@ void MainWindow::passTextureChannelsToViewer3D()
         case TextureChannel::Albedo:
             viewer->setAlbedoTexture(node->textureId());
             break;
+        case TextureChannel::Normal:
+            viewer->setNormalTexture(node->textureId());
+            break;
+        case TextureChannel::Metalness:
+            viewer->setMetalnessTexture(node->textureId());
+            break;
+        case TextureChannel::Roughness:
+            viewer->setRoughnessTexture(node->textureId());
+            break;
+        default:
+            break;
         }
     }
 }

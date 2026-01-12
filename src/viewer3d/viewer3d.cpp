@@ -458,4 +458,46 @@ void Viewer3D::clearAlbedoTexture()
     this->material->needsUpdate = true;
 }
 
-void Viewer3D::clearTextures() { this->clearAlbedoTexture(); }
+void Viewer3D::setNormalTexture(GLuint texId)
+{
+    this->material->normalMapId = texId;
+    this->material->needsUpdate = true;
+}
+
+void Viewer3D::clearNormalTexture()
+{
+    this->material->normalMapId = 0;
+    this->material->needsUpdate = true;
+}
+
+void Viewer3D::setMetalnessTexture(GLuint texId)
+{
+    this->material->metalnessMapId = texId;
+    this->material->needsUpdate = true;
+}
+
+void Viewer3D::clearMetalnessTexture()
+{
+    this->material->metalnessMapId = 0;
+    this->material->needsUpdate = true;
+}
+
+void Viewer3D::setRoughnessTexture(GLuint texId)
+{
+    this->material->roughnessMapId = texId;
+    this->material->needsUpdate = true;
+}
+
+void Viewer3D::clearRoughnessTexture()
+{
+    this->material->roughnessMapId = 0;
+    this->material->needsUpdate = true;
+}
+
+void Viewer3D::clearTextures()
+{
+    this->clearAlbedoTexture();
+    this->clearNormalTexture();
+    this->clearMetalnessTexture();
+    this->clearRoughnessTexture();
+}
