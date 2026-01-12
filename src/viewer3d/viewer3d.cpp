@@ -371,7 +371,7 @@ Material* Viewer3D::loadMaterial()
     // flags << "LINEAR_OUTPUT 1";
     // flags << "TEST 1";
     // flags << "TEST2 1";
-    // flags << "HAS_TANGENT_VEC4 1";
+    flags << "HAS_TANGENT_VEC4 1";
     // flags << "DEBUG_NORMAL_GEOMETRY 1";
     flags << "DEBUG_NONE 1"; // IMPORTANT!! caused many headaches..
     flags << "DEBUG DEBUG_NONE";

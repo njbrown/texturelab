@@ -90,7 +90,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 
                 if (!!this->project) {
                     if (name == TextureChannel::None) {
-                        // todo: clear channel
+                        // Find and remove any channel that points to this node
+                        auto it = this->project->textureChannels.begin();
+                        while (it != this->project->textureChannels.end()) {
+                            if (it.value() == node->id) {
+                                it = this->project->textureChannels.erase(it);
+                            } else {
+                                ++it;
+                            }
+                        }
                     }
                     else {
 

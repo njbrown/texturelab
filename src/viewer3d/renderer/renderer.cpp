@@ -76,7 +76,7 @@ void Renderer::updateMaterial(Material* material)
     // determine attribs from mesh
     flags << "HAS_NORMAL_VEC3 1";
     flags << "HAS_TEXCOORD_0_VEC2 1";
-    // flags << "HAS_TANGENT_VEC4 1";
+    flags << "HAS_TANGENT_VEC4 1";
 
     flags << "DEBUG_NONE 1"; // IMPORTANT!! caused many headaches..
     flags << "DEBUG DEBUG_NONE";
@@ -280,11 +280,21 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
     shader->setUniformValue("u_EmissiveUVSet", 0);
     shader->setUniformValue("u_MetallicRoughnessUVSet", 0);
 
-    if (mat->albedoMapId != 0) {
-        shader->setUniformValue("u_BaseColorSampler", 0);
-        gl->glActiveTexture(GL_TEXTURE0);
-        gl->glBindTexture(GL_TEXTURE_2D, mat->albedoMapId);
-    }
+    shader->setUniformValue("u_BaseColorSampler", 0);
+    gl->glActiveTexture(GL_TEXTURE0);
+    gl->glBindTexture(GL_TEXTURE_2D, mat->albedoMapId);
+
+    shader->setUniformValue("u_NormalSampler", 1);
+    gl->glActiveTexture(GL_TEXTURE1);
+    gl->glBindTexture(GL_TEXTURE_2D, mat->normalMapId);
+
+    shader->setUniformValue("u_MetalnessSampler", 2);
+    gl->glActiveTexture(GL_TEXTURE2);
+    gl->glBindTexture(GL_TEXTURE_2D, mat->metalnessMapId);
+
+    shader->setUniformValue("u_RoughnessSampler", 3);
+    gl->glActiveTexture(GL_TEXTURE3);
+    gl->glBindTexture(GL_TEXTURE_2D, mat->roughnessMapId);
 
     // albedo
     // mainProgram->setUniformValue("u_BaseColorFactor", mat->albedo);
