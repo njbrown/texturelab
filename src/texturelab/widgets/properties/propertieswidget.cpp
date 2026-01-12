@@ -15,7 +15,7 @@ PropertiesWidget::PropertiesWidget() : QWidget()
                                   "Roughness", "Height", "Alpha"};
     textureChannelProp->setValue(0);
 
-    randomSeedProp = new FloatProp();
+    randomSeedProp = new IntProp();
     randomSeedProp->displayName = "Random Seed";
     randomSeedProp->minValue = 0;
     randomSeedProp->maxValue = 50;
@@ -186,11 +186,11 @@ void PropertiesWidget::addBasePropsToLayout()
     layout->addWidget(widget);
 
     // todo: random seed 
-    randomSeedProp->setValue(this->selectedNode->randomSeed);
+    randomSeedProp->setValue((int)this->selectedNode->randomSeed);
 
-    auto seedWidget = new FloatPropWidget();
+    auto seedWidget = new IntPropWidget();
     seedWidget->setProp(randomSeedProp);
-    connect(seedWidget, &FloatPropWidget::valueChanged, [=](float value) {
+    connect(seedWidget, &IntPropWidget::valueChanged, [=](int value) {
         this->selectedNode->randomSeed = value;
         this->project->markNodeAsDirty(this->selectedNode);
 

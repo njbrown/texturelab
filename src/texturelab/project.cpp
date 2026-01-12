@@ -39,7 +39,7 @@ TextureProjectPtr Project::loadTexture(QString path)
         auto node = lib->createNode(nodeName);
         node->exportName = nodeDef["exportName"].toString("");
         node->id = nodeDef["id"].toString();
-        node->randomSeed = nodeDef["randomSeed"].toInteger(0);
+        node->randomSeed = (long)nodeDef["randomSeed"].toDouble(0);
 
         // get position from scene
         // we're converging the scene and designer props into one

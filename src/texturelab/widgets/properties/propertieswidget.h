@@ -9,7 +9,7 @@ typedef QSharedPointer<TextureProject> TextureProjectPtr;
 typedef QSharedPointer<TextureNode> TextureNodePtr;
 
 class EnumProp;
-class FloatProp;
+class IntProp;
 
 enum class TextureChannel : int;
 
@@ -27,7 +27,7 @@ class PropertiesWidget : public QWidget {
 
     // base props
     EnumProp* textureChannelProp;
-    FloatProp* randomSeedProp;
+    IntProp* randomSeedProp;
 
 public:
     PropertiesWidget();
