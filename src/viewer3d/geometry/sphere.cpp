@@ -29,6 +29,7 @@ Mesh* createSphere(QOpenGLFunctions* gl, float radius, int widthSegments,
     QVector<unsigned int> indices;
     QVector<float> vertices;
     QVector<float> normals;
+    QVector<float> tangents;
     QVector<float> uvs;
 
     for (int iy = 0; iy <= heightSegments; iy++) {
@@ -51,12 +52,12 @@ Mesh* createSphere(QOpenGLFunctions* gl, float radius, int widthSegments,
             auto u = ix / (float)widthSegments;
 
             // vertex
+            auto phi = phiStart + u * phiLength;
+            auto theta = thetaStart + v * thetaLength;
 
-            auto x = -radius * std::cos(phiStart + u * phiLength) *
-                     std::sin(thetaStart + v * thetaLength);
-            auto y = radius * std::cos(thetaStart + v * thetaLength);
-            auto z = radius * std::sin(phiStart + u * phiLength) *
-                     std::sin(thetaStart + v * thetaLength);
+            auto x = -radius * std::cos(phi) * std::sin(theta);
+            auto y = radius * std::cos(theta);
+            auto z = radius * std::sin(phi) * std::sin(theta);
 
             vertices.append({x, y, z});
 
@@ -64,6 +65,11 @@ Mesh* createSphere(QOpenGLFunctions* gl, float radius, int widthSegments,
             QVector3D normal(x, y, z);
             normal.normalize();
             normals.append({normal.x(), normal.y(), normal.z()});
+
+            // tangent (derivative of position with respect to phi)
+            QVector3D tangent(std::sin(phi), 0.0f, std::cos(phi));
+            tangent.normalize();
+            tangents.append({tangent.x(), tangent.y(), tangent.z(), 1.0f});
 
             // uv
 
@@ -127,6 +133,16 @@ Mesh* createSphere(QOpenGLFunctions* gl, float radius, int widthSegments,
     gl->glEnableVertexAttribArray((int)VertexUsage::TexCoord0);
     gl->glVertexAttribPointer((int)VertexUsage::TexCoord0, 2, GL_FLOAT,
                               GL_FALSE, 2 * sizeof(float), BUFFER_OFFSET(0));
+
+    // tangent
+    vbo = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+    vbo->create();
+    vbo->bind();
+    vbo->setUsagePattern(QOpenGLBuffer::StaticDraw);
+    vbo->allocate(tangents.data(), tangents.length() * sizeof(float));
+    gl->glEnableVertexAttribArray((int)VertexUsage::Tangent);
+    gl->glVertexAttribPointer((int)VertexUsage::Tangent, 4, GL_FLOAT, GL_FALSE,
+                              4 * sizeof(float), BUFFER_OFFSET(0));
 
     vao->release();
 
