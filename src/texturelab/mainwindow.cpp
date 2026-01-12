@@ -196,6 +196,37 @@ void MainWindow::setProject(TextureProjectPtr project)
     this->graphWidget->setTextureRenderer(renderer);
     this->view2DWidget->setTextureRenderer(renderer);
 
+    // Update view3D textures when a node's texture is updated
+    connect(renderer, &TextureRenderer::thumbnailGenerated,
+            [this](const QString& nodeId, GLuint texId, const QPixmap&) {
+                if (!this->project)
+                    return;
+
+                auto viewer = this->view3DWidget->viewer;
+                for (auto channel : this->project->textureChannels.keys()) {
+                    if (this->project->textureChannels[channel] == nodeId) {
+                        switch (channel) {
+                        case TextureChannel::Albedo:
+                            viewer->setAlbedoTexture(texId);
+                            break;
+                        case TextureChannel::Normal:
+                            viewer->setNormalTexture(texId);
+                            break;
+                        case TextureChannel::Metalness:
+                            viewer->setMetalnessTexture(texId);
+                            break;
+                        case TextureChannel::Roughness:
+                            viewer->setRoughnessTexture(texId);
+                            break;
+                        default:
+                            break;
+                        }
+                        this->view3DWidget->reRender();
+                        break;
+                    }
+                }
+            });
+
     renderer->update();
 
     // Update window title with project name
