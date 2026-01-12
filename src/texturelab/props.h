@@ -44,6 +44,7 @@ public:
     QString name;
     QString displayName;
     PropType::Value type;
+    int order = 0;// for tracking order in UI
 
     PropertyGroup* group = nullptr;
 

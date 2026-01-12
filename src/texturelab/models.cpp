@@ -175,6 +175,7 @@ IntProp* TextureNode::addIntProp(const QString& name,
     prop->maxValue = maxVal;
     prop->step = increment;
     prop->value = defaultVal;
+    prop->order = props.size();
 
     props[name] = prop;
 
@@ -193,6 +194,7 @@ FloatProp* TextureNode::addFloatProp(const QString& name,
     prop->maxValue = maxVal;
     prop->step = increment;
     prop->value = defaultVal;
+    prop->order = props.size();
 
     props[name] = prop;
 
@@ -206,6 +208,7 @@ BoolProp* TextureNode::addBoolProp(const QString& name,
     prop->name = name;
     prop->displayName = displayName;
     prop->value = defaultVal;
+    prop->order = props.size();
 
     props[name] = prop;
 
@@ -221,6 +224,7 @@ EnumProp* TextureNode::addEnumProp(const QString& name,
     prop->displayName = displayName;
     prop->values = values;
     prop->index = 0;
+    prop->order = props.size();
 
     props[name] = prop;
 
@@ -235,6 +239,7 @@ ColorProp* TextureNode::addColorProp(const QString& name,
     prop->name = name;
     prop->displayName = displayName;
     prop->value = defaultVal;
+    prop->order = props.size();
 
     props[name] = prop;
 
@@ -249,6 +254,7 @@ StringProp* TextureNode::addStringProp(const QString& name,
     prop->name = name;
     prop->displayName = displayName;
     prop->value = defaultVal;
+    prop->order = props.size();
 
     props[name] = prop;
 
@@ -263,6 +269,7 @@ GradientProp* TextureNode::addGradientProp(const QString& name,
     prop->name = name;
     prop->displayName = displayName;
     prop->setValue(QVariant::fromValue(Gradient(defaultVal)));
+    prop->order = props.size();
 
     props[name] = prop;
 
@@ -275,6 +282,7 @@ ImageProp* TextureNode::addImageProp(const QString& name,
     auto prop = new ImageProp();
     prop->name = name;
     prop->displayName = displayName;
+    prop->order = props.size();
 
     props[name] = prop;
 

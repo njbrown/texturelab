@@ -40,8 +40,13 @@ void PropertiesWidget::setSelectedNode(const TextureNodePtr& node)
     // add base props
     this->addBasePropsToLayout();
 
+    // sort props by order
+    QList<Prop*> sortedProps = node->props.values();
+    std::sort(sortedProps.begin(), sortedProps.end(),
+              [](Prop* a, Prop* b) { return a->order < b->order; });
+
     // add new props to layout
-    for (auto prop : node->props) {
+    for (auto prop : sortedProps) {
         switch (prop->type) {
         case PropType::Float: {
             auto widget = new FloatPropWidget();
@@ -185,7 +190,6 @@ void PropertiesWidget::addBasePropsToLayout()
     });
     layout->addWidget(widget);
 
-    // todo: random seed 
     randomSeedProp->setValue((int)this->selectedNode->randomSeed);
 
     auto seedWidget = new IntPropWidget();
