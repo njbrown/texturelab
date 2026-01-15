@@ -265,7 +265,7 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
     shader->setUniformValue("u_ViewProjectionMatrix", projMatrix * viewMatrix);
     shader->setUniformValue("u_ModelMatrix", worldMatrix);
     shader->setUniformValue("u_NormalMatrix", normalMatrix);
-    shader->setUniformValue("u_Exposure", 1.0f);
+    shader->setUniformValue("u_Exposure", 0.8f);
     shader->setUniformValue("u_Camera", camPos);
 
     // default mat props
