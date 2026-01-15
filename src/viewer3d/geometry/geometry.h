@@ -22,6 +22,13 @@ Mesh* createPlane(QOpenGLFunctions* gl, float width = 1, float height = 1,
                   int widthSegments = 1, int heightSegments = 1,
                   PlaneOrientation orientation = PlaneOrientation::XY);
 
+// Create a cylinder mesh with normals, tangents, and UVs
+// https://github.com/mrdoob/three.js/blob/master/src/geometries/CylinderGeometry.js
+Mesh* createCylinder(QOpenGLFunctions* gl, float radiusTop = 1,
+                     float radiusBottom = 1, float height = 1,
+                     int radialSegments = 32, int heightSegments = 1,
+                     bool openEnded = false);
+
 // other sources:
 // https://www.danielsieger.com/blog/2021/03/27/generating-spheres.html
 // https://schneide.blog/2016/07/15/generating-an-icosphere-in-c/

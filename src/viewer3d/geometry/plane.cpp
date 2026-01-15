@@ -91,7 +91,8 @@ Mesh* createPlane(QOpenGLFunctions* gl, float width, float height,
             uvs.append(ix / (float)gridX);
             if (orientation == PlaneOrientation::XZ) {
                 uvs.append(iy / (float)gridY);
-            } else {
+            }
+            else {
                 uvs.append(1.0f - (iy / (float)gridY));
             }
         }

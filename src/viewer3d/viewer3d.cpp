@@ -546,6 +546,10 @@ void Viewer3D::setModel(const QString& modelType)
         // Create a subdivided plane in XZ orientation
         gltfMesh = createPlane(this->gl, 4, 4, 32, 32, PlaneOrientation::XZ);
     }
+    else if (modelType == "cylinder") {
+        // Create a cylinder with height subdivisions for displacement mapping
+        gltfMesh = createCylinder(this->gl, 1, 1, 2, 32, 32, false);
+    }
     else if (modelType == "cube") {
         gltfMesh = loadMeshFromRc(":assets/cube.gltf");
     }

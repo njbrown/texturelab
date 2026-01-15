@@ -34,6 +34,10 @@ View3DWidget::View3DWidget()
     connect(planeXZAction, &QAction::triggered,
             [this]() { this->viewer->setModel("plane_xz"); });
 
+    QAction* cylinderAction = modelMenu->addAction("Cylinder");
+    connect(cylinderAction, &QAction::triggered,
+            [this]() { this->viewer->setModel("cylinder"); });
+
     QAction* cubeAction = modelMenu->addAction("Cube");
     connect(cubeAction, &QAction::triggered,
             [this]() { this->viewer->setModel("cube"); });

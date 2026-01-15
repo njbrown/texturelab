@@ -18,6 +18,7 @@ set(SRCS
     gltf/gltf.cpp
     geometry/sphere.cpp
     geometry/plane.cpp
+    geometry/cylinder.cpp
     renderer/renderer.cpp
 )
 set(HEADERS
