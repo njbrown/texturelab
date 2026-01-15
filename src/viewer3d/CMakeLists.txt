@@ -19,6 +19,7 @@ set(SRCS
     geometry/sphere.cpp
     geometry/plane.cpp
     geometry/cylinder.cpp
+    geometry/cube.cpp
     renderer/renderer.cpp
 )
 set(HEADERS

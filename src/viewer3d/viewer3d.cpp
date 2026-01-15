@@ -551,7 +551,8 @@ void Viewer3D::setModel(const QString& modelType)
         gltfMesh = createCylinder(this->gl, 1, 1, 2, 32, 32, false);
     }
     else if (modelType == "cube") {
-        gltfMesh = loadMeshFromRc(":assets/cube.gltf");
+        // Create a subdivided cube
+        gltfMesh = createCube(this->gl, 2, 2, 2, 32, 32, 32);
     }
     else if (modelType == "cubesphere") {
         // CubeSphere - a sphere with low segments for a more cubic look

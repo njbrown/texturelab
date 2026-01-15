@@ -29,6 +29,12 @@ Mesh* createCylinder(QOpenGLFunctions* gl, float radiusTop = 1,
                      int radialSegments = 32, int heightSegments = 1,
                      bool openEnded = false);
 
+// Create a subdivided cube mesh with normals, tangents, and UVs
+// https://github.com/mrdoob/three.js/blob/master/src/geometries/BoxGeometry.js
+Mesh* createCube(QOpenGLFunctions* gl, float width = 1, float height = 1,
+                 float depth = 1, int widthSegments = 1, int heightSegments = 1,
+                 int depthSegments = 1);
+
 // other sources:
 // https://www.danielsieger.com/blog/2021/03/27/generating-spheres.html
 // https://schneide.blog/2016/07/15/generating-an-icosphere-in-c/
