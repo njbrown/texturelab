@@ -17,6 +17,7 @@ set(SRCS
     shadercache.cpp
     gltf/gltf.cpp
     geometry/sphere.cpp
+    geometry/plane.cpp
     renderer/renderer.cpp
 )
 set(HEADERS

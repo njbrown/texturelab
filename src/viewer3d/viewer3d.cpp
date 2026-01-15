@@ -521,6 +521,9 @@ void Viewer3D::loadEnvironment(const QString path)
 
 void Viewer3D::setModel(const QString& modelType)
 {
+    // Bind OpenGL context
+    makeCurrent();
+
     // Clean up old mesh
     if (gltfMesh) {
         delete gltfMesh;
@@ -531,10 +534,17 @@ void Viewer3D::setModel(const QString& modelType)
     if (modelType == "sphere") {
         gltfMesh = createSphere(this->gl, 2, 64, 64);
     }
-    else if (modelType == "plane") {
-        // Create a plane (using sphere with very low height segments)
-        gltfMesh =
-            createSphere(this->gl, 2, 64, 2, 0, M_PI * 2, M_PI / 2, 0.01);
+    else if (modelType == "plane_xy") {
+        // Create a subdivided plane in XY orientation
+        gltfMesh = createPlane(this->gl, 4, 4, 32, 32, PlaneOrientation::XY);
+    }
+    else if (modelType == "plane_yz") {
+        // Create a subdivided plane in YZ orientation
+        gltfMesh = createPlane(this->gl, 4, 4, 32, 32, PlaneOrientation::YZ);
+    }
+    else if (modelType == "plane_xz") {
+        // Create a subdivided plane in XZ orientation
+        gltfMesh = createPlane(this->gl, 4, 4, 32, 32, PlaneOrientation::XZ);
     }
     else if (modelType == "cube") {
         gltfMesh = loadMeshFromRc(":assets/cube.gltf");
@@ -547,6 +557,9 @@ void Viewer3D::setModel(const QString& modelType)
         // Default to sphere
         gltfMesh = createSphere(this->gl, 2, 64, 64);
     }
+
+    // Release OpenGL context
+    doneCurrent();
 
     this->repaint();
 }

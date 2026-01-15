@@ -22,9 +22,17 @@ View3DWidget::View3DWidget()
     connect(sphereAction, &QAction::triggered,
             [this]() { this->viewer->setModel("sphere"); });
 
-    QAction* planeAction = modelMenu->addAction("Plane");
-    connect(planeAction, &QAction::triggered,
-            [this]() { this->viewer->setModel("plane"); });
+    QAction* planeXYAction = modelMenu->addAction("Plane (XY)");
+    connect(planeXYAction, &QAction::triggered,
+            [this]() { this->viewer->setModel("plane_xy"); });
+
+    QAction* planeYZAction = modelMenu->addAction("Plane (YZ)");
+    connect(planeYZAction, &QAction::triggered,
+            [this]() { this->viewer->setModel("plane_yz"); });
+
+    QAction* planeXZAction = modelMenu->addAction("Plane (XZ)");
+    connect(planeXZAction, &QAction::triggered,
+            [this]() { this->viewer->setModel("plane_xz"); });
 
     QAction* cubeAction = modelMenu->addAction("Cube");
     connect(cubeAction, &QAction::triggered,
