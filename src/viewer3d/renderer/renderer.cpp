@@ -89,6 +89,8 @@ void Renderer::updateMaterial(Material* material)
         flags << "HAS_METALNESS_MAP 1";
     if (material->roughnessMapId != 0)
         flags << "HAS_ROUGHNESS_MAP 1";
+    if (material->heightMapId != 0)
+        flags << "HAS_HEIGHT_MAP 1";
     // flags << "HAS_NORMAL_MAP 1";
     // flags << "HAS_ROUGHNESS_MAP 1";
     // flags << "HAS_METALNESS_MAP 1";
@@ -295,6 +297,12 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
     shader->setUniformValue("u_RoughnessSampler", 3);
     gl->glActiveTexture(GL_TEXTURE3);
     gl->glBindTexture(GL_TEXTURE_2D, mat->roughnessMapId);
+
+    shader->setUniformValue("u_HeightSampler", 4);
+    gl->glActiveTexture(GL_TEXTURE4);
+    gl->glBindTexture(GL_TEXTURE_2D, mat->heightMapId);
+
+    shader->setUniformValue("u_HeightScale", material->heightScale);
 
     // albedo
     // mainProgram->setUniformValue("u_BaseColorFactor", mat->albedo);

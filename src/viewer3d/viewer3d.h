@@ -103,6 +103,9 @@ public:
     void clearMetalnessTexture();
     void setRoughnessTexture(GLuint texId);
     void clearRoughnessTexture();
+    void setHeightTexture(GLuint texId);
+    void clearHeightTexture();
+    void setHeightScale(float scale);
     void resetMaterial();
 
     // void setAlphaTexture(GLuint texId);

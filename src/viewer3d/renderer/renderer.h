@@ -63,6 +63,7 @@ struct Material {
     GLuint normalMapId = 0;
     GLuint metalnessMapId = 0;
     GLuint roughnessMapId = 0;
+    GLuint heightMapId = 0;
 
     // QOpenGLTexture* albedoMap = nullptr;
     // QOpenGLTexture* normalMap = nullptr;
@@ -77,7 +78,7 @@ struct Material {
     float metalness = 0.0;
     float normalIntensity = 1.0;
     float roughness = 0.0;
-    float heightScale = 1.0;
+    float heightScale = 0.1;
     float alpha = 1.0;
     QVector3D emission = QVector3D(1, 1, 1);
 

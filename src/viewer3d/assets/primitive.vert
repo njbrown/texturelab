@@ -5,6 +5,11 @@ uniform mat4 u_ViewProjectionMatrix;
 uniform mat4 u_ModelMatrix;
 uniform mat4 u_NormalMatrix;
 
+#ifdef HAS_HEIGHT_MAP
+uniform sampler2D u_HeightSampler;
+uniform float u_HeightScale;
+#endif
+
 
 in vec3 a_position;
 out vec3 v_Position;
@@ -100,7 +105,19 @@ vec3 getTangent()
 void main()
 {
     gl_PointSize = 1.0f;
-    vec4 pos = u_ModelMatrix * getPosition();
+    
+    vec4 localPos = getPosition();
+    
+#ifdef HAS_HEIGHT_MAP
+#ifdef HAS_TEXCOORD_0_VEC2
+    // Sample height map and displace along normal
+    float height = texture(u_HeightSampler, a_texcoord_0).r;
+    vec3 displacedPos = localPos.xyz + getNormal() * height * u_HeightScale;
+    localPos = vec4(displacedPos, 1.0);
+#endif
+#endif
+    
+    vec4 pos = u_ModelMatrix * localPos;
     v_Position = vec3(pos.xyz) / pos.w;
 
 #ifdef HAS_NORMAL_VEC3

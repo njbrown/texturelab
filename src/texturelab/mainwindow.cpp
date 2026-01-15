@@ -219,6 +219,9 @@ void MainWindow::setProject(TextureProjectPtr project)
                         case TextureChannel::Roughness:
                             viewer->setRoughnessTexture(texId);
                             break;
+                        case TextureChannel::Height:
+                            viewer->setHeightTexture(texId);
+                            break;
                         default:
                             break;
                         }
