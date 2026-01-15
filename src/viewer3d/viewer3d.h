@@ -61,7 +61,7 @@ class Viewer3D : public QOpenGLWidget {
     QVector3D camPos = {0, 0, 0};
     float yaw = 0;
     float pitch = 0;
-    float dragSpeed = 0.5f;
+    float dragSpeed = 0.25f;
 
     bool leftMouseDown = false;
     bool middleMouseDown = false;
