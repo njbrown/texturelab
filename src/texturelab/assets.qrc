@@ -91,6 +91,16 @@
     <file alias="icons/crosshair.svg">../icons/crosshair.svg</file>
     <file alias="icons/copy.svg">../icons/copy.svg</file>
     
+    <!-- Environment HDR files -->
     <file alias="env/cave_wall_1k.hdr">../../public/assets/env/cave_wall/cave_wall_1k.hdr</file>
+    <file alias="env/christmas_1k.hdr">../../public/assets/env/christmas/christmas_photo_studio_01_1k.hdr</file>
+    <file alias="env/dresden_station_night_1k.hdr">../../public/assets/env/dresden_station_night/dresden_station_night_1k.hdr</file>
+    <file alias="env/hansaplatz_1k.hdr">../../public/assets/env/hansaplatz/hansaplatz_1k.hdr</file>
+    <file alias="env/kloppenheim_05_1k.hdr">../../public/assets/env/kloppenheim_05/kloppenheim_05_1k.hdr</file>
+    <file alias="env/modern_buildings_night_1k.hdr">../../public/assets/env/modern_buildings_night/modern_buildings_night_1k.hdr</file>
+    <file alias="env/snowy_park_01_1k.hdr">../../public/assets/env/snowy_park_01/snowy_park_01_1k.hdr</file>
+    <file alias="env/spruit_sunrise_1k.hdr">../../public/assets/env/spruit_sunrise/spruit_sunrise_1k.hdr</file>
+    <file alias="env/studio_small_07_1k.hdr">../../public/assets/env/studio_small_07/studio_small_07_1k.hdr</file>
+    <file alias="env/wide_street_01_1k.hdr">../../public/assets/env/wide_street_01_1k.hdr</file>
     </qresource>
 </RCC>

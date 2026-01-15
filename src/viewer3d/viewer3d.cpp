@@ -1,8 +1,8 @@
 #include "viewer3d.h"
 #include <QMatrix4x4>
 #include <QOpenGLWindow>
-#include <QVector3D>
 #include <QQuaternion>
+#include <QVector3D>
 
 #include <QFile>
 #include <QImage>
@@ -500,4 +500,53 @@ void Viewer3D::clearTextures()
     this->clearNormalTexture();
     this->clearMetalnessTexture();
     this->clearRoughnessTexture();
+}
+
+void Viewer3D::resetCamera()
+{
+    zoom = 7;
+    yaw = 0;
+    pitch = 0;
+    center = QVector3D(0, 0, 0);
+    this->repaint();
+}
+
+void Viewer3D::loadEnvironment(const QString path)
+{
+    if (renderer) {
+        renderer->loadEnvironment(path);
+        this->repaint();
+    }
+}
+
+void Viewer3D::setModel(const QString& modelType)
+{
+    // Clean up old mesh
+    if (gltfMesh) {
+        delete gltfMesh;
+        gltfMesh = nullptr;
+    }
+
+    // Create new mesh based on type
+    if (modelType == "sphere") {
+        gltfMesh = createSphere(this->gl, 2, 64, 64);
+    }
+    else if (modelType == "plane") {
+        // Create a plane (using sphere with very low height segments)
+        gltfMesh =
+            createSphere(this->gl, 2, 64, 2, 0, M_PI * 2, M_PI / 2, 0.01);
+    }
+    else if (modelType == "cube") {
+        gltfMesh = loadMeshFromRc(":assets/cube.gltf");
+    }
+    else if (modelType == "cubesphere") {
+        // CubeSphere - a sphere with low segments for a more cubic look
+        gltfMesh = createSphere(this->gl, 2, 8, 8);
+    }
+    else {
+        // Default to sphere
+        gltfMesh = createSphere(this->gl, 2, 64, 64);
+    }
+
+    this->repaint();
 }

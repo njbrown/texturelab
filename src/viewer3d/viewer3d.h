@@ -112,6 +112,7 @@ public:
     void clearTextures();
     void resetCamera();
     void loadEnvironment(const QString path);
+    void setModel(const QString& modelType);
 
     // sets env to use on load
     void setDefaultEnvironment(const QString path);
