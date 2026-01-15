@@ -95,7 +95,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
                         while (it != this->project->textureChannels.end()) {
                             if (it.value() == node->id) {
                                 it = this->project->textureChannels.erase(it);
-                            } else {
+                            }
+                            else {
                                 ++it;
                             }
                         }
@@ -252,6 +253,39 @@ void MainWindow::setupMenus()
     editMenu->addAction("Paste", []() {});
 
     auto examplesMenu = this->menuBar()->addMenu("Examples");
+
+    // List of example texture files
+    QStringList examples = {"Copper.texture",
+                            "FoilGasket.texture",
+                            "GoldLinedMarbleTiles.texture",
+                            "Grass.texture",
+                            "GrassyRock.texture",
+                            "Grenade.texture",
+                            "Sand.texture",
+                            "Screws.texture",
+                            "WoodenPlanks.texture",
+                            "YellowTiles.texture"};
+
+    for (const QString& example : examples) {
+        // Remove .texture extension for display name
+        QString displayName = example;
+        displayName.replace(".texture", "");
+
+        examplesMenu->addAction(displayName, [this, example]() {
+            QString examplePath = ":examples/" + example;
+
+            // Load the example project
+            auto project = Project::loadTexture(examplePath);
+
+            // Set project name from filename
+            QString projectName = example;
+            projectName.replace(".texture", "");
+            project->name = projectName;
+
+            setProject(project);
+        });
+    }
+
     auto optionsMenu = this->menuBar()->addMenu("Help");
     optionsMenu->addAction("Documentation", []() {});
     optionsMenu->addAction("About", []() {});

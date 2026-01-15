@@ -102,5 +102,17 @@
     <file alias="env/spruit_sunrise_1k.hdr">../../public/assets/env/spruit_sunrise/spruit_sunrise_1k.hdr</file>
     <file alias="env/studio_small_07_1k.hdr">../../public/assets/env/studio_small_07/studio_small_07_1k.hdr</file>
     <file alias="env/wide_street_01_1k.hdr">../../public/assets/env/wide_street_01_1k.hdr</file>
+    
+    <!-- Example texture files -->
+    <file alias="examples/Copper.texture">../../public/assets/examples/Copper.texture</file>
+    <file alias="examples/FoilGasket.texture">../../public/assets/examples/FoilGasket.texture</file>
+    <file alias="examples/GoldLinedMarbleTiles.texture">../../public/assets/examples/GoldLinedMarbleTiles.texture</file>
+    <file alias="examples/Grass.texture">../../public/assets/examples/Grass.texture</file>
+    <file alias="examples/GrassyRock.texture">../../public/assets/examples/GrassyRock.texture</file>
+    <file alias="examples/Grenade.texture">../../public/assets/examples/Grenade.texture</file>
+    <file alias="examples/Sand.texture">../../public/assets/examples/Sand.texture</file>
+    <file alias="examples/Screws.texture">../../public/assets/examples/Screws.texture</file>
+    <file alias="examples/WoodenPlanks.texture">../../public/assets/examples/WoodenPlanks.texture</file>
+    <file alias="examples/YellowTiles.texture">../../public/assets/examples/YellowTiles.texture</file>
     </qresource>
 </RCC>
