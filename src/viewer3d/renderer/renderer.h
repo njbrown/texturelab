@@ -90,6 +90,7 @@ public:
     IblSampler* iblSampler;
     ShaderCache* shaderCache;
     QOpenGLFunctions* gl;
+    QOpenGLShaderProgram* skyboxShader = nullptr;
 
     void init(QOpenGLFunctions* gl);
     void loadEnvironment(const QString& path);
@@ -101,6 +102,9 @@ public:
                         const QMatrix4x4& worldMatrix,
                         const QMatrix4x4& viewMatrix,
                         const QMatrix4x4& projMatrix);
+
+    void renderSkybox(Mesh* mesh, const QMatrix4x4& viewMatrix,
+                      const QMatrix4x4& projMatrix);
 };
 
 Mesh* loadMeshFromRc(const QString& path);

@@ -17,5 +17,7 @@
     <file>assets/punctual.glsl</file>
     <file>assets/textures.glsl</file>
     <file>assets/tonemapping.glsl</file>
+    <file>assets/skybox.vert</file>
+    <file>assets/skybox.frag</file>
     </qresource>
 </RCC>

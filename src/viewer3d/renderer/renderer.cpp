@@ -394,3 +394,57 @@ bool loadGltfModel(tinygltf::Model& model, const QString& filename)
 
     return res;
 }
+
+void Renderer::renderSkybox(Mesh* mesh, const QMatrix4x4& viewMatrix,
+                            const QMatrix4x4& projMatrix)
+{
+    // Create skybox shader if it doesn't exist
+    if (!skyboxShader) {
+        skyboxShader = new QOpenGLShaderProgram();
+
+        QFile vertFile(":assets/skybox.vert");
+        QFile fragFile(":assets/skybox.frag");
+
+        if (vertFile.open(QIODevice::ReadOnly) &&
+            fragFile.open(QIODevice::ReadOnly)) {
+            QString vertSource = vertFile.readAll();
+            QString fragSource = fragFile.readAll();
+
+            skyboxShader->addShaderFromSourceCode(QOpenGLShader::Vertex,
+                                                  vertSource);
+            skyboxShader->addShaderFromSourceCode(QOpenGLShader::Fragment,
+                                                  fragSource);
+            skyboxShader->bindAttributeLocation("a_position",
+                                                (int)VertexUsage::Position);
+            skyboxShader->link();
+        }
+    }
+
+    if (!skyboxShader || !iblSampler || !mesh)
+        return;
+
+    skyboxShader->bind();
+
+    // Set uniforms
+    QMatrix4x4 modelMatrix;
+    modelMatrix.setToIdentity();
+
+    skyboxShader->setUniformValue("u_modelMatrix", modelMatrix);
+    skyboxShader->setUniformValue("u_viewMatrix", viewMatrix);
+    skyboxShader->setUniformValue("u_projectionMatrix", projMatrix);
+
+    // Bind environment cubemap
+    gl->glActiveTexture(GL_TEXTURE0);
+    gl->glBindTexture(GL_TEXTURE_CUBE_MAP, iblSampler->cubemapTextureID);
+    skyboxShader->setUniformValue("u_environmentMap", 0);
+
+    // Render the skybox mesh
+    mesh->vao->bind();
+    mesh->indexBuffer->bind();
+
+    gl->glDrawElements(mesh->primitiveMode, mesh->numElements, mesh->indexType,
+                       BUFFER_OFFSET(mesh->indexByteOffset));
+
+    mesh->vao->release();
+    skyboxShader->release();
+}

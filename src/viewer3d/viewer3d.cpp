@@ -139,10 +139,9 @@ void Viewer3D::paintGL()
     if (skydomeMesh) {
         gl->glDepthFunc(GL_LEQUAL);  // Change depth function for skybox
         gl->glDisable(GL_CULL_FACE); // Render from inside
-        renderer->renderGltfMesh(skydomeMesh, material, camPos, worldMatrix,
-                                 viewMatrix, projMatrix);
+        renderer->renderSkybox(skydomeMesh, viewMatrix, projMatrix);
         gl->glEnable(GL_CULL_FACE);
-        gl->glDepthFunc(GL_LESS);    // Reset depth function
+        gl->glDepthFunc(GL_LESS); // Reset depth function
     }
 
     // render gltf mesh
