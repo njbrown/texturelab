@@ -51,15 +51,17 @@ Mesh* createCylinder(QOpenGLFunctions* gl, float radiusTop, float radiusBottom,
             vertices.append(vy);
             vertices.append(vz);
 
-            // Normal
-            QVector3D normal(sinTheta, 0.0f, cosTheta);
+            // Normal (accounting for cone slope)
+            float slope = std::atan2(radiusBottom - radiusTop, height);
+            QVector3D normal(sinTheta * std::cos(slope), std::sin(slope),
+                             cosTheta * std::cos(slope));
             normal.normalize();
             normals.append(normal.x());
             normals.append(normal.y());
             normals.append(normal.z());
 
-            // Tangent
-            QVector3D tangent(-cosTheta, 0.0f, sinTheta);
+            // Tangent (perpendicular to normal, going around the cylinder)
+            QVector3D tangent(cosTheta, 0.0f, -sinTheta);
             tangent.normalize();
             tangents.append(tangent.x());
             tangents.append(tangent.y());
