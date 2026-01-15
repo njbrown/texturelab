@@ -88,6 +88,9 @@ void Viewer3D::initializeGL()
     gltfMesh = createSphere(this->gl, 2, 64, 64);
     this->material = mat;
 
+    // Create skydome for rendering environment
+    skydomeMesh = createSkydome(this->gl, 100, 32, 16);
+
     // setup matrices
     worldMatrix.setToIdentity();
 
@@ -131,6 +134,16 @@ void Viewer3D::paintGL()
     // gl->glDisable(GL_CULL_FACE);
 
     vao->bind();
+
+    // Render skydome first (as background)
+    if (skydomeMesh) {
+        gl->glDepthFunc(GL_LEQUAL);  // Change depth function for skybox
+        gl->glDisable(GL_CULL_FACE); // Render from inside
+        renderer->renderGltfMesh(skydomeMesh, material, camPos, worldMatrix,
+                                 viewMatrix, projMatrix);
+        gl->glEnable(GL_CULL_FACE);
+        gl->glDepthFunc(GL_LESS);    // Reset depth function
+    }
 
     // render gltf mesh
     renderer->renderGltfMesh(gltfMesh, material, camPos, worldMatrix,

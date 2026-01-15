@@ -36,6 +36,7 @@ class Viewer3D : public QOpenGLWidget {
     Renderer* renderer;
     Material* material;
     Mesh* gltfMesh;
+    Mesh* skydomeMesh;
     QString defaultEnvPath;
 
     QOpenGLFunctions* gl = nullptr;

@@ -20,6 +20,7 @@ set(SRCS
     geometry/plane.cpp
     geometry/cylinder.cpp
     geometry/cube.cpp
+    geometry/skydome.cpp
     renderer/renderer.cpp
 )
 set(HEADERS

@@ -35,6 +35,10 @@ Mesh* createCube(QOpenGLFunctions* gl, float width = 1, float height = 1,
                  float depth = 1, int widthSegments = 1, int heightSegments = 1,
                  int depthSegments = 1);
 
+// Create a skydome (inverted sphere) for rendering environment maps
+Mesh* createSkydome(QOpenGLFunctions* gl, float radius = 100,
+                    int widthSegments = 32, int heightSegments = 16);
+
 // other sources:
 // https://www.danielsieger.com/blog/2021/03/27/generating-spheres.html
 // https://schneide.blog/2016/07/15/generating-an-icosphere-in-c/
