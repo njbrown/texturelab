@@ -106,7 +106,7 @@ Mesh* createCylinder(QOpenGLFunctions* gl, float radiusTop, float radiusBottom,
         vertices.append(0.0f);
 
         normals.append(0.0f);
-        normals.append(1.0f);
+        normals.append(-1.0f);
         normals.append(0.0f);
 
         tangents.append(1.0f);
@@ -132,7 +132,7 @@ Mesh* createCylinder(QOpenGLFunctions* gl, float radiusTop, float radiusBottom,
             vertices.append(radiusTop * cosTheta);
 
             normals.append(0.0f);
-            normals.append(1.0f);
+            normals.append(-1.0f);
             normals.append(0.0f);
 
             tangents.append(1.0f);
@@ -167,7 +167,7 @@ Mesh* createCylinder(QOpenGLFunctions* gl, float radiusTop, float radiusBottom,
         vertices.append(0.0f);
 
         normals.append(0.0f);
-        normals.append(-1.0f);
+        normals.append(1.0f);
         normals.append(0.0f);
 
         tangents.append(1.0f);
@@ -193,7 +193,7 @@ Mesh* createCylinder(QOpenGLFunctions* gl, float radiusTop, float radiusBottom,
             vertices.append(radiusBottom * cosTheta);
 
             normals.append(0.0f);
-            normals.append(-1.0f);
+            normals.append(1.0f);
             normals.append(0.0f);
 
             tangents.append(1.0f);
