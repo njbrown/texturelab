@@ -83,7 +83,7 @@ void Viewer3D::initializeGL()
     auto mat = this->loadMaterial();
     // mat->albedo = QVector4D(0.7, 0.7, 0.7, 1.0);
     mat->roughness = 1.0;
-    mat->metalness = 0.0;
+    mat->metalness = 1.0;
     // gltfMesh = loadMeshFromRc(":assets/cube.gltf");
     gltfMesh = createSphere(this->gl, 2, 64, 64);
     this->material = mat;

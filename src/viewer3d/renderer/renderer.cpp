@@ -104,13 +104,17 @@ void Renderer::updateMaterial(Material* material)
     flags << "ALPHAMODE_BLEND 2";
     flags << "ALPHAMODE ALPHAMODE_OPAQUE";
 
-    // tone mapping
-    // flags << "TONEMAP_ACES_NARKOWICZ 1";
+    // tone mapping (match 3js as much as we can)
+    flags << "TONEMAP_ACES_HILL 1";
+    flags << "TONEMAP_ACES_HILL_EXPOSURE_BOOST 1";
 
     // build shader
     auto vertShader =
         shaderCache->generateShaderSource("primitive.vert", flags);
     auto fragShader = shaderCache->generateShaderSource("pbr.frag", flags);
+
+    // qDebug() << "Generated shader with flags:" << flags;
+    // qDebug() << fragShader;
 
     auto shader = new QOpenGLShaderProgram;
     shader->bind();
@@ -265,7 +269,7 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
     shader->setUniformValue("u_ViewProjectionMatrix", projMatrix * viewMatrix);
     shader->setUniformValue("u_ModelMatrix", worldMatrix);
     shader->setUniformValue("u_NormalMatrix", normalMatrix);
-    shader->setUniformValue("u_Exposure", 0.8f);
+    shader->setUniformValue("u_Exposure", 1.0f);
     shader->setUniformValue("u_Camera", camPos);
 
     // default mat props
