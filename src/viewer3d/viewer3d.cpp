@@ -82,8 +82,8 @@ void Viewer3D::initializeGL()
     // mesh = loadMesh();
     auto mat = this->loadMaterial();
     // mat->albedo = QVector4D(0.7, 0.7, 0.7, 1.0);
-    mat->roughness = 1.0;
-    mat->metalness = 1.0;
+    mat->roughness = 0.5; // Three.js default
+    mat->metalness = 0.0; // Three.js default
     // gltfMesh = loadMeshFromRc(":assets/cube.gltf");
     gltfMesh = createSphere(this->gl, 2, 64, 64);
     this->material = mat;

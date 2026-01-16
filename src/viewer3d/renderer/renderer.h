@@ -75,10 +75,10 @@ struct Material {
     // QOpenGLTexture* alphaMap = nullptr;
 
     QVector4D albedo = QVector4D(1, 1, 1, 1);
-    float metalness = 1.0;
+    float metalness = 0.0; // Three.js default
     float normalIntensity = 1.0;
-    float roughness = 1.0;
-    float heightScale = 0.1;
+    float roughness = 0.5;   // Three.js default
+    float heightScale = 0.1; // Three.js displacementScale
     float alpha = 1.0;
     QVector3D emission = QVector3D(1, 1, 1);
 

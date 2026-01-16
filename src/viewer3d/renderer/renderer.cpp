@@ -274,8 +274,13 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
 
     // default mat props
     shader->setUniformValue("u_BaseColorFactor", material->albedo);
-    shader->setUniformValue("u_MetallicFactor", material->metalness);
-    shader->setUniformValue("u_RoughnessFactor", material->roughness);
+    // Match Three.js: factor 1.0 when map present, otherwise use material value
+    shader->setUniformValue("u_MetallicFactor", material->metalnessMapId != 0
+                                                    ? 1.0f
+                                                    : material->metalness);
+    shader->setUniformValue("u_RoughnessFactor", material->roughnessMapId != 0
+                                                     ? 1.0f
+                                                     : material->roughness);
     shader->setUniformValue("u_EmissiveStrength", 0.f);
     shader->setUniformValue("u_NormalScale", material->normalIntensity);
     // uv sets
