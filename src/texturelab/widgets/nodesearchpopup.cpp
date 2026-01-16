@@ -142,8 +142,42 @@ bool NodeSearchPopup::eventFilter(QObject* obj, QEvent* event)
     if (obj == searchInput && event->type() == QEvent::KeyPress) {
         QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
 
-        // Prevent arrow keys from moving cursor in search input
-        if (keyEvent->key() == Qt::Key_Up || keyEvent->key() == Qt::Key_Down) {
+        // Handle arrow keys to navigate the list
+        if (keyEvent->key() == Qt::Key_Up) {
+            // Navigate up in the list (only through visible items)
+            int currentRow = itemList->currentRow();
+            for (int i = currentRow - 1; i >= 0; i--) {
+                if (!itemList->item(i)->isHidden()) {
+                    itemList->setCurrentRow(i);
+                    break;
+                }
+            }
+            return true;
+        }
+        else if (keyEvent->key() == Qt::Key_Down) {
+            // Navigate down in the list (only through visible items)
+            int currentRow = itemList->currentRow();
+            for (int i = currentRow + 1; i < itemList->count(); i++) {
+                if (!itemList->item(i)->isHidden()) {
+                    itemList->setCurrentRow(i);
+                    break;
+                }
+            }
+            return true;
+        }
+        else if (keyEvent->key() == Qt::Key_Return ||
+                 keyEvent->key() == Qt::Key_Enter) {
+            // Add the selected item
+            QString itemName = getSelectedItemName();
+            if (!itemName.isEmpty()) {
+                emit itemSelected(itemName, showPosition);
+                hide();
+            }
+            return true;
+        }
+        else if (keyEvent->key() == Qt::Key_Escape) {
+            // Close the popup
+            hide();
             return true;
         }
     }
