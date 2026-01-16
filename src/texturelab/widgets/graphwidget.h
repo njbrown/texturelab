@@ -5,6 +5,7 @@
 
 class QDragEnterEvent;
 class TextureRenderer;
+class NodeSearchPopup;
 
 namespace nodegraph {
 class NodeGraph;
@@ -30,6 +31,7 @@ public:
     void dragEnterEvent(QDragEnterEvent* evt);
     void dragMoveEvent(QDragMoveEvent* event);
     void dropEvent(QDropEvent* event);
+    void keyPressEvent(QKeyEvent* event) override;
 
     void setTextureRenderer(TextureRenderer* renderer);
 
@@ -42,6 +44,11 @@ public:
 
 protected:
     void addNode(const TextureNodePtr& node);
+    void addNodeFromSearch(const QString& nodeName, const QPoint& position);
+
+private:
+    NodeSearchPopup* searchPopup;
+    QPoint lastMousePos;
 
 signals:
     void nodeSelectionChanged(const TextureNodePtr& node);

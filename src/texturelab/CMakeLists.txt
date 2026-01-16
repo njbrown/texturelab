@@ -119,6 +119,8 @@ set(PROJECT_SOURCES
         ./widgets/graphwidget.cpp
         ./widgets/librarywidget.h
         ./widgets/librarywidget.cpp
+        ./widgets/nodesearchpopup.h
+        ./widgets/nodesearchpopup.cpp
         ./widgets/properties/propertieswidget.h
         ./widgets/properties/propertieswidget.cpp
         ./widgets/properties/propwidgets.h

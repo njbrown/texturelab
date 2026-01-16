@@ -1,9 +1,12 @@
 #include "graphwidget.h"
+#include <QCursor>
 #include <QDragEnterEvent>
+#include <QKeyEvent>
 #include <QMainWindow>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMimeData>
+#include <QMouseEvent>
 #include <QOpenGLContext>
 #include <QToolBar>
 
@@ -14,6 +17,7 @@
 #include "libraries/library.h"
 #include "librarywidget.h"
 #include "nodegraph.h"
+#include "nodesearchpopup.h"
 
 GraphWidget::GraphWidget() : QMainWindow(nullptr)
 {
@@ -21,6 +25,15 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
     this->setCentralWidget(graph);
 
     this->setAcceptDrops(true);
+
+    // Create search popup
+    searchPopup = new NodeSearchPopup(this);
+    connect(searchPopup, &NodeSearchPopup::itemSelected, this,
+            &GraphWidget::addNodeFromSearch);
+
+    // Enable mouse tracking to capture cursor position
+    setMouseTracking(true);
+    graph->setMouseTracking(true);
 
     connect(graph, &nodegraph::NodeGraph::connectionAdded,
             [=](nodegraph::ConnectionPtr con) {
@@ -111,6 +124,11 @@ void GraphWidget::setTextureProject(TextureProjectPtr project)
     this->scene = scene;
     this->project = project;
 
+    // Set library for search popup
+    if (project && project->library) {
+        searchPopup->setLibrary(project->library);
+    }
+
     // add nodes
     for (auto node : project->nodes) {
         this->addNode(node);
@@ -198,4 +216,41 @@ void GraphWidget::setTextureRenderer(TextureRenderer* renderer)
                     node->setThumbnail(pixmap);
                 }
             });
+}
+
+void GraphWidget::keyPressEvent(QKeyEvent* event)
+{
+    if (event->key() == Qt::Key_Space) {
+        // Show the search popup at the current mouse cursor position
+        QPoint globalPos = QCursor::pos();
+        searchPopup->show(globalPos);
+        event->accept();
+    }
+    else {
+        QMainWindow::keyPressEvent(event);
+    }
+}
+
+void GraphWidget::addNodeFromSearch(const QString& nodeName,
+                                     const QPoint& position)
+{
+    if (!project || !project->library)
+        return;
+
+    // Create node from library
+    auto node = project->library->createNode(nodeName);
+
+    // Convert global position to scene position
+    QPoint localPos = graph->mapFromGlobal(position);
+    auto scenePos = graph->mapToScene(localPos);
+    node->pos = QVector2D(scenePos) - QVector2D(50, 50);
+
+    // Add to project and scene
+    this->project->addNode(node);
+    this->addNode(node);
+
+    // Update renderer
+    if (this->renderer) {
+        this->renderer->update();
+    }
 }
