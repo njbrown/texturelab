@@ -32,7 +32,7 @@ LibraryWidget::LibraryWidget() : QWidget()
     searchBar->setPlaceholderText("search");
     searchBar->setAlignment(Qt::AlignLeft);
     connect(searchBar, &QLineEdit::textChanged,
-            [=](QString text) { qDebug() << "search changed"; });
+            this, &LibraryWidget::filterList);
 
     this->layout()->addWidget(searchBar);
 
@@ -67,6 +67,20 @@ void LibraryWidget::setLibrary(Library* lib)
         item->setIcon(libraryItem.icon);
 
         this->listWidget->addItem(item);
+    }
+}
+
+void LibraryWidget::filterList(const QString& text)
+{
+    QString searchText = text.toLower();
+
+    for (int i = 0; i < listWidget->count(); i++) {
+        QListWidgetItem* item = listWidget->item(i);
+        QString itemName = item->data(Qt::DisplayRole).toString().toLower();
+
+        // Show item if search text is empty or item name contains search text
+        bool matches = searchText.isEmpty() || itemName.contains(searchText);
+        item->setHidden(!matches);
     }
 }
 

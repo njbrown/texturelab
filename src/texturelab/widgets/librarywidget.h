@@ -10,13 +10,16 @@ class QLineEdit;
 
 // https://stackoverflow.com/questions/37331270/how-to-create-grid-style-qlistwidget
 class LibraryWidget : public QWidget {
-    // Q_OBJECT
+    Q_OBJECT
 public:
     LibraryWidget();
     void setLibrary(Library* lib);
 
     LibraryListWidget* listWidget;
     QLineEdit* searchBar;
+
+private slots:
+    void filterList(const QString& text);
 };
 
 class LibraryItemMimeData : public QMimeData {
