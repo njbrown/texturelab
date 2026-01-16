@@ -45,4 +45,8 @@ protected:
     // }
 
     QMimeData* mimeData(const QList<QListWidgetItem*>& items) const;
+    void resizeEvent(QResizeEvent* event) override;
+
+private:
+    void updateGridSize();
 };

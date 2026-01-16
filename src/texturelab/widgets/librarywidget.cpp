@@ -8,6 +8,7 @@
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QMimeData>
+#include <QResizeEvent>
 #include <QScrollBar>
 #include <QVBoxLayout>
 
@@ -114,6 +115,22 @@ LibraryListWidget::LibraryListWidget() : QListWidget()
         "QListView::item{ border-radius: 2px; border: 0px solid rgba(0,0,0,1); "
         "margin-left: 6px;  }"
         "QListView::item:hover{border: 1px solid rgba(50,150,250,1); }");
+}
+
+void LibraryListWidget::resizeEvent(QResizeEvent* event)
+{
+    QListWidget::resizeEvent(event);
+    updateGridSize();
+}
+
+void LibraryListWidget::updateGridSize()
+{
+    int itemSize = 90;
+    int availableWidth = viewport()->width() - verticalScrollBar()->width();
+    int itemsPerRow = qMax(1, availableWidth / itemSize);
+    int adjustedItemWidth = availableWidth / itemsPerRow;
+
+    setGridSize(QSize(adjustedItemWidth, itemSize));
 }
 
 QMimeData*
