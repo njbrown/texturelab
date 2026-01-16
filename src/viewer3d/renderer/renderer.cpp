@@ -98,6 +98,12 @@ void Renderer::updateMaterial(Material* material)
     // flags << "HAS_EMISSIVE_MAP 1";
     flags << "MATERIAL_METALLICROUGHNESS 1"; // MR mode
 
+    // Enable punctual lighting (matches Three.js) - toggleable
+    if (this->usePunctualLights) {
+        flags << "USE_PUNCTUAL 1";
+        flags << "LIGHT_COUNT 3";
+    }
+
     // blending
     flags << "ALPHAMODE_OPAQUE 0";
     flags << "ALPHAMODE_MASK 1";
@@ -353,6 +359,44 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
     envRot.setToIdentity();
     shader->setUniformValue("u_EnvRotation", envRot);
     shader->setUniformValue("u_EnvIntensity", 1.0f);
+
+    // Setup punctual lights (matches Three.js setupLighting) - conditional
+    if (this->usePunctualLights) {
+        // Three.js uses brightness = 2 multiplier
+        // Back light: 0.225 * 2 = 0.45 at (2.6, 1, 3)
+        shader->setUniformValue("u_Lights[0].direction", QVector3D(0, 0, 0));
+        shader->setUniformValue("u_Lights[0].range", -1.0f); // unlimited
+        shader->setUniformValue("u_Lights[0].color",
+                                QVector3D(1, 1, 1)); // white
+        shader->setUniformValue("u_Lights[0].intensity", 0.45f);
+        shader->setUniformValue("u_Lights[0].position",
+                                QVector3D(2.6f, 1.0f, 3.0f));
+        shader->setUniformValue("u_Lights[0].innerConeCos", 0.0f);
+        shader->setUniformValue("u_Lights[0].outerConeCos", 0.0f);
+        shader->setUniformValue("u_Lights[0].type", 0); // Directional
+
+        // Key light: 0.375 * 2 = 0.75 at (-2, -1, 0)
+        shader->setUniformValue("u_Lights[1].direction", QVector3D(0, 0, 0));
+        shader->setUniformValue("u_Lights[1].range", -1.0f);
+        shader->setUniformValue("u_Lights[1].color", QVector3D(1, 1, 1));
+        shader->setUniformValue("u_Lights[1].intensity", 0.75f);
+        shader->setUniformValue("u_Lights[1].position",
+                                QVector3D(-2.0f, -1.0f, 0.0f));
+        shader->setUniformValue("u_Lights[1].innerConeCos", 0.0f);
+        shader->setUniformValue("u_Lights[1].outerConeCos", 0.0f);
+        shader->setUniformValue("u_Lights[1].type", 0);
+
+        // Fill light: 0.75 * 2 = 1.5 at (3, 3, 2)
+        shader->setUniformValue("u_Lights[2].direction", QVector3D(0, 0, 0));
+        shader->setUniformValue("u_Lights[2].range", -1.0f);
+        shader->setUniformValue("u_Lights[2].color", QVector3D(1, 1, 1));
+        shader->setUniformValue("u_Lights[2].intensity", 1.5f);
+        shader->setUniformValue("u_Lights[2].position",
+                                QVector3D(3.0f, 3.0f, 2.0f));
+        shader->setUniformValue("u_Lights[2].innerConeCos", 0.0f);
+        shader->setUniformValue("u_Lights[2].outerConeCos", 0.0f);
+        shader->setUniformValue("u_Lights[2].type", 0);
+    }
 
     // render mesh
     mesh->vao->bind();

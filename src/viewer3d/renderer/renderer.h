@@ -92,6 +92,7 @@ public:
     ShaderCache* shaderCache;
     QOpenGLFunctions* gl;
     QOpenGLShaderProgram* skyboxShader = nullptr;
+    bool usePunctualLights = true; // Toggle punctual lighting (Three.js style)
 
     void init(QOpenGLFunctions* gl);
     void loadEnvironment(const QString& path);
