@@ -415,6 +415,8 @@ void IblSampler::applyFilter(int distribution, float roughness,
         shader->setUniformValue("u_distribution", distribution);
         shader->setUniformValue("u_currentFace", i);
         shader->setUniformValue("u_isGeneratingLUT", 0);
+        shader->setUniformValue("u_floatTexture", 1);
+        shader->setUniformValue("u_intensityScale", (GLfloat)1.0);
 
         vbo->bind();
         gl->glEnableVertexAttribArray((int)VertexUsage::Position);
@@ -494,6 +496,8 @@ void IblSampler::sampleLut(int distribution, int targetTextureId,
     shader->setUniformValue("u_distribution", distribution);
     shader->setUniformValue("u_currentFace", 0);
     shader->setUniformValue("u_isGeneratingLUT", 1);
+    shader->setUniformValue("u_floatTexture", 1);
+    shader->setUniformValue("u_intensityScale", (GLfloat)1.0);
 
     vbo->bind();
     gl->glEnableVertexAttribArray((int)VertexUsage::Position);
