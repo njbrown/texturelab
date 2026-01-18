@@ -46,7 +46,8 @@ float getSpotAttenuation(vec3 pointToLight, vec3 spotDirection, float outerConeC
     {
         if (actualCos < innerConeCos)
         {
-            return smoothstep(outerConeCos, innerConeCos, actualCos);
+            float angularAttenuation = (actualCos - outerConeCos) / (innerConeCos - outerConeCos);
+            return angularAttenuation * angularAttenuation;
         }
         return 1.0;
     }
@@ -97,7 +98,7 @@ vec3 getPunctualRadianceClearCoat(vec3 clearcoatNormal, vec3 v, vec3 l, vec3 h, 
     float NdotL = clampedDot(clearcoatNormal, l);
     float NdotV = clampedDot(clearcoatNormal, v);
     float NdotH = clampedDot(clearcoatNormal, h);
-    return NdotL * BRDF_specularGGX(f0, f90, clearcoatRoughness * clearcoatRoughness, 1.0, VdotH, NdotL, NdotV, NdotH);
+    return NdotL * BRDF_specularGGX(clearcoatRoughness * clearcoatRoughness, NdotL, NdotV, NdotH);
 }
 
 
@@ -118,8 +119,7 @@ vec3 applyVolumeAttenuation(vec3 radiance, float transmissionDistance, vec3 atte
     else
     {
         // Compute light attenuation using Beer's law.
-        vec3 attenuationCoefficient = -log(attenuationColor) / attenuationDistance;
-        vec3 transmittance = exp(-attenuationCoefficient * transmissionDistance); // Beer's law
+        vec3 transmittance = pow(attenuationColor, vec3(transmissionDistance / attenuationDistance));
         return transmittance * radiance;
     }
 }

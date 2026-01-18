@@ -373,3 +373,56 @@ vec2 getIridescenceThicknessUV()
 }
 
 #endif
+
+
+// Diffuse Transmission
+
+#ifdef MATERIAL_DIFFUSE_TRANSMISSION
+
+uniform sampler2D u_DiffuseTransmissionSampler;
+uniform int u_DiffuseTransmissionUVSet;
+uniform mat3 u_DiffuseTransmissionUVTransform;
+
+uniform sampler2D u_DiffuseTransmissionColorSampler;
+uniform int u_DiffuseTransmissionColorUVSet;
+uniform mat3 u_DiffuseTransmissionColorUVTransform;
+
+
+vec2 getDiffuseTransmissionUV()
+{
+    vec3 uv = vec3(u_DiffuseTransmissionUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);
+#ifdef HAS_DIFFUSETRANSMISSION_UV_TRANSFORM
+    uv = u_DiffuseTransmissionUVTransform * uv;
+#endif
+    return uv.xy;
+}
+
+vec2 getDiffuseTransmissionColorUV()
+{
+    vec3 uv = vec3(u_DiffuseTransmissionColorUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);
+#ifdef HAS_DIFFUSETRANSMISSIONCOLOR_UV_TRANSFORM
+    uv = u_DiffuseTransmissionColorUVTransform * uv;
+#endif
+    return uv.xy;
+}
+
+#endif
+
+// Anisotropy
+
+#ifdef MATERIAL_ANISOTROPY
+
+uniform sampler2D u_AnisotropySampler;
+uniform int u_AnisotropyUVSet;
+uniform mat3 u_AnisotropyUVTransform;
+
+vec2 getAnisotropyUV()
+{
+    vec3 uv = vec3(u_AnisotropyUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);
+#ifdef HAS_ANISOTROPY_UV_TRANSFORM
+    uv = u_AnisotropyUVTransform * uv;
+#endif
+    return uv.xy;
+}
+
+#endif
