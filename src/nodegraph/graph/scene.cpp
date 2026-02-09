@@ -1,4 +1,5 @@
 #include "scene.h"
+#include "frame.h"
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsView>
@@ -129,6 +130,22 @@ ConnectionPtr Scene::connectNodes(NodePtr leftNode, QString leftOutputName,
 }
 
 NodePtr Scene::getNodeById(QString id) { return nodes[id]; }
+
+void Scene::addFrame(FramePtr frame)
+{
+    this->addItem(frame.data());
+    frames[frame->id()] = frame;
+}
+
+FramePtr Scene::getFrameById(QString id) { return frames[id]; }
+
+void Scene::removeFrame(FramePtr frame)
+{
+    frame->hide();
+    this->removeItem(frame.data());
+    frames.remove(frame->id());
+    frame->show();
+}
 
 void Scene::removeNode(NodePtr node)
 {

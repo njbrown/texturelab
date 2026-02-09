@@ -23,17 +23,20 @@ class Node;
 class Port;
 class Connection;
 class Scene;
+class Frame;
 
 typedef QSharedPointer<Node> NodePtr;
 typedef QSharedPointer<Connection> ConnectionPtr;
 typedef QSharedPointer<Port> PortPtr;
 typedef QSharedPointer<Scene> ScenePtr;
+typedef QSharedPointer<Frame> FramePtr;
 
 enum class SceneItemType : int { Node = 1, Port = 2, Connection = 3 };
 
 class Scene : public QGraphicsScene, public QEnableSharedFromThis<Scene> {
 public:
     QMap<QString, NodePtr> nodes;
+    QMap<QString, FramePtr> frames;
     QString id;
 
     Scene();
@@ -41,6 +44,10 @@ public:
 
     void addNode(NodePtr node);
     NodePtr getNodeById(QString id);
+
+    void addFrame(FramePtr frame);
+    FramePtr getFrameById(QString id);
+    void removeFrame(FramePtr frame);
 
     ConnectionPtr connectNodes(NodePtr leftNode, QString leftOutputName,
                                NodePtr rightNode, QString rightInputName);

@@ -1,4 +1,5 @@
 #include "graph/scene.h"
+#include "graph/frame.h"
 #include "nodegraph.h"
 #include <QApplication>
 #include <QMainWindow>
@@ -44,6 +45,19 @@ int main(int argc, char *argv[]) {
   node2->addOutPort("result");
   node2->setPos(320, 0);
   scene->addNode(node2);
+
+  // Create a frame to group the first two nodes
+  FramePtr frame = Frame::create();
+  frame->setTitle("Processing Group");
+  frame->setColor(QColor(50, 20, 80));  // Purple-ish color
+  frame->setFrameRect(QRectF(-20, -20, 400, 250));
+  frame->setPos(0, 0);
+
+  // Add nodes to the frame so they move together
+  frame->addNode(node);
+  frame->addNode(outputNode);
+
+  scene->addFrame(frame);
 
   w.resize(800, 600);
 
