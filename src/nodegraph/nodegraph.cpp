@@ -175,6 +175,7 @@ void NodeGraph::mouseMoveEvent(QMouseEvent* event)
     if (event->buttons() == Qt::MiddleButton) {
         QPointF difference = _clickPos - mapToScene(event->pos());
         setSceneRect(sceneRect().translated(difference.x(), difference.y()));
+        _clickPos = mapToScene(event->pos()); // Update reference point to maintain coordinate consistency
     }
     QGraphicsView::mouseMoveEvent(event);
 }
