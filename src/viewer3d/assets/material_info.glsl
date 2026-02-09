@@ -209,9 +209,14 @@ vec4 getBaseColor()
 #endif
 
 #if defined(MATERIAL_SPECULARGLOSSINESS) && defined(HAS_DIFFUSE_MAP)
-    baseColor *= texture(u_DiffuseSampler, getDiffuseUV());
+    vec4 diffuseMap = texture(u_DiffuseSampler, getDiffuseUV());
+    // Base color textures are in sRGB space, convert to linear for PBR calculations
+    baseColor *= sRGBToLinear(diffuseMap);
 #elif defined(MATERIAL_METALLICROUGHNESS) && defined(HAS_BASE_COLOR_MAP)
-    baseColor *= texture(u_BaseColorSampler, getBaseColorUV());
+    vec4 baseColorMap = texture(u_BaseColorSampler, getBaseColorUV());
+    // Base color textures are in sRGB space, convert to linear for PBR calculations
+    baseColor *= sRGBToLinear(baseColorMap);
+    //baseColor *= baseColorMap;
 #endif
 
     return baseColor * getVertexColor();
