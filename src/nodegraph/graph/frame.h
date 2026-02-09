@@ -83,6 +83,7 @@ private:
     QVector<ResizeRegion> getFrameRegions() const;
     DragMode getHitRegion(const QPointF& pos) const;
     Qt::CursorShape getCursorForDragMode(DragMode mode) const;
+    QVector<NodePtr> getNodesInFrame() const;
 
 public:
     explicit Frame();

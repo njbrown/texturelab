@@ -144,6 +144,49 @@ Qt::CursorShape Frame::getCursorForDragMode(DragMode mode) const
     return Qt::ArrowCursor;
 }
 
+QVector<NodePtr> Frame::getNodesInFrame() const
+{
+    QVector<NodePtr> nodesInFrame;
+
+    if (!scene()) {
+        return nodesInFrame;
+    }
+
+    // Get the frame's bounding rectangle in scene coordinates
+    QRectF frameSceneRect = mapRectToScene(_frameRect);
+
+    // Get all items in the scene
+    QList<QGraphicsItem*> items = scene()->items(frameSceneRect);
+
+    // Filter for Node items that are fully or partially within the frame
+    for (QGraphicsItem* item : items) {
+        // Check if this is a Node (type() returns SceneItemType::Node)
+        if (item->type() == (int)SceneItemType::Node) {
+            Node* nodePtr = qgraphicsitem_cast<Node*>(item);
+            if (nodePtr) {
+                // Get the node's bounding rect in scene coordinates
+                QRectF nodeBounds = nodePtr->sceneBoundingRect();
+
+                // Check if the node's center is within the frame
+                QPointF nodeCenter = nodeBounds.center();
+                if (frameSceneRect.contains(nodeCenter)) {
+                    // Find the shared pointer from the scene
+                    Scene* scenePtr = static_cast<Scene*>(scene());
+                    if (scenePtr) {
+                        QString nodeId = nodePtr->id();
+                        NodePtr sharedNode = scenePtr->getNodeById(nodeId);
+                        if (sharedNode) {
+                            nodesInFrame.append(sharedNode);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return nodesInFrame;
+}
+
 void Frame::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
                   QWidget* widget)
 {
@@ -220,11 +263,16 @@ void Frame::mousePressEvent(QGraphicsSceneMouseEvent* event)
             }
         }
 
-        // Capture contained nodes if dragging the handle (not Alt key)
-        if (_dragMode == DragMode::HandleTop &&
-            !(event->modifiers() & Qt::AltModifier)) {
+        // Capture nodes geometrically within the frame
+        // Skip if Alt key is pressed (allows moving frame without nodes)
+        if (!(event->modifiers() & Qt::AltModifier)) {
             _nodeDragStartPositions.clear();
-            for (NodePtr node : _nodes) {
+
+            // Get all nodes currently within the frame's bounds
+            QVector<NodePtr> nodesInBounds = getNodesInFrame();
+
+            // Store their starting positions
+            for (NodePtr node : nodesInBounds) {
                 if (node) {
                     _nodeDragStartPositions[node] = node->pos();
                 }
