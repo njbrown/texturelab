@@ -179,9 +179,19 @@ void IblSampler::loadPanorama(const QString& path)
     QFile file(path);
     file.open(QFile::ReadOnly);
     auto byteArray = file.readAll();
+
     auto textureData = stbi_loadf_from_memory(
         (unsigned char*)byteArray.constData(), byteArray.length(), &width,
         &height, &numComponents, 3);
+
+    if (!textureData) {
+        qFatal("Failed to load HDR panorama: %s", stbi_failure_reason());
+        return;
+    }
+
+    // qDebug() << "Loaded HDR:" << width << "x" << height
+    //          << "components:" << numComponents;
+
     QOpenGLTexture* text = new QOpenGLTexture(QOpenGLTexture::Target2D);
     text->setMinMagFilters(QOpenGLTexture::LinearMipMapLinear,
                            QOpenGLTexture::Linear);
@@ -193,6 +203,9 @@ void IblSampler::loadPanorama(const QString& path)
     text->setFormat(QOpenGLTexture::RGB32F);
     text->allocateStorage();
     text->setData(QOpenGLTexture::RGB, QOpenGLTexture::Float32, textureData);
+
+    // Free stb_image buffer after uploading to GPU
+    stbi_image_free(textureData);
 
     inputTexture = text;
 }
@@ -252,7 +265,7 @@ GLuint IblSampler::createCubemap(bool withMipmaps)
 
     for (unsigned int i = 0; i < 6; ++i) {
         gl->glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB32F,
-                         textureSize, textureSize, 0, GL_RGBA, GL_FLOAT,
+                         textureSize, textureSize, 0, GL_RGB, GL_FLOAT,
                          nullptr);
     }
     gl->glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S,
@@ -330,7 +343,7 @@ void IblSampler::panoramaToCubemap()
                                   GL_FALSE, 5 * sizeof(float),
                                   reinterpret_cast<void*>(3 * sizeof(float)));
 
-        gl->glDrawArrays(GL_TRIANGLES, 0, 3);
+        gl->glDrawArrays(GL_TRIANGLES, 0, 6);
 
         vbo->release();
     }
@@ -416,7 +429,7 @@ void IblSampler::applyFilter(int distribution, float roughness,
         shader->setUniformValue("u_currentFace", i);
         shader->setUniformValue("u_isGeneratingLUT", 0);
         shader->setUniformValue("u_floatTexture", 1);
-        shader->setUniformValue("u_intensityScale", (GLfloat)1.0);
+        shader->setUniformValue("u_intensityScale", (GLfloat)intensityScale);
 
         vbo->bind();
         gl->glEnableVertexAttribArray((int)VertexUsage::Position);
@@ -449,18 +462,21 @@ void IblSampler::cubeMapToLambertian()
 
 void IblSampler::cubeMapToGGX()
 {
-    for (int currentMipLevel = 0; currentMipLevel <= this->mipmapLevels;
+    // qDebug() << "MIPMAP LEVELS: " << this->mipmapLevels;
+    for (int currentMipLevel = 0; currentMipLevel < this->mipmapLevels;
          ++currentMipLevel) {
-        auto roughness = ((float)currentMipLevel) / (this->mipmapLevels - 1);
+        auto roughness = ((float)currentMipLevel) / (this->mipmapLevels - 1.0);
+
+        // qDebug() << "ROUGHNESS: " << roughness << " MIP" << currentMipLevel;
         this->applyFilter(1, roughness, currentMipLevel, this->ggxTextureID,
                           this->ggxSampleCount);
     }
 }
 void IblSampler::cubeMapToSheen()
 {
-    for (auto currentMipLevel = 0; currentMipLevel <= this->mipmapLevels;
+    for (auto currentMipLevel = 0; currentMipLevel < this->mipmapLevels;
          ++currentMipLevel) {
-        auto roughness = (currentMipLevel) / (this->mipmapLevels - 1);
+        auto roughness = ((float)currentMipLevel) / (this->mipmapLevels - 1.0);
         this->applyFilter(2, roughness, currentMipLevel, this->sheenTextureID,
                           this->sheenSamplCount);
     }
@@ -497,7 +513,7 @@ void IblSampler::sampleLut(int distribution, int targetTextureId,
     shader->setUniformValue("u_currentFace", 0);
     shader->setUniformValue("u_isGeneratingLUT", 1);
     shader->setUniformValue("u_floatTexture", 1);
-    shader->setUniformValue("u_intensityScale", (GLfloat)1.0);
+    shader->setUniformValue("u_intensityScale", (GLfloat)intensityScale);
 
     vbo->bind();
     gl->glEnableVertexAttribArray((int)VertexUsage::Position);

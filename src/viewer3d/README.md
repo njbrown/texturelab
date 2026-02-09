@@ -11,6 +11,8 @@ https://github.com/KhronosGroup/glTF-Sample-Renderer/blob/47a191931461a6f2e14de4
 https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Viewer/47a191931461a6f2e14de48d6da0f0eb6ec2d147/source/Renderer/shaders/material_info.glsl
 
 
+Editor that uses same gltf renderer:
+- https://www.gltfeditor.com/
 
 steps:
 load gltf model with tangents

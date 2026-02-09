@@ -24,6 +24,7 @@ public:
     float lodBias = 0.0;
     int lowestMipLevel = 4;
     int lutResolution = 1024;
+    float intensityScale = 1.0;
 
     int mipmapLevels = -1;
 
