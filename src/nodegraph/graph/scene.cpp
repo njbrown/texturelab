@@ -193,6 +193,9 @@ Scene::~Scene()
 
 Node::Node()
 {
+    // Generate unique ID for this node
+    _id = QUuid::createUuid().toString();
+
     width = 100;
     height = 100;
     isHovered = false;
