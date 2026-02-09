@@ -1,165 +1,129 @@
 #include "frame.h"
 #include "scene.h"
-#include <QPainter>
-#include <QGraphicsSceneMouseEvent>
-#include <QGraphicsSceneHoverEvent>
-#include <QCursor>
 #include <QApplication>
+#include <QCursor>
+#include <QGraphicsSceneHoverEvent>
+#include <QGraphicsSceneMouseEvent>
+#include <QPainter>
 #include <QUuid>
 #include <QtMath>
 
 namespace nodegraph {
 
 Frame::Frame()
-    : QGraphicsObject()
-    , _id(QUuid::createUuid().toString())
-    , _title("Frame")
-    , _description("")
-    , _showTitle(true)
-    , _color(25, 0, 51)  // RGB(0.1, 0, 0.2) * 255
-    , _frameRect(0, 0, 500, 300)
-    , _isHovered(false)
-    , _isDragged(false)
-    , _dragMode(DragMode::None)
-    , _xResize(0)
-    , _yResize(0)
+    : QGraphicsObject(), _id(QUuid::createUuid().toString()), _title("Frame"),
+      _description(""), _showTitle(true),
+      _color(25, 0, 51) // RGB(0.1, 0, 0.2) * 255
+      ,
+      _frameRect(0, 0, 500, 300), _isHovered(false), _isDragged(false),
+      _dragMode(DragMode::None), _xResize(0), _yResize(0)
 {
     setFlag(QGraphicsItem::ItemIsMovable, true);
     setFlag(QGraphicsItem::ItemIsSelectable, true);
     setAcceptHoverEvents(true);
-    setZValue(-1000);  // Behind nodes by default
+    setZValue(-1000); // Behind nodes by default
 }
 
-FramePtr Frame::create() {
-    return FramePtr(new Frame());
-}
+FramePtr Frame::create() { return FramePtr(new Frame()); }
 
-Frame::~Frame() {
-}
+Frame::~Frame() {}
 
-void Frame::setTitle(const QString& title) {
+void Frame::setTitle(const QString& title)
+{
     _title = title;
     update();
 }
 
-void Frame::setColor(const QColor& color) {
+void Frame::setColor(const QColor& color)
+{
     _color = color;
     update();
 }
 
-void Frame::setFrameRect(const QRectF& rect) {
+void Frame::setFrameRect(const QRectF& rect)
+{
     prepareGeometryChange();
     _frameRect = rect;
     update();
 }
 
-void Frame::setSize(qreal width, qreal height) {
+void Frame::setSize(qreal width, qreal height)
+{
     prepareGeometryChange();
     _frameRect.setWidth(qMax(width, MIN_WIDTH));
     _frameRect.setHeight(qMax(height, MIN_HEIGHT));
     update();
 }
 
-void Frame::addNode(NodePtr node) {
+void Frame::addNode(NodePtr node)
+{
     if (!_nodes.contains(node)) {
         _nodes.append(node);
     }
 }
 
-void Frame::removeNode(NodePtr node) {
-    _nodes.removeAll(node);
-}
+void Frame::removeNode(NodePtr node) { _nodes.removeAll(node); }
 
-void Frame::clearNodes() {
-    _nodes.clear();
-}
+void Frame::clearNodes() { _nodes.clear(); }
 
-QRectF Frame::boundingRect() const {
+QRectF Frame::boundingRect() const
+{
     return _frameRect.adjusted(-5, -HANDLE_SIZE - 5, 5, 5);
 }
 
-QVector<ResizeRegion> Frame::getFrameRegions() const {
+QVector<ResizeRegion> Frame::getFrameRegions() const
+{
     QVector<ResizeRegion> regions;
     qreal h = RESIZE_HANDLE_SIZE;
     qreal w = _frameRect.width();
     qreal height = _frameRect.height();
 
     // Top handle bar
-    regions.append({
-        QRectF(_frameRect.x(), _frameRect.y() - HANDLE_SIZE, w, HANDLE_SIZE),
-        DragMode::HandleTop,
-        0, 0,
-        Qt::SizeAllCursor
-    });
+    regions.append(
+        {QRectF(_frameRect.x(), _frameRect.y() - HANDLE_SIZE, w, HANDLE_SIZE),
+         DragMode::HandleTop, 0, 0, Qt::SizeAllCursor});
 
     // Top-left corner
-    regions.append({
-        QRectF(_frameRect.x(), _frameRect.y(), h, h),
-        DragMode::ResizeTopLeft,
-        -1, -1,
-        Qt::SizeFDiagCursor
-    });
+    regions.append({QRectF(_frameRect.x(), _frameRect.y(), h, h),
+                    DragMode::ResizeTopLeft, -1, -1, Qt::SizeFDiagCursor});
 
     // Top-right corner
-    regions.append({
-        QRectF(_frameRect.x() + w - h, _frameRect.y(), h, h),
-        DragMode::ResizeTopRight,
-        1, -1,
-        Qt::SizeBDiagCursor
-    });
+    regions.append({QRectF(_frameRect.x() + w - h, _frameRect.y(), h, h),
+                    DragMode::ResizeTopRight, 1, -1, Qt::SizeBDiagCursor});
 
     // Bottom-left corner
-    regions.append({
-        QRectF(_frameRect.x(), _frameRect.y() + height - h, h, h),
-        DragMode::ResizeBottomLeft,
-        -1, 1,
-        Qt::SizeBDiagCursor
-    });
+    regions.append({QRectF(_frameRect.x(), _frameRect.y() + height - h, h, h),
+                    DragMode::ResizeBottomLeft, -1, 1, Qt::SizeBDiagCursor});
 
     // Bottom-right corner
-    regions.append({
-        QRectF(_frameRect.x() + w - h, _frameRect.y() + height - h, h, h),
-        DragMode::ResizeBottomRight,
-        1, 1,
-        Qt::SizeFDiagCursor
-    });
+    regions.append(
+        {QRectF(_frameRect.x() + w - h, _frameRect.y() + height - h, h, h),
+         DragMode::ResizeBottomRight, 1, 1, Qt::SizeFDiagCursor});
 
     // Top edge
-    regions.append({
-        QRectF(_frameRect.x() + h, _frameRect.y(), w - 2 * h, h),
-        DragMode::ResizeTop,
-        0, -1,
-        Qt::SizeVerCursor
-    });
+    regions.append({QRectF(_frameRect.x() + h, _frameRect.y(), w - 2 * h, h),
+                    DragMode::ResizeTop, 0, -1, Qt::SizeVerCursor});
 
     // Bottom edge
-    regions.append({
-        QRectF(_frameRect.x() + h, _frameRect.y() + height - h, w - 2 * h, h),
-        DragMode::ResizeBottom,
-        0, 1,
-        Qt::SizeVerCursor
-    });
+    regions.append(
+        {QRectF(_frameRect.x() + h, _frameRect.y() + height - h, w - 2 * h, h),
+         DragMode::ResizeBottom, 0, 1, Qt::SizeVerCursor});
 
     // Left edge
-    regions.append({
-        QRectF(_frameRect.x(), _frameRect.y() + h, h, height - 2 * h),
-        DragMode::ResizeLeft,
-        -1, 0,
-        Qt::SizeHorCursor
-    });
+    regions.append(
+        {QRectF(_frameRect.x(), _frameRect.y() + h, h, height - 2 * h),
+         DragMode::ResizeLeft, -1, 0, Qt::SizeHorCursor});
 
     // Right edge
-    regions.append({
-        QRectF(_frameRect.x() + w - h, _frameRect.y() + h, h, height - 2 * h),
-        DragMode::ResizeRight,
-        1, 0,
-        Qt::SizeHorCursor
-    });
+    regions.append(
+        {QRectF(_frameRect.x() + w - h, _frameRect.y() + h, h, height - 2 * h),
+         DragMode::ResizeRight, 1, 0, Qt::SizeHorCursor});
 
     return regions;
 }
 
-DragMode Frame::getHitRegion(const QPointF& pos) const {
+DragMode Frame::getHitRegion(const QPointF& pos) const
+{
     QVector<ResizeRegion> regions = getFrameRegions();
     for (const ResizeRegion& region : regions) {
         if (region.rect.contains(pos)) {
@@ -169,7 +133,8 @@ DragMode Frame::getHitRegion(const QPointF& pos) const {
     return DragMode::None;
 }
 
-Qt::CursorShape Frame::getCursorForDragMode(DragMode mode) const {
+Qt::CursorShape Frame::getCursorForDragMode(DragMode mode) const
+{
     QVector<ResizeRegion> regions = getFrameRegions();
     for (const ResizeRegion& region : regions) {
         if (region.dragMode == mode) {
@@ -179,7 +144,9 @@ Qt::CursorShape Frame::getCursorForDragMode(DragMode mode) const {
     return Qt::ArrowCursor;
 }
 
-void Frame::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) {
+void Frame::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
+                  QWidget* widget)
+{
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
@@ -187,7 +154,8 @@ void Frame::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWi
 
     // Draw top handle bar
     QColor handleColor = _color.lighter(150);
-    QRectF handleRect(_frameRect.x(), _frameRect.y() - HANDLE_SIZE, _frameRect.width(), HANDLE_SIZE);
+    QRectF handleRect(_frameRect.x(), _frameRect.y() - HANDLE_SIZE,
+                      _frameRect.width(), HANDLE_SIZE);
     painter->fillRect(handleRect, handleColor);
 
     // Draw title if enabled
@@ -200,9 +168,10 @@ void Frame::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWi
     // Draw frame border
     QPen borderPen;
     if (isSelected()) {
-        borderPen.setColor(QColor(255, 165, 0));  // Orange for selected
+        borderPen.setColor(QColor(255, 165, 0)); // Orange for selected
         borderPen.setWidth(2);
-    } else {
+    }
+    else {
         borderPen.setColor(_color.lighter(120));
         borderPen.setWidth(1);
     }
@@ -210,7 +179,7 @@ void Frame::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWi
 
     // Draw semi-transparent background
     QColor bgColor = _color;
-    bgColor.setAlpha(50);  // Semi-transparent
+    bgColor.setAlpha(50); // Semi-transparent
     painter->setBrush(bgColor);
     painter->drawRect(_frameRect);
 
@@ -227,11 +196,13 @@ void Frame::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWi
         painter->drawRect(_frameRect.x(), _frameRect.y(), h, h);
         painter->drawRect(_frameRect.x() + w - h, _frameRect.y(), h, h);
         painter->drawRect(_frameRect.x(), _frameRect.y() + height - h, h, h);
-        painter->drawRect(_frameRect.x() + w - h, _frameRect.y() + height - h, h, h);
+        painter->drawRect(_frameRect.x() + w - h, _frameRect.y() + height - h,
+                          h, h);
     }
 }
 
-void Frame::mousePressEvent(QGraphicsSceneMouseEvent* event) {
+void Frame::mousePressEvent(QGraphicsSceneMouseEvent* event)
+{
     if (event->button() == Qt::LeftButton) {
         QPointF pos = event->pos();
         _dragMode = getHitRegion(pos);
@@ -250,7 +221,8 @@ void Frame::mousePressEvent(QGraphicsSceneMouseEvent* event) {
         }
 
         // Capture contained nodes if dragging the handle (not Alt key)
-        if (_dragMode == DragMode::HandleTop && !(event->modifiers() & Qt::AltModifier)) {
+        if (_dragMode == DragMode::HandleTop &&
+            !(event->modifiers() & Qt::AltModifier)) {
             _nodeDragStartPositions.clear();
             for (NodePtr node : _nodes) {
                 if (node) {
@@ -265,7 +237,8 @@ void Frame::mousePressEvent(QGraphicsSceneMouseEvent* event) {
     QGraphicsObject::mousePressEvent(event);
 }
 
-void Frame::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
+void Frame::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
+{
     if (_isDragged && event->buttons() & Qt::LeftButton) {
         QPointF delta = event->scenePos() - _dragStartPos;
 
@@ -273,42 +246,47 @@ void Frame::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
             // Move the frame and all captured nodes
             setPos(pos() + delta);
 
-            for (auto it = _nodeDragStartPositions.begin(); it != _nodeDragStartPositions.end(); ++it) {
+            for (auto it = _nodeDragStartPositions.begin();
+                 it != _nodeDragStartPositions.end(); ++it) {
                 NodePtr node = it.key();
                 if (node) {
-                    node->setPos(it.value() + delta);
+                    // node->setPos(it.value() + delta);
+                    node->moveBy(delta.x(), delta.y());
                 }
             }
 
             _dragStartPos = event->scenePos();
-        } else if (_dragMode != DragMode::None) {
+        }
+        else if (_dragMode != DragMode::None) {
             // Resize mode
             prepareGeometryChange();
 
             QRectF newRect = _dragStartRect;
 
             // Handle horizontal resize
-            if (_xResize == -1) {  // Left edge
+            if (_xResize == -1) { // Left edge
                 qreal newX = _dragStartRect.x() + delta.x();
                 qreal newWidth = _dragStartRect.width() - delta.x();
                 if (newWidth >= MIN_WIDTH) {
                     newRect.setX(newX);
                     newRect.setWidth(newWidth);
                 }
-            } else if (_xResize == 1) {  // Right edge
+            }
+            else if (_xResize == 1) { // Right edge
                 qreal newWidth = _dragStartRect.width() + delta.x();
                 newRect.setWidth(qMax(newWidth, MIN_WIDTH));
             }
 
             // Handle vertical resize
-            if (_yResize == -1) {  // Top edge
+            if (_yResize == -1) { // Top edge
                 qreal newY = _dragStartRect.y() + delta.y();
                 qreal newHeight = _dragStartRect.height() - delta.y();
                 if (newHeight >= MIN_HEIGHT) {
                     newRect.setY(newY);
                     newRect.setHeight(newHeight);
                 }
-            } else if (_yResize == 1) {  // Bottom edge
+            }
+            else if (_yResize == 1) { // Bottom edge
                 qreal newHeight = _dragStartRect.height() + delta.y();
                 newRect.setHeight(qMax(newHeight, MIN_HEIGHT));
             }
@@ -324,7 +302,8 @@ void Frame::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
     QGraphicsObject::mouseMoveEvent(event);
 }
 
-void Frame::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
+void Frame::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
+{
     if (event->button() == Qt::LeftButton) {
         _isDragged = false;
         _dragMode = DragMode::None;
@@ -338,27 +317,31 @@ void Frame::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
     QGraphicsObject::mouseReleaseEvent(event);
 }
 
-void Frame::hoverEnterEvent(QGraphicsSceneHoverEvent* event) {
+void Frame::hoverEnterEvent(QGraphicsSceneHoverEvent* event)
+{
     _isHovered = true;
     update();
     QGraphicsObject::hoverEnterEvent(event);
 }
 
-void Frame::hoverLeaveEvent(QGraphicsSceneHoverEvent* event) {
+void Frame::hoverLeaveEvent(QGraphicsSceneHoverEvent* event)
+{
     _isHovered = false;
     setCursor(Qt::ArrowCursor);
     update();
     QGraphicsObject::hoverLeaveEvent(event);
 }
 
-void Frame::hoverMoveEvent(QGraphicsSceneHoverEvent* event) {
+void Frame::hoverMoveEvent(QGraphicsSceneHoverEvent* event)
+{
     QPointF pos = event->pos();
     DragMode mode = getHitRegion(pos);
 
     if (mode != DragMode::None) {
         Qt::CursorShape cursor = getCursorForDragMode(mode);
         setCursor(cursor);
-    } else {
+    }
+    else {
         setCursor(Qt::ArrowCursor);
     }
 
