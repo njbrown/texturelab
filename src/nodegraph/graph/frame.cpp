@@ -167,9 +167,8 @@ QVector<NodePtr> Frame::getNodesInFrame() const
                 // Get the node's bounding rect in scene coordinates
                 QRectF nodeBounds = nodePtr->sceneBoundingRect();
 
-                // Check if the node's center is within the frame
-                QPointF nodeCenter = nodeBounds.center();
-                if (frameSceneRect.contains(nodeCenter)) {
+                // Check if the node is fully contained within the frame
+                if (frameSceneRect.contains(nodeBounds)) {
                     // Find the shared pointer from the scene
                     Scene* scenePtr = static_cast<Scene*>(scene());
                     if (scenePtr) {
