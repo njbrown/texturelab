@@ -28,6 +28,8 @@ FramePtr Frame::create() { return FramePtr(new Frame()); }
 
 Frame::~Frame() {}
 
+int Frame::type() const { return (int)SceneItemType::Frame; }
+
 void Frame::setTitle(const QString& title)
 {
     _title = title;

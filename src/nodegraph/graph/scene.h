@@ -33,7 +33,7 @@ typedef QSharedPointer<Scene> ScenePtr;
 typedef QSharedPointer<Frame> FramePtr;
 typedef QSharedPointer<Comment> CommentPtr;
 
-enum class SceneItemType : int { Node = 1, Port = 2, Connection = 3, Comment = 4 };
+enum class SceneItemType : int { Node = 1, Port = 2, Connection = 3, Comment = 4, Frame = 5 };
 
 class Scene : public QGraphicsScene, public QEnableSharedFromThis<Scene> {
 public:

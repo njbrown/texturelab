@@ -35,6 +35,8 @@ public:
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
                QWidget* widget = nullptr) override;
 
+    virtual int type() const override;
+
     virtual ~Comment();
 };
 

@@ -1,4 +1,5 @@
 #include "comment.h"
+#include "scene.h"
 #include <QCursor>
 #include <QFont>
 #include <QFontMetrics>
@@ -20,6 +21,8 @@ Comment::Comment()
 CommentPtr Comment::create() { return CommentPtr(new Comment()); }
 
 Comment::~Comment() {}
+
+int Comment::type() const { return (int)SceneItemType::Comment; }
 
 void Comment::setText(const QString& text)
 {
