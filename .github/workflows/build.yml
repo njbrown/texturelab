@@ -1,45 +1,157 @@
-# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
-
-name: Update and build application
+name: Build
 
 on:
   push:
-    branches: [ master ]
+    branches: [main, master]
   pull_request:
-    branches: [ master ]
+    branches: [main, master]
+  workflow_dispatch:
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [12.x, 14.x]
+  build-linux:
+    # runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
-    - name: Checkout source code
-      uses: actions/checkout@master
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          fetch-tags: true
 
-    - name: Setup cache
-      id: yarn-cache-dir-path
-      run: echo "::set-output name=dir::$(yarn cache dir)"
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.7.0"
+          modules: "qtshadertools"
+          dir: "${{ github.workspace }}/Qt"
+          cache: true
 
-    - uses: actions/cache@master
-      id: yarn-cache
-      with:
-        path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-yarn-
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            libgl1-mesa-dev \
+            libxkbcommon-dev \
+            libvulkan-dev \
+            libxcb-cursor0 \
+            libxcb-shape0-dev
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@master
-      with:
-        node-version: ${{ matrix.node-version }}
+      - name: Configure CMake
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
 
-    - name: Install dependencies and build
-      run: |
-        yarn install
-        yarn electron:build --publish=never
+      - name: Build
+        run: cmake --build build --target texturelab --parallel $(nproc)
+
+      - name: Install LinuxDeploy
+        uses: miurahr/install-linuxdeploy-action@v1
+        with:
+          plugins: qt appimage
+
+      - name: Create AppImage
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: 1
+          DEPLOY_STDCXX: 1
+        run: |
+          export QMAKE=${{ github.workspace }}/Qt/Qt/6.7.0/gcc_64/bin/qmake
+          export PATH=${{ github.workspace }}/Qt/Qt/6.7.0/gcc_64/bin:$PATH
+          export LD_LIBRARY_PATH=${{ github.workspace }}/Qt/Qt/6.7.0/gcc_64/lib:$LD_LIBRARY_PATH
+
+          # Create desktop file
+          cat > texturelab.desktop << 'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=TextureLab
+          Exec=texturelab
+          Icon=texturelab
+          Categories=Graphics;
+          EOF
+
+          # Create a placeholder icon (256x256 PNG with "TL" text)
+          cp src/icons/logo.png texturelab.png
+
+          linuxdeploy-x86_64.AppImage \
+            --appdir AppDir \
+            --executable build/src/texturelab/texturelab \
+            --desktop-file texturelab.desktop \
+            --icon-file texturelab.png \
+            --plugin qt \
+            --output appimage
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: texturelab-linux
+          path: "*.AppImage"
+
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.7.0"
+          arch: "win64_msvc2019_64"
+          modules: "qtshadertools"
+          dir: "${{ github.workspace }}/Qt"
+          cache: true
+
+      - name: Configure CMake
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --target texturelab --config Release --parallel
+
+      - name: Deploy Qt dependencies
+        run: |
+          mkdir deploy
+          copy build\src\texturelab\Release\texturelab.exe deploy\
+          ${{ github.workspace }}\Qt\Qt\6.7.0\msvc2019_64\bin\windeployqt.exe deploy\texturelab.exe --release --no-translations
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: texturelab-windows
+          path: deploy/
+
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.7.0"
+          modules: "qtshadertools"
+          dir: "${{ github.workspace }}/Qt"
+          cache: true
+
+      - name: Configure CMake
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --target texturelab --parallel $(sysctl -n hw.ncpu)
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: texturelab-macos
+          path: build/src/texturelab/texturelab.app

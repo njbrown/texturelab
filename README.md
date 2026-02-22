@@ -1,5 +1,3 @@
-
-
 <h1 align="center">
   TextureLab
 </h1>
@@ -17,23 +15,55 @@
 ![Screenshot](https://user-images.githubusercontent.com/1708550/123368911-4ceb9f00-d542-11eb-87b5-b0fc3ea3cc3d.png)
 
 # NOTE!
+
 Texturelab will soon be converted to a qt project. All issues will be addressed after the conversion is complete.
 
 ## Building
+
+Prerequisites
+
+```
+install Qt 6 and required dependencies
+
+Note: Linux needs libmesa:
+https://doc.qt.io/qt-6/linux.html
+
+sudo apt install build-essential libgl1-mesa-dev libxkbcommon-dev libvulkan-dev
+
+```
 
 Building is done with `yarn`. Install it [here](https://classic.yarnpkg.com/en/docs/install) if you havent already.
 
 ```
 git clone https://github.com/njbrown/texturelab.git
-
 cd texturelab
-
-# if you want to pull down assets (textures and node icons)
-git submodule update --init
-
-yarn install
-yarn electron:serve
+git submodule update --init --recursive
 ```
+
+Ensure Qt6 is added to your CMAKE_PREFIX_PATH env
+
+generate build files:
+
+```
+cmake -G "Unix Makefiles"
+```
+
+build
+
+```
+make texturelab
+```
+
+## Windows Setup
+If you dont want to or have MSVC installed, you can use g++ via MSYS2
+```
+winget install MSYS2.MSYS2
+```
+Then in MSYS2 UCRT64 terminal:
+```
+pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-ninja mingw-w64-ucrt-x86_64-cmake
+```
+Add `C:\msys64\ucrt64\bin` to your PATH
 
 ## Feedback
 
