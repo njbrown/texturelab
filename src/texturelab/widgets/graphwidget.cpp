@@ -13,6 +13,8 @@
 #include "./graphics/texturerenderer.h"
 #include "./models.h"
 #include "./utils.h"
+#include "graph/comment.h"
+#include "graph/frame.h"
 #include "graph/scene.h"
 #include "libraries/library.h"
 #include "librarywidget.h"
@@ -29,7 +31,7 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
     // Create search popup
     searchPopup = new NodeSearchPopup(this);
     connect(searchPopup, &NodeSearchPopup::itemSelected, this,
-            &GraphWidget::addNodeFromSearch);
+            &GraphWidget::addItemFromSearch);
 
     // Enable mouse tracking to capture cursor position
     setMouseTracking(true);
@@ -231,26 +233,33 @@ void GraphWidget::keyPressEvent(QKeyEvent* event)
     }
 }
 
-void GraphWidget::addNodeFromSearch(const QString& nodeName,
+void GraphWidget::addItemFromSearch(const QString& name, PopupItemType type,
                                      const QPoint& position)
 {
-    if (!project || !project->library)
-        return;
-
-    // Create node from library
-    auto node = project->library->createNode(nodeName);
-
-    // Convert global position to scene position
     QPoint localPos = graph->mapFromGlobal(position);
     auto scenePos = graph->mapToScene(localPos);
-    node->pos = QVector2D(scenePos) - QVector2D(50, 50);
 
-    // Add to project and scene
-    this->project->addNode(node);
-    this->addNode(node);
+    if (type == PopupItemType::Frame) {
+        auto frame = nodegraph::Frame::create();
+        frame->setPos(scenePos);
+        scene->addFrame(frame);
+    }
+    else if (type == PopupItemType::Comment) {
+        auto comment = nodegraph::Comment::create();
+        comment->setPos(scenePos);
+        scene->addComment(comment);
+    }
+    else {
+        if (!project || !project->library)
+            return;
 
-    // Update renderer
-    if (this->renderer) {
-        this->renderer->update();
+        auto node = project->library->createNode(name);
+        node->pos = QVector2D(scenePos) - QVector2D(50, 50);
+        this->project->addNode(node);
+        this->addNode(node);
+
+        if (this->renderer) {
+            this->renderer->update();
+        }
     }
 }

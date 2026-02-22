@@ -39,7 +39,8 @@ NodeSearchPopup::NodeSearchPopup(QWidget* parent) : QFrame(parent)
     connect(itemList, &QListWidget::itemClicked,
             [this](QListWidgetItem* item) {
                 if (item) {
-                    emit itemSelected(item->text(), showPosition);
+                    auto type = (PopupItemType)item->data(Qt::UserRole).toInt();
+                    emit itemSelected(item->text(), type, showPosition);
                     hide();
                 }
             });
@@ -53,18 +54,25 @@ void NodeSearchPopup::setLibrary(Library* lib)
     library = lib;
     itemList->clear();
 
-    if (!lib)
-        return;
+    // Fixed entries: Frame and Comment always appear at the top
+    auto frameItem = new QListWidgetItem("Frame");
+    frameItem->setData(Qt::UserRole, (int)PopupItemType::Frame);
+    itemList->addItem(frameItem);
 
-    // Populate the list with all library items
-    for (auto& libraryItem : lib->items) {
-        QListWidgetItem* item = new QListWidgetItem;
-        item->setText(libraryItem.name);
-        item->setIcon(libraryItem.icon);
-        itemList->addItem(item);
+    auto commentItem = new QListWidgetItem("Comment");
+    commentItem->setData(Qt::UserRole, (int)PopupItemType::Comment);
+    itemList->addItem(commentItem);
+
+    if (lib) {
+        for (auto& libraryItem : lib->items) {
+            QListWidgetItem* item = new QListWidgetItem;
+            item->setText(libraryItem.name);
+            item->setIcon(libraryItem.icon);
+            item->setData(Qt::UserRole, (int)PopupItemType::Node);
+            itemList->addItem(item);
+        }
     }
 
-    // Select first item by default
     if (itemList->count() > 0) {
         itemList->setCurrentRow(0);
     }
@@ -137,6 +145,15 @@ QString NodeSearchPopup::getSelectedItemName() const
     return QString();
 }
 
+PopupItemType NodeSearchPopup::getSelectedItemType() const
+{
+    auto currentItem = itemList->currentItem();
+    if (currentItem && !currentItem->isHidden()) {
+        return (PopupItemType)currentItem->data(Qt::UserRole).toInt();
+    }
+    return PopupItemType::Node;
+}
+
 bool NodeSearchPopup::eventFilter(QObject* obj, QEvent* event)
 {
     if (obj == searchInput && event->type() == QEvent::KeyPress) {
@@ -170,7 +187,7 @@ bool NodeSearchPopup::eventFilter(QObject* obj, QEvent* event)
             // Add the selected item
             QString itemName = getSelectedItemName();
             if (!itemName.isEmpty()) {
-                emit itemSelected(itemName, showPosition);
+                emit itemSelected(itemName, getSelectedItemType(), showPosition);
                 hide();
             }
             return true;
@@ -193,7 +210,7 @@ void NodeSearchPopup::keyPressEvent(QKeyEvent* event)
         // Add the selected item
         QString itemName = getSelectedItemName();
         if (!itemName.isEmpty()) {
-            emit itemSelected(itemName, showPosition);
+            emit itemSelected(itemName, getSelectedItemType(), showPosition);
             hide();
         }
         event->accept();

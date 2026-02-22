@@ -6,6 +6,8 @@
 class Library;
 class QLineEdit;
 
+enum class PopupItemType { Node, Frame, Comment };
+
 class NodeSearchPopup : public QFrame {
     Q_OBJECT
 
@@ -24,6 +26,7 @@ private:
     void filterList(const QString& text);
     void selectItem(int index);
     QString getSelectedItemName() const;
+    PopupItemType getSelectedItemType() const;
 
     Library* library;
     QLineEdit* searchInput;
@@ -31,5 +34,6 @@ private:
     QPoint showPosition;
 
 signals:
-    void itemSelected(const QString& itemName, const QPoint& position);
+    void itemSelected(const QString& itemName, PopupItemType type,
+                      const QPoint& position);
 };
