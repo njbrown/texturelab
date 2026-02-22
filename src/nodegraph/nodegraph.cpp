@@ -20,6 +20,8 @@ const QColor BackgroundColor(53, 53, 53);
 const QColor FineGridColor(60, 60, 60);
 const QColor CoarseGridColor(25, 25, 25);
 
+#include "graph/comment.h"
+#include "graph/frame.h"
 #include "graph/scene.h"
 #include "nodegraph.h"
 
@@ -129,16 +131,21 @@ void NodeGraph::scaleDown()
 void NodeGraph::keyPressEvent(QKeyEvent* event)
 {
     if (event->key() == Qt::Key_Delete) {
-        // delete items!
         auto items = this->_scene->selectedItems();
         for (auto item : items) {
             if (item->type() == (int)SceneItemType::Node) {
                 auto node = qgraphicsitem_cast<Node*>(item);
                 this->_scene->removeNode(node->sharedFromThis());
             }
+            else if (item->type() == (int)SceneItemType::Frame) {
+                auto frame = qgraphicsitem_cast<Frame*>(item);
+                this->_scene->removeFrame(frame->sharedFromThis());
+            }
+            else if (item->type() == (int)SceneItemType::Comment) {
+                auto comment = qgraphicsitem_cast<Comment*>(item);
+                this->_scene->removeComment(comment->sharedFromThis());
+            }
         }
-
-        // package them and pass them to deletion signal
     }
 
     QGraphicsView::keyPressEvent(event);
@@ -175,6 +182,7 @@ void NodeGraph::mouseMoveEvent(QMouseEvent* event)
     if (event->buttons() == Qt::MiddleButton) {
         QPointF difference = _clickPos - mapToScene(event->pos());
         setSceneRect(sceneRect().translated(difference.x(), difference.y()));
+        _clickPos = mapToScene(event->pos()); // Update reference point to maintain coordinate consistency
     }
     QGraphicsView::mouseMoveEvent(event);
 }

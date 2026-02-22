@@ -1,4 +1,6 @@
 #include "scene.h"
+#include "comment.h"
+#include "frame.h"
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsView>
@@ -130,6 +132,38 @@ ConnectionPtr Scene::connectNodes(NodePtr leftNode, QString leftOutputName,
 
 NodePtr Scene::getNodeById(QString id) { return nodes[id]; }
 
+void Scene::addFrame(FramePtr frame)
+{
+    this->addItem(frame.data());
+    frames[frame->id()] = frame;
+}
+
+FramePtr Scene::getFrameById(QString id) { return frames[id]; }
+
+void Scene::removeFrame(FramePtr frame)
+{
+    frame->hide();
+    this->removeItem(frame.data());
+    frames.remove(frame->id());
+    frame->show();
+}
+
+void Scene::addComment(CommentPtr comment)
+{
+    this->addItem(comment.data());
+    comments[comment->id()] = comment;
+}
+
+CommentPtr Scene::getCommentById(QString id) { return comments[id]; }
+
+void Scene::removeComment(CommentPtr comment)
+{
+    comment->hide();
+    this->removeItem(comment.data());
+    comments.remove(comment->id());
+    comment->show();
+}
+
 void Scene::removeNode(NodePtr node)
 {
     // gather connections
@@ -176,8 +210,11 @@ Scene::~Scene()
 
 Node::Node()
 {
-    width = 100;
-    height = 100;
+    // Generate unique ID for this node
+    _id = QUuid::createUuid().toString();
+
+    width = NODE_WIDTH;
+    height = NODE_HEIGHT;
     isHovered = false;
 
     defaultBorderColor = QColor(0, 0, 0);
@@ -226,6 +263,11 @@ Node::Node()
 }
 
 NodePtr Node::create() { return NodePtr(new Node()); }
+
+void Node::setCenter(float x, float y)
+{
+    setPos(x - NODE_WIDTH / 2.0f, y - NODE_HEIGHT / 2.0f);
+}
 
 void Node::setName(QString name)
 {

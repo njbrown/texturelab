@@ -1,11 +1,13 @@
 #pragma once
 
+#include "nodesearchpopup.h"
+#include <QComboBox>
 #include <QMainWindow>
 #include <QSharedPointer>
+#include <QSpinBox>
 
 class QDragEnterEvent;
 class TextureRenderer;
-class NodeSearchPopup;
 
 namespace nodegraph {
 class NodeGraph;
@@ -44,11 +46,17 @@ public:
 
 protected:
     void addNode(const TextureNodePtr& node);
-    void addNodeFromSearch(const QString& nodeName, const QPoint& position);
+    void addItemFromSearch(const QString& name, PopupItemType type,
+                           const QPoint& position);
 
 private:
+    void setupToolbar();
+
     NodeSearchPopup* searchPopup;
     QPoint lastMousePos;
+
+    QComboBox* resolutionPicker;
+    QSpinBox* seedInput;
 
 signals:
     void nodeSelectionChanged(const TextureNodePtr& node);

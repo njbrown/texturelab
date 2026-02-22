@@ -15,11 +15,15 @@ set(NODEGRAPH_SRCS
     # main.cpp
     nodegraph.cpp
     graph/scene.cpp
+    graph/frame.cpp
+    graph/comment.cpp
 )
 set(NODEGRAPH_HEADERS
     nodegraph.h
     utils.h
     graph/scene.h
+    graph/frame.h
+    graph/comment.h
 )
 
 # library

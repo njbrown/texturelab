@@ -2,17 +2,21 @@
 #include <QCursor>
 #include <QDragEnterEvent>
 #include <QKeyEvent>
+#include <QLabel>
 #include <QMainWindow>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QOpenGLContext>
+#include <QSignalBlocker>
 #include <QToolBar>
 
 #include "./graphics/texturerenderer.h"
 #include "./models.h"
 #include "./utils.h"
+#include "graph/comment.h"
+#include "graph/frame.h"
 #include "graph/scene.h"
 #include "libraries/library.h"
 #include "librarywidget.h"
@@ -26,10 +30,12 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
 
     this->setAcceptDrops(true);
 
+    setupToolbar();
+
     // Create search popup
     searchPopup = new NodeSearchPopup(this);
     connect(searchPopup, &NodeSearchPopup::itemSelected, this,
-            &GraphWidget::addNodeFromSearch);
+            &GraphWidget::addItemFromSearch);
 
     // Enable mouse tracking to capture cursor position
     setMouseTracking(true);
@@ -114,6 +120,55 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
     // library = nullptr;
 }
 
+void GraphWidget::setupToolbar()
+{
+    auto toolbar = this->addToolBar("Graph");
+    toolbar->setMovable(false);
+
+    toolbar->addWidget(new QLabel("Resolution: "));
+
+    resolutionPicker = new QComboBox();
+    for (int res : {32, 64, 128, 256, 512, 1024, 2048, 4096})
+        resolutionPicker->addItem(QString("%1 x %1").arg(res), res);
+    resolutionPicker->setCurrentIndex(5); // default: 1024
+    resolutionPicker->setEnabled(false);
+    toolbar->addWidget(resolutionPicker);
+
+    connect(resolutionPicker, &QComboBox::currentIndexChanged, this,
+            [=](int /*index*/) {
+                if (!project)
+                    return;
+                int res = resolutionPicker->currentData().toInt();
+                project->textureWidth = res;
+                project->textureHeight = res;
+                for (auto& node : project->nodes)
+                    node->isDirty = true;
+                if (renderer)
+                    renderer->update();
+            });
+
+    toolbar->addSeparator();
+
+    toolbar->addWidget(new QLabel("Seed: "));
+
+    seedInput = new QSpinBox();
+    seedInput->setMinimum(0);
+    seedInput->setMaximum(99999);
+    seedInput->setValue(0);
+    seedInput->setEnabled(false);
+    toolbar->addWidget(seedInput);
+
+    connect(seedInput, &QSpinBox::valueChanged, this, [=]() {
+        if (!project)
+            return;
+        project->randomSeed = seedInput->value();
+        for (auto& node : project->nodes)
+            node->isDirty = true;
+        if (renderer)
+            renderer->update();
+    });
+}
+
 void GraphWidget::setTextureProject(TextureProjectPtr project)
 {
     // generate nodes from texture project
@@ -123,6 +178,17 @@ void GraphWidget::setTextureProject(TextureProjectPtr project)
     // auto scene = new nodegraph::Scene();
     this->scene = scene;
     this->project = project;
+
+    // Update toolbar controls from project settings
+    {
+        QSignalBlocker b1(resolutionPicker);
+        QSignalBlocker b2(seedInput);
+        int resIndex = resolutionPicker->findData(project->textureWidth);
+        resolutionPicker->setCurrentIndex(resIndex >= 0 ? resIndex : 5);
+        resolutionPicker->setEnabled(true);
+        seedInput->setValue(project->randomSeed);
+        seedInput->setEnabled(true);
+    }
 
     // Set library for search popup
     if (project && project->library) {
@@ -143,9 +209,25 @@ void GraphWidget::setTextureProject(TextureProjectPtr project)
                             con->rightNodeInputName);
     }
 
-    // todo: add frames
-    // todo: add comments
-    // todo: add navigations
+    // add comments
+    for (auto comment : project->comments) {
+        auto gcomment = nodegraph::Comment::create();
+        gcomment->setId(comment->id);
+        gcomment->setText(comment->text);
+        gcomment->setPos(comment->pos.x(), comment->pos.y());
+        scene->addComment(gcomment);
+    }
+
+    // add frames
+    for (auto frame : project->frames) {
+        auto gframe = nodegraph::Frame::create();
+        gframe->setId(frame->id);
+        gframe->setTitle(frame->text);
+        gframe->setPos(frame->pos.x(), frame->pos.y());
+        if (frame->size.x() > 0 && frame->size.y() > 0)
+            gframe->setSize(frame->size.x(), frame->size.y());
+        scene->addFrame(gframe);
+    }
 
     // graph->setNodeGraphScene(nodegraph::ScenePtr(scene));
     graph->setNodeGraphScene(scene);
@@ -161,7 +243,7 @@ void GraphWidget::addNode(const TextureNodePtr& node)
 
     gnode->setId(node->id);
     gnode->addOutPort("output");
-    gnode->setPos(node->pos.x(), node->pos.y());
+    gnode->setCenter(node->pos.x(), node->pos.y());
 
     scene->addNode(gnode);
 }
@@ -182,25 +264,29 @@ void GraphWidget::dropEvent(QDropEvent* evt)
 {
     auto mimeData = evt->mimeData();
     if (mimeData->hasFormat(LIBRARY_ITEM_MIME_FORMAT)) {
-        // auto data = qobject_cast<const LibraryItemMimeData*>(mimeData);
         auto data = (const LibraryItemMimeData*)mimeData;
-
-        // qDebug() << data->libraryItemName;
-        // create node from library
-        auto node = project->library->createNode(data->libraryItemName);
-
         auto scenePos = this->graph->mapToScene(evt->position().toPoint());
-        node->pos = QVector2D(scenePos) - QVector2D(50, 50);
 
-        this->project->addNode(node);
-        this->addNode(node);
-
-        this->renderer->update();
+        if (data->itemType == PopupItemType::Frame) {
+            auto frame = nodegraph::Frame::create();
+            frame->setPos(scenePos);
+            scene->addFrame(frame);
+        }
+        else if (data->itemType == PopupItemType::Comment) {
+            auto comment = nodegraph::Comment::create();
+            comment->setPos(scenePos);
+            scene->addComment(comment);
+        }
+        else {
+            auto node = project->library->createNode(data->libraryItemName);
+            node->pos = QVector2D(scenePos);
+            this->project->addNode(node);
+            this->addNode(node);
+            this->renderer->update();
+        }
 
         evt->accept();
     }
-    // mimeData->formats().contains()
-    // if (mimeData->data("ITEM_TYPE").toStdString() == "")
 }
 
 void GraphWidget::setTextureRenderer(TextureRenderer* renderer)
@@ -231,26 +317,33 @@ void GraphWidget::keyPressEvent(QKeyEvent* event)
     }
 }
 
-void GraphWidget::addNodeFromSearch(const QString& nodeName,
-                                     const QPoint& position)
+void GraphWidget::addItemFromSearch(const QString& name, PopupItemType type,
+                                    const QPoint& position)
 {
-    if (!project || !project->library)
-        return;
-
-    // Create node from library
-    auto node = project->library->createNode(nodeName);
-
-    // Convert global position to scene position
     QPoint localPos = graph->mapFromGlobal(position);
     auto scenePos = graph->mapToScene(localPos);
-    node->pos = QVector2D(scenePos) - QVector2D(50, 50);
 
-    // Add to project and scene
-    this->project->addNode(node);
-    this->addNode(node);
+    if (type == PopupItemType::Frame) {
+        auto frame = nodegraph::Frame::create();
+        frame->setPos(scenePos);
+        scene->addFrame(frame);
+    }
+    else if (type == PopupItemType::Comment) {
+        auto comment = nodegraph::Comment::create();
+        comment->setPos(scenePos);
+        scene->addComment(comment);
+    }
+    else {
+        if (!project || !project->library)
+            return;
 
-    // Update renderer
-    if (this->renderer) {
-        this->renderer->update();
+        auto node = project->library->createNode(name);
+        node->pos = QVector2D(scenePos);
+        this->project->addNode(node);
+        this->addNode(node);
+
+        if (this->renderer) {
+            this->renderer->update();
+        }
     }
 }

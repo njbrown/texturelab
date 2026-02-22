@@ -1,5 +1,6 @@
 #pragma once
 
+#include "nodesearchpopup.h"
 #include <QFrame>
 #include <QListWidget>
 #include <QMimeData>
@@ -20,6 +21,10 @@ public:
 
 private slots:
     void filterList(const QString& text);
+
+private:
+    void addSpecialItem(const QString& name, const QString& iconPath,
+                        PopupItemType type);
 };
 
 class LibraryItemMimeData : public QMimeData {
@@ -27,6 +32,7 @@ class LibraryItemMimeData : public QMimeData {
 
 public:
     QString libraryItemName;
+    PopupItemType itemType = PopupItemType::Node;
 
     virtual bool hasFormat(const QString& format) const override;
 };

@@ -45,28 +45,41 @@ LibraryWidget::LibraryWidget() : QWidget()
     this->setLibrary(nullptr);
 }
 
+void LibraryWidget::addSpecialItem(const QString& name,
+                                    const QString& iconPath, PopupItemType type)
+{
+    QListWidgetItem* item = new QListWidgetItem;
+    item->setData(Qt::DisplayRole, name);
+    item->setData((int)Roles::ItemType, "LibraryItem");
+    item->setData((int)Roles::LibraryItemName, name);
+    item->setData(Qt::UserRole, (int)type);
+    item->setSizeHint(QSize(90, 90));
+    item->setTextAlignment(Qt::AlignCenter);
+    item->setFlags(item->flags() | Qt::ItemIsEditable);
+    item->setIcon(QIcon(iconPath));
+    this->listWidget->addItem(item);
+}
+
 void LibraryWidget::setLibrary(Library* lib)
 {
-    QSize currentSize = QSize(90, 90);
     this->listWidget->clear();
+
+    addSpecialItem("Frame", ":nodes/frame.png", PopupItemType::Frame);
+    addSpecialItem("Comment", ":nodes/comment.png", PopupItemType::Comment);
 
     if (!lib)
         return;
 
     for (auto& libraryItem : lib->items) {
-        // for (int i = 0; i < 10; i++) {
         QListWidgetItem* item = new QListWidgetItem;
         item->setData(Qt::DisplayRole, libraryItem.name);
         item->setData((int)Roles::ItemType, "LibraryItem");
         item->setData((int)Roles::LibraryItemName, libraryItem.name);
-        // item->setData(Qt::DisplayRole, libraryItem.name);
-
-        item->setSizeHint(currentSize);
+        item->setData(Qt::UserRole, (int)PopupItemType::Node);
+        item->setSizeHint(QSize(90, 90));
         item->setTextAlignment(Qt::AlignCenter);
         item->setFlags(item->flags() | Qt::ItemIsEditable);
-        // item->setIcon(QIcon(":nodes/bevel.png"));
         item->setIcon(libraryItem.icon);
-
         this->listWidget->addItem(item);
     }
 }
@@ -142,11 +155,12 @@ LibraryListWidget::mimeData(const QList<QListWidgetItem*>& items) const
     // data->setData("ITEM_TYPE", "LIBRARY_ITEM");
 
     auto itemName = items[0]->data((int)Roles::LibraryItemName).toString();
-    // data->setData("LIBRARY_ITEM_NAME", itemName);
+    auto itemType = (PopupItemType)items[0]->data(Qt::UserRole).toInt();
     qDebug() << "Mime Data Dragging: " << itemName;
 
     auto mimeData = new LibraryItemMimeData();
     mimeData->libraryItemName = itemName;
+    mimeData->itemType = itemType;
 
     return mimeData;
 }

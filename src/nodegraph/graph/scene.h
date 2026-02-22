@@ -23,17 +23,23 @@ class Node;
 class Port;
 class Connection;
 class Scene;
+class Frame;
+class Comment;
 
 typedef QSharedPointer<Node> NodePtr;
 typedef QSharedPointer<Connection> ConnectionPtr;
 typedef QSharedPointer<Port> PortPtr;
 typedef QSharedPointer<Scene> ScenePtr;
+typedef QSharedPointer<Frame> FramePtr;
+typedef QSharedPointer<Comment> CommentPtr;
 
-enum class SceneItemType : int { Node = 1, Port = 2, Connection = 3 };
+enum class SceneItemType : int { Node = 1, Port = 2, Connection = 3, Comment = 4, Frame = 5 };
 
 class Scene : public QGraphicsScene, public QEnableSharedFromThis<Scene> {
 public:
     QMap<QString, NodePtr> nodes;
+    QMap<QString, FramePtr> frames;
+    QMap<QString, CommentPtr> comments;
     QString id;
 
     Scene();
@@ -41,6 +47,14 @@ public:
 
     void addNode(NodePtr node);
     NodePtr getNodeById(QString id);
+
+    void addFrame(FramePtr frame);
+    FramePtr getFrameById(QString id);
+    void removeFrame(FramePtr frame);
+
+    void addComment(CommentPtr comment);
+    CommentPtr getCommentById(QString id);
+    void removeComment(CommentPtr comment);
 
     ConnectionPtr connectNodes(NodePtr leftNode, QString leftOutputName,
                                NodePtr rightNode, QString rightInputName);
@@ -57,6 +71,9 @@ public:
 
 class Node : public QGraphicsObject, public QEnableSharedFromThis<Node> {
     QString _id;
+
+    static constexpr int NODE_WIDTH = 100;
+    static constexpr int NODE_HEIGHT = 100;
 
     int width;
     int height;
@@ -97,6 +114,7 @@ public:
     const QVector<PortPtr> getOutPorts() const;
 
     void setName(QString name);
+    void setCenter(float x, float y);
     void setThumbnail(const QPixmap& pixmap);
 
     void addInPort(QString name);
