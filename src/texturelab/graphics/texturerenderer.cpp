@@ -346,10 +346,12 @@ void TextureRenderer::update()
             project->textureHeight != node->textureHeight) {
             // resize
             // resizeNodeTexture(node);
-            node->textureWidth = project->textureWidth;
-            node->textureHeight = project->textureHeight;
-            node->texture = new QOpenGLFramebufferObject(node->textureWidth,
-                                                         node->textureHeight);
+            // node->textureWidth = project->textureWidth;
+            // node->textureHeight = project->textureHeight;
+            // node->texture = new QOpenGLFramebufferObject(node->textureWidth,
+            //                                              node->textureHeight);
+
+            this->createNodeTexture(node);
 
             // clear pixmap and emit thumbnail changed?
         }
@@ -416,6 +418,16 @@ void TextureRenderer::updateOld()
 void TextureRenderer::initializeNodeGraphicsResources(
     const TextureNodePtr& node)
 {
+    this->createNodeTexture(node);
+
+    ctx->makeCurrent(surface);
+    // build and compile shaders
+    node->shader = buildShaderForNode(node);
+    ctx->doneCurrent();
+}
+
+void TextureRenderer::createNodeTexture(const TextureNodePtr& node)
+{
     ctx->makeCurrent(surface);
 
     // create fbo
@@ -436,8 +448,6 @@ void TextureRenderer::initializeNodeGraphicsResources(
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     gl->glBindTexture(GL_TEXTURE_2D, 0);
 
-    // build and compile shaders
-    node->shader = buildShaderForNode(node);
     ctx->doneCurrent();
 }
 

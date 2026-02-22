@@ -49,6 +49,7 @@ public:
     void testRendering();
 
     void initializeNodeGraphicsResources(const TextureNodePtr& node);
+    void createNodeTexture(const TextureNodePtr& node);
     void renderNode(const TextureNodePtr& node);
 
     TextureProjectPtr project;
