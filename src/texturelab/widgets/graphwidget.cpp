@@ -2,12 +2,14 @@
 #include <QCursor>
 #include <QDragEnterEvent>
 #include <QKeyEvent>
+#include <QLabel>
 #include <QMainWindow>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QOpenGLContext>
+#include <QSignalBlocker>
 #include <QToolBar>
 
 #include "./graphics/texturerenderer.h"
@@ -27,6 +29,8 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
     this->setCentralWidget(graph);
 
     this->setAcceptDrops(true);
+
+    setupToolbar();
 
     // Create search popup
     searchPopup = new NodeSearchPopup(this);
@@ -116,6 +120,55 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
     // library = nullptr;
 }
 
+void GraphWidget::setupToolbar()
+{
+    auto toolbar = this->addToolBar("Graph");
+    toolbar->setMovable(false);
+
+    toolbar->addWidget(new QLabel("Resolution: "));
+
+    resolutionPicker = new QComboBox();
+    for (int res : {32, 64, 128, 256, 512, 1024, 2048, 4096})
+        resolutionPicker->addItem(QString("%1 x %1").arg(res), res);
+    resolutionPicker->setCurrentIndex(5); // default: 1024
+    resolutionPicker->setEnabled(false);
+    toolbar->addWidget(resolutionPicker);
+
+    connect(resolutionPicker, &QComboBox::currentIndexChanged, this,
+            [=](int /*index*/) {
+                if (!project)
+                    return;
+                int res = resolutionPicker->currentData().toInt();
+                project->textureWidth = res;
+                project->textureHeight = res;
+                for (auto& node : project->nodes)
+                    node->isDirty = true;
+                if (renderer)
+                    renderer->update();
+            });
+
+    toolbar->addSeparator();
+
+    toolbar->addWidget(new QLabel("Seed: "));
+
+    seedInput = new QSpinBox();
+    seedInput->setMinimum(0);
+    seedInput->setMaximum(99999);
+    seedInput->setValue(0);
+    seedInput->setEnabled(false);
+    toolbar->addWidget(seedInput);
+
+    connect(seedInput, &QSpinBox::editingFinished, this, [=]() {
+        if (!project)
+            return;
+        project->randomSeed = seedInput->value();
+        for (auto& node : project->nodes)
+            node->isDirty = true;
+        if (renderer)
+            renderer->update();
+    });
+}
+
 void GraphWidget::setTextureProject(TextureProjectPtr project)
 {
     // generate nodes from texture project
@@ -125,6 +178,17 @@ void GraphWidget::setTextureProject(TextureProjectPtr project)
     // auto scene = new nodegraph::Scene();
     this->scene = scene;
     this->project = project;
+
+    // Update toolbar controls from project settings
+    {
+        QSignalBlocker b1(resolutionPicker);
+        QSignalBlocker b2(seedInput);
+        int resIndex = resolutionPicker->findData(project->textureWidth);
+        resolutionPicker->setCurrentIndex(resIndex >= 0 ? resIndex : 5);
+        resolutionPicker->setEnabled(true);
+        seedInput->setValue(project->randomSeed);
+        seedInput->setEnabled(true);
+    }
 
     // Set library for search popup
     if (project && project->library) {
