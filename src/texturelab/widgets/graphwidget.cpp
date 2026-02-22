@@ -145,9 +145,25 @@ void GraphWidget::setTextureProject(TextureProjectPtr project)
                             con->rightNodeInputName);
     }
 
-    // todo: add frames
-    // todo: add comments
-    // todo: add navigations
+    // add comments
+    for (auto comment : project->comments) {
+        auto gcomment = nodegraph::Comment::create();
+        gcomment->setId(comment->id);
+        gcomment->setText(comment->text);
+        gcomment->setPos(comment->pos.x(), comment->pos.y());
+        scene->addComment(gcomment);
+    }
+
+    // add frames
+    for (auto frame : project->frames) {
+        auto gframe = nodegraph::Frame::create();
+        gframe->setId(frame->id);
+        gframe->setTitle(frame->text);
+        gframe->setPos(frame->pos.x(), frame->pos.y());
+        if (frame->size.x() > 0 && frame->size.y() > 0)
+            gframe->setSize(frame->size.x(), frame->size.y());
+        scene->addFrame(gframe);
+    }
 
     // graph->setNodeGraphScene(nodegraph::ScenePtr(scene));
     graph->setNodeGraphScene(scene);

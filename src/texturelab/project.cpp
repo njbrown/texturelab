@@ -5,6 +5,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QUuid>
 
 TextureProjectPtr Project::loadTexture(QString path)
 {
@@ -80,6 +81,36 @@ TextureProjectPtr Project::loadTexture(QString path)
 
         QString rightNodeInputId = conObj["rightNodeInput"].toString();
         texture->addConnection(leftNode, rightNode, rightNodeInputId);
+    }
+
+    // load comments
+    auto commentArray = sceneObj["comments"].toArray();
+    for (auto item : commentArray) {
+        auto obj = item.toObject();
+        CommentPtr comment(new Comment());
+        auto commentId = obj["id"].toString();
+        comment->id = commentId.isEmpty()
+                          ? QUuid::createUuid().toString(QUuid::WithoutBraces)
+                          : commentId;
+        comment->text = obj["text"].toString();
+        comment->pos = QVector2D(obj["x"].toDouble(), obj["y"].toDouble());
+        texture->comments[comment->id] = comment;
+    }
+
+    // load frames
+    auto frameArray = sceneObj["frames"].toArray();
+    for (auto item : frameArray) {
+        auto obj = item.toObject();
+        FramePtr frame(new Frame());
+        auto frameId = obj["id"].toString();
+        frame->id = frameId.isEmpty()
+                        ? QUuid::createUuid().toString(QUuid::WithoutBraces)
+                        : frameId;
+        frame->text = obj["title"].toString();
+        frame->pos = QVector2D(obj["x"].toDouble(), obj["y"].toDouble());
+        frame->size =
+            QVector2D(obj["width"].toDouble(300), obj["height"].toDouble(200));
+        texture->frames[frame->id] = frame;
     }
 
     if (json["export"].isObject()) {
