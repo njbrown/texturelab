@@ -184,25 +184,29 @@ void GraphWidget::dropEvent(QDropEvent* evt)
 {
     auto mimeData = evt->mimeData();
     if (mimeData->hasFormat(LIBRARY_ITEM_MIME_FORMAT)) {
-        // auto data = qobject_cast<const LibraryItemMimeData*>(mimeData);
         auto data = (const LibraryItemMimeData*)mimeData;
-
-        // qDebug() << data->libraryItemName;
-        // create node from library
-        auto node = project->library->createNode(data->libraryItemName);
-
         auto scenePos = this->graph->mapToScene(evt->position().toPoint());
-        node->pos = QVector2D(scenePos) - QVector2D(50, 50);
 
-        this->project->addNode(node);
-        this->addNode(node);
-
-        this->renderer->update();
+        if (data->itemType == PopupItemType::Frame) {
+            auto frame = nodegraph::Frame::create();
+            frame->setPos(scenePos);
+            scene->addFrame(frame);
+        }
+        else if (data->itemType == PopupItemType::Comment) {
+            auto comment = nodegraph::Comment::create();
+            comment->setPos(scenePos);
+            scene->addComment(comment);
+        }
+        else {
+            auto node = project->library->createNode(data->libraryItemName);
+            node->pos = QVector2D(scenePos) - QVector2D(50, 50);
+            this->project->addNode(node);
+            this->addNode(node);
+            this->renderer->update();
+        }
 
         evt->accept();
     }
-    // mimeData->formats().contains()
-    // if (mimeData->data("ITEM_TYPE").toStdString() == "")
 }
 
 void GraphWidget::setTextureRenderer(TextureRenderer* renderer)

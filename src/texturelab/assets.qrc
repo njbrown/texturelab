@@ -85,6 +85,9 @@
     <!-- v3 nodes -->
     <!-- <file alias="nodes/crop.png">../../public/assets/nodes/crop.png</file> -->
     
+    <file alias="nodes/frame.png">../../public/assets/nodes/frame.png</file>
+    <file alias="nodes/comment.png">../../public/assets/nodes/comment.png</file>
+
     <!-- icons -->
     <file alias="icons/save.svg">../icons/save.svg</file>
     <file alias="icons/grid.svg">../icons/grid.svg</file>
