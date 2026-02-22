@@ -72,6 +72,9 @@ public:
 class Node : public QGraphicsObject, public QEnableSharedFromThis<Node> {
     QString _id;
 
+    static constexpr int NODE_WIDTH = 100;
+    static constexpr int NODE_HEIGHT = 100;
+
     int width;
     int height;
     GLuint texId = 0;
@@ -111,6 +114,7 @@ public:
     const QVector<PortPtr> getOutPorts() const;
 
     void setName(QString name);
+    void setCenter(float x, float y);
     void setThumbnail(const QPixmap& pixmap);
 
     void addInPort(QString name);

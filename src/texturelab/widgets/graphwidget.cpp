@@ -179,7 +179,7 @@ void GraphWidget::addNode(const TextureNodePtr& node)
 
     gnode->setId(node->id);
     gnode->addOutPort("output");
-    gnode->setPos(node->pos.x(), node->pos.y());
+    gnode->setCenter(node->pos.x(), node->pos.y());
 
     scene->addNode(gnode);
 }
@@ -215,7 +215,7 @@ void GraphWidget::dropEvent(QDropEvent* evt)
         }
         else {
             auto node = project->library->createNode(data->libraryItemName);
-            node->pos = QVector2D(scenePos) - QVector2D(50, 50);
+            node->pos = QVector2D(scenePos);
             this->project->addNode(node);
             this->addNode(node);
             this->renderer->update();
@@ -274,7 +274,7 @@ void GraphWidget::addItemFromSearch(const QString& name, PopupItemType type,
             return;
 
         auto node = project->library->createNode(name);
-        node->pos = QVector2D(scenePos) - QVector2D(50, 50);
+        node->pos = QVector2D(scenePos);
         this->project->addNode(node);
         this->addNode(node);
 

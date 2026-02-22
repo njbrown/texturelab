@@ -213,8 +213,8 @@ Node::Node()
     // Generate unique ID for this node
     _id = QUuid::createUuid().toString();
 
-    width = 100;
-    height = 100;
+    width = NODE_WIDTH;
+    height = NODE_HEIGHT;
     isHovered = false;
 
     defaultBorderColor = QColor(0, 0, 0);
@@ -263,6 +263,11 @@ Node::Node()
 }
 
 NodePtr Node::create() { return NodePtr(new Node()); }
+
+void Node::setCenter(float x, float y)
+{
+    setPos(x - NODE_WIDTH / 2.0f, y - NODE_HEIGHT / 2.0f);
+}
 
 void Node::setName(QString name)
 {
