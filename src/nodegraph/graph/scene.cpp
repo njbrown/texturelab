@@ -1,4 +1,5 @@
 #include "scene.h"
+#include "comment.h"
 #include "frame.h"
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsSceneMouseEvent>
@@ -145,6 +146,22 @@ void Scene::removeFrame(FramePtr frame)
     this->removeItem(frame.data());
     frames.remove(frame->id());
     frame->show();
+}
+
+void Scene::addComment(CommentPtr comment)
+{
+    this->addItem(comment.data());
+    comments[comment->id()] = comment;
+}
+
+CommentPtr Scene::getCommentById(QString id) { return comments[id]; }
+
+void Scene::removeComment(CommentPtr comment)
+{
+    comment->hide();
+    this->removeItem(comment.data());
+    comments.remove(comment->id());
+    comment->show();
 }
 
 void Scene::removeNode(NodePtr node)

@@ -1,5 +1,6 @@
-#include "graph/scene.h"
+#include "graph/comment.h"
 #include "graph/frame.h"
+#include "graph/scene.h"
 #include "nodegraph.h"
 #include <QApplication>
 #include <QMainWindow>
@@ -7,62 +8,69 @@
 
 using namespace nodegraph;
 
-int main(int argc, char *argv[]) {
-  QApplication a(argc, argv);
-  QMainWindow w;
+int main(int argc, char* argv[])
+{
+    QApplication a(argc, argv);
+    QMainWindow w;
 
-  auto graph = new NodeGraph(&w);
+    auto graph = new NodeGraph(&w);
 
-  // QStackedLayout *layout = new QStackedLayout(&w);
-  // layout->addWidget(graph);
+    // QStackedLayout *layout = new QStackedLayout(&w);
+    // layout->addWidget(graph);
 
-  w.setCentralWidget(graph);
+    w.setCentralWidget(graph);
 
-  auto scene = graph->scene();
+    auto scene = graph->scene();
 
-  NodePtr node(new Node());
-  node->setName("Warp");
-  node->addInPort("image");
-  node->addInPort("height");
-  node->addOutPort("image");
-  scene->addNode(node);
+    NodePtr node(new Node());
+    node->setName("Warp");
+    node->addInPort("image");
+    node->addInPort("height");
+    node->addOutPort("image");
+    scene->addNode(node);
 
-  NodePtr outputNode(new Node());
-  outputNode->setName("Floodfill");
-  outputNode->addInPort("image");
-  outputNode->addOutPort("result");
-  outputNode->setPos(200, 150);
-  scene->addNode(outputNode);
+    NodePtr outputNode(new Node());
+    outputNode->setName("Floodfill");
+    outputNode->addInPort("image");
+    outputNode->addOutPort("result");
+    outputNode->setPos(200, 150);
+    scene->addNode(outputNode);
 
-  scene->connectNodes(node, "image", outputNode, "image");
+    scene->connectNodes(node, "image", outputNode, "image");
 
-  NodePtr node2(new Node());
-  node2->setName("Stress Test");
-  node2->addInPort("image");
-  node2->addInPort("image2");
-  node2->addInPort("image3");
-  node2->addInPort("image4");
-  node2->addOutPort("result");
-  node2->setPos(320, 0);
-  scene->addNode(node2);
+    NodePtr node2(new Node());
+    node2->setName("Stress Test");
+    node2->addInPort("image");
+    node2->addInPort("image2");
+    node2->addInPort("image3");
+    node2->addInPort("image4");
+    node2->addOutPort("result");
+    node2->setPos(320, 0);
+    scene->addNode(node2);
 
-  // Create a frame to group the first two nodes
-  FramePtr frame = Frame::create();
-  frame->setTitle("Processing Group");
-  frame->setColor(QColor(50, 20, 80));  // Purple-ish color
-  frame->setFrameRect(QRectF(-20, -20, 400, 250));
-  frame->setPos(0, 0);
+    // Create a frame to group the first two nodes
+    FramePtr frame = Frame::create();
+    frame->setTitle("Processing Group");
+    frame->setColor(QColor(50, 20, 80)); // Purple-ish color
+    frame->setFrameRect(QRectF(-20, -20, 400, 250));
+    frame->setPos(0, 0);
 
-  // Add nodes to the frame so they move together
-  frame->addNode(node);
-  frame->addNode(outputNode);
+    // Add nodes to the frame so they move together
+    frame->addNode(node);
+    frame->addNode(outputNode);
 
-  scene->addFrame(frame);
+    scene->addFrame(frame);
 
-  w.resize(800, 600);
+    CommentPtr comment = Comment::create();
+    comment->setText("Warp node takes image\nand height map as inputs\n\nnew "
+                     "line works too!");
+    comment->setPos(420, 0);
+    scene->addComment(comment);
 
-  w.show();
-  w.showMaximized();
+    w.resize(800, 600);
 
-  return a.exec();
+    w.show();
+    w.showMaximized();
+
+    return a.exec();
 }
