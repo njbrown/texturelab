@@ -158,7 +158,7 @@ void GraphWidget::setupToolbar()
     seedInput->setEnabled(false);
     toolbar->addWidget(seedInput);
 
-    connect(seedInput, &QSpinBox::editingFinished, this, [=]() {
+    connect(seedInput, &QSpinBox::valueChanged, this, [=]() {
         if (!project)
             return;
         project->randomSeed = seedInput->value();
@@ -318,7 +318,7 @@ void GraphWidget::keyPressEvent(QKeyEvent* event)
 }
 
 void GraphWidget::addItemFromSearch(const QString& name, PopupItemType type,
-                                     const QPoint& position)
+                                    const QPoint& position)
 {
     QPoint localPos = graph->mapFromGlobal(position);
     auto scenePos = graph->mapToScene(localPos);
