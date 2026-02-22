@@ -2,6 +2,7 @@
 #include "../utils.h"
 #include "./libraries/library.h"
 
+#include <QIcon>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QListWidget>
@@ -55,11 +56,11 @@ void NodeSearchPopup::setLibrary(Library* lib)
     itemList->clear();
 
     // Fixed entries: Frame and Comment always appear at the top
-    auto frameItem = new QListWidgetItem("Frame");
+    auto frameItem = new QListWidgetItem(QIcon(":nodes/frame.png"), "Frame");
     frameItem->setData(Qt::UserRole, (int)PopupItemType::Frame);
     itemList->addItem(frameItem);
 
-    auto commentItem = new QListWidgetItem("Comment");
+    auto commentItem = new QListWidgetItem(QIcon(":nodes/comment.png"), "Comment");
     commentItem->setData(Qt::UserRole, (int)PopupItemType::Comment);
     itemList->addItem(commentItem);
 
