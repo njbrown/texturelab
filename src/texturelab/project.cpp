@@ -137,6 +137,8 @@ TextureProjectPtr Project::loadTexture(QString path)
                 channel = TextureChannel::Height;
             else if (key == "alpha")
                 channel = TextureChannel::Alpha;
+            else if (key == "ao")
+                channel = TextureChannel::AO;
 
             if (channel != TextureChannel::None) {
                 auto nodeId = channels[key].toString();

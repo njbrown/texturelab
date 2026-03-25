@@ -91,6 +91,8 @@ void Renderer::updateMaterial(Material* material)
         flags << "HAS_ROUGHNESS_MAP 1";
     if (material->heightMapId != 0)
         flags << "HAS_HEIGHT_MAP 1";
+    if (material->aoMapId != 0)
+        flags << "HAS_OCCLUSION_MAP 1";
     // flags << "HAS_NORMAL_MAP 1";
     // flags << "HAS_ROUGHNESS_MAP 1";
     // flags << "HAS_METALNESS_MAP 1";
@@ -318,6 +320,12 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
     gl->glBindTexture(GL_TEXTURE_2D, mat->heightMapId);
 
     shader->setUniformValue("u_HeightScale", material->heightScale);
+
+    shader->setUniformValue("u_OcclusionSampler", 5);
+    gl->glActiveTexture(GL_TEXTURE5);
+    gl->glBindTexture(GL_TEXTURE_2D, mat->aoMapId);
+    shader->setUniformValue("u_OcclusionUVSet", 0);
+    shader->setUniformValue("u_OcclusionStrength", 1.0f);
 
     // albedo
     // mainProgram->setUniformValue("u_BaseColorFactor", mat->albedo);

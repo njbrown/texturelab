@@ -48,7 +48,8 @@ enum class TextureChannel : int {
     Metalness = 3,
     Roughness = 4,
     Height = 5,
-    Alpha = 6
+    Alpha = 6,
+    AO = 7
 };
 
 class ProjectFile {

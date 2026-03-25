@@ -106,12 +106,9 @@ public:
     void setHeightTexture(GLuint texId);
     void clearHeightTexture();
     void setHeightScale(float scale);
+    void setAoTexture(GLuint texId);
+    void clearAoTexture();
     void resetMaterial();
-
-    // void setAlphaTexture(GLuint texId);
-    // void setAoTexture(GLuint texId);
-    // void setEmissiveTexture(GLuint texId);
-    // void setHeightTexture(GLuint texId);
 
     void clearTextures();
     void resetCamera();

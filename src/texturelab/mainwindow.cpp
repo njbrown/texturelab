@@ -167,6 +167,12 @@ void MainWindow::passTextureChannelsToViewer3D()
         case TextureChannel::Roughness:
             viewer->setRoughnessTexture(node->textureId());
             break;
+        case TextureChannel::Height:
+            viewer->setHeightTexture(node->textureId());
+            break;
+        case TextureChannel::AO:
+            viewer->setAoTexture(node->textureId());
+            break;
         default:
             break;
         }
@@ -221,6 +227,9 @@ void MainWindow::setProject(TextureProjectPtr project)
                             break;
                         case TextureChannel::Height:
                             viewer->setHeightTexture(texId);
+                            break;
+                        case TextureChannel::AO:
+                            viewer->setAoTexture(texId);
                             break;
                         default:
                             break;

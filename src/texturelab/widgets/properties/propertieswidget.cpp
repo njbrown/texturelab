@@ -12,7 +12,7 @@ PropertiesWidget::PropertiesWidget() : QWidget()
     textureChannelProp = new EnumProp();
     textureChannelProp->displayName = "Texture Channel";
     textureChannelProp->values = {"None",      "Albedo", "Normal", "Metalness",
-                                  "Roughness", "Height", "Alpha"};
+                                  "Roughness", "Height", "Alpha", "AO"};
     textureChannelProp->setValue(0);
 
     randomSeedProp = new IntProp();

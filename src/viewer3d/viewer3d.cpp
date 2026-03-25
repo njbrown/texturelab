@@ -524,6 +524,18 @@ void Viewer3D::setHeightScale(float scale)
     this->material->needsUpdate = true;
 }
 
+void Viewer3D::setAoTexture(GLuint texId)
+{
+    this->material->aoMapId = texId;
+    this->material->needsUpdate = true;
+}
+
+void Viewer3D::clearAoTexture()
+{
+    this->material->aoMapId = 0;
+    this->material->needsUpdate = true;
+}
+
 void Viewer3D::clearTextures()
 {
     this->clearAlbedoTexture();
@@ -531,6 +543,7 @@ void Viewer3D::clearTextures()
     this->clearMetalnessTexture();
     this->clearRoughnessTexture();
     this->clearHeightTexture();
+    this->clearAoTexture();
 }
 
 void Viewer3D::resetCamera()
