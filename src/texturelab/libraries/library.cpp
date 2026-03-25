@@ -192,6 +192,8 @@ Library* createLibraryV3()
     // V3 NODES
     lib->addNode<AmbientOcclusionNode>("ambientocclusion", "Ambient Occlusion",
                                        ":nodes/bevel.png");
+    lib->addNode<CurvatureNode>("curvature", "Curvature",
+                                 ":nodes/bevel.png");
 
     return lib;
 }
