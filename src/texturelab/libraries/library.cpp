@@ -194,6 +194,10 @@ Library* createLibraryV3()
                                        ":nodes/bevel.png");
     lib->addNode<CurvatureNode>("curvature", "Curvature",
                                  ":nodes/bevel.png");
+    lib->addNode<MaskedBlurNode>("maskedblur", "Masked Blur",
+                                  ":nodes/blurv2.png");
+    lib->addNode<RaysNode>("rays", "Rays", ":nodes/bevel.png");
+    lib->addNode<SwirlNode>("swirl", "Swirl", ":nodes/bevel.png");
 
     return lib;
 }
