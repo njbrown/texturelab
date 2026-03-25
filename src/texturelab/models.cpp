@@ -118,7 +118,7 @@ TextureProjectPtr TextureProject::createEmpty(Library* library)
     if (library != nullptr)
         project->library = library;
     else
-        project->library = createLibraryV2();
+        project->library = createLibraryV3();
 
     return TextureProjectPtr(project);
 }

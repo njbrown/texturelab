@@ -26,7 +26,7 @@ TextureProjectPtr Project::loadTexture(QString path)
 
     // create library from version
     // Library *lib = new LibraryV1();
-    Library* lib = createLibraryV2();
+    Library* lib = createLibraryV3();
 
     // scene objects
     auto sceneObj = json["scene"].toObject();

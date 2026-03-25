@@ -2,6 +2,7 @@
 #include "../models.h"
 #include "libv1.h"
 #include "libv2.h"
+#include "libv3.h"
 
 #include <QMap>
 
@@ -180,6 +181,17 @@ Library* createLibraryV2()
                                            "Value Noise Fractal Sum",
                                            ":nodes/valuenoisefractalsum.png");
     lib->addNode<WarpNodeV2>("warp", "Warp", ":nodes/warp.png");
+
+    return lib;
+}
+
+Library* createLibraryV3()
+{
+    auto lib = createLibraryV2();
+
+    // V3 NODES
+    lib->addNode<AmbientOcclusionNode>("ambientocclusion", "Ambient Occlusion",
+                                       ":nodes/bevel.png");
 
     return lib;
 }

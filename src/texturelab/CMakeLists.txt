@@ -98,6 +98,10 @@ set(LIBRARYV2
     ./libraries/v2/warpv2.cpp
 )
 
+set(LIBRARYV3
+    ./libraries/v3/ambientocclusion.cpp
+)
+
 set(PROJECT_SOURCES
         ./main.cpp
         ./mainwindow.cpp
@@ -112,7 +116,7 @@ set(PROJECT_SOURCES
         ./props.h
         ./props.cpp
         ./libraries/libv2.h
-        ./libraries/libv2.h
+        ./libraries/libv3.h
         ./libraries/library.h
         ./libraries/library.cpp
         ./widgets/graphwidget.h
@@ -137,6 +141,7 @@ set(PROJECT_SOURCES
         ./graphics/renderworker.cpp
         ${LIBRARYV1}
         ${LIBRARYV2}
+        ${LIBRARYV3}
 )
 
 set(PROJECT_RESOURCES
