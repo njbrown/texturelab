@@ -80,6 +80,7 @@ void NodeGraph::setNodeGraphScene(const ScenePtr& scene)
     }
 
     this->_scene = scene;
+    scene->setSceneRect(-100000, -100000, 200000, 200000);
     this->setScene(scene.data());
 
     // handle scene's events from within the view
@@ -168,21 +169,22 @@ void NodeGraph::keyReleaseEvent(QKeyEvent* event)
 
 void NodeGraph::mousePressEvent(QMouseEvent* event)
 {
-    if (event->button() == Qt::MiddleButton &&
-        scene()->mouseGrabberItem() == nullptr) {
-        _clickPos = mapToScene(event->pos());
+    if (event->button() == Qt::MiddleButton) {
+        _clickPos = event->pos();
         setDragMode(QGraphicsView::NoDrag);
+        return;
     }
     QGraphicsView::mousePressEvent(event);
 }
 
 void NodeGraph::mouseMoveEvent(QMouseEvent* event)
 {
-
-    if (event->buttons() == Qt::MiddleButton) {
-        QPointF difference = _clickPos - mapToScene(event->pos());
-        setSceneRect(sceneRect().translated(difference.x(), difference.y()));
-        _clickPos = mapToScene(event->pos()); // Update reference point to maintain coordinate consistency
+    if (event->buttons() & Qt::MiddleButton) {
+        QPointF delta = event->pos() - _clickPos;
+        horizontalScrollBar()->setValue(horizontalScrollBar()->value() - delta.x());
+        verticalScrollBar()->setValue(verticalScrollBar()->value() - delta.y());
+        _clickPos = event->pos();
+        return;
     }
     QGraphicsView::mouseMoveEvent(event);
 }
