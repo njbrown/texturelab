@@ -1,6 +1,14 @@
 #pragma once
 
 #include "../models.h"
+#include <memory>
+
+class BevelV2Node : public TextureNode {
+public:
+    virtual void init() override;
+    std::shared_ptr<NodeTextureRenderer> createRenderer() override;
+    std::shared_ptr<NodeRenderData> createRenderData() override;
+};
 
 class AmbientOcclusionNode : public TextureNode {
 public:

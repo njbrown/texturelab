@@ -15,8 +15,7 @@ public:
 class BevelNode : public TextureNode {
 public:
     virtual void init() override;
-    std::shared_ptr<NodeTextureRenderer> createRenderer() override;
-    std::shared_ptr<NodeRenderData> createRenderData() override;
+    void cpuProcess(void* gl, const RenderCommand& command) override;
 };
 
 class BlurNodeV2 : public TextureNode {

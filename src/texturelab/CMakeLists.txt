@@ -100,6 +100,7 @@ set(LIBRARYV2
 
 set(LIBRARYV3
     ./libraries/v3/ambientocclusion.cpp
+    ./libraries/v3/bevelv2.cpp
     ./libraries/v3/curvature.cpp
     ./libraries/v3/maskedblur.cpp
     ./libraries/v3/rays.cpp

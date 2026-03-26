@@ -190,6 +190,7 @@ Library* createLibraryV3()
     auto lib = createLibraryV2();
 
     // V3 NODES
+    lib->addNode<BevelV2Node>("bevelv2", "Bevel V2", ":nodes/bevel.png");
     lib->addNode<AmbientOcclusionNode>("ambientocclusion", "Ambient Occlusion",
                                        ":nodes/bevel.png");
     lib->addNode<CurvatureNode>("curvature", "Curvature",
