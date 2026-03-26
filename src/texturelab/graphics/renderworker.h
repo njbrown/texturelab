@@ -1,12 +1,14 @@
 #pragma once
 
 #include "../props.h"
+#include "noderenderer.h"
 #include <QList>
 #include <QMutex>
 #include <QObject>
 #include <QOpenGLFunctions>
 #include <QQueue>
 #include <atomic>
+#include <memory>
 
 class QOffscreenSurface;
 class QOpenGLContext;
@@ -53,6 +55,10 @@ struct RenderCommand {
 
     // props
     QList<RenderProp> props;
+
+    // Custom rendering support (null = standard single-pass)
+    std::shared_ptr<NodeTextureRenderer> renderer;
+    std::shared_ptr<NodeRenderData> renderData;
 };
 
 class RenderWorker : public QObject {
@@ -70,9 +76,13 @@ class RenderWorker : public QObject {
     // use custom dbo that gets shared across render textures
     GLuint fboId;
 
+    RenderResourceCache resourceCache;
+
     QMutex mutex;
     std::atomic<bool> running;
     QQueue<RenderCommand> renderQueue;
+
+    void renderSinglePass(const RenderCommand& command);
 
 public:
     RenderWorker();

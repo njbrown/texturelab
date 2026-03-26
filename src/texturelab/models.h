@@ -9,6 +9,7 @@
 #include <QString>
 #include <QVector2D>
 #include <QtOpenGL>
+#include <memory>
 
 class QOpenGLFramebufferObject;
 class QOpenGLShaderProgram;
@@ -29,6 +30,8 @@ typedef QSharedPointer<Connection> ConnectionPtr;
 class Prop;
 class PropertyGroup;
 class Library;
+class NodeTextureRenderer;
+struct NodeRenderData;
 
 class IntProp;
 class FloatProp;
@@ -142,6 +145,19 @@ public:
     bool hasProp(QString propName);
 
     void setShaderSource(const QString& source) { shaderSource = source; }
+
+    // Override to provide a custom renderer for multi-pass or non-standard rendering.
+    // Called on the main thread during queueNextNodeToRender().
+    // Return nullptr for standard single-pass rendering.
+    virtual std::shared_ptr<NodeTextureRenderer> createRenderer() {
+        return nullptr;
+    }
+
+    // Override to provide render-time data for the custom renderer.
+    // Called on the main thread. Must not reference GPU resources.
+    virtual std::shared_ptr<NodeRenderData> createRenderData() {
+        return nullptr;
+    }
 
     bool isGraphicsResourcesInitialized()
     {

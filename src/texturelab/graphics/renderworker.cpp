@@ -205,6 +205,9 @@ void RenderWorker::setup()
     // gl->glReadBuffer(GL_NONE);
     gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    // Initialize resource cache for custom node renderers
+    resourceCache.init(gl, fboId);
+
 #ifdef __linux__
     // setup renderdoc
     if (void* mod = dlopen("librenderdoc.so", RTLD_NOW | RTLD_NOLOAD)) {
@@ -219,20 +222,47 @@ void RenderWorker::setup()
 
 void RenderWorker::processRenderCommand(const RenderCommand& command)
 {
-    // Here you would bind the shader, set up inputs and props, and render to a
-    // texture. This is a placeholder implementation.
-
     if (rdoc_api)
         rdoc_api->StartFrameCapture(NULL, NULL);
 
     ctx->makeCurrent(surface);
 
-    // Handle CPU processing nodes differently
-    if (command.usesCpuProcessing && command.nodePtr != nullptr) {
-        // Cast back to TextureNode and call cpuProcess
-        TextureNode* node = static_cast<TextureNode*>(command.nodePtr);
+    // Custom renderer path — node defines its own multi-pass rendering
+    if (command.renderer) {
+        NodeRenderContext renderCtx;
+        renderCtx.gl = gl;
+        renderCtx.cache = &resourceCache;
+        renderCtx.outputTextureId = command.textureId;
+        renderCtx.textureWidth = command.textureWidth;
+        renderCtx.textureHeight = command.textureHeight;
+        renderCtx.randomSeed = command.randomSeed;
+        renderCtx.vao = vao;
+        renderCtx.vbo = vbo;
 
-        // Call the CPU processing method with the full command
+        for (const auto& input : command.inputs) {
+            renderCtx.inputs.append(
+                NodeInputBinding{input.inputName, input.textureId});
+        }
+
+        command.renderer->render(renderCtx, *command.renderData);
+        resourceCache.releaseAllTextures();
+
+        gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                   GL_TEXTURE_2D, 0, 0);
+        gl->glBindFramebuffer(GL_FRAMEBUFFER, ctx->defaultFramebufferObject());
+
+        ctx->doneCurrent();
+
+        if (rdoc_api)
+            rdoc_api->EndFrameCapture(NULL, NULL);
+
+        emit nodeRendered(command.nodeId, command.textureId);
+        return;
+    }
+
+    // CPU processing path
+    if (command.usesCpuProcessing && command.nodePtr != nullptr) {
+        TextureNode* node = static_cast<TextureNode*>(command.nodePtr);
         node->cpuProcess(gl, command);
 
         ctx->doneCurrent();
@@ -244,13 +274,23 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
         return;
     }
 
-    // Simulate rendering process
-    GLuint renderedTextureId =
-        0; // Replace with actual texture ID after rendering
+    // Standard single-pass GPU path
+    renderSinglePass(command);
 
-    // qDebug() << "RenderWorker: Processing render command for node:"
-    //          << command.nodeId;
+    gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_2D, 0, 0);
+    gl->glBindFramebuffer(GL_FRAMEBUFFER, ctx->defaultFramebufferObject());
 
+    ctx->doneCurrent();
+
+    if (rdoc_api)
+        rdoc_api->EndFrameCapture(NULL, NULL);
+
+    emit nodeRendered(command.nodeId, command.textureId);
+}
+
+void RenderWorker::renderSinglePass(const RenderCommand& command)
+{
     gl->glBindFramebuffer(GL_FRAMEBUFFER, fboId);
     gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                GL_TEXTURE_2D, command.textureId, 0);
@@ -258,9 +298,7 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
     GLenum status = gl->glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {
         qFatal("FRAMEBUFFER IS NOT COMPLETE!");
-        // qWarning("%s Framebuffer is not complete!", command.nodeId);
     }
-    // fbo->bind();
 
     gl->glViewport(0, 0, command.textureWidth, command.textureHeight);
 
@@ -268,8 +306,6 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
     gl->glClearDepth(0);
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // qDebug() << "RenderWorker: Cleared framebuffer for node:" <<
-    // command.nodeId;
     vao->bind();
 
     if (command.shaderLinked) {
@@ -281,7 +317,6 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
             gl->glActiveTexture(GL_TEXTURE0 + texIndex);
             gl->glBindTexture(GL_TEXTURE_2D, 0);
 
-            // gl->glUniform1i(node->shader->uniformLocation(input), 0);
             gl->glUniform1i(
                 gl->glGetUniformLocation(command.shaderId,
                                          input.inputName.toStdString().c_str()),
@@ -299,12 +334,9 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
         texIndex = 0;
         for (auto nodeInput : command.inputs) {
             gl->glActiveTexture(GL_TEXTURE0 + texIndex);
-            // if (!nodeInput.node->texture->bind())
-            //     qFatal("could not bind texture");
             gl->glBindTexture(GL_TEXTURE_2D, nodeInput.textureId);
 
             auto name = nodeInput.inputName;
-            // gl->glUniform1i(node->shader->uniformLocation(input), 0);
             gl->glUniform1i(gl->glGetUniformLocation(
                                 command.shaderId, name.toStdString().c_str()),
                             texIndex);
@@ -312,23 +344,15 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
             gl->glUniform1i(gl->glGetUniformLocation(command.shaderId,
                                                      connectedName.c_str()),
                             1);
-            // shader->setUniformValue(name.toStdString().c_str(), texIndex);
-            // shader->setUniformValue((name +
-            // "_connected").toStdString().c_str(),
-            //                         1);
 
             texIndex++;
         }
 
         // pass seed
-        // shader->setUniformValue("_seed", (GLfloat)(command.randomSeed));
         gl->glUniform1f(gl->glGetUniformLocation(command.shaderId, "_seed"),
                         (GLfloat)(command.randomSeed));
 
         // texture size
-        // shader->setUniformValue(
-        //     "_textureSize",
-        //     QVector2D(command.textureWidth, command.textureHeight));
         gl->glUniform2f(
             gl->glGetUniformLocation(command.shaderId, "_textureSize"),
             (GLfloat)(command.textureWidth), (GLfloat)(command.textureHeight));
@@ -337,7 +361,6 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
         for (auto prop : command.props) {
             auto propCString = ("prop_" + prop.propName.toStdString());
             auto propName = propCString.c_str();
-            // qDebug() << "glsl prop: " << propName;
 
             switch (prop.propType) {
             case PropType::Int: {
@@ -375,18 +398,15 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
                 auto gradientVal = prop.value.value<Gradient>();
                 auto numPoints = gradientVal.points.size();
 
-                // Set number of gradient points
                 gl->glUniform1i(
                     gl->glGetUniformLocation(
                         command.shaderId, (propCString + ".numPoints").c_str()),
                     numPoints);
 
-                // Pass each gradient point (color and position)
                 for (int i = 0; i < numPoints; i++) {
                     const auto& point = gradientVal.points[i];
                     const auto& color = point.color;
 
-                    // Set color for this point
                     std::string colorPath =
                         propCString + ".colors[" + std::to_string(i) + "]";
                     gl->glUniform3f(gl->glGetUniformLocation(command.shaderId,
@@ -394,7 +414,6 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
                                     color.redF(), color.greenF(),
                                     color.blueF());
 
-                    // Set position for this point
                     std::string posPath =
                         propCString + ".positions[" + std::to_string(i) + "]";
                     gl->glUniform1f(gl->glGetUniformLocation(command.shaderId,
@@ -403,7 +422,6 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
                 }
             } break;
             case PropType::Image: {
-                // Use pre-uploaded texture ID from main thread
                 if (prop.textureId != 0) {
                     gl->glActiveTexture(GL_TEXTURE0 + texIndex);
                     gl->glBindTexture(GL_TEXTURE_2D, prop.textureId);
@@ -413,10 +431,8 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
                     texIndex++;
                 }
                 else {
-                    // No texture provided, bind a default texture (e.g., white)
                     gl->glActiveTexture(GL_TEXTURE0 + texIndex);
-                    gl->glBindTexture(GL_TEXTURE_2D, 0); // Bind to 0 or a
-                                                         // default texture
+                    gl->glBindTexture(GL_TEXTURE_2D, 0);
                     gl->glUniform1i(
                         gl->glGetUniformLocation(command.shaderId, propName),
                         texIndex);
@@ -442,27 +458,6 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
     }
 
     vao->release();
-
-    // gl->glBindFramebuffer(GL_FRAMEBUFFER,
-    // ctx->defaultFramebufferObject());
-
-    // grab pixels to pixmap
-    // auto img = node->texture->toImage();
-    // img.save(node->id + ".png");
-
-    // gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    // fbo->release();
-
-    gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                               GL_TEXTURE_2D, 0, 0);
-    gl->glBindFramebuffer(GL_FRAMEBUFFER, ctx->defaultFramebufferObject());
-
-    ctx->doneCurrent();
-
-    if (rdoc_api)
-        rdoc_api->EndFrameCapture(NULL, NULL);
-    // Emit signal that node has been rendered
-    emit nodeRendered(command.nodeId, command.textureId);
 }
 
 void RenderWorker::kill() { running = false; }

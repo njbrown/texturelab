@@ -1,208 +1,248 @@
-#include "../../graphics/renderworker.h"
+#include "../../graphics/noderenderer.h"
 #include "../../models.h"
 #include "../../props.h"
 #include "../libv2.h"
-#include <QOpenGLFramebufferObject>
+
 #include <QOpenGLFunctions_3_2_Core>
 #include <algorithm>
 #include <cmath>
-#include <vector>
 
-// Constants for Euclidean Distance Transform
-static const double INF = 1e20;
-// Use normalized float range [0.0, 1.0] for GL_RGBA32F textures
-static const float VALUE_MAX = 1.0f;
+// ============================================================================
+// BevelRenderData — parameters passed to the render thread
+// ============================================================================
 
-// Forward declarations for EDT functions
-static void edt(std::vector<double>& data, int width, int height,
-                std::vector<double>& f, std::vector<uint16_t>& v,
-                std::vector<double>& z);
+struct BevelRenderData : public NodeRenderData {
+    float distance = 50.0f;
+    float threshold = 0.5f;
+};
 
-static void edt1d(std::vector<double>& grid, int offset, int stride, int length,
-                  std::vector<double>& f, std::vector<uint16_t>& v,
-                  std::vector<double>& z);
+// ============================================================================
+// BevelRenderer — JFA-based GPU bevel implementation
+// ============================================================================
+
+class BevelRenderer : public NodeTextureRenderer {
+public:
+    void render(NodeRenderContext& ctx,
+                const NodeRenderData& baseData) override
+    {
+        auto& data = static_cast<const BevelRenderData&>(baseData);
+        auto gl = ctx.gl;
+        auto cache = ctx.cache;
+
+        int w = ctx.textureWidth;
+        int h = ctx.textureHeight;
+
+        // No input connected — output black
+        if (ctx.inputs.isEmpty() || ctx.inputs[0].textureId == 0) {
+            cache->bindFboToTexture(ctx.outputTextureId);
+            gl->glViewport(0, 0, w, h);
+            gl->glClearColor(0, 0, 0, 1);
+            gl->glClear(GL_COLOR_BUFFER_BIT);
+            return;
+        }
+
+        // Compile shaders (cached after first call)
+        GLuint seedShader = cache->getOrCompileShader(
+            "jfa_seed", standardVert(), seedFrag());
+        GLuint jfaShader = cache->getOrCompileShader(
+            "jfa_step", standardVert(), jfaFrag());
+        GLuint bevelShader = cache->getOrCompileShader(
+            "jfa_bevel", standardVert(), bevelFrag());
+
+        // Acquire two intermediate textures for ping-pong
+        GLuint texA = cache->acquireTexture(w, h);
+        GLuint texB = cache->acquireTexture(w, h);
+
+        // --- Pass 0: Seed initialization ---
+        // Detect edges where the input crosses the threshold
+        cache->bindFboToTexture(texA);
+        ctx.useShader(seedShader);
+        ctx.bindTexture(seedShader, "image", ctx.inputs[0].textureId, 0);
+        gl->glUniform1f(
+            gl->glGetUniformLocation(seedShader, "u_threshold"),
+            data.threshold);
+        ctx.drawQuad();
+
+        // --- Passes 1..N: JFA iteration (ping-pong) ---
+        int maxDim = std::max(w, h);
+        int stepSize = maxDim / 2;
+
+        while (stepSize >= 1) {
+            cache->bindFboToTexture(texB);
+            ctx.useShader(jfaShader);
+            ctx.bindTexture(jfaShader, "u_input", texA, 0);
+            gl->glUniform1i(
+                gl->glGetUniformLocation(jfaShader, "u_stepSize"), stepSize);
+            ctx.drawQuad();
+
+            std::swap(texA, texB);
+            stepSize /= 2;
+        }
+
+        // --- Final pass: Distance field → bevel height ---
+        cache->bindFboToTexture(ctx.outputTextureId);
+        ctx.useShader(bevelShader);
+        ctx.bindTexture(bevelShader, "u_jfa", texA, 0);
+        gl->glUniform1f(
+            gl->glGetUniformLocation(bevelShader, "u_distance"),
+            data.distance);
+        ctx.drawQuad();
+
+        // Intermediates released by worker after render() returns
+    }
+
+private:
+    static QString standardVert()
+    {
+        return RenderResourceCache::standardVertexSource();
+    }
+
+    static QString seedFrag()
+    {
+        return R""""(
+            #version 150 core
+            in vec2 v_texCoord;
+            out vec4 fragColor;
+
+            uniform sampler2D image;
+            uniform vec2 _textureSize;
+            uniform float u_threshold;
+
+            void main() {
+                vec2 uv = v_texCoord;
+                float v = texture(image, uv).r;
+                vec2 texel = vec2(1.0) / _textureSize;
+
+                // Check 4-neighbors for threshold crossing (edge detection)
+                float n = texture(image, uv + vec2(0.0, texel.y)).r;
+                float s = texture(image, uv - vec2(0.0, texel.y)).r;
+                float e = texture(image, uv + vec2(texel.x, 0.0)).r;
+                float w = texture(image, uv - vec2(texel.x, 0.0)).r;
+
+                bool isEdge = (v >= u_threshold) != (n >= u_threshold) ||
+                              (v >= u_threshold) != (s >= u_threshold) ||
+                              (v >= u_threshold) != (e >= u_threshold) ||
+                              (v >= u_threshold) != (w >= u_threshold);
+
+                if (isEdge)
+                    fragColor = vec4(uv, v, 1.0);  // Seed: store own UV
+                else
+                    fragColor = vec4(-1.0, -1.0, v, 0.0);  // No seed
+            }
+        )"""";
+    }
+
+    static QString jfaFrag()
+    {
+        return R""""(
+            #version 150 core
+            in vec2 v_texCoord;
+            out vec4 fragColor;
+
+            uniform sampler2D u_input;
+            uniform vec2 _textureSize;
+            uniform int u_stepSize;
+
+            void main() {
+                vec2 uv = v_texCoord;
+                vec2 texel = vec2(1.0) / _textureSize;
+                vec4 best = texture(u_input, uv);
+                float bestDist = (best.a < 0.5) ? 9999.0 : length(uv - best.xy);
+
+                // Check 3x3 neighborhood at current step size
+                for (int y = -1; y <= 1; y++) {
+                    for (int x = -1; x <= 1; x++) {
+                        if (x == 0 && y == 0) continue;
+
+                        vec2 offset = vec2(float(x), float(y))
+                                    * float(u_stepSize) * texel;
+                        vec4 neighbor = texture(u_input, uv + offset);
+
+                        if (neighbor.a < 0.5) continue;  // No seed
+
+                        float d = length(uv - neighbor.xy);
+                        if (d < bestDist) {
+                            bestDist = d;
+                            best = neighbor;
+                        }
+                    }
+                }
+
+                fragColor = best;
+            }
+        )"""";
+    }
+
+    static QString bevelFrag()
+    {
+        return R""""(
+            #version 150 core
+            in vec2 v_texCoord;
+            out vec4 fragColor;
+
+            uniform sampler2D u_jfa;
+            uniform vec2 _textureSize;
+            uniform float u_distance;
+
+            void main() {
+                vec2 uv = v_texCoord;
+                vec4 data = texture(u_jfa, uv);
+
+                if (data.a < 0.5) {
+                    // No nearest seed found
+                    fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+                    return;
+                }
+
+                // Convert UV-space distance to pixel distance
+                float dist = length(uv - data.xy)
+                           * max(_textureSize.x, _textureSize.y);
+
+                float bevel = 1.0 - clamp(dist / u_distance, 0.0, 1.0);
+                fragColor = vec4(vec3(bevel), 1.0);
+            }
+        )"""";
+    }
+};
+
+// ============================================================================
+// BevelNode
+// ============================================================================
 
 void BevelNode::init()
 {
     this->title = "Bevel";
     this->addInput("image");
-    this->addFloatProp("distance", "Distance", 50.0, 0.0, 100.0, 0.01);
+    this->addFloatProp("distance", "Distance", 50.0, 0.0, 200.0, 0.5);
+    this->addFloatProp("threshold", "Threshold", 0.5, 0.0, 1.0, 0.01);
 
-    // This node uses CPU processing instead of GPU shader
-    this->usesCpuProcessing = true;
-
-    // Set a passthrough shader initially (not used, but required for
-    // initialization)
+    // Passthrough shader for initialization (not used during rendering —
+    // custom renderer handles all passes)
     auto source = R""""(
         vec4 process(vec2 uv)
         {
-            vec4 col = texture(image, uv);
-            return col;
+            return texture(image, uv);
         }
-		)"""";
+    )"""";
     this->setShaderSource(source);
 }
 
-void BevelNode::cpuProcess(void* glPtr, const RenderCommand& command)
+std::shared_ptr<NodeTextureRenderer> BevelNode::createRenderer()
 {
-    // Cast to QOpenGLFunctions_3_2_Core
-    auto gl = static_cast<QOpenGLFunctions_3_2_Core*>(glPtr);
-
-    // Get the first input texture if available
-    GLuint inputTextureId = 0;
-    if (!command.inputs.isEmpty()) {
-        inputTextureId = command.inputs[0].textureId;
-    }
-
-    if (inputTextureId == 0)
-        return;
-
-    int width = command.textureWidth;
-    int height = command.textureHeight;
-
-    // Allocate buffers
-    int gridSize = width * height;
-    std::vector<float> readPixels(gridSize * 4);
-    std::vector<float> resultPixels(gridSize * 4);
-
-    // Read pixels from input texture
-    GLuint fbo;
-    gl->glGenFramebuffers(1, &fbo);
-    gl->glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-    gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                               GL_TEXTURE_2D, inputTextureId, 0);
-
-    if (gl->glCheckFramebufferStatus(GL_FRAMEBUFFER) ==
-        GL_FRAMEBUFFER_COMPLETE) {
-        gl->glReadPixels(0, 0, width, height, GL_RGBA, GL_FLOAT,
-                         readPixels.data());
-    }
-
-    gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    gl->glDeleteFramebuffers(1, &fbo);
-
-    // Allocate working arrays
-    int maxSize = std::max(width, height);
-    std::vector<double> f(maxSize * 3);
-    std::vector<double> z(maxSize * 3 + 1);
-    std::vector<uint16_t> v(maxSize * 3);
-
-    std::vector<double> gridOuter(gridSize);
-    std::vector<double> gridInner(gridSize);
-    std::vector<double> grid(gridSize);
-
-    // Convert pixels to distance fields
-    for (int i = 0; i < gridSize; i++) {
-        float a = readPixels[i * 4 + 0]; // Use red channel
-
-        gridOuter[i] = (a == 1.0f)   ? 0.0
-                       : (a == 0.0f) ? INF
-                                     : std::pow(std::max(0.0f, 0.5f - a), 2);
-        gridInner[i] = (a == 1.0f)   ? INF
-                       : (a == 0.0f) ? 0.0
-                                     : std::pow(std::max(0.0f, a - 0.5f), 2);
-    }
-
-    // Apply Euclidean Distance Transform
-    edt(gridOuter, width, height, f, v, z);
-    edt(gridInner, width, height, f, v, z);
-
-    // Get distance property from RenderCommand props
-    float radius = 50.0f;
-    for (const auto& prop : command.props) {
-        if (prop.propName == "distance" && prop.propType == PropType::Float) {
-            radius = prop.value.toFloat();
-            break;
-        }
-    }
-    float offset = 0.25f;
-
-    // Calculate bevel
-    float minVal = 1.0f;
-    float maxVal = 0.0f;
-
-    for (int i = 0; i < gridSize; i++) {
-        double d = std::sqrt(gridOuter[i]) - std::sqrt(gridInner[i]);
-        float col = VALUE_MAX - VALUE_MAX * (d / radius + offset);
-        col = std::max(0.0f, std::min(VALUE_MAX, col));
-
-        minVal = std::min(minVal, col);
-        maxVal = std::max(maxVal, col);
-        grid[i] = col;
-    }
-
-    // Normalize and invert
-    float range = maxVal - minVal;
-    float scale = (range > 0.0f) ? (1.0f / range) : 1.0f;
-
-    for (int i = 0; i < gridSize; i++) {
-        float col = 1.0f - (grid[i] - minVal) * scale; // de-invert
-
-        resultPixels[i * 4 + 0] = col;
-        resultPixels[i * 4 + 1] = col;
-        resultPixels[i * 4 + 2] = col;
-        resultPixels[i * 4 + 3] = 1.0f;
-    }
-
-    // Upload result to texture
-    gl->glBindTexture(GL_TEXTURE_2D, command.textureId);
-    gl->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA,
-                     GL_FLOAT, resultPixels.data());
-    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    gl->glBindTexture(GL_TEXTURE_2D, 0);
+    return std::make_shared<BevelRenderer>();
 }
 
-// 2D Euclidean squared distance transform by Felzenszwalb & Huttenlocher
-// https://cs.brown.edu/~pff/papers/dt-final.pdf
-static void edt(std::vector<double>& data, int width, int height,
-                std::vector<double>& f, std::vector<uint16_t>& v,
-                std::vector<double>& z)
+std::shared_ptr<NodeRenderData> BevelNode::createRenderData()
 {
-    for (int x = 0; x < width; x++)
-        edt1d(data, x, width, height, f, v, z);
-    for (int y = 0; y < height; y++)
-        edt1d(data, y * width, 1, width, f, v, z);
-}
+    auto data = std::make_shared<BevelRenderData>();
 
-// 1D squared distance transform
-static void edt1d(std::vector<double>& grid, int offset, int stride, int length,
-                  std::vector<double>& f, std::vector<uint16_t>& v,
-                  std::vector<double>& z)
-{
-    v[0] = 0;
-    z[0] = -INF;
-    z[1] = INF;
+    auto distProp = static_cast<FloatProp*>(this->getProp("distance"));
+    if (distProp)
+        data->distance = distProp->value;
 
-    // Load line in array three times for wrapping
-    for (int q = 0; q < length; q++)
-        f[q] = grid[offset + q * stride];
-    for (int q = 0; q < length; q++)
-        f[q + length] = grid[offset + q * stride];
-    for (int q = 0; q < length; q++)
-        f[q + length + length] = grid[offset + q * stride];
+    auto threshProp = static_cast<FloatProp*>(this->getProp("threshold"));
+    if (threshProp)
+        data->threshold = threshProp->value;
 
-    int k = 0;
-    for (int q = 1; q < length * 3; q++) {
-        double s;
-        do {
-            int r = v[k];
-            s = (f[q] - f[r] + q * q - r * r) / (q - r) / 2.0;
-        } while (s <= z[k] && --k > -1);
-
-        k++;
-        v[k] = q;
-        z[k] = s;
-        z[k + 1] = INF;
-    }
-
-    // Copy over middle section
-    for (int q = length, k = 0; q < length + length; q++) {
-        while (z[k + 1] < q)
-            k++;
-        int r = v[k];
-        grid[offset + (q - length) * stride] = f[r] + (q - r) * (q - r);
-    }
+    return data;
 }

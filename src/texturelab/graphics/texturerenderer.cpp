@@ -617,6 +617,12 @@ void TextureRenderer::queueNextNodeToRender()
         cmd.shaderLinked = nextNode->shader->isLinked();
         cmd.randomSeed = project->randomSeed + nextNode->randomSeed;
 
+        // Custom renderer support
+        cmd.renderer = nextNode->createRenderer();
+        if (cmd.renderer) {
+            cmd.renderData = nextNode->createRenderData();
+        }
+
         // CPU processing support
         cmd.usesCpuProcessing = nextNode->usesCpuProcessing;
         cmd.nodePtr = nextNode.data(); // Store raw pointer for CPU processing
