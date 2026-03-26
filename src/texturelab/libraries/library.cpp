@@ -199,6 +199,25 @@ Library* createLibraryV3()
                                   ":nodes/blurv2.png");
     lib->addNode<RaysNode>("rays", "Rays", ":nodes/bevel.png");
     lib->addNode<SwirlNode>("swirl", "Swirl", ":nodes/bevel.png");
+    lib->addNode<FloodFillV2Node>("floodfillv2", "Flood Fill V2",
+                                   ":nodes/floodfill.png");
+    lib->addNode<FloodFillV2ToColorNode>("floodfillv2tocolor",
+                                         "FF To Color V2",
+                                         ":nodes/floodfilltocolor.png");
+    lib->addNode<FloodFillV2ToRandomColorNode>("floodfillv2torandomcolor",
+                                               "FF To Random Color V2",
+                                               ":nodes/floodfilltorandomcolor.png");
+    lib->addNode<FloodFillV2ToRandomIntensityNode>(
+        "floodfillv2torandomintensity", "FF To Random Intensity V2",
+        ":nodes/floodfilltorandomintensity.png");
+    lib->addNode<FloodFillV2ToBBoxNode>("floodfillv2tobbox", "FF To BBox V2",
+                                        ":nodes/floodfilltobbox.png");
+    lib->addNode<FloodFillV2ToGradientNode>("floodfillv2togradient",
+                                            "FF To Gradient V2",
+                                            ":nodes/floodfilltogradient.png");
+    lib->addNode<FloodFillV2SamplerNode>("floodfillv2sampler",
+                                         "FF Sampler V2",
+                                         ":nodes/floodfillsampler.png");
 
     return lib;
 }

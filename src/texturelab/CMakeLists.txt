@@ -105,6 +105,13 @@ set(LIBRARYV3
     ./libraries/v3/maskedblur.cpp
     ./libraries/v3/rays.cpp
     ./libraries/v3/swirl.cpp
+    ./libraries/v3/floodfillv2.cpp
+    ./libraries/v3/floodfillv2tocolor.cpp
+    ./libraries/v3/floodfillv2torandomcolor.cpp
+    ./libraries/v3/floodfillv2torandomintensity.cpp
+    ./libraries/v3/floodfillv2tobbox.cpp
+    ./libraries/v3/floodfillv2togradient.cpp
+    ./libraries/v3/floodfillv2sampler.cpp
 )
 
 set(PROJECT_SOURCES
