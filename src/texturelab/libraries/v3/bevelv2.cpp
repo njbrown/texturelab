@@ -111,20 +111,10 @@ private:
             void main() {
                 vec2 uv = v_texCoord;
                 float v = texture(image, uv).r;
-                vec2 texel = vec2(1.0) / _textureSize;
 
-                // Check 4-neighbors for threshold crossing (edge detection)
-                float n = texture(image, uv + vec2(0.0, texel.y)).r;
-                float s = texture(image, uv - vec2(0.0, texel.y)).r;
-                float e = texture(image, uv + vec2(texel.x, 0.0)).r;
-                float w = texture(image, uv - vec2(texel.x, 0.0)).r;
-
-                bool isEdge = (v >= u_threshold) != (n >= u_threshold) ||
-                              (v >= u_threshold) != (s >= u_threshold) ||
-                              (v >= u_threshold) != (e >= u_threshold) ||
-                              (v >= u_threshold) != (w >= u_threshold);
-
-                if (isEdge)
+                // Black pixels (below threshold) are seeds —
+                // JFA spreads distance from them into white regions
+                if (v < u_threshold)
                     fragColor = vec4(uv, v, 1.0);  // Seed: store own UV
                 else
                     fragColor = vec4(-1.0, -1.0, v, 0.0);  // No seed
@@ -198,7 +188,7 @@ private:
                 float dist = length(uv - data.xy)
                            * max(_textureSize.x, _textureSize.y);
 
-                float bevel = 1.0 - clamp(dist / u_distance, 0.0, 1.0);
+                float bevel = clamp(dist / u_distance, 0.0, 1.0);
                 fragColor = vec4(vec3(bevel), 1.0);
             }
         )"""";
