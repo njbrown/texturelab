@@ -14,6 +14,7 @@
 struct BevelV2RenderData : public NodeRenderData {
     float distance = 50.0f;
     float threshold = 0.5f;
+    int shape = 0; // 0=Linear, 1=Round, 2=Smooth
 };
 
 // ============================================================================
@@ -53,8 +54,7 @@ public:
         GLuint texA = cache->acquireTexture(w, h);
         GLuint texB = cache->acquireTexture(w, h);
 
-        // --- Pass 0: Seed initialization ---
-        // Detect edges where the input crosses the threshold
+        // --- Seed initialization ---
         cache->bindFboToTexture(texA);
         ctx.useShader(seedShader);
         ctx.bindTexture(seedShader, "image", ctx.inputs[0].textureId, 0);
@@ -63,7 +63,7 @@ public:
             data.threshold);
         ctx.drawQuad();
 
-        // --- Passes 1..N: JFA iteration (ping-pong) ---
+        // --- JFA iteration (ping-pong) ---
         int maxDim = std::max(w, h);
         int stepSize = maxDim / 2;
 
@@ -86,9 +86,10 @@ public:
         gl->glUniform1f(
             gl->glGetUniformLocation(bevelShader, "u_distance"),
             data.distance);
+        gl->glUniform1i(
+            gl->glGetUniformLocation(bevelShader, "u_shape"),
+            data.shape);
         ctx.drawQuad();
-
-        // Intermediates released by worker after render() returns
     }
 
 private:
@@ -173,6 +174,11 @@ private:
             uniform sampler2D u_jfa;
             uniform vec2 _textureSize;
             uniform float u_distance;
+            uniform int u_shape;
+
+            #define SHAPE_LINEAR 0
+            #define SHAPE_ROUND  1
+            #define SHAPE_SMOOTH 2
 
             void main() {
                 vec2 uv = v_texCoord;
@@ -188,7 +194,20 @@ private:
                 float dist = length(uv - data.xy)
                            * max(_textureSize.x, _textureSize.y);
 
-                float bevel = clamp(dist / u_distance, 0.0, 1.0);
+                float t = clamp(dist / u_distance, 0.0, 1.0);
+
+                float bevel;
+                if (u_shape == SHAPE_ROUND) {
+                    // Circular cross-section: quarter-circle falloff
+                    bevel = sqrt(1.0 - (1.0 - t) * (1.0 - t));
+                } else if (u_shape == SHAPE_SMOOTH) {
+                    // S-curve: smoothstep for gentle transitions
+                    bevel = smoothstep(0.0, 1.0, t);
+                } else {
+                    // Linear ramp (default)
+                    bevel = t;
+                }
+
                 fragColor = vec4(vec3(bevel), 1.0);
             }
         )"""";
@@ -205,6 +224,7 @@ void BevelV2Node::init()
     this->addInput("image");
     this->addFloatProp("distance", "Distance", 50.0, 0.0, 200.0, 0.5);
     this->addFloatProp("threshold", "Threshold", 0.5, 0.0, 1.0, 0.01);
+    this->addEnumProp("shape", "Shape", {"Linear", "Round", "Smooth"});
 
     // Passthrough shader for initialization (not used during rendering —
     // custom renderer handles all passes)
@@ -233,6 +253,10 @@ std::shared_ptr<NodeRenderData> BevelV2Node::createRenderData()
     auto threshProp = static_cast<FloatProp*>(this->getProp("threshold"));
     if (threshProp)
         data->threshold = threshProp->value;
+
+    auto shapeProp = static_cast<EnumProp*>(this->getProp("shape"));
+    if (shapeProp)
+        data->shape = shapeProp->index;
 
     return data;
 }
