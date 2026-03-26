@@ -189,6 +189,15 @@ Library* createLibraryV3()
 {
     auto lib = createLibraryV2();
 
+    // Remove V1/V2 nodes that are superseded by V3 equivalents
+    lib->items.remove("floodfill");
+    lib->items.remove("floodfillsampler");
+    lib->items.remove("floodfilltobbox");
+    lib->items.remove("floodfilltocolor");
+    lib->items.remove("floodfilltogradient");
+    lib->items.remove("floodfilltorandomcolor");
+    lib->items.remove("floodfilltorandomintensity");
+
     // V3 NODES
     lib->addNode<BevelV2Node>("bevelv2", "Bevel V2", ":nodes/bevel.png");
     lib->addNode<AmbientOcclusionNode>("ambientocclusion", "Ambient Occlusion",
