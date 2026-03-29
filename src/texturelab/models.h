@@ -41,6 +41,7 @@ class ColorProp;
 class StringProp;
 class GradientProp;
 class ImageProp;
+class CurveProp;
 
 enum class PackageFileType { Texture, Image };
 
@@ -189,6 +190,8 @@ public:
                                   const Gradient& defaultVal);
 
     ImageProp* addImageProp(const QString& name, const QString& displayName);
+
+    CurveProp* addCurveProp(const QString& name, const QString& displayName);
 };
 
 class Comment : public QEnableSharedFromThis<Comment> {

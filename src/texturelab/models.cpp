@@ -288,3 +288,16 @@ ImageProp* TextureNode::addImageProp(const QString& name,
 
     return prop;
 }
+
+CurveProp* TextureNode::addCurveProp(const QString& name,
+                                     const QString& displayName)
+{
+    auto prop = new CurveProp();
+    prop->name = name;
+    prop->displayName = displayName;
+    prop->order = props.size();
+
+    props[name] = prop;
+
+    return prop;
+}

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "curve.h"
 #include "../colorpicker/gradient.h"
 #include <QBuffer>
 #include <QColor>
@@ -30,7 +31,8 @@ public:
         Enum,
         String,
         Gradient,
-        Image
+        Image,
+        Curve
     };
 
     static QString toString(Value propType);
@@ -503,6 +505,50 @@ public:
 
             value.addPoint(GradientPoint(position, color));
         }
+    }
+};
+
+class CurveProp : public Prop {
+public:
+    Curve value; // default: linear identity
+
+    CurveProp() : Prop() { type = PropType::Curve; }
+
+    Prop* clone() const override
+    {
+        auto* copy = new CurveProp(*this);
+        copy->group = nullptr;
+        return copy;
+    }
+
+    QVariant getValue() override { return QVariant::fromValue(value); }
+
+    void setValue(QVariant val) override { value = val.value<Curve>(); }
+
+    QJsonObject toJson() override
+    {
+        auto obj = Prop::toJson();
+        obj["value"] = value.toJson();
+        return obj;
+    }
+
+    void fromJson(const QJsonObject& obj) override
+    {
+        Prop::fromJson(obj);
+        if (obj.contains("value") && obj["value"].isObject())
+            value = Curve::fromJson(obj["value"].toObject());
+        else
+            value = Curve(); // fallback to linear identity
+    }
+
+    QJsonValue toJsonValue() override { return value.toJson(); }
+
+    void fromJsonValue(const QJsonValue& val) override
+    {
+        if (val.isObject())
+            value = Curve::fromJson(val.toObject());
+        else
+            value = Curve();
     }
 };
 

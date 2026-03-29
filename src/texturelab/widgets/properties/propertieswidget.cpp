@@ -1,6 +1,7 @@
 #include "propertieswidget.h"
 #include "../../models.h"
 #include "../../props.h"
+#include "curvepropwidget.h"
 #include "propwidgets.h"
 
 #include <QVBoxLayout>
@@ -153,6 +154,21 @@ void PropertiesWidget::setSelectedNode(const TextureNodePtr& node)
                         project->markNodeAsDirty(node);
 
                         emit propertyUpdated(prop->name, value);
+                    });
+            layout->addWidget(widget);
+
+        } break;
+        case PropType::Curve: {
+            auto widget = new CurvePropWidget((CurveProp*)prop);
+            propWidgets.append(widget);
+
+            connect(widget, &CurvePropWidget::valueChanged,
+                    [=](const Curve& value) {
+                        node->setProp(prop->name, QVariant::fromValue(value));
+                        project->markNodeAsDirty(node);
+
+                        emit propertyUpdated(prop->name,
+                                             QVariant::fromValue(value));
                     });
             layout->addWidget(widget);
 

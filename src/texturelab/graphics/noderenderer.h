@@ -78,6 +78,7 @@ private:
     static QString fragmentPreamble();
     static QString randomLib();
     static QString gradientLib();
+    static QString curveLib();
     static QString generateInputDeclarations(const QStringList& inputNames);
     static QString generatePropDeclarations(
         const QList<QPair<QString, int>>& propTypes);

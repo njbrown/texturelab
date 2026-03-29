@@ -228,5 +228,7 @@ Library* createLibraryV3()
                                          "FF Sampler V2",
                                          ":nodes/floodfillsampler.png");
 
+    lib->addNode<CurveNode>("curve", "Curve", ":nodes/curve.png");
+
     return lib;
 }

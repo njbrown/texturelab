@@ -124,6 +124,7 @@ GLuint RenderResourceCache::compileNodeShader(
         return shaderCache[key]->programId();
 
     QString fSource = fragmentPreamble() + randomLib() + gradientLib() +
+                      curveLib() +
                       generateInputDeclarations(inputNames) +
                       generatePropDeclarations(propTypes) + "#line 0\n" +
                       processSource;
@@ -163,6 +164,7 @@ QString RenderResourceCache::fragmentPreamble()
         in vec2 v_texCoord;
 
         #define GRADIENT_MAX_POINTS 32
+        #define CURVE_MAX_POINTS 32
 
         vec4 process(vec2 uv);
         void initRandom();
@@ -315,6 +317,53 @@ QString RenderResourceCache::gradientLib()
     )"""";
 }
 
+QString RenderResourceCache::curveLib()
+{
+    return R""""(
+        struct Curve {
+            int  numPoints;
+            vec2 anchors[CURVE_MAX_POINTS];
+            vec2 handleR[CURVE_MAX_POINTS];
+            vec2 handleL[CURVE_MAX_POINTS];
+        };
+
+        float _cubicBez(float p0, float p1, float p2, float p3, float t) {
+            float mt = 1.0 - t;
+            return mt*mt*mt*p0 + 3.0*mt*mt*t*p1 + 3.0*mt*t*t*p2 + t*t*t*p3;
+        }
+
+        float _cubicBezD(float p0, float p1, float p2, float p3, float t) {
+            float mt = 1.0 - t;
+            return 3.0 * (mt*mt*(p1-p0) + 2.0*mt*t*(p2-p1) + t*t*(p3-p2));
+        }
+
+        float evalCurve(Curve c, float x) {
+            // Find segment: last anchor whose x <= input x
+            int seg = c.numPoints - 2;
+            for (int i = 0; i < CURVE_MAX_POINTS - 1; i++) {
+                if (i >= c.numPoints - 1) break;
+                if (x <= c.anchors[i + 1].x) { seg = i; break; }
+            }
+
+            vec2 P0 = c.anchors[seg];
+            vec2 P1 = c.handleR[seg];
+            vec2 P2 = c.handleL[seg + 1];
+            vec2 P3 = c.anchors[seg + 1];
+
+            // Newton-Raphson: solve Bx(t) = x (8 iterations, constant bound)
+            float t = clamp((x - P0.x) / max(P3.x - P0.x, 1e-5), 0.0, 1.0);
+            for (int i = 0; i < 8; i++) {
+                float bx  = _cubicBez(P0.x, P1.x, P2.x, P3.x, t);
+                float dbx = _cubicBezD(P0.x, P1.x, P2.x, P3.x, t);
+                t -= (abs(dbx) > 1e-6) ? (bx - x) / dbx : 0.0;
+                t  = clamp(t, 0.0, 1.0);
+            }
+
+            return _cubicBez(P0.y, P1.y, P2.y, P3.y, t);
+        }
+    )"""";
+}
+
 QString RenderResourceCache::generateInputDeclarations(
     const QStringList& inputNames)
 {
@@ -355,6 +404,9 @@ QString RenderResourceCache::generatePropDeclarations(
             break;
         case PropType::Image:
             code += "uniform sampler2D prop_" + name + ";\n";
+            break;
+        case PropType::Curve:
+            code += "uniform Curve prop_" + name + ";\n";
             break;
         default:
             break;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../models.h"
+#include "v3/curvenode.h"
 #include <memory>
 
 class BevelV2Node : public TextureNode {

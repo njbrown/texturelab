@@ -1,5 +1,6 @@
 #include "renderworker.h"
 #include "../models.h"
+#include "../curve.h"
 #include "gradient.h"
 #include "texturerenderer.h"
 #include <QImage>
@@ -437,6 +438,35 @@ void RenderWorker::renderSinglePass(const RenderCommand& command)
                         gl->glGetUniformLocation(command.shaderId, propName),
                         texIndex);
                     texIndex++;
+                }
+            } break;
+            case PropType::Curve: {
+                auto curve   = prop.value.value<Curve>();
+                int  nPoints = qMin((int)curve.points.size(), CURVE_MAX_POINTS);
+
+                gl->glUniform1i(
+                    gl->glGetUniformLocation(command.shaderId,
+                                             (propCString + ".numPoints").c_str()),
+                    nPoints);
+
+                for (int i = 0; i < nPoints; i++) {
+                    const auto& pt  = curve.points[i];
+                    std::string idx = "[" + std::to_string(i) + "]";
+
+                    gl->glUniform2f(
+                        gl->glGetUniformLocation(command.shaderId,
+                                                 (propCString + ".anchors" + idx).c_str()),
+                        pt.x, pt.y);
+
+                    gl->glUniform2f(
+                        gl->glGetUniformLocation(command.shaderId,
+                                                 (propCString + ".handleR" + idx).c_str()),
+                        pt.x + pt.rx, pt.y + pt.ry);
+
+                    gl->glUniform2f(
+                        gl->glGetUniformLocation(command.shaderId,
+                                                 (propCString + ".handleL" + idx).c_str()),
+                        pt.x + pt.lx, pt.y + pt.ly);
                 }
             } break;
             }

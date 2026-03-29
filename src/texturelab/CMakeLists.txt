@@ -101,6 +101,7 @@ set(LIBRARYV2
 set(LIBRARYV3
     ./libraries/v3/ambientocclusion.cpp
     ./libraries/v3/bevelv2.cpp
+    ./libraries/v3/curvenode.cpp
     ./libraries/v3/curvature.cpp
     ./libraries/v3/maskedblur.cpp
     ./libraries/v3/rays.cpp
@@ -121,6 +122,8 @@ set(PROJECT_SOURCES
         ./exporter.h
         ./exporter.cpp
         ./utils.h
+        ./curve.h
+        ./curve.cpp
         ./models.h
         ./models.cpp
         ./project.h
@@ -141,6 +144,8 @@ set(PROJECT_SOURCES
         ./widgets/properties/propertieswidget.cpp
         ./widgets/properties/propwidgets.h
         ./widgets/properties/propwidgets.cpp
+        ./widgets/properties/curvepropwidget.h
+        ./widgets/properties/curvepropwidget.cpp
         ./widgets/view2dwidget.h
         ./widgets/view2dwidget.cpp
         ./widgets/view3dwidget.h

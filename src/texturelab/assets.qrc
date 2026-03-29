@@ -83,6 +83,7 @@
     <file alias="nodes/valuenoisefractalsum.png">../../public/assets/nodes/valuenoisefractalsum.png</file>
     <!-- <file alias="nodes/warpv2.png">../../public/assets/nodes/warpv2.png</file> -->
     <!-- v3 nodes -->
+    <file alias="nodes/curve.png">../../public/assets/nodes/curve.png</file>
     <!-- <file alias="nodes/crop.png">../../public/assets/nodes/crop.png</file> -->
     
     <file alias="nodes/frame.png">../../public/assets/nodes/frame.png</file>
