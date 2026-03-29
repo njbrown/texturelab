@@ -12,6 +12,7 @@ void CurveNode::init()
             float gray   = (col.r + col.g + col.b) * 0.3333333;
             float mapped = evalCurve(prop_curve, gray);
             return vec4(vec3(mapped), col.a);
+            // return vec4(1.0,0.0,0.0,1.0);
         }
     )"""";
 

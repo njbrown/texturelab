@@ -34,14 +34,14 @@ Curve::Curve()
 {
     CurvePoint p0;
     p0.x = 0.0f; p0.y = 0.0f;
-    p0.lx = -0.15f; p0.ly = 0.0f;
-    p0.rx =  0.15f; p0.ry = 0.0f;
+    p0.lx = -0.15f; p0.ly = -0.15f;
+    p0.rx =  0.15f; p0.ry =  0.15f;
     p0.smooth = true;
 
     CurvePoint p1;
     p1.x = 1.0f; p1.y = 1.0f;
-    p1.lx = -0.15f; p1.ly = 0.0f;
-    p1.rx =  0.15f; p1.ry = 0.0f;
+    p1.lx = -0.15f; p1.ly = -0.15f;
+    p1.rx =  0.15f; p1.ry =  0.15f;
     p1.smooth = true;
 
     points.append(p0);
