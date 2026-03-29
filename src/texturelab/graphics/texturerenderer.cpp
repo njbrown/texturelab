@@ -1,4 +1,5 @@
 #include "texturerenderer.h"
+#include "noderenderer.h"
 #include "renderworker.h"
 // #include "../models.h"
 
@@ -730,50 +731,23 @@ TextureRenderer::buildShaderForNode(const TextureNodePtr& node)
     QOpenGLShader* fshader = new QOpenGLShader(QOpenGLShader::Fragment);
     auto program = new QOpenGLShaderProgram;
 
-    QString vSource = R""""(
-        #version 150 core
+    // Build input/prop declaration lists for RenderResourceCache helpers
+    QStringList inputNames = node->inputs;
 
-        //precision highp float;
+    QList<QPair<QString, int>> propTypes;
+    for (auto prop : node->props)
+        propTypes.append({prop->name, (int)prop->type});
 
-        in vec3 a_pos;
-        in vec2 a_texCoord;
+    QString fSource = RenderResourceCache::fragmentPreamble()
+                    + RenderResourceCache::randomLib()
+                    + RenderResourceCache::gradientLib()
+                    + RenderResourceCache::curveLib()
+                    + RenderResourceCache::generateInputDeclarations(inputNames)
+                    + RenderResourceCache::generatePropDeclarations(propTypes)
+                    + "#line 0\n"
+                    + node->shaderSource;
 
-        out vec2 v_texCoord;
-
-        void main()
-        {
-                v_texCoord = a_texCoord;
-                gl_Position = vec4(a_pos,1);
-        }
-    )"""";
-
-    QString fSource = R""""(
-        #version 150 core
-        //precision highp float;
-        in vec2 v_texCoord;
-
-        #define GRADIENT_MAX_POINTS 32        
-
-        vec4 process(vec2 uv);
-        void initRandom();
-
-        uniform vec2 _textureSize;
-
-        out vec4 fragColor;
-            
-        void main() {
-            initRandom();
-			vec4 result = process(v_texCoord);
-			fragColor = clamp(result, 0.0, 1.0);
-        }
-        
-    )"""";
-
-    fSource = fSource + this->createRandomLib() + this->createGradientLib() +
-              this->createCodeForInputs(node) + this->createCodeForProps(node) +
-              "#line 0\n" + node->shaderSource;
-
-    if (!vshader->compileSourceCode(vSource)) {
+    if (!vshader->compileSourceCode(RenderResourceCache::standardVertexSource())) {
         qDebug() << "VERTEX SHADER ERROR";
         qDebug() << vshader->log();
     }
@@ -783,10 +757,7 @@ TextureRenderer::buildShaderForNode(const TextureNodePtr& node)
         qDebug() << fshader->log();
     }
 
-    // qDebug() << fSource;
-
     program->removeAllShaders();
-
     program->addShader(vshader);
     program->addShader(fshader);
 
@@ -802,196 +773,4 @@ TextureRenderer::buildShaderForNode(const TextureNodePtr& node)
     ctx->doneCurrent();
 
     return program;
-}
-
-QString TextureRenderer::createRandomLib()
-{
-    return R""""(
-        // this offsets the random start (should be a uniform)
-        uniform float _seed;
-        // this is the starting number for the rng
-        // (should be set from the uv coordinates so it's unique per pixel)
-        vec2 _randomStart;
-
-        // gives a much better distribution at 1
-        #define RANDOM_ITERATIONS 1
-
-        #define HASHSCALE1 443.8975
-        #define HASHSCALE3 vec3(443.897, 441.423, 437.195)
-        #define HASHSCALE4 vec4(443.897, 441.423, 437.195, 444.129)
-
-        //  1 out, 2 in...
-        float hash12(vec2 p)
-        {
-            vec3 p3  = fract(vec3(p.xyx) * HASHSCALE1);
-            p3 += dot(p3, p3.yzx + 19.19);
-            return fract((p3.x + p3.y) * p3.z);
-        }
-
-        ///  2 out, 2 in...
-        vec2 hash22(vec2 p)
-        {
-            vec3 p3 = fract(vec3(p.xyx) * HASHSCALE3);
-            p3 += dot(p3, p3.yzx+19.19);
-            return fract((p3.xx+p3.yz)*p3.zy);
-
-        }
-
-
-        float _rand(vec2 uv)
-        {
-            float a = 0.0;
-            for (int t = 0; t < RANDOM_ITERATIONS; t++)
-            {
-                float v = float(t+1)*.152;
-                // 0.005 is a good value
-                vec2 pos = (uv * v);
-                a += hash12(pos);
-            }
-
-            return a/float(RANDOM_ITERATIONS);
-        }
-
-        vec2 _rand2(vec2 uv)
-        {
-            vec2 a = vec2(0.0);
-            for (int t = 0; t < RANDOM_ITERATIONS; t++)
-            {
-                float v = float(t+1)*.152;
-                // 0.005 is a good value
-                vec2 pos = (uv * v);
-                a += hash22(pos);
-            }
-
-            return a/float(RANDOM_ITERATIONS);
-        }
-
-        float randomFloat(int index) 
-        {
-            return _rand(_randomStart + vec2(_seed) + vec2(index));
-        }
-
-        float randomVec2(int index) 
-        {
-            return _rand(_randomStart + vec2(_seed) + vec2(index));
-        }
-
-        float randomFloat(int index, float start, float end)
-        {
-            float r = _rand(_randomStart + vec2(_seed) + vec2(index));
-            return start + r*(end-start);
-        }
-
-        int randomInt(int index, int start, int end)
-        {
-            float r = _rand(_randomStart + vec2(_seed) + vec2(index));
-            return start + int(r*float(end-start));
-        }
-
-        bool randomBool(int index)
-        {
-            return _rand(_randomStart + vec2(_seed) + vec2(index)) > 0.5;
-        }
-
-        void initRandom()
-        {
-            _randomStart = v_texCoord;
-        }
-        )"""";
-}
-
-QString TextureRenderer::createGradientLib()
-{
-    return R""""(
-        struct Gradient {
-				vec3 colors[GRADIENT_MAX_POINTS];
-				float positions[GRADIENT_MAX_POINTS];
-				int numPoints;
-    };
-        
-    // assumes points are sorted
-    vec3 sampleGradient(vec3 colors[GRADIENT_MAX_POINTS], float positions[GRADIENT_MAX_POINTS], int numPoints, float t)
-    {
-        if (numPoints == 0)
-            return vec3(1,0,0);
-        
-        if (numPoints == 1)
-            return colors[0];
-        
-        // here at least two points are available
-        if (t <= positions[0])
-            return colors[0];
-        
-        int last = numPoints - 1;
-        if (t >= positions[last])
-            return colors[last];
-        
-        // find two points in-between and lerp
-        
-        for(int i = 0; i < numPoints-1;i++) {
-            if (positions[i+1] > t) {
-                vec3 colorA = colors[i];
-                vec3 colorB = colors[i+1];
-                
-                float t1 = positions[i];
-                float t2 = positions[i+1];
-                
-                float lerpPos = (t - t1)/(t2 - t1);
-                return mix(colorA, colorB, lerpPos);
-                
-            }
-            
-        }
-        
-        return vec3(0,0,0);
-    }
-
-    vec3 sampleGradient(Gradient gradient, float t)
-    {
-      return sampleGradient(gradient.colors, gradient.positions, gradient.numPoints, t);
-    }
-        )"""";
-}
-QString TextureRenderer::createCodeForInputs(const TextureNodePtr& node)
-{
-    QString code = "";
-    for (auto input : node->inputs) {
-        code += "uniform sampler2D " + input + ";\n";
-        code += "uniform bool " + input + "_connected;\n";
-    }
-
-    return code;
-}
-
-QString TextureRenderer::createCodeForProps(const TextureNodePtr& node)
-{
-    QString code = "";
-
-    for (auto prop : node->props) {
-        switch (prop->type) {
-        case PropType::Int:
-            code += "uniform int prop_" + prop->name + ";\n";
-            break;
-        case PropType::Float:
-            code += "uniform float prop_" + prop->name + ";\n";
-            break;
-        case PropType::Bool:
-            code += "uniform bool prop_" + prop->name + ";\n";
-            break;
-        case PropType::Enum:
-            code += "uniform int prop_" + prop->name + ";\n";
-            break;
-        case PropType::Color:
-            code += "uniform vec4 prop_" + prop->name + ";\n";
-            break;
-        case PropType::Gradient:
-            code += "uniform Gradient prop_" + prop->name + ";\n";
-            break;
-        case PropType::Image:
-            code += "uniform sampler2D prop_" + prop->name + ";\n";
-            break;
-        }
-    }
-
-    return code + "\n";
 }

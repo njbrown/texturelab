@@ -61,6 +61,15 @@ public:
     // Standard vertex shader source (shared across all node shaders)
     static QString standardVertexSource();
 
+    // Shader source building blocks — public so other renderers can reuse them
+    static QString fragmentPreamble();
+    static QString randomLib();
+    static QString gradientLib();
+    static QString curveLib();
+    static QString generateInputDeclarations(const QStringList& inputNames);
+    static QString generatePropDeclarations(
+        const QList<QPair<QString, int>>& propTypes);
+
 private:
     QOpenGLFunctions_3_2_Core* gl = nullptr;
     GLuint m_fboId = 0;
@@ -74,14 +83,6 @@ private:
     QList<CachedTexture> texturePool;
 
     QMap<QString, QOpenGLShaderProgram*> shaderCache;
-
-    static QString fragmentPreamble();
-    static QString randomLib();
-    static QString gradientLib();
-    static QString curveLib();
-    static QString generateInputDeclarations(const QStringList& inputNames);
-    static QString generatePropDeclarations(
-        const QList<QPair<QString, int>>& propTypes);
 };
 
 // View into the worker's GL state, passed to renderers at render time.

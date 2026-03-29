@@ -64,10 +64,6 @@ private:
     QVector<NodeInput> getNodeInputs(const TextureNodePtr& node);
     TextureNodePtr getNextUpdatableNode() const;
     QOpenGLShaderProgram* buildShaderForNode(const TextureNodePtr& node);
-    QString createRandomLib();
-    QString createGradientLib();
-    QString createCodeForInputs(const TextureNodePtr& node);
-    QString createCodeForProps(const TextureNodePtr& node);
 
 signals:
     void thumbnailGenerated(const QString& nodeId, GLuint texId,
