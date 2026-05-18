@@ -113,6 +113,25 @@ set(LIBRARYV3
     ./libraries/v3/floodfillv2tobbox.cpp
     ./libraries/v3/floodfillv2togradient.cpp
     ./libraries/v3/floodfillv2sampler.cpp
+    # Phase 1 — Filters / Color
+    ./libraries/v3/edgedetect.cpp
+    ./libraries/v3/highpass.cpp
+    ./libraries/v3/emboss.cpp
+    ./libraries/v3/vibrance.cpp
+    ./libraries/v3/colortomask.cpp
+    ./libraries/v3/toongradient.cpp
+    ./libraries/v3/autolevels.cpp
+    # Phase 2 — Generators
+    ./libraries/v3/directionalscratches.cpp
+    ./libraries/v3/roughgrain.cpp
+    ./libraries/v3/voronoifractal.cpp
+    ./libraries/v3/truchet.cpp
+    ./libraries/v3/fbmdomainwarp.cpp
+    # Phase 3 — Multi-pass
+    ./libraries/v3/blurhq.cpp
+    ./libraries/v3/distancetransform.cpp
+    ./libraries/v3/heightblend.cpp
+    ./libraries/v3/makeittile.cpp
 )
 
 set(PROJECT_SOURCES

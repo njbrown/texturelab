@@ -230,5 +230,33 @@ Library* createLibraryV3()
 
     lib->addNode<CurveNode>("curve", "Curve", ":nodes/curve.png");
 
+    // -----------------------------------------------------------------------
+    // Phase 1 — Filters / Color
+    // -----------------------------------------------------------------------
+    lib->addNode<EdgeDetectNode>   ("edgedetect",   "Edge Detect",   ":nodes/bevel.png");
+    lib->addNode<HighpassNode>     ("highpass",     "Highpass",      ":nodes/blurv2.png");
+    lib->addNode<EmbossNode>       ("emboss",       "Emboss",        ":nodes/normalmap.png");
+    lib->addNode<VibranceNode>     ("vibrance",     "Vibrance",      ":nodes/hsl.png");
+    lib->addNode<ColorToMaskNode>  ("colortomask",  "Color To Mask", ":nodes/extractchannel.png");
+    lib->addNode<ToonGradientNode> ("toongradient", "Toon Gradient", ":nodes/gradientmap.png");
+    lib->addNode<AutoLevelsNode>   ("autolevels",   "Auto Levels",   ":nodes/histogramscan.png");
+
+    // -----------------------------------------------------------------------
+    // Phase 2 — Generators
+    // -----------------------------------------------------------------------
+    lib->addNode<DirectionalScratchesNode>("directionalscratches", "Directional Scratches", ":nodes/cell.png");
+    lib->addNode<RoughGrainNode>          ("roughgrain",           "Rough Grain",           ":nodes/cell.png");
+    lib->addNode<VoronoiFractalNode>      ("voronoifractal",       "Voronoi Fractal",       ":nodes/cell.png");
+    lib->addNode<TruchetNode>             ("truchet",              "Truchet",               ":nodes/hexagon.png");
+    lib->addNode<FBMDomainWarpNode>       ("fbmdomainwarp",        "FBM Domain Warp",       ":nodes/fractalnoise.png");
+
+    // -----------------------------------------------------------------------
+    // Phase 3 — Multi-pass
+    // -----------------------------------------------------------------------
+    lib->addNode<BlurHQNode>            ("blurhq",            "Blur HQ",             ":nodes/blurv2.png");
+    lib->addNode<DistanceTransformNode> ("distancetransform", "Distance Transform",  ":nodes/bevel.png");
+    lib->addNode<HeightBlendNode>       ("heightblend",       "Height Blend",        ":nodes/blend.png");
+    lib->addNode<MakeItTileNode>        ("makeittile",        "Make It Tile",        ":nodes/tile.png");
+
     return lib;
 }
