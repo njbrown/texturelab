@@ -105,9 +105,9 @@ private:
 
                 int radius = int(ceil(u_radius));
                 for (int i = -radius; i <= radius; i++) {
-                    float w     = exp(-float(i * i) / twoSigSq);
+                    float w      = exp(-float(i * i) / twoSigSq);
                     vec2  offset = %1 * float(i);
-                    result      += texture(u_image, uv + offset * step) * w;
+                    result      += texture(u_image, fract(uv + offset * step)) * w;
                     totalW      += w;
                 }
 
