@@ -85,6 +85,7 @@ public:
 
     QString exportFilePattern = "${project}_${name}";
     QString exportDestination = "";
+    QString filePath = nullptr;
 
     void addNode(const TextureNodePtr& node);
 
@@ -106,6 +107,7 @@ public:
 class TextureNode : public QEnableSharedFromThis<TextureNode> {
 public:
     QString id;
+    QString typeName;
     QString title;
 
     QVector2D pos;
@@ -147,16 +149,18 @@ public:
 
     void setShaderSource(const QString& source) { shaderSource = source; }
 
-    // Override to provide a custom renderer for multi-pass or non-standard rendering.
-    // Called on the main thread during queueNextNodeToRender().
+    // Override to provide a custom renderer for multi-pass or non-standard
+    // rendering. Called on the main thread during queueNextNodeToRender().
     // Return nullptr for standard single-pass rendering.
-    virtual std::shared_ptr<NodeTextureRenderer> createRenderer() {
+    virtual std::shared_ptr<NodeTextureRenderer> createRenderer()
+    {
         return nullptr;
     }
 
     // Override to provide render-time data for the custom renderer.
     // Called on the main thread. Must not reference GPU resources.
-    virtual std::shared_ptr<NodeRenderData> createRenderData() {
+    virtual std::shared_ptr<NodeRenderData> createRenderData()
+    {
         return nullptr;
     }
 

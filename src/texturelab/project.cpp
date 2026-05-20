@@ -151,3 +151,105 @@ TextureProjectPtr Project::loadTexture(QString path)
 
     return texture;
 }
+
+QByteArray Project::saveTexture(TextureProjectPtr texture)
+{
+    QJsonObject json;
+
+    // nodes
+    QJsonArray nodeArray;
+    for (auto& node : texture->nodes) {
+        QJsonObject nodeDef;
+        nodeDef["typeName"] = node->typeName;
+        nodeDef["id"] = node->id;
+        nodeDef["exportName"] = node->exportName;
+        nodeDef["randomSeed"] = (double)node->randomSeed;
+
+        QJsonObject propObj;
+        for (auto key : node->props.keys()) {
+            propObj[key] = node->props[key]->toJsonValue();
+        }
+        nodeDef["properties"] = propObj;
+
+        nodeArray.append(nodeDef);
+    }
+    json["nodes"] = nodeArray;
+
+    // scene (node positions, comments, frames)
+    QJsonObject sceneObj;
+
+    QJsonObject sceneNodesObj;
+    for (auto& node : texture->nodes) {
+        QJsonObject posObj;
+        posObj["x"] = node->pos.x();
+        posObj["y"] = node->pos.y();
+        sceneNodesObj[node->id] = posObj;
+    }
+    sceneObj["nodes"] = sceneNodesObj;
+
+    QJsonArray commentArray;
+    for (auto& comment : texture->comments) {
+        QJsonObject obj;
+        obj["id"] = comment->id;
+        obj["text"] = comment->text;
+        obj["x"] = comment->pos.x();
+        obj["y"] = comment->pos.y();
+        commentArray.append(obj);
+    }
+    sceneObj["comments"] = commentArray;
+
+    QJsonArray frameArray;
+    for (auto& frame : texture->frames) {
+        QJsonObject obj;
+        obj["id"] = frame->id;
+        obj["title"] = frame->text;
+        obj["x"] = frame->pos.x();
+        obj["y"] = frame->pos.y();
+        obj["width"] = frame->size.x();
+        obj["height"] = frame->size.y();
+        frameArray.append(obj);
+    }
+    sceneObj["frames"] = frameArray;
+
+    json["scene"] = sceneObj;
+
+    // connections
+    QJsonArray conArray;
+    for (auto& con : texture->connections) {
+        QJsonObject conObj;
+        conObj["leftNodeId"] = con->leftNode->id;
+        conObj["rightNodeId"] = con->rightNode->id;
+        conObj["rightNodeInput"] = con->rightNodeInputName;
+        conArray.append(conObj);
+    }
+    json["connections"] = conArray;
+
+    // export settings
+    QJsonObject exportObj;
+    exportObj["filePattern"] = texture->exportFilePattern;
+    exportObj["destination"] = texture->exportDestination;
+    json["export"] = exportObj;
+
+    // editor texture channels
+    QJsonObject channelsObj;
+    for (auto it = texture->textureChannels.begin();
+         it != texture->textureChannels.end(); ++it) {
+        QString key;
+        switch (it.key()) {
+        case TextureChannel::Albedo:    key = "albedo";    break;
+        case TextureChannel::Normal:    key = "normal";    break;
+        case TextureChannel::Metalness: key = "metalness"; break;
+        case TextureChannel::Roughness: key = "roughness"; break;
+        case TextureChannel::Height:    key = "height";    break;
+        case TextureChannel::Alpha:     key = "alpha";     break;
+        case TextureChannel::AO:        key = "ao";        break;
+        default: continue;
+        }
+        channelsObj[key] = it.value();
+    }
+    QJsonObject editorObj;
+    editorObj["textureChannels"] = channelsObj;
+    json["editor"] = editorObj;
+
+    return QJsonDocument(json).toJson();
+}

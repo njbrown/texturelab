@@ -6,4 +6,5 @@ class Project
 {
 public:
     static TextureProjectPtr loadTexture(QString path);
+    static QByteArray saveTexture(TextureProjectPtr texture);
 };

@@ -33,6 +33,8 @@ protected:
     // menu callbacks
     void openProject();
     void newProject();
+    void saveProject();
+    void saveProjectAs();
     void showExportDialog();
     void directExport();
     void handleExport(const QString& destination, const QString& pattern);

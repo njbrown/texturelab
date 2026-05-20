@@ -12,6 +12,7 @@ TextureNodePtr Library::createNode(QString name)
         auto& item = items[name];
         if (item.name == name) {
             auto node = item.factoryFunction();
+            node->typeName = name;
 
             // todo: put this in the appropriate place
             node->init();

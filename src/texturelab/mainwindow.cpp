@@ -3,6 +3,7 @@
 #include <vector>
 
 #include <QDebug>
+#include <QFile>
 #include <QFileDialog>
 #include <QHBoxLayout>
 #include <QLayout>
@@ -252,8 +253,8 @@ void MainWindow::setupMenus()
     fileMenu->addAction("Open Project", [=]() { this->openProject(); });
     fileMenu->addAction("New Project", [=]() { this->newProject(); });
     fileMenu->addSeparator();
-    fileMenu->addAction("Save", []() {});
-    fileMenu->addAction("Save As...", []() {});
+    fileMenu->addAction("Save", [=]() { this->saveProject(); });
+    fileMenu->addAction("Save As...", [=]() { this->saveProjectAs(); });
     fileMenu->addSeparator();
     fileMenu->addAction("Edit", []() {});
 
@@ -431,6 +432,48 @@ void MainWindow::openProject()
 }
 
 void MainWindow::newProject() { setProject(TextureProject::createEmpty()); }
+
+void MainWindow::saveProject()
+{
+    if (project->filePath.isNull() || project->filePath.isEmpty()) {
+        QString filePath = QFileDialog::getSaveFileName(
+            this, "Save Texture...", QString(), "Texturelab File (*.texture)");
+
+        if (filePath.isNull() || filePath.isEmpty()) {
+            return;
+        }
+
+        if (!filePath.endsWith(".texture", Qt::CaseInsensitive))
+            filePath += ".texture";
+
+        project->filePath = filePath;
+    }
+
+    QFile file(project->filePath);
+    file.open(QIODevice::WriteOnly);
+    file.write(Project::saveTexture(project));
+    file.close();
+}
+
+void MainWindow::saveProjectAs()
+{
+    QString filePath = QFileDialog::getSaveFileName(
+        this, "Save Texture As...", QString(), "Texturelab File (*.texture)");
+
+    if (filePath.isNull() || filePath.isEmpty()) {
+        return;
+    }
+
+    if (!filePath.endsWith(".texture", Qt::CaseInsensitive))
+        filePath += ".texture";
+
+    project->filePath = filePath;
+
+    QFile file(project->filePath);
+    file.open(QIODevice::WriteOnly);
+    file.write(Project::saveTexture(project));
+    file.close();
+}
 
 void MainWindow::showExportDialog()
 {
