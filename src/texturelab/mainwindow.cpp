@@ -184,9 +184,13 @@ void MainWindow::passTextureChannelsToViewer3D()
 
 void MainWindow::setProject(TextureProjectPtr project)
 {
+    // Clear widget state from the old project
+    this->view2DWidget->clearSelection();
+    this->view3DWidget->viewer->clearTextures();
+    this->view3DWidget->reRender();
+
     // Clean up old renderer before creating new one
     if (this->renderer) {
-        // Clear references to old renderer in widgets
         this->graphWidget->setTextureRenderer(nullptr);
         this->view2DWidget->setTextureRenderer(nullptr);
 

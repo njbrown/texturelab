@@ -81,7 +81,11 @@ void View2DWidget::setSelectedNode(const TextureNodePtr& node)
     this->graph->setSelectedNode(node);
 }
 
-void View2DWidget::clearSelection() {}
+void View2DWidget::clearSelection()
+{
+    this->node.reset();
+    this->graph->clearSelection();
+}
 
 void View2DWidget::reRenderNode()
 {
@@ -349,7 +353,12 @@ void View2DGraph::setSelectedNode(const TextureNodePtr& node)
 
 void View2DGraph::updatePreview() { this->preview->update(); }
 
-void View2DGraph::clearSelection() {};
+void View2DGraph::clearSelection()
+{
+    this->preview->clearNode();
+    this->preview->hide();
+    this->preview->update();
+};
 
 void View2DGraph::drawBackground(QPainter* painter, const QRectF& r)
 {
