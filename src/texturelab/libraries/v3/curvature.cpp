@@ -40,7 +40,7 @@ void CurvatureNode::init()
             return texture(height, p).x;
         }
 
-        float Curve(vec2 p, vec2 o)
+        float _curveSample(vec2 p, vec2 o)
         {
             float a = HeightMap(p + o);
             float b = HeightMap(p - o);
@@ -58,7 +58,7 @@ void CurvatureNode::init()
             for (float oy = -q; oy < q; oy++)
             {
                 vec2 o = vec2(ox, oy);
-                float c = Curve(p, o * s);
+                float c = _curveSample(p, o * s);
                 v += (H + c) * ((r - length(o * s)) / r);
             }
 
