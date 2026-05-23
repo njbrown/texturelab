@@ -15,6 +15,7 @@
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
 #include <QPushButton>
+#include <QSettings>
 #include <QToolBar>
 #include <QToolButton>
 
@@ -257,6 +258,12 @@ void MainWindow::setupMenus()
     fileMenu->addAction("Save", [=]() { this->saveProject(); });
     fileMenu->addAction("Save As...", [=]() { this->saveProjectAs(); });
     fileMenu->addSeparator();
+
+    recentFilesMenu = fileMenu->addMenu("Open Recent");
+    connect(recentFilesMenu, &QMenu::aboutToShow,
+            this, &MainWindow::updateRecentFilesMenu);
+
+    fileMenu->addSeparator();
     fileMenu->addAction("Edit", []() {});
 
     auto editMenu = this->menuBar()->addMenu("Edit");
@@ -430,6 +437,7 @@ void MainWindow::openProject()
     project->filePath = filePath;
 
     setProject(project);
+    addToRecentFiles(filePath);
 }
 
 void MainWindow::newProject() { setProject(TextureProject::createEmpty()); }
@@ -456,6 +464,7 @@ void MainWindow::saveProject()
     file.open(QIODevice::WriteOnly);
     file.write(Project::saveTexture(project));
     file.close();
+    addToRecentFiles(project->filePath);
 }
 
 void MainWindow::saveProjectAs()
@@ -482,6 +491,7 @@ void MainWindow::saveProjectAs()
     file.open(QIODevice::WriteOnly);
     file.write(Project::saveTexture(project));
     file.close();
+    addToRecentFiles(project->filePath);
 }
 
 void MainWindow::showExportDialog()
@@ -647,6 +657,46 @@ void MainWindow::handleExport(const QString& destination,
     }
 
     QMessageBox::information(this, "Export", message);
+}
+
+void MainWindow::addToRecentFiles(const QString& filePath)
+{
+    QSettings settings;
+    QStringList files = settings.value("recentFiles").toStringList();
+    files.removeAll(filePath);
+    files.prepend(filePath);
+    while (files.size() > MaxRecentFiles)
+        files.removeLast();
+    settings.setValue("recentFiles", files);
+}
+
+void MainWindow::updateRecentFilesMenu()
+{
+    recentFilesMenu->clear();
+
+    QSettings settings;
+    QStringList files = settings.value("recentFiles").toStringList();
+
+    for (const QString& filePath : files) {
+        QFileInfo info(filePath);
+        auto action = recentFilesMenu->addAction(info.fileName(), [this, filePath]() {
+            auto project = Project::loadTexture(filePath);
+            QFileInfo fileInfo(filePath);
+            project->name = fileInfo.baseName();
+            project->filePath = filePath;
+            setProject(project);
+            addToRecentFiles(filePath);
+        });
+        action->setToolTip(filePath);
+    }
+
+    if (files.isEmpty())
+        recentFilesMenu->addAction("No recent files")->setEnabled(false);
+
+    recentFilesMenu->addSeparator();
+    recentFilesMenu->addAction("Clear Recent Files", [this]() {
+        QSettings().remove("recentFiles");
+    });
 }
 
 MainWindow::~MainWindow()

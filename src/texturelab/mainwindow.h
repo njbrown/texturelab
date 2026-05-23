@@ -3,6 +3,8 @@
 
 #include "DockManager.h"
 #include <QMainWindow>
+#include <QMenu>
+#include <QSettings>
 #include <QSharedPointer>
 #include <QString>
 
@@ -43,12 +45,18 @@ protected:
 
     void setProject(TextureProjectPtr project);
 
+    void addToRecentFiles(const QString& filePath);
+    void updateRecentFilesMenu();
+
     ads::CDockAreaWidget* addDock(const QString& title,
                                   ads::DockWidgetArea area, QWidget* widget,
                                   ads::CDockAreaWidget* areaWidget);
 
 private:
+    static constexpr int MaxRecentFiles = 10;
+
     ads::CDockManager* dockManager;
+    QMenu* recentFilesMenu;
     QToolBar* toolBar;
     QWidget* editor;
 
