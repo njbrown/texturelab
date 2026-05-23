@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QFile>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLayout>
 #include <QList>
@@ -424,9 +425,9 @@ void MainWindow::openProject()
 
     auto project = Project::loadTexture(filePath);
 
-    // Extract filename without extension
     QFileInfo fileInfo(filePath);
     project->name = fileInfo.baseName();
+    project->filePath = filePath;
 
     setProject(project);
 }
@@ -470,6 +471,10 @@ void MainWindow::saveProjectAs()
         filePath += ".texture";
 
     project->filePath = filePath;
+
+    QFileInfo fileInfo(filePath);
+    project->name = fileInfo.baseName();
+    setWindowTitle(project->name + " - TextureLab");
 
     graphWidget->syncPositionsToModel();
 
