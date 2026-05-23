@@ -98,12 +98,15 @@ private:
                 vec2 uv   = v_texCoord;
                 vec2 step = 1.0 / _textureSize;
 
-                float sigma     = max(u_radius / 3.0, 0.001);
+                // Scale radius by resolution so the blur covers the same
+                // visual proportion regardless of texture size (512 = reference).
+                float pixelRadius = u_radius * (_textureSize.x / 512.0);
+                float sigma     = max(pixelRadius / 3.0, 0.001);
                 float twoSigSq  = 2.0 * sigma * sigma;
                 vec4  result    = vec4(0.0);
                 float totalW    = 0.0;
 
-                int radius = int(ceil(u_radius));
+                int radius = int(ceil(pixelRadius));
                 for (int i = -radius; i <= radius; i++) {
                     float w      = exp(-float(i * i) / twoSigSq);
                     vec2  offset = %1 * float(i);
