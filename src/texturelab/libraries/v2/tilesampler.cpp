@@ -18,7 +18,7 @@ void TileSamplerNode::init()
     this->addIntProp("columns", "Column Count", 8, 0, 15, 1);
 
     auto posProps = this->createGroup("Position");
-    posProps->add(this->addFloatProp("offset", "Offset", 0.5, 0, 1, 0.1));
+    posProps->add(this->addFloatProp("offset", "Offset", 0.0, 0, 1, 0.1));
     posProps->add(
         this->addEnumProp("offset_axis", "Offset Axis", {"X Axis", "Y Axis"}));
     posProps->add(
