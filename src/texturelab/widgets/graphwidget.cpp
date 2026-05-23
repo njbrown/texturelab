@@ -111,11 +111,28 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
                 }
             });
 
-    // connect(graph, &nodegraph::NodeGraph::nodeAdded,
-    //         [=](nodegraph::NodePtr node) { qDebug() << "NODE ADDED"; });
+    connect(graph, &nodegraph::NodeGraph::nodeRemoved,
+            [=](nodegraph::NodePtr node) {
+                auto nodeId = node->id();
+                auto texNode = project->getNodeById(nodeId);
 
-    // connect(graph, &nodegraph::NodeGraph::nodeRemoved,
-    //         [=](nodegraph::NodePtr node) { qDebug() << "NODE REMOVED"; });
+                // remove all connections involving this node from the model
+                for (auto key : project->connections.keys()) {
+                    auto con = project->connections[key];
+                    if (con->leftNode->id == nodeId ||
+                        con->rightNode->id == nodeId) {
+                        // mark downstream node dirty before disconnecting
+                        if (con->leftNode->id == nodeId)
+                            con->rightNode->isDirty = true;
+                        project->connections.remove(key);
+                    }
+                }
+
+                project->nodes.remove(nodeId);
+
+                emit nodeSelectionChanged(TextureNodePtr(nullptr));
+                renderer->update();
+            });
 
     // library = nullptr;
 }

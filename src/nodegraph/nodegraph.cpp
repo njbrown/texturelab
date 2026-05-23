@@ -136,7 +136,9 @@ void NodeGraph::keyPressEvent(QKeyEvent* event)
         for (auto item : items) {
             if (item->type() == (int)SceneItemType::Node) {
                 auto node = qgraphicsitem_cast<Node*>(item);
-                this->_scene->removeNode(node->sharedFromThis());
+                auto nodePtr = node->sharedFromThis();
+                this->_scene->removeNode(nodePtr);
+                emit nodeRemoved(nodePtr);
             }
             else if (item->type() == (int)SceneItemType::Frame) {
                 auto frame = qgraphicsitem_cast<Frame*>(item);
