@@ -248,6 +248,38 @@ void GraphWidget::addNode(const TextureNodePtr& node)
     scene->addNode(gnode);
 }
 
+void GraphWidget::syncPositionsToModel()
+{
+    if (!project || !scene)
+        return;
+
+    for (auto& node : project->nodes) {
+        auto gnode = scene->getNodeById(node->id);
+        if (gnode) {
+            auto center = gnode->getCenter();
+            node->pos = QVector2D(center.x(), center.y());
+        }
+    }
+
+    for (auto& comment : project->comments) {
+        auto gcomment = scene->getCommentById(comment->id);
+        if (gcomment) {
+            auto p = gcomment->pos();
+            comment->pos = QVector2D(p.x(), p.y());
+        }
+    }
+
+    for (auto& frame : project->frames) {
+        auto gframe = scene->getFrameById(frame->id);
+        if (gframe) {
+            auto p = gframe->pos();
+            frame->pos = QVector2D(p.x(), p.y());
+            auto rect = gframe->frameRect();
+            frame->size = QVector2D(rect.width(), rect.height());
+        }
+    }
+}
+
 void GraphWidget::dragEnterEvent(QDragEnterEvent* evt)
 {
     // qDebug() << "Drag enter";

@@ -36,6 +36,7 @@ public:
     void keyPressEvent(QKeyEvent* event) override;
 
     void setTextureRenderer(TextureRenderer* renderer);
+    void syncPositionsToModel();
 
     nodegraph::NodeGraph* graph;
     // Library* library;

@@ -449,6 +449,8 @@ void MainWindow::saveProject()
         project->filePath = filePath;
     }
 
+    graphWidget->syncPositionsToModel();
+
     QFile file(project->filePath);
     file.open(QIODevice::WriteOnly);
     file.write(Project::saveTexture(project));
@@ -468,6 +470,8 @@ void MainWindow::saveProjectAs()
         filePath += ".texture";
 
     project->filePath = filePath;
+
+    graphWidget->syncPositionsToModel();
 
     QFile file(project->filePath);
     file.open(QIODevice::WriteOnly);

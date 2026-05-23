@@ -269,6 +269,11 @@ void Node::setCenter(float x, float y)
     setPos(x - NODE_WIDTH / 2.0f, y - NODE_HEIGHT / 2.0f);
 }
 
+QPointF Node::getCenter() const
+{
+    return QPointF(pos().x() + NODE_WIDTH / 2.0f, pos().y() + NODE_HEIGHT / 2.0f);
+}
+
 void Node::setName(QString name)
 {
     this->name = name;

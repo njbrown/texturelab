@@ -115,6 +115,7 @@ public:
 
     void setName(QString name);
     void setCenter(float x, float y);
+    QPointF getCenter() const;
     void setThumbnail(const QPixmap& pixmap);
 
     void addInPort(QString name);
