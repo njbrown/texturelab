@@ -299,31 +299,37 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
     shader->setUniformValue("u_EmissiveUVSet", 0);
     shader->setUniformValue("u_MetallicRoughnessUVSet", 0);
 
+    auto bindLinear = [&](GLuint texId) {
+        gl->glBindTexture(GL_TEXTURE_2D, texId);
+        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    };
+
     shader->setUniformValue("u_BaseColorSampler", 0);
     gl->glActiveTexture(GL_TEXTURE0);
-    gl->glBindTexture(GL_TEXTURE_2D, mat->albedoMapId);
+    bindLinear(mat->albedoMapId);
 
     shader->setUniformValue("u_NormalSampler", 1);
     gl->glActiveTexture(GL_TEXTURE1);
-    gl->glBindTexture(GL_TEXTURE_2D, mat->normalMapId);
+    bindLinear(mat->normalMapId);
 
     shader->setUniformValue("u_MetalnessSampler", 2);
     gl->glActiveTexture(GL_TEXTURE2);
-    gl->glBindTexture(GL_TEXTURE_2D, mat->metalnessMapId);
+    bindLinear(mat->metalnessMapId);
 
     shader->setUniformValue("u_RoughnessSampler", 3);
     gl->glActiveTexture(GL_TEXTURE3);
-    gl->glBindTexture(GL_TEXTURE_2D, mat->roughnessMapId);
+    bindLinear(mat->roughnessMapId);
 
     shader->setUniformValue("u_HeightSampler", 4);
     gl->glActiveTexture(GL_TEXTURE4);
-    gl->glBindTexture(GL_TEXTURE_2D, mat->heightMapId);
+    bindLinear(mat->heightMapId);
 
     shader->setUniformValue("u_HeightScale", material->heightScale);
 
     shader->setUniformValue("u_OcclusionSampler", 5);
     gl->glActiveTexture(GL_TEXTURE5);
-    gl->glBindTexture(GL_TEXTURE_2D, mat->aoMapId);
+    bindLinear(mat->aoMapId);
     shader->setUniformValue("u_OcclusionUVSet", 0);
     shader->setUniformValue("u_OcclusionStrength", 1.0f);
 
