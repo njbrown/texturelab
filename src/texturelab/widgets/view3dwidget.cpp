@@ -9,7 +9,7 @@ View3DWidget::View3DWidget()
     this->viewer = new Viewer3D();
     this->setCentralWidget(viewer);
 
-    this->viewer->setDefaultEnvironment(":env/cave_wall_1k.hdr");
+    this->viewer->setDefaultEnvironment(":env/sunny_rose_garden_1k.hdr");
 
     // Create menu bar
     QMenuBar* menuBar = new QMenuBar(this);

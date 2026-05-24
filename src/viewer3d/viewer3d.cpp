@@ -111,7 +111,7 @@ void Viewer3D::initializeGL()
     if (!defaultEnvPath.isEmpty())
         renderer->loadEnvironment(defaultEnvPath);
     else
-        renderer->loadEnvironment(":assets/panorama.hdr");
+        renderer->loadEnvironment(":env/sunny_rose_garden_1k.hdr");
 }
 
 void Viewer3D::setDefaultEnvironment(const QString path)

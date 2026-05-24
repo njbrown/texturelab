@@ -106,6 +106,7 @@
     <file alias="env/spruit_sunrise_1k.hdr">../../public/assets/env/spruit_sunrise/spruit_sunrise_1k.hdr</file>
     <file alias="env/studio_small_07_1k.hdr">../../public/assets/env/studio_small_07/studio_small_07_1k.hdr</file>
     <file alias="env/wide_street_01_1k.hdr">../../public/assets/env/wide_street_01_1k.hdr</file>
+    <file alias="env/sunny_rose_garden_1k.hdr">../../public/assets/env/sunny_rose_garden_1k.hdr</file>
     
     <!-- Example texture files -->
     <file alias="examples/Copper.texture">../../public/assets/examples/Copper.texture</file>
