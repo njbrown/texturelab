@@ -14,8 +14,8 @@ void TileNode::init()
     this->addFloatProp("brickWidth", "Tile Width", 1.0, 0, 1, 0.01);
     this->addFloatProp("brickHeight", "Tile Height", 1.0, 0, 1, 0.01);
 
-    this->addFloatProp("rows", "Rows", 6, 1, 20, 1);
-    this->addFloatProp("columns", "Columns", 6, 1, 20, 1);
+    this->addIntProp("rows", "Rows", 6, 1, 30, 1);
+    this->addIntProp("columns", "Columns", 6, 1, 30, 1);
 
     auto source = R""""(
         // offset for alternating rows
