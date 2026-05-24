@@ -85,7 +85,7 @@ void Viewer3D::initializeGL()
     mat->roughness = 0.5; // Three.js default
     mat->metalness = 0.0; // Three.js default
     // gltfMesh = loadMeshFromRc(":assets/cube.gltf");
-    gltfMesh = createSphere(this->gl, 2, 64, 64);
+    gltfMesh = createSphere(this->gl, 2, 1000, 1000);
     this->material = mat;
 
     // Create skydome for rendering environment
