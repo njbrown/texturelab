@@ -131,17 +131,15 @@ void Viewer3D::paintGL()
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     gl->glEnable(GL_DEPTH_TEST);
-    // gl->glDisable(GL_CULL_FACE);
+    gl->glDisable(GL_CULL_FACE);
 
     vao->bind();
 
     // Render skydome first (as background)
     if (skydomeMesh) {
-        gl->glDepthFunc(GL_LEQUAL);  // Change depth function for skybox
-        gl->glDisable(GL_CULL_FACE); // Render from inside
+        gl->glDepthFunc(GL_LEQUAL);
         renderer->renderSkybox(skydomeMesh, viewMatrix, projMatrix);
-        gl->glEnable(GL_CULL_FACE);
-        gl->glDepthFunc(GL_LESS); // Reset depth function
+        gl->glDepthFunc(GL_LESS);
     }
 
     // render gltf mesh
