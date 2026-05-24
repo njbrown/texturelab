@@ -194,7 +194,9 @@ private:
                 float dist = length(uv - data.xy)
                            * max(_textureSize.x, _textureSize.y);
 
-                float t = clamp(dist / u_distance, 0.0, 1.0);
+                float pixelDistance = u_distance
+                    * (max(_textureSize.x, _textureSize.y) / 512.0);
+                float t = clamp(dist / pixelDistance, 0.0, 1.0);
 
                 float bevel;
                 if (u_shape == SHAPE_ROUND) {
