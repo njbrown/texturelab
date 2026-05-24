@@ -145,8 +145,11 @@ void Viewer3D::paintGL()
     }
 
     // render gltf mesh
+    gl->glEnable(GL_BLEND);
+    gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     renderer->renderGltfMesh(gltfMesh, material, camPos, worldMatrix,
                              viewMatrix, projMatrix);
+    gl->glDisable(GL_BLEND);
 
     // test several in a row
     // int totalSpheres = 6;
@@ -466,7 +469,8 @@ void Viewer3D::setAlbedoTexture(GLuint texId)
 
 void Viewer3D::clearAlbedoTexture()
 {
-    if (!this->material) return;
+    if (!this->material)
+        return;
     this->material->albedoMapId = 0;
     this->material->needsUpdate = true;
 }
@@ -479,7 +483,8 @@ void Viewer3D::setNormalTexture(GLuint texId)
 
 void Viewer3D::clearNormalTexture()
 {
-    if (!this->material) return;
+    if (!this->material)
+        return;
     this->material->normalMapId = 0;
     this->material->needsUpdate = true;
 }
@@ -492,7 +497,8 @@ void Viewer3D::setMetalnessTexture(GLuint texId)
 
 void Viewer3D::clearMetalnessTexture()
 {
-    if (!this->material) return;
+    if (!this->material)
+        return;
     this->material->metalnessMapId = 0;
     this->material->needsUpdate = true;
 }
@@ -505,7 +511,8 @@ void Viewer3D::setRoughnessTexture(GLuint texId)
 
 void Viewer3D::clearRoughnessTexture()
 {
-    if (!this->material) return;
+    if (!this->material)
+        return;
     this->material->roughnessMapId = 0;
     this->material->needsUpdate = true;
 }
@@ -518,7 +525,8 @@ void Viewer3D::setHeightTexture(GLuint texId)
 
 void Viewer3D::clearHeightTexture()
 {
-    if (!this->material) return;
+    if (!this->material)
+        return;
     this->material->heightMapId = 0;
     this->material->needsUpdate = true;
 }
@@ -537,7 +545,8 @@ void Viewer3D::setAoTexture(GLuint texId)
 
 void Viewer3D::clearAoTexture()
 {
-    if (!this->material) return;
+    if (!this->material)
+        return;
     this->material->aoMapId = 0;
     this->material->needsUpdate = true;
 }
@@ -582,27 +591,30 @@ void Viewer3D::setModel(const QString& modelType)
 
     // Create new mesh based on type
     if (modelType == "sphere") {
-        gltfMesh = createSphere(this->gl, 2, 64, 64);
+        gltfMesh = createSphere(this->gl, 2, 1000, 1000);
     }
     else if (modelType == "plane_xy") {
         // Create a subdivided plane in XY orientation
-        gltfMesh = createPlane(this->gl, 4, 4, 32, 32, PlaneOrientation::XY);
+        gltfMesh =
+            createPlane(this->gl, 4, 4, 1000, 1000, PlaneOrientation::XY);
     }
     else if (modelType == "plane_yz") {
         // Create a subdivided plane in YZ orientation
-        gltfMesh = createPlane(this->gl, 4, 4, 32, 32, PlaneOrientation::YZ);
+        gltfMesh =
+            createPlane(this->gl, 4, 4, 1000, 1000, PlaneOrientation::YZ);
     }
     else if (modelType == "plane_xz") {
         // Create a subdivided plane in XZ orientation
-        gltfMesh = createPlane(this->gl, 4, 4, 32, 32, PlaneOrientation::XZ);
+        gltfMesh =
+            createPlane(this->gl, 4, 4, 1000, 1000, PlaneOrientation::XZ);
     }
     else if (modelType == "cylinder") {
         // Create a cylinder with height subdivisions for displacement mapping
-        gltfMesh = createCylinder(this->gl, 1, 1, 2, 32, 32, false);
+        gltfMesh = createCylinder(this->gl, 1, 1, 2, 1000, 1000, false);
     }
     else if (modelType == "cube") {
         // Create a subdivided cube
-        gltfMesh = createCube(this->gl, 2, 2, 2, 32, 32, 32);
+        gltfMesh = createCube(this->gl, 2, 2, 2, 1000, 1000, 1000);
     }
     else if (modelType == "cubesphere") {
         // CubeSphere - a sphere with low segments for a more cubic look
@@ -610,7 +622,7 @@ void Viewer3D::setModel(const QString& modelType)
     }
     else {
         // Default to sphere
-        gltfMesh = createSphere(this->gl, 2, 64, 64);
+        gltfMesh = createSphere(this->gl, 2, 1000, 1000);
     }
 
     // Release OpenGL context

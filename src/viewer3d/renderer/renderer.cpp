@@ -110,7 +110,7 @@ void Renderer::updateMaterial(Material* material)
     flags << "ALPHAMODE_OPAQUE 0";
     flags << "ALPHAMODE_MASK 1";
     flags << "ALPHAMODE_BLEND 2";
-    flags << "ALPHAMODE ALPHAMODE_OPAQUE";
+    flags << "ALPHAMODE ALPHAMODE_BLEND";
 
     // tone mapping (match 3js as much as we can)
     flags << "TONEMAP_ACES_HILL 1";
