@@ -66,6 +66,20 @@ void PropertiesWidget::setSelectedNode(const TextureNodePtr& node)
             layout->addWidget(widget);
 
         } break;
+        case PropType::Bool: {
+            auto widget = new BoolPropWidget();
+            widget->setProp((BoolProp*)prop);
+            propWidgets.append(widget);
+
+            connect(widget, &BoolPropWidget::valueChanged, [=](bool value) {
+                node->setProp(prop->name, value);
+                project->markNodeAsDirty(node);
+
+                emit propertyUpdated(prop->name, value);
+            });
+            layout->addWidget(widget);
+
+        } break;
         case PropType::Int: {
             auto widget = new IntPropWidget();
             widget->setProp((IntProp*)prop);
