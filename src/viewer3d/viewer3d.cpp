@@ -608,7 +608,7 @@ void Viewer3D::setModel(const QString& modelType)
     }
     else if (modelType == "cylinder") {
         // Create a cylinder with height subdivisions for displacement mapping
-        gltfMesh = createCylinder(this->gl, 1, 1, 2, 1000, 1000, false);
+        gltfMesh = createCylinder(this->gl, 1, 1, 2, 1000, 1000, 0.1f, 16);
     }
     else if (modelType == "cube") {
         // Create a subdivided cube
