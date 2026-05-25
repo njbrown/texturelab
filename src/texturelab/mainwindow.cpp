@@ -7,6 +7,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QLayout>
 #include <QList>
 #include <QMenu>
@@ -14,9 +15,8 @@
 #include <QMessageBox>
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
-#include <QPushButton>
-#include <QLabel>
 #include <QProgressBar>
+#include <QPushButton>
 #include <QSettings>
 #include <QStatusBar>
 #include <QTimer>
@@ -55,11 +55,19 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     statusLabel = new QLabel("Ready");
     progressBar = new QProgressBar();
     progressBar->setRange(0, 1);
+    progressBar->setValue(1);
     progressBar->setFixedWidth(180);
     progressBar->setTextVisible(false);
-    progressBar->hide();
-    statusBar()->addWidget(statusLabel);
-    statusBar()->addPermanentWidget(progressBar);
+
+    auto* statusWidget = new QWidget();
+    auto* statusLayout = new QHBoxLayout(statusWidget);
+    // statusLayout->setContentsMargins(4, 0, 4, 0);
+    statusLayout->setContentsMargins(0, 0, 0, 0);
+    statusLayout->setSpacing(6);
+    statusLayout->addStretch();
+    statusLayout->addWidget(statusLabel, 0, Qt::AlignVCenter);
+    statusLayout->addWidget(progressBar, 0, Qt::AlignVCenter);
+    statusBar()->addWidget(statusWidget, 1);
 
     this->dockManager = new ads::CDockManager(this);
 
@@ -225,13 +233,12 @@ void MainWindow::setProject(TextureProjectPtr project)
 
     connect(renderer, &TextureRenderer::renderProgress,
             [this](int clean, int total) {
+                progressBar->setMaximum(total == 0 ? 1 : total);
+                progressBar->setValue(total == 0 ? 1 : clean);
                 if (total == 0 || clean == total) {
-                    progressBar->hide();
                     statusLabel->setText("Ready");
-                } else {
-                    progressBar->setMaximum(total);
-                    progressBar->setValue(clean);
-                    progressBar->show();
+                }
+                else {
                     statusLabel->setText(
                         QString("Rendering %1 / %2").arg(clean).arg(total));
                 }
@@ -291,8 +298,8 @@ void MainWindow::setupMenus()
     fileMenu->addSeparator();
 
     recentFilesMenu = fileMenu->addMenu("Open Recent");
-    connect(recentFilesMenu, &QMenu::aboutToShow,
-            this, &MainWindow::updateRecentFilesMenu);
+    connect(recentFilesMenu, &QMenu::aboutToShow, this,
+            &MainWindow::updateRecentFilesMenu);
 
     fileMenu->addSeparator();
     fileMenu->addAction("Edit", []() {});
@@ -710,14 +717,15 @@ void MainWindow::updateRecentFilesMenu()
 
     for (const QString& filePath : files) {
         QFileInfo info(filePath);
-        auto action = recentFilesMenu->addAction(info.fileName(), [this, filePath]() {
-            auto project = Project::loadTexture(filePath);
-            QFileInfo fileInfo(filePath);
-            project->name = fileInfo.baseName();
-            project->filePath = filePath;
-            setProject(project);
-            addToRecentFiles(filePath);
-        });
+        auto action =
+            recentFilesMenu->addAction(info.fileName(), [this, filePath]() {
+                auto project = Project::loadTexture(filePath);
+                QFileInfo fileInfo(filePath);
+                project->name = fileInfo.baseName();
+                project->filePath = filePath;
+                setProject(project);
+                addToRecentFiles(filePath);
+            });
         action->setToolTip(filePath);
     }
 
@@ -725,9 +733,8 @@ void MainWindow::updateRecentFilesMenu()
         recentFilesMenu->addAction("No recent files")->setEnabled(false);
 
     recentFilesMenu->addSeparator();
-    recentFilesMenu->addAction("Clear Recent Files", [this]() {
-        QSettings().remove("recentFiles");
-    });
+    recentFilesMenu->addAction("Clear Recent Files",
+                               [this]() { QSettings().remove("recentFiles"); });
 }
 
 MainWindow::~MainWindow()
