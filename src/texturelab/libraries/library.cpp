@@ -263,6 +263,7 @@ Library* createLibraryV3()
     lib->addNode<BlurHQNode>("blurhq", "Blur HQ", ":nodes/blurv2.png");
     lib->addNode<DistanceTransformNode>(
         "distancetransform", "Distance Transform", ":nodes/bevel.png");
+    lib->addNode<ColorSpreadNode>("spread", "Spread", ":nodes/bevel.png");
     lib->addNode<HeightBlendNode>("heightblend", "Height Blend",
                                   ":nodes/blend.png");
     lib->addNode<MakeItTileNode>("makeittile", "Make It Tile",

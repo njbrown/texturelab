@@ -130,6 +130,7 @@ set(LIBRARYV3
     # Phase 3 — Multi-pass
     ./libraries/v3/blurhq.cpp
     ./libraries/v3/distancetransform.cpp
+    ./libraries/v3/spread.cpp
     ./libraries/v3/heightblend.cpp
     ./libraries/v3/makeittile.cpp
 )

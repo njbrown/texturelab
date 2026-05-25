@@ -92,6 +92,13 @@ public:
     std::shared_ptr<NodeRenderData>      createRenderData() override;
 };
 
+class ColorSpreadNode : public TextureNode {
+public:
+    void init() override;
+    std::shared_ptr<NodeTextureRenderer> createRenderer() override;
+    std::shared_ptr<NodeRenderData>      createRenderData() override;
+};
+
 class HeightBlendNode : public TextureNode {
 public:
     void init() override;
