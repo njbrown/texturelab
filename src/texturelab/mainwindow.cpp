@@ -15,7 +15,11 @@
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
 #include <QPushButton>
+#include <QLabel>
+#include <QProgressBar>
 #include <QSettings>
+#include <QStatusBar>
+#include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
 
@@ -47,6 +51,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 
     this->renderer = nullptr;
     this->exportDialog = nullptr;
+
+    statusLabel = new QLabel("Ready");
+    progressBar = new QProgressBar();
+    progressBar->setRange(0, 1);
+    progressBar->setFixedWidth(180);
+    progressBar->setTextVisible(false);
+    progressBar->hide();
+    statusBar()->addWidget(statusLabel);
+    statusBar()->addPermanentWidget(progressBar);
 
     this->dockManager = new ads::CDockManager(this);
 
@@ -209,6 +222,20 @@ void MainWindow::setProject(TextureProjectPtr project)
     renderer->setProject(project);
     this->graphWidget->setTextureRenderer(renderer);
     this->view2DWidget->setTextureRenderer(renderer);
+
+    connect(renderer, &TextureRenderer::renderProgress,
+            [this](int clean, int total) {
+                if (total == 0 || clean == total) {
+                    progressBar->hide();
+                    statusLabel->setText("Ready");
+                } else {
+                    progressBar->setMaximum(total);
+                    progressBar->setValue(clean);
+                    progressBar->show();
+                    statusLabel->setText(
+                        QString("Rendering %1 / %2").arg(clean).arg(total));
+                }
+            });
 
     // Update view3D textures when a node's texture is updated
     connect(renderer, &TextureRenderer::thumbnailGenerated,

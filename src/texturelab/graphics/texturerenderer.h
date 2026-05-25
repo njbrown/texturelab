@@ -68,6 +68,7 @@ private:
 signals:
     void thumbnailGenerated(const QString& nodeId, GLuint texId,
                             const QPixmap& pixmap);
+    void renderProgress(int clean, int total);
 };
 
 // note: there's no specified fbo limit

@@ -20,6 +20,8 @@ class TextureProject;
 typedef QSharedPointer<TextureProject> TextureProjectPtr;
 
 class QToolBar;
+class QProgressBar;
+class QLabel;
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
@@ -68,6 +70,9 @@ private:
     ExportDialog* exportDialog;
 
     TextureRenderer* renderer;
+
+    QProgressBar* progressBar;
+    QLabel* statusLabel;
 
     TextureProjectPtr project;
 };
