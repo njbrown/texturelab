@@ -155,3 +155,56 @@ jobs:
         with:
           name: texturelab-macos
           path: build/src/texturelab/texturelab.app
+
+  notify-discord:
+    needs: [build-linux, build-windows, build-macos]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          BRANCH: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          REPO: ${{ github.repository }}
+          LINUX_RESULT: ${{ needs.build-linux.result }}
+          WINDOWS_RESULT: ${{ needs.build-windows.result }}
+          MACOS_RESULT: ${{ needs.build-macos.result }}
+        run: |
+          SHORT_SHA="${SHA:0:7}"
+          RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
+
+          status_emoji() {
+            case "$1" in
+              success) echo "✅" ;;
+              failure) echo "❌" ;;
+              cancelled) echo "⏹️" ;;
+              *) echo "⚠️" ;;
+            esac
+          }
+
+          if [[ "$LINUX_RESULT" == "success" && "$WINDOWS_RESULT" == "success" && "$MACOS_RESULT" == "success" ]]; then
+            TITLE="Build succeeded — $BRANCH @ $SHORT_SHA"
+            COLOR=3066993
+            LINUX_URL="https://nightly.link/$REPO/workflows/build/$BRANCH/texturelab-linux.zip"
+            WINDOWS_URL="https://nightly.link/$REPO/workflows/build/$BRANCH/texturelab-windows.zip"
+            MACOS_URL="https://nightly.link/$REPO/workflows/build/$BRANCH/texturelab-macos.zip"
+            DOWNLOADS="[Linux]($LINUX_URL) · [Windows]($WINDOWS_URL) · [macOS]($MACOS_URL)"
+            DESCRIPTION="$DOWNLOADS"
+          else
+            TITLE="Build failed — $BRANCH @ $SHORT_SHA"
+            COLOR=15158332
+            DESCRIPTION="$(status_emoji $LINUX_RESULT) Linux · $(status_emoji $WINDOWS_RESULT) Windows · $(status_emoji $MACOS_RESULT) macOS\n[View run]($RUN_URL)"
+          fi
+
+          curl -s -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"embeds\": [{
+                \"title\": \"$TITLE\",
+                \"description\": \"$DESCRIPTION\",
+                \"color\": $COLOR,
+                \"url\": \"$RUN_URL\"
+              }]
+            }"
