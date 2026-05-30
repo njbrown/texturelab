@@ -156,11 +156,34 @@ jobs:
           name: texturelab-macos
           path: build/src/texturelab/texturelab.app
 
-  notify-discord:
+  deploy:
     needs: [build-linux, build-windows, build-macos]
     if: always()
     runs-on: ubuntu-latest
     steps:
+      - name: Download artifacts
+        if: ${{ needs.build-linux.result == 'success' || needs.build-windows.result == 'success' || needs.build-macos.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Zip and upload to S3
+        if: ${{ needs.build-linux.result == 'success' || needs.build-windows.result == 'success' || needs.build-macos.result == 'success' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-2
+          SHA: ${{ github.sha }}
+        run: |
+          cd artifacts
+          if [ -d texturelab-linux ];   then zip -r ../linux-$SHA.zip   texturelab-linux/;   fi
+          if [ -d texturelab-windows ]; then zip -r ../windows-$SHA.zip texturelab-windows/; fi
+          if [ -d texturelab-macos ];   then zip -r ../macos-$SHA.zip   texturelab-macos/;   fi
+          cd ..
+          for f in linux-$SHA.zip windows-$SHA.zip macos-$SHA.zip; do
+            [ -f "$f" ] && aws s3 cp "$f" s3://texturelab-nightlies/
+          done
+
       - name: Post to Discord
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
@@ -174,6 +197,7 @@ jobs:
         run: |
           SHORT_SHA="${SHA:0:7}"
           RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
+          S3_BASE="https://texturelab-nightlies.s3.us-east-2.amazonaws.com"
 
           status_emoji() {
             case "$1" in
@@ -187,11 +211,7 @@ jobs:
           if [[ "$LINUX_RESULT" == "success" && "$WINDOWS_RESULT" == "success" && "$MACOS_RESULT" == "success" ]]; then
             TITLE="Build succeeded — $BRANCH @ $SHORT_SHA"
             COLOR=3066993
-            LINUX_URL="https://nightly.link/$REPO/workflows/build/$BRANCH/texturelab-linux.zip"
-            WINDOWS_URL="https://nightly.link/$REPO/workflows/build/$BRANCH/texturelab-windows.zip"
-            MACOS_URL="https://nightly.link/$REPO/workflows/build/$BRANCH/texturelab-macos.zip"
-            DOWNLOADS="[Linux]($LINUX_URL) · [Windows]($WINDOWS_URL) · [macOS]($MACOS_URL)"
-            DESCRIPTION="$DOWNLOADS"
+            DESCRIPTION="[Linux]($S3_BASE/linux-$SHA.zip) · [Windows]($S3_BASE/windows-$SHA.zip) · [macOS]($S3_BASE/macos-$SHA.zip)"
           else
             TITLE="Build failed — $BRANCH @ $SHORT_SHA"
             COLOR=15158332
