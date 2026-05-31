@@ -256,6 +256,8 @@ Library* createLibraryV3()
     lib->addNode<TruchetNode>("truchet", "Truchet", ":nodes/hexagon.png");
     lib->addNode<FBMDomainWarpNode>("fbmdomainwarp", "FBM Domain Warp",
                                     ":nodes/fractalnoise.png");
+    lib->addNode<PerlinNoiseNode>("perlinnoise", "Perlin Noise",
+                                  ":nodes/fractalnoise.png");
 
     // -----------------------------------------------------------------------
     // Phase 3 — Multi-pass

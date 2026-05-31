@@ -127,6 +127,7 @@ set(LIBRARYV3
     ./libraries/v3/voronoifractal.cpp
     ./libraries/v3/truchet.cpp
     ./libraries/v3/fbmdomainwarp.cpp
+    ./libraries/v3/perlinnoise.cpp
     # Phase 3 — Multi-pass
     ./libraries/v3/blurhq.cpp
     ./libraries/v3/distancetransform.cpp
