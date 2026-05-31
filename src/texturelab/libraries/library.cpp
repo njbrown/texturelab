@@ -199,6 +199,7 @@ Library* createLibraryV3()
     lib->items.remove("floodfilltorandomcolor");
     lib->items.remove("floodfilltorandomintensity");
     lib->items.remove("bevel");
+    lib->items.remove("perlin3d");
 
     // V3 NODES
     lib->addNode<BevelV2Node>("bevelv2", "Bevel V2", ":nodes/bevel.png");
