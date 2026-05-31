@@ -266,8 +266,8 @@ Library* createLibraryV3()
     lib->addNode<ColorSpreadNode>("spread", "Spread", ":nodes/bevel.png");
     lib->addNode<HeightBlendNode>("heightblend", "Height Blend",
                                   ":nodes/blend.png");
-    lib->addNode<MakeItTileNode>("makeittile", "Make It Tile",
-                                 ":nodes/tile.png");
+    // lib->addNode<MakeItTileNode>("makeittile", "Make It Tile",
+    //                              ":nodes/tile.png");
     // lib->addNode<NormalMapV3Node>("normalmapv3", "Normal Map V3",
     //                               ":nodes/normalmap.png");
 
