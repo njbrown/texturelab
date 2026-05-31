@@ -258,6 +258,8 @@ Library* createLibraryV3()
                                     ":nodes/fractalnoise.png");
     lib->addNode<PerlinNoiseNode>("perlinnoise", "Perlin Noise",
                                   ":nodes/fractalnoise.png");
+    lib->addNode<PerlinNoise3DNode>("perlinnoise3d", "Perlin Noise 3D",
+                                    ":nodes/fractalnoise.png");
 
     // -----------------------------------------------------------------------
     // Phase 3 — Multi-pass

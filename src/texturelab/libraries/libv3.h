@@ -79,6 +79,11 @@ public:
     void init() override;
 };
 
+class PerlinNoise3DNode : public TextureNode {
+public:
+    void init() override;
+};
+
 // ---------------------------------------------------------------------------
 // Phase 3 — Multi-pass nodes
 // ---------------------------------------------------------------------------
