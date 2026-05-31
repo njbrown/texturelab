@@ -52,13 +52,24 @@ public:
             RenderResourceCache::standardVertexSource(),
             verticalFrag());
 
-        // Intermediate texture for the horizontal pass result
+        // Intermediate texture for the horizontal pass result.
+        // GL_LINEAR is required for the bilinear tap trick in the shaders —
+        // sampling at fractional offsets must interpolate rather than snap.
         GLuint intermediate = cache->acquireTexture(w, h);
+        gl->glBindTexture(GL_TEXTURE_2D, intermediate);
+        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        GLuint inputTex = ctx.inputs[0].textureId;
+        gl->glBindTexture(GL_TEXTURE_2D, inputTex);
+        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        gl->glBindTexture(GL_TEXTURE_2D, 0);
 
         // --- Pass 1: horizontal blur ---
         cache->bindFboToTexture(intermediate);
         ctx.useShader(hShader);
-        ctx.bindTexture(hShader, "u_image", ctx.inputs[0].textureId, 0);
+        ctx.bindTexture(hShader, "u_image", inputTex, 0);
         gl->glUniform1f(
             gl->glGetUniformLocation(hShader, "u_radius"), data.radius);
         gl->glUniform2f(
@@ -77,11 +88,28 @@ public:
             float(w), float(h));
         ctx.drawQuad();
 
+        // Restore GL_NEAREST on both textures — pooled textures are expected
+        // to be GL_NEAREST; the input texture is owned by another node.
+        gl->glBindTexture(GL_TEXTURE_2D, inputTex);
+        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        gl->glBindTexture(GL_TEXTURE_2D, intermediate);
+        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        gl->glBindTexture(GL_TEXTURE_2D, 0);
+
         cache->releaseTexture(intermediate);
     }
 
 private:
-    // Shared Gaussian sampling code — axis is injected per-pass
+    // Shared Gaussian sampling code — axis is injected per-pass.
+    //
+    // Uses the bilinear tap trick: instead of sampling at each integer pixel
+    // offset i, adjacent taps i and i+1 are collapsed into a single fetch at
+    // the Gaussian-weighted midpoint between them.  Hardware bilinear filtering
+    // then delivers the exact weighted average in one sample, halving fetch
+    // count and eliminating the discrete-step banding that arises from
+    // integer-only sampling on smooth gradients.
     static QString gaussianBody(const QString& axis)
     {
         return QString(R""""(
@@ -101,17 +129,32 @@ private:
                 // Scale radius by resolution so the blur covers the same
                 // visual proportion regardless of texture size (512 = reference).
                 float pixelRadius = u_radius * (_textureSize.x / 512.0);
-                float sigma     = max(pixelRadius / 3.0, 0.001);
-                float twoSigSq  = 2.0 * sigma * sigma;
-                vec4  result    = vec4(0.0);
-                float totalW    = 0.0;
+                float sigma       = max(pixelRadius / 3.0, 0.001);
+                float twoSigSq    = 2.0 * sigma * sigma;
 
-                int radius = int(ceil(pixelRadius));
-                for (int i = -radius; i <= radius; i++) {
-                    float w      = exp(-float(i * i) / twoSigSq);
-                    vec2  offset = %1 * float(i);
-                    result      += texture(u_image, fract(uv + offset * step)) * w;
-                    totalW      += w;
+                // Center tap: G(0) = 1, no offset needed.
+                vec4  result = texture(u_image, uv);
+                float totalW = 1.0;
+
+                int iRadius = int(ceil(pixelRadius));
+
+                // Bilinear tap trick: pair taps i and i+1, sample once at the
+                // weighted midpoint.  GL_LINEAR on u_image makes the hardware
+                // perform the blend.  Use float(i)*float(i) to avoid any
+                // potential int overflow at large radii.
+                for (int i = 1; i <= iRadius; i += 2) {
+                    float fi = float(i);
+                    float w0 = exp(-(fi * fi) / twoSigSq);
+                    float w1 = (i + 1 <= iRadius)
+                               ? exp(-((fi + 1.0) * (fi + 1.0)) / twoSigSq)
+                               : 0.0;
+                    float w      = w0 + w1;
+                    float offset = fi + w1 / w;
+
+                    vec2 o = %1 * offset * step;
+                    result += texture(u_image, fract(uv + o)) * w;
+                    result += texture(u_image, fract(uv - o)) * w;
+                    totalW += 2.0 * w;
                 }
 
                 fragColor = result / max(totalW, 0.0001);
