@@ -109,6 +109,11 @@ public:
     void init() override;
 };
 
+class NormalMapV3Node : public TextureNode {
+public:
+    void init() override;
+};
+
 class BevelV2Node : public TextureNode {
 public:
     virtual void init() override;

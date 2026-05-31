@@ -268,6 +268,8 @@ Library* createLibraryV3()
                                   ":nodes/blend.png");
     lib->addNode<MakeItTileNode>("makeittile", "Make It Tile",
                                  ":nodes/tile.png");
+    // lib->addNode<NormalMapV3Node>("normalmapv3", "Normal Map V3",
+    //                               ":nodes/normalmap.png");
 
     return lib;
 }
