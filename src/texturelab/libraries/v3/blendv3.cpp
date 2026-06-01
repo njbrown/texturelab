@@ -2,6 +2,10 @@
 #include "../../props.h"
 #include "../libv3.h"
 
+// reference:
+// https://ssp.impulsetrain.com/porterduff.html
+// https://github.com/dpt/Porter-Duff/blob/master/Porter-Duff.md
+
 void BlendV3Node::init()
 {
     this->title = "Blend";
@@ -126,7 +130,11 @@ void BlendV3Node::init()
             else                      // Normal (17)
                 result = colA.rgb;
 
-            return vec4(mix(colB.rgb, result, finalOpacity), colB.a);
+            // Factor in the foreground's own alpha so transparent regions
+            // of the overlay let the background show through.
+            float blendFactor = finalOpacity * colA.a;
+            float outAlpha    = blendFactor + colB.a * (1.0 - blendFactor);
+            return vec4(mix(colB.rgb, result, blendFactor), outAlpha);
         }
         )"""");
 }
