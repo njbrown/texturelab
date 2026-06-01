@@ -200,6 +200,7 @@ Library* createLibraryV3()
     lib->items.remove("floodfilltorandomintensity");
     lib->items.remove("bevel");
     lib->items.remove("perlin3d");
+    lib->items.remove("blend");
 
     // V3 NODES
     lib->addNode<BevelV2Node>("bevelv2", "Bevel V2", ":nodes/bevel.png");
@@ -233,7 +234,7 @@ Library* createLibraryV3()
     // -----------------------------------------------------------------------
     // Phase 1 — Filters / Color
     // -----------------------------------------------------------------------
-    lib->addNode<BlendV3Node>("blendv3", "Blend", ":nodes/blend.png");
+    lib->addNode<BlendV3Node>("blend", "Blend", ":nodes/blend.png");
     lib->addNode<EdgeDetectNode>("edgedetect", "Edge Detect",
                                  ":nodes/bevel.png");
     lib->addNode<HighpassNode>("highpass", "Highpass", ":nodes/blurv2.png");

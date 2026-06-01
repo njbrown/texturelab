@@ -6,29 +6,33 @@ void BlendV3Node::init()
 {
     this->title = "Blend";
 
-    this->addInput("colorA");   // top / foreground
-    this->addInput("colorB");   // bottom / background
-    this->addInput("opacity");  // optional mask
+    this->addInput("colorA");  // top / foreground
+    this->addInput("colorB");  // bottom / background
+    this->addInput("opacity"); // optional mask
 
-    this->addEnumProp("type", "Type", {
-        "Normal",
-        "Multiply",
-        "Screen",
-        "Overlay",
-        "Soft Light",
-        "Hard Light",
-        "Color Dodge",
-        "Color Burn",
-        "Linear Dodge",
-        "Linear Burn",
-        "Difference",
-        "Exclusion",
-        "Add",
-        "Subtract",
-        "Divide",
-        "Max",
-        "Min",
-    });
+    // Indices 0-8 match the v1 blend node for consistency.
+    // New modes are appended from index 9 onward.
+    this->addEnumProp("type", "Type",
+                      {
+                          "Multiply",     // 0
+                          "Add",          // 1
+                          "Subtract",     // 2
+                          "Divide",       // 3
+                          "Max",          // 4
+                          "Min",          // 5
+                          "Switch",       // 6  (shows colorA — same as v1)
+                          "Overlay",      // 7  (fixed: correct 2× factor)
+                          "Screen",       // 8
+                          "Soft Light",   // 9
+                          "Hard Light",   // 10
+                          "Color Dodge",  // 11
+                          "Color Burn",   // 12
+                          "Linear Dodge", // 13
+                          "Linear Burn",  // 14
+                          "Difference",   // 15
+                          "Exclusion",    // 16
+                          "Normal",       // 17
+                      });
     this->addFloatProp("opacity", "Opacity", 1.0, 0.0, 1.0, 0.01);
 
     this->setShaderSource(R""""(
@@ -79,40 +83,42 @@ void BlendV3Node::init()
             vec4 colB = texture(colorB, uv); // bottom / background
             vec3 result = colB.rgb;
 
-            if (prop_type == 0)       // Normal
-                result = colA.rgb;
-            else if (prop_type == 1)  // Multiply
+            if (prop_type == 0)       // Multiply
                 result = colA.rgb * colB.rgb;
-            else if (prop_type == 2)  // Screen
-                result = blend_screen(colA.rgb, colB.rgb);
-            else if (prop_type == 3)  // Overlay
-                result = blend_overlay(colB.rgb, colA.rgb);
-            else if (prop_type == 4)  // Soft Light
-                result = blend_soft_light(colB.rgb, colA.rgb);
-            else if (prop_type == 5)  // Hard Light
-                result = blend_hard_light(colB.rgb, colA.rgb);
-            else if (prop_type == 6)  // Color Dodge
-                result = blend_color_dodge(colB.rgb, colA.rgb);
-            else if (prop_type == 7)  // Color Burn
-                result = blend_color_burn(colB.rgb, colA.rgb);
-            else if (prop_type == 8)  // Linear Dodge (Add, clamped)
-                result = clamp(colA.rgb + colB.rgb, 0.0, 1.0);
-            else if (prop_type == 9)  // Linear Burn
-                result = clamp(colA.rgb + colB.rgb - 1.0, 0.0, 1.0);
-            else if (prop_type == 10) // Difference
-                result = abs(colA.rgb - colB.rgb);
-            else if (prop_type == 11) // Exclusion
-                result = colA.rgb + colB.rgb - 2.0 * colA.rgb * colB.rgb;
-            else if (prop_type == 12) // Add (unclamped)
+            else if (prop_type == 1)  // Add
                 result = colA.rgb + colB.rgb;
-            else if (prop_type == 13) // Subtract
+            else if (prop_type == 2)  // Subtract
                 result = colB.rgb - colA.rgb;
-            else if (prop_type == 14) // Divide
-                result = clamp(colB.rgb / max(colA.rgb, vec3(1e-4)), 0.0, 1.0);
-            else if (prop_type == 15) // Max
+            else if (prop_type == 3)  // Divide
+                result = colB.rgb / max(colA.rgb, vec3(1e-4));
+            else if (prop_type == 4)  // Max
                 result = max(colA.rgb, colB.rgb);
-            else                      // Min
+            else if (prop_type == 5)  // Min
                 result = min(colA.rgb, colB.rgb);
+            else if (prop_type == 6)  // Switch (show colorA)
+                result = colA.rgb;
+            else if (prop_type == 7)  // Overlay (fixed)
+                result = blend_overlay(colB.rgb, colA.rgb);
+            else if (prop_type == 8)  // Screen
+                result = blend_screen(colA.rgb, colB.rgb);
+            else if (prop_type == 9)  // Soft Light
+                result = blend_soft_light(colB.rgb, colA.rgb);
+            else if (prop_type == 10) // Hard Light
+                result = blend_hard_light(colB.rgb, colA.rgb);
+            else if (prop_type == 11) // Color Dodge
+                result = blend_color_dodge(colB.rgb, colA.rgb);
+            else if (prop_type == 12) // Color Burn
+                result = blend_color_burn(colB.rgb, colA.rgb);
+            else if (prop_type == 13) // Linear Dodge (clamped Add)
+                result = clamp(colA.rgb + colB.rgb, 0.0, 1.0);
+            else if (prop_type == 14) // Linear Burn
+                result = clamp(colA.rgb + colB.rgb - 1.0, 0.0, 1.0);
+            else if (prop_type == 15) // Difference
+                result = abs(colA.rgb - colB.rgb);
+            else if (prop_type == 16) // Exclusion
+                result = colA.rgb + colB.rgb - 2.0 * colA.rgb * colB.rgb;
+            else                      // Normal (17)
+                result = colA.rgb;
 
             return vec4(mix(colB.rgb, result, finalOpacity), colB.a);
         }
