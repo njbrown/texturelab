@@ -42,21 +42,27 @@ void BlendV3Node::init()
 
         // Standard overlay: base is bottom layer, blend is top layer.
         // if base < 0.5: 2*base*blend, else 1 - 2*(1-base)*(1-blend)
+        // Uses explicit per-channel conditionals to avoid evaluating both
+        // branches simultaneously, which can produce NaN/Inf with HDR inputs.
         vec3 blend_overlay(vec3 base, vec3 blend) {
-            return mix(
-                2.0 * base * blend,
-                1.0 - 2.0 * (1.0 - base) * (1.0 - blend),
-                step(vec3(0.5), base)
+            vec3 dark  = 2.0 * base * blend;
+            vec3 light = 1.0 - 2.0 * (1.0 - base) * (1.0 - blend);
+            return vec3(
+                base.r < 0.5 ? dark.r : light.r,
+                base.g < 0.5 ? dark.g : light.g,
+                base.b < 0.5 ? dark.b : light.b
             );
         }
 
         // Pegtop / W3C two-case approximation for soft light.
         // base = bottom, blend = top (light source).
         vec3 blend_soft_light(vec3 base, vec3 blend) {
-            return mix(
-                2.0 * base * blend + base * base * (1.0 - 2.0 * blend),
-                2.0 * base * (1.0 - blend) + sqrt(base) * (2.0 * blend - 1.0),
-                step(vec3(0.5), blend)
+            vec3 dark  = 2.0 * base * blend + base * base * (1.0 - 2.0 * blend);
+            vec3 light = 2.0 * base * (1.0 - blend) + sqrt(clamp(base, 0.0, 1.0)) * (2.0 * blend - 1.0);
+            return vec3(
+                blend.r < 0.5 ? dark.r : light.r,
+                blend.g < 0.5 ? dark.g : light.g,
+                blend.b < 0.5 ? dark.b : light.b
             );
         }
 
