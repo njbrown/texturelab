@@ -51,7 +51,13 @@ void Node::initializeGL()
         out vec4 fragColor;
         uniform sampler2D textureSampler;
         void main() {
-            fragColor = texture(textureSampler, vTexCoord);
+            // 8px checkerboard in screen space
+            vec2 tile = floor(gl_FragCoord.xy / 8.0);
+            float checker = mod(tile.x + tile.y, 2.0);
+            vec3 bg = mix(vec3(0.753), vec3(0.502), checker);
+
+            vec4 texColor = texture(textureSampler, vTexCoord);
+            fragColor = vec4(mix(bg, texColor.rgb, texColor.a), 1.0);
         }
     )";
     
@@ -469,6 +475,16 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
     painter->fillPath(bgPath, QBrush(QColor(10, 10, 10, 255)));
 
     if (!thumbnail.isNull()) {
+        // Checkerboard background for alpha-transparent thumbnails
+        static QPixmap checkerTile;
+        if (checkerTile.isNull()) {
+            checkerTile = QPixmap(16, 16);
+            checkerTile.fill(QColor(0xC0, 0xC0, 0xC0));
+            QPainter cp(&checkerTile);
+            cp.fillRect(0, 0, 8, 8, QColor(0x80, 0x80, 0x80));
+            cp.fillRect(8, 8, 8, 8, QColor(0x80, 0x80, 0x80));
+        }
+        painter->fillRect(QRect(0, 0, nodeWidth, nodeHeight), QBrush(checkerTile));
         painter->drawPixmap(QRect(0, 0, nodeWidth, nodeHeight), thumbnail);
     }
 

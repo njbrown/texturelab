@@ -523,6 +523,8 @@ bool ImagePropWidget::eventFilter(QObject* obj, QEvent* event)
             filePath = fileName;
             QImage image(fileName);
             if (!image.isNull()) {
+                if (image.format() != QImage::Format_RGBA8888)
+                    image = image.convertToFormat(QImage::Format_RGBA8888);
                 if (prop) {
                     prop->value = image;
                     updateImagePreview();
