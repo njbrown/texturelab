@@ -114,6 +114,7 @@ set(LIBRARYV3
     ./libraries/v3/floodfillv2togradient.cpp
     ./libraries/v3/floodfillv2sampler.cpp
     # Phase 1 — Filters / Color
+    ./libraries/v3/blendv3.cpp
     ./libraries/v3/edgedetect.cpp
     ./libraries/v3/highpass.cpp
     ./libraries/v3/emboss.cpp

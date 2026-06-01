@@ -233,6 +233,7 @@ Library* createLibraryV3()
     // -----------------------------------------------------------------------
     // Phase 1 — Filters / Color
     // -----------------------------------------------------------------------
+    lib->addNode<BlendV3Node>("blendv3", "Blend", ":nodes/blend.png");
     lib->addNode<EdgeDetectNode>("edgedetect", "Edge Detect",
                                  ":nodes/bevel.png");
     lib->addNode<HighpassNode>("highpass", "Highpass", ":nodes/blurv2.png");

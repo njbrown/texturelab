@@ -114,6 +114,11 @@ public:
     void init() override;
 };
 
+class BlendV3Node : public TextureNode {
+public:
+    void init() override;
+};
+
 class MakeItTileNode : public TextureNode {
 public:
     void init() override;
