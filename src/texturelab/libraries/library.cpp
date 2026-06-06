@@ -201,6 +201,9 @@ Library* createLibraryV3()
     lib->items.remove("bevel");
     lib->items.remove("perlin3d");
     lib->items.remove("blend");
+    lib->items.remove("cell");
+    lib->items.remove("linecell");
+    lib->items.remove("solidcell");
 
     // V3 NODES
     lib->addNode<BevelV2Node>("bevelv2", "Bevel V2", ":nodes/bevel.png");
@@ -263,6 +266,11 @@ Library* createLibraryV3()
                                   ":nodes/fractalnoise.png");
     lib->addNode<PerlinNoise3DNode>("perlinnoise3d", "Perlin Noise 3D",
                                     ":nodes/fractalnoise.png");
+    lib->addNode<CellV3Node>("cell", "Cell V3", ":nodes/cell.png");
+    lib->addNode<LineCellV3Node>("linecell", "Line Cell V3",
+                                 ":nodes/linecell.png");
+    lib->addNode<SolidCellV3Node>("solidcell", "Solid Cell V3",
+                                  ":nodes/solidcell.png");
 
     // -----------------------------------------------------------------------
     // Phase 3 — Multi-pass

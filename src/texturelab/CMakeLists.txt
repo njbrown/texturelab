@@ -130,6 +130,9 @@ set(LIBRARYV3
     ./libraries/v3/fbmdomainwarp.cpp
     ./libraries/v3/perlinnoise.cpp
     ./libraries/v3/perlinnoise3d.cpp
+    ./libraries/v3/cellv3.cpp
+    ./libraries/v3/linecellv3.cpp
+    ./libraries/v3/solidcellv3.cpp
     # Phase 3 — Multi-pass
     ./libraries/v3/blurhq.cpp
     ./libraries/v3/distancetransform.cpp

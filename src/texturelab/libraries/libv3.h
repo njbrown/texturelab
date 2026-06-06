@@ -197,3 +197,18 @@ class FloodFillV2SamplerNode : public TextureNode {
 public:
     virtual void init() override;
 };
+
+class CellV3Node : public TextureNode {
+public:
+    void init() override;
+};
+
+class LineCellV3Node : public TextureNode {
+public:
+    void init() override;
+};
+
+class SolidCellV3Node : public TextureNode {
+public:
+    void init() override;
+};
