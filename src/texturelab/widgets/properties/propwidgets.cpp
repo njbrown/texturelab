@@ -19,30 +19,39 @@
 #include <QSlider>
 #include <QSpinBox>
 #include <QVBoxLayout>
+#include <climits>
+#include <limits>
 
 const int SLIDER_MAX = 1000;
+
+class NoWheelSlider : public QSlider {
+public:
+    using QSlider::QSlider;
+    void wheelEvent(QWheelEvent* event) override { event->ignore(); }
+};
 
 // FLOAT PROP WIDGET
 // https://stackoverflow.com/a/19007951
 FloatPropWidget::FloatPropWidget()
 {
     prop = nullptr;
+    updating = false;
 
     auto vlayout = new QVBoxLayout(this);
     this->setLayout(vlayout);
 
-    // label
     label = new QLabel(this);
     label->setText("");
     vlayout->addWidget(label);
 
-    // slider
-    slider = new QSlider(Qt::Horizontal, this);
+    slider = new NoWheelSlider(Qt::Horizontal, this);
     slider->setMinimum(0);
     slider->setMaximum(SLIDER_MAX);
     slider->setSingleStep(1);
 
     spinbox = new QDoubleSpinBox(this);
+    spinbox->setMaximum(std::numeric_limits<double>::max());
+    spinbox->setFixedWidth(60);
 
     auto hbox = new QHBoxLayout();
     hbox->addWidget(slider);
@@ -53,43 +62,54 @@ FloatPropWidget::FloatPropWidget()
     this->setFixedHeight(80);
 
     connect(slider, &QSlider::valueChanged, [=](int val) {
-        auto percent = val / (float)SLIDER_MAX;
-        if (prop) {
-            auto range = prop->maxValue - prop->minValue;
-            auto finalValue = prop->minValue + range * percent;
-            spinbox->setValue(finalValue);
-
-            emit valueChanged(finalValue);
-        }
+        if (updating || !prop)
+            return;
+        updating = true;
+        auto range = prop->maxValue - prop->minValue;
+        auto finalValue = prop->minValue + range * (val / (double)SLIDER_MAX);
+        spinbox->setValue(finalValue);
+        updating = false;
+        emit valueChanged(finalValue);
     });
 
     connect(spinbox, &QDoubleSpinBox::valueChanged, [=](double val) {
-        if (prop) {
-            auto range = prop->maxValue - prop->minValue;
-            auto finalValue = ((val - prop->minValue) / range) * SLIDER_MAX;
-
-            slider->setValue(finalValue);
-
-            emit valueChanged(val);
-        }
+        if (updating || !prop)
+            return;
+        updating = true;
+        auto range = prop->maxValue - prop->minValue;
+        int sliderVal =
+            (range > 0)
+                ? qBound(0, (int)((val - prop->minValue) / range * SLIDER_MAX),
+                         SLIDER_MAX)
+                : 0;
+        slider->setValue(sliderVal);
+        updating = false;
+        emit valueChanged(val);
     });
 }
 
 void FloatPropWidget::setProp(FloatProp* prop)
 {
+    this->prop = prop;
+    updating = true;
+
     label->setText(prop->displayName);
 
     spinbox->setMinimum(prop->minValue);
-    spinbox->setMaximum(prop->maxValue);
+    spinbox->setMaximum(std::numeric_limits<double>::max());
     spinbox->setSingleStep(prop->step);
     spinbox->setValue(prop->value);
 
     auto range = prop->maxValue - prop->minValue;
-    auto finalValue = ((prop->value - prop->minValue) / range) * SLIDER_MAX;
+    int sliderVal =
+        (range > 0)
+            ? qBound(0,
+                     (int)((prop->value - prop->minValue) / range * SLIDER_MAX),
+                     SLIDER_MAX)
+            : 0;
+    slider->setValue(sliderVal);
 
-    slider->setValue(finalValue);
-
-    this->prop = prop;
+    updating = false;
 }
 
 // INT PROP WIDGET
@@ -97,22 +117,23 @@ void FloatPropWidget::setProp(FloatProp* prop)
 IntPropWidget::IntPropWidget()
 {
     prop = nullptr;
+    updating = false;
 
     auto vlayout = new QVBoxLayout(this);
     this->setLayout(vlayout);
 
-    // label
     label = new QLabel(this);
     label->setText("");
     vlayout->addWidget(label);
 
-    // slider
-    slider = new QSlider(Qt::Horizontal, this);
+    slider = new NoWheelSlider(Qt::Horizontal, this);
     slider->setMinimum(0);
     slider->setMaximum(SLIDER_MAX);
     slider->setSingleStep(1);
 
     spinbox = new QSpinBox(this);
+    spinbox->setMaximum(INT_MAX);
+    spinbox->setFixedWidth(60);
 
     auto hbox = new QHBoxLayout();
     hbox->addWidget(slider);
@@ -123,38 +144,54 @@ IntPropWidget::IntPropWidget()
     this->setFixedHeight(80);
 
     connect(slider, &QSlider::valueChanged, [=](int val) {
-        auto percent = val / (float)SLIDER_MAX;
-        if (prop) {
-            spinbox->setValue(val);
-
-            emit valueChanged(val);
-        }
+        if (updating || !prop)
+            return;
+        updating = true;
+        auto range = prop->maxValue - prop->minValue;
+        long finalValue =
+            prop->minValue + (long)qRound(range * (val / (double)SLIDER_MAX));
+        spinbox->setValue((int)finalValue);
+        updating = false;
+        emit valueChanged(finalValue);
     });
 
     connect(spinbox, &QSpinBox::valueChanged, [=](int val) {
-        if (prop) {
-            slider->setValue(val);
-
-            emit valueChanged(val);
-        }
+        if (updating || !prop)
+            return;
+        updating = true;
+        auto range = prop->maxValue - prop->minValue;
+        int sliderVal = (range > 0) ? qBound(0,
+                                             (int)((val - prop->minValue) /
+                                                   (double)range * SLIDER_MAX),
+                                             SLIDER_MAX)
+                                    : 0;
+        slider->setValue(sliderVal);
+        updating = false;
+        emit valueChanged((long)val);
     });
 }
 
 void IntPropWidget::setProp(IntProp* prop)
 {
+    this->prop = prop;
+    updating = true;
+
     label->setText(prop->displayName);
 
-    spinbox->setMinimum(prop->minValue);
-    spinbox->setMaximum(prop->maxValue);
-    spinbox->setSingleStep(prop->step);
-    spinbox->setValue(prop->value);
+    spinbox->setMinimum((int)prop->minValue);
+    spinbox->setMaximum(INT_MAX);
+    spinbox->setSingleStep((int)prop->step);
+    spinbox->setValue((int)prop->value);
 
-    slider->setValue(prop->value);
-    slider->setMinimum(prop->minValue);
-    slider->setMaximum(prop->maxValue);
-    slider->setSingleStep(prop->step);
+    auto range = prop->maxValue - prop->minValue;
+    int sliderVal = (range > 0) ? qBound(0,
+                                         (int)((prop->value - prop->minValue) /
+                                               (double)range * SLIDER_MAX),
+                                         SLIDER_MAX)
+                                : 0;
+    slider->setValue(sliderVal);
 
-    this->prop = prop;
+    updating = false;
 }
 
 // ENUM PROP WIDGET

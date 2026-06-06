@@ -29,6 +29,7 @@ class FloatPropWidget : public QWidget {
     QDoubleSpinBox* spinbox;
 
     FloatProp* prop;
+    bool updating;
 
 public:
     FloatPropWidget();
@@ -45,6 +46,7 @@ class IntPropWidget : public QWidget {
     QSpinBox* spinbox;
 
     IntProp* prop;
+    bool updating;
 
 public:
     IntPropWidget();
