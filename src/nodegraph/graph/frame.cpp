@@ -204,8 +204,15 @@ void Frame::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
 
     // Draw title if enabled
     if (_showTitle && !_title.isEmpty()) {
+        QFont font("Arial", 10, QFont::Bold);
+        painter->setFont(font);
+
+        // shadow pass
+        painter->setPen(QColor(0, 0, 0, 160));
+        painter->drawText(handleRect.translated(1, 1), Qt::AlignCenter, _title);
+
+        // text pass
         painter->setPen(QColor(255, 255, 255));
-        painter->setFont(QFont("Arial", 10, QFont::Bold));
         painter->drawText(handleRect, Qt::AlignCenter, _title);
     }
 

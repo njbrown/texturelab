@@ -28,8 +28,10 @@ void GraphWidget::syncFrameToScene(const FramePtr& frame)
     if (!frame || !scene)
         return;
     auto ngFrame = scene->getFrameById(frame->id);
-    if (ngFrame)
+    if (ngFrame) {
         ngFrame->setTitle(frame->text);
+        ngFrame->setColor(frame->color);
+    }
 }
 
 void GraphWidget::syncCommentToScene(const CommentPtr& comment)
@@ -278,6 +280,7 @@ void GraphWidget::setTextureProject(TextureProjectPtr project)
         auto gframe = nodegraph::Frame::create();
         gframe->setId(frame->id);
         gframe->setTitle(frame->text);
+        gframe->setColor(frame->color);
         gframe->setPos(frame->pos.x(), frame->pos.y());
         if (frame->size.x() > 0 && frame->size.y() > 0)
             gframe->setSize(frame->size.x(), frame->size.y());

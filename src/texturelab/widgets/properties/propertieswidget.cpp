@@ -262,6 +262,19 @@ void PropertiesWidget::setSelectedFrame(const FramePtr& frame)
     });
     layout->addWidget(titleWidget);
 
+    auto colorProp = new ColorProp();
+    colorProp->displayName = "Color";
+    colorProp->value = frame->color;
+    auto colorWidget = new ColorPropWidget();
+    colorWidget->setProp(colorProp);
+    propWidgets.append(colorWidget);
+
+    connect(colorWidget, &ColorPropWidget::valueChanged, [=](const QColor& color) {
+        frame->color = color;
+        emit framePropertyChanged(frame);
+    });
+    layout->addWidget(colorWidget);
+
     layout->addStretch(1);
 }
 
@@ -285,6 +298,7 @@ void PropertiesWidget::setSelectedComment(const CommentPtr& comment)
     textProp->value = comment->text;
     auto textWidget = new StringPropWidget();
     textWidget->setProp(textProp);
+    textWidget->setMultiline(true);
     propWidgets.append(textWidget);
 
     connect(textWidget, &StringPropWidget::valueChanged, [=](const QString& value) {

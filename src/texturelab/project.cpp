@@ -110,6 +110,9 @@ TextureProjectPtr Project::loadTexture(QString path)
         frame->pos = QVector2D(obj["x"].toDouble(), obj["y"].toDouble());
         frame->size =
             QVector2D(obj["width"].toDouble(300), obj["height"].toDouble(200));
+        auto colorStr = obj["color"].toString();
+        if (!colorStr.isEmpty())
+            frame->color = QColor(colorStr);
         texture->frames[frame->id] = frame;
     }
 
@@ -203,6 +206,7 @@ QByteArray Project::saveTexture(TextureProjectPtr texture)
         QJsonObject obj;
         obj["id"] = frame->id;
         obj["title"] = frame->text;
+        obj["color"] = frame->color.name(QColor::HexRgb);
         obj["x"] = frame->pos.x();
         obj["y"] = frame->pos.y();
         obj["width"] = frame->size.x();

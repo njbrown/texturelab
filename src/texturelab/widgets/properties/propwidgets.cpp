@@ -15,6 +15,7 @@
 #include <QLineEdit>
 #include <QPainter>
 #include <QPixmap>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSlider>
 #include <QSpinBox>
@@ -239,27 +240,47 @@ StringPropWidget::StringPropWidget()
     auto vlayout = new QVBoxLayout(this);
     this->setLayout(vlayout);
 
-    // label
     label = new QLabel(this);
     label->setText("");
     vlayout->addWidget(label);
 
-    // line edit
     lineEdit = new QLineEdit(this);
     vlayout->addWidget(lineEdit);
+
+    textEdit = new QPlainTextEdit(this);
+    textEdit->hide();
+    vlayout->addWidget(textEdit);
 
     this->setFixedHeight(80);
 
     connect(lineEdit, &QLineEdit::textChanged,
             [=](const QString& text) { emit valueChanged(text); });
+
+    connect(textEdit, &QPlainTextEdit::textChanged,
+            [=]() { emit valueChanged(textEdit->toPlainText()); });
 }
 
 void StringPropWidget::setProp(StringProp* prop)
 {
     label->setText(prop->displayName);
     lineEdit->setText(prop->value);
+    textEdit->setPlainText(prop->value);
 
     this->prop = prop;
+}
+
+void StringPropWidget::setMultiline(bool multiline)
+{
+    if (multiline) {
+        lineEdit->hide();
+        textEdit->show();
+        setFixedHeight(120);
+    }
+    else {
+        textEdit->hide();
+        lineEdit->show();
+        setFixedHeight(80);
+    }
 }
 
 // BOOL PROP WIDGET

@@ -209,6 +209,7 @@ class Frame : public QEnableSharedFromThis<Frame> {
 public:
     QString id;
     QString text;
+    QColor color = QColor(25, 0, 51);
 
     QVector2D pos;
     QVector2D size;
