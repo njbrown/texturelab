@@ -5,6 +5,7 @@
 #include "propwidgets.h"
 
 #include <QVBoxLayout>
+#include <QLabel>
 
 PropertiesWidget::PropertiesWidget() : QWidget()
 {
@@ -31,10 +32,10 @@ PropertiesWidget::PropertiesWidget() : QWidget()
 void PropertiesWidget::setSelectedNode(const TextureNodePtr& node)
 {
     qDebug() << "Displaying properties for node: " << node->title;
-    this->selectedNode = node;
 
-    // clear current properties
+    // clear current properties first, then assign (clearSelection resets selectedNode)
     this->clearSelection();
+    this->selectedNode = node;
 
     auto layout = (QVBoxLayout*)this->layout();
 
@@ -233,9 +234,74 @@ void PropertiesWidget::addBasePropsToLayout()
     layout->addWidget(seedWidget);
 }
 
+void PropertiesWidget::setSelectedFrame(const FramePtr& frame)
+{
+    this->clearSelection();
+    if (!frame)
+        return;
+
+    this->selectedFrame = frame;
+    displayMode = PropertyDisplayMode::Frame;
+
+    auto layout = (QVBoxLayout*)this->layout();
+
+    auto titleLabel = new QLabel("Frame");
+    titleLabel->setStyleSheet("font-weight: bold; margin-bottom: 4px;");
+    layout->addWidget(titleLabel);
+
+    auto titleProp = new StringProp();
+    titleProp->displayName = "Title";
+    titleProp->value = frame->text;
+    auto titleWidget = new StringPropWidget();
+    titleWidget->setProp(titleProp);
+    propWidgets.append(titleWidget);
+
+    connect(titleWidget, &StringPropWidget::valueChanged, [=](const QString& value) {
+        frame->text = value;
+        emit framePropertyChanged(frame);
+    });
+    layout->addWidget(titleWidget);
+
+    layout->addStretch(1);
+}
+
+void PropertiesWidget::setSelectedComment(const CommentPtr& comment)
+{
+    this->clearSelection();
+    if (!comment)
+        return;
+
+    this->selectedComment = comment;
+    displayMode = PropertyDisplayMode::Comment;
+
+    auto layout = (QVBoxLayout*)this->layout();
+
+    auto titleLabel = new QLabel("Comment");
+    titleLabel->setStyleSheet("font-weight: bold; margin-bottom: 4px;");
+    layout->addWidget(titleLabel);
+
+    auto textProp = new StringProp();
+    textProp->displayName = "Text";
+    textProp->value = comment->text;
+    auto textWidget = new StringPropWidget();
+    textWidget->setProp(textProp);
+    propWidgets.append(textWidget);
+
+    connect(textWidget, &StringPropWidget::valueChanged, [=](const QString& value) {
+        comment->text = value;
+        emit commentPropertyChanged(comment);
+    });
+    layout->addWidget(textWidget);
+
+    layout->addStretch(1);
+}
+
 void PropertiesWidget::clearSelection()
 {
     displayMode = PropertyDisplayMode::None;
+    selectedNode.clear();
+    selectedFrame.clear();
+    selectedComment.clear();
 
     auto layout = this->layout();
 

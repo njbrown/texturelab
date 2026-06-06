@@ -118,6 +118,10 @@ signals:
     void nodeSelectionChanged(const NodePtr& node);
     void nodeDoubleClicked(const NodePtr& node);
 
+    // null ptr means no active frame/comment selected
+    void frameSelectionChanged(const FramePtr& frame);
+    void commentSelectionChanged(const CommentPtr& comment);
+
     void itemsDeleted(QList<NodePtr> nodes, QList<ConnectionPtr> cons);
 };
 } // namespace nodegraph

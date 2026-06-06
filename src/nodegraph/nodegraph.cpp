@@ -510,12 +510,29 @@ void NodeGraph::handleSelectionChange()
     auto selected = this->_scene->selectedItems();
     for (auto item : selected) {
         if (item->type() == (int)SceneItemType::Node) {
+            // emit nulls first so downstream handlers clear before setting new selection
+            emit frameSelectionChanged(FramePtr(nullptr));
+            emit commentSelectionChanged(CommentPtr(nullptr));
             emit nodeSelectionChanged(((Node*)item)->sharedFromThis());
+            return;
+        }
+        if (item->type() == (int)SceneItemType::Frame) {
+            emit nodeSelectionChanged(NodePtr(nullptr));
+            emit commentSelectionChanged(CommentPtr(nullptr));
+            emit frameSelectionChanged(((Frame*)item)->sharedFromThis());
+            return;
+        }
+        if (item->type() == (int)SceneItemType::Comment) {
+            emit nodeSelectionChanged(NodePtr(nullptr));
+            emit frameSelectionChanged(FramePtr(nullptr));
+            emit commentSelectionChanged(((Comment*)item)->sharedFromThis());
             return;
         }
     }
 
     emit nodeSelectionChanged(NodePtr(nullptr));
+    emit frameSelectionChanged(FramePtr(nullptr));
+    emit commentSelectionChanged(CommentPtr(nullptr));
 }
 
 NodeGraph::~NodeGraph() {}

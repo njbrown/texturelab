@@ -23,6 +23,24 @@
 #include "nodegraph.h"
 #include "nodesearchpopup.h"
 
+void GraphWidget::syncFrameToScene(const FramePtr& frame)
+{
+    if (!frame || !scene)
+        return;
+    auto ngFrame = scene->getFrameById(frame->id);
+    if (ngFrame)
+        ngFrame->setTitle(frame->text);
+}
+
+void GraphWidget::syncCommentToScene(const CommentPtr& comment)
+{
+    if (!comment || !scene)
+        return;
+    auto ngComment = scene->getCommentById(comment->id);
+    if (ngComment)
+        ngComment->setText(comment->text);
+}
+
 GraphWidget::GraphWidget() : QMainWindow(nullptr)
 {
     graph = new nodegraph::NodeGraph(this);
@@ -132,6 +150,26 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
 
                 emit nodeSelectionChanged(TextureNodePtr(nullptr));
                 renderer->update();
+            });
+
+    connect(graph, &nodegraph::NodeGraph::frameSelectionChanged,
+            [=](nodegraph::FramePtr ngFrame) {
+                if (!ngFrame || !project) {
+                    emit frameSelectionChanged(FramePtr(nullptr));
+                    return;
+                }
+                auto modelFrame = project->frames.value(ngFrame->id());
+                emit frameSelectionChanged(modelFrame);
+            });
+
+    connect(graph, &nodegraph::NodeGraph::commentSelectionChanged,
+            [=](nodegraph::CommentPtr ngComment) {
+                if (!ngComment || !project) {
+                    emit commentSelectionChanged(CommentPtr(nullptr));
+                    return;
+                }
+                auto modelComment = project->comments.value(ngComment->id());
+                emit commentSelectionChanged(modelComment);
             });
 
     // library = nullptr;
@@ -320,11 +358,27 @@ void GraphWidget::dropEvent(QDropEvent* evt)
             auto frame = nodegraph::Frame::create();
             frame->setPos(scenePos);
             scene->addFrame(frame);
+
+            if (project) {
+                auto modelFrame = FramePtr(new Frame());
+                modelFrame->id = frame->id();
+                modelFrame->text = frame->title();
+                modelFrame->pos = QVector2D(scenePos.x(), scenePos.y());
+                project->frames[modelFrame->id] = modelFrame;
+            }
         }
         else if (data->itemType == PopupItemType::Comment) {
             auto comment = nodegraph::Comment::create();
             comment->setPos(scenePos);
             scene->addComment(comment);
+
+            if (project) {
+                auto modelComment = CommentPtr(new Comment());
+                modelComment->id = comment->id();
+                modelComment->text = comment->text();
+                modelComment->pos = QVector2D(scenePos.x(), scenePos.y());
+                project->comments[modelComment->id] = modelComment;
+            }
         }
         else {
             auto node = project->library->createNode(data->libraryItemName);
@@ -376,11 +430,27 @@ void GraphWidget::addItemFromSearch(const QString& name, PopupItemType type,
         auto frame = nodegraph::Frame::create();
         frame->setPos(scenePos);
         scene->addFrame(frame);
+
+        if (project) {
+            auto modelFrame = FramePtr(new Frame());
+            modelFrame->id = frame->id();
+            modelFrame->text = frame->title();
+            modelFrame->pos = QVector2D(scenePos.x(), scenePos.y());
+            project->frames[modelFrame->id] = modelFrame;
+        }
     }
     else if (type == PopupItemType::Comment) {
         auto comment = nodegraph::Comment::create();
         comment->setPos(scenePos);
         scene->addComment(comment);
+
+        if (project) {
+            auto modelComment = CommentPtr(new Comment());
+            modelComment->id = comment->id();
+            modelComment->text = comment->text();
+            modelComment->pos = QVector2D(scenePos.x(), scenePos.y());
+            project->comments[modelComment->id] = modelComment;
+        }
     }
     else {
         if (!project || !project->library)

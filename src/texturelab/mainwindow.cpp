@@ -96,6 +96,36 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
                 }
             });
 
+    connect(this->graphWidget, &GraphWidget::frameSelectionChanged,
+            [this](const FramePtr& frame) {
+                if (!!frame) {
+                    this->propWidget->setSelectedFrame(frame);
+                }
+                else {
+                    this->propWidget->clearSelection();
+                }
+            });
+
+    connect(this->graphWidget, &GraphWidget::commentSelectionChanged,
+            [this](const CommentPtr& comment) {
+                if (!!comment) {
+                    this->propWidget->setSelectedComment(comment);
+                }
+                else {
+                    this->propWidget->clearSelection();
+                }
+            });
+
+    connect(this->propWidget, &PropertiesWidget::framePropertyChanged,
+            [this](const FramePtr& frame) {
+                this->graphWidget->syncFrameToScene(frame);
+            });
+
+    connect(this->propWidget, &PropertiesWidget::commentPropertyChanged,
+            [this](const CommentPtr& comment) {
+                this->graphWidget->syncCommentToScene(comment);
+            });
+
     connect(this->propWidget, &PropertiesWidget::propertyUpdated,
             [this](const QString& name, const QVariant& value) {
                 if (this->renderer && !!this->project) {
@@ -441,6 +471,8 @@ void MainWindow::setupDocks()
             rightArea);
     setWidgetRatiosInArea(leftArea, {0.5f, 0.5f});
     setWidgetRatiosInArea(rightArea, {0.5f, 0.5f});
+
+    QTimer::singleShot(0, this, [this]() { graphWidget->setFocus(); });
 }
 
 ads::CDockAreaWidget* MainWindow::addDock(const QString& title,

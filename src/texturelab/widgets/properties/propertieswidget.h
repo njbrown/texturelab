@@ -5,8 +5,12 @@
 
 class TextureProject;
 class TextureNode;
+class Comment;
+class Frame;
 typedef QSharedPointer<TextureProject> TextureProjectPtr;
 typedef QSharedPointer<TextureNode> TextureNodePtr;
+typedef QSharedPointer<Comment> CommentPtr;
+typedef QSharedPointer<Frame> FramePtr;
 
 class EnumProp;
 class IntProp;
@@ -24,6 +28,8 @@ class PropertiesWidget : public QWidget {
 
     TextureProjectPtr project;
     TextureNodePtr selectedNode;
+    FramePtr selectedFrame;
+    CommentPtr selectedComment;
 
     // base props
     EnumProp* textureChannelProp;
@@ -33,6 +39,8 @@ public:
     PropertiesWidget();
 
     void setSelectedNode(const TextureNodePtr& node);
+    void setSelectedFrame(const FramePtr& frame);
+    void setSelectedComment(const CommentPtr& comment);
     void clearSelection();
 
     void setProject(const TextureProjectPtr& project);
@@ -44,4 +52,6 @@ signals:
     void propertyUpdated(const QString& name, const QVariant& value);
     void textureChannelUpdated(const TextureChannel& name,
                                const TextureNodePtr& node);
+    void framePropertyChanged(const FramePtr& frame);
+    void commentPropertyChanged(const CommentPtr& comment);
 };

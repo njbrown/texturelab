@@ -19,8 +19,12 @@ class Library;
 
 class TextureProject;
 class TextureNode;
+class Comment;
+class Frame;
 typedef QSharedPointer<TextureProject> TextureProjectPtr;
 typedef QSharedPointer<TextureNode> TextureNodePtr;
+typedef QSharedPointer<Comment> CommentPtr;
+typedef QSharedPointer<Frame> FramePtr;
 
 class GraphWidget : public QMainWindow {
     Q_OBJECT
@@ -37,6 +41,9 @@ public:
 
     void setTextureRenderer(TextureRenderer* renderer);
     void syncPositionsToModel();
+
+    void syncFrameToScene(const FramePtr& frame);
+    void syncCommentToScene(const CommentPtr& comment);
 
     nodegraph::NodeGraph* graph;
     // Library* library;
@@ -62,4 +69,6 @@ private:
 signals:
     void nodeSelectionChanged(const TextureNodePtr& node);
     void nodeDoubleClicked(const TextureNodePtr& node);
+    void frameSelectionChanged(const FramePtr& frame);
+    void commentSelectionChanged(const CommentPtr& comment);
 };
