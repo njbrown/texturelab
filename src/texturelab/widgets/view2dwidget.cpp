@@ -319,20 +319,22 @@ void View2DGraph::scaleDown()
 // void View2DGraph::keyReleaseEvent(QKeyEvent* event){};
 void View2DGraph::mousePressEvent(QMouseEvent* event)
 {
-    if (event->button() == Qt::MiddleButton &&
-        scene()->mouseGrabberItem() == nullptr) {
-        _clickPos = mapToScene(event->pos());
+    if (event->button() == Qt::MiddleButton) {
+        _clickPos = event->pos();
         setDragMode(QGraphicsView::NoDrag);
+        return;
     }
     QGraphicsView::mousePressEvent(event);
 }
 
 void View2DGraph::mouseMoveEvent(QMouseEvent* event)
 {
-
-    if (event->buttons() == Qt::MiddleButton) {
-        QPointF difference = _clickPos - mapToScene(event->pos());
-        setSceneRect(sceneRect().translated(difference.x(), difference.y()));
+    if (event->buttons() & Qt::MiddleButton) {
+        QPointF delta = event->pos() - _clickPos;
+        qreal s = transform().m11();
+        setSceneRect(sceneRect().translated(-delta.x() / s, -delta.y() / s));
+        _clickPos = event->pos();
+        return;
     }
     QGraphicsView::mouseMoveEvent(event);
 }
@@ -340,6 +342,7 @@ void View2DGraph::mouseMoveEvent(QMouseEvent* event)
 void View2DGraph::mouseReleaseEvent(QMouseEvent* event)
 {
     if (event->button() == Qt::MiddleButton) {
+        setDragMode(QGraphicsView::ScrollHandDrag);
     }
     QGraphicsView::mouseReleaseEvent(event);
 }
