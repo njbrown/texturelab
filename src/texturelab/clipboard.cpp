@@ -7,6 +7,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QUuid>
+#include <limits>
 
 const QString Clipboard::PREFIX = "texturelab-clipboard:";
 
@@ -98,6 +99,7 @@ bool Clipboard::hasData()
 }
 
 bool Clipboard::pasteItems(TextureProjectPtr project,
+                           QPointF viewCenter,
                            QList<TextureNodePtr>& outNodes,
                            QList<ConnectionPtr>& outConnections,
                            QList<CommentPtr>& outComments,
@@ -117,7 +119,40 @@ bool Clipboard::pasteItems(TextureProjectPtr project,
 
     auto root = doc.object();
 
-    static constexpr double OFFSET = 20.0;
+    // Compute bounding box of all items in the clipboard to find their center
+    double minX = std::numeric_limits<double>::max();
+    double minY = std::numeric_limits<double>::max();
+    double maxX = std::numeric_limits<double>::lowest();
+    double maxY = std::numeric_limits<double>::lowest();
+
+    auto expandBBox = [&](double x, double y) {
+        minX = std::min(minX, x); minY = std::min(minY, y);
+        maxX = std::max(maxX, x); maxY = std::max(maxY, y);
+    };
+
+    for (auto item : root["nodes"].toArray()) {
+        auto o = item.toObject();
+        expandBBox(o["x"].toDouble(), o["y"].toDouble());
+    }
+    for (auto item : root["comments"].toArray()) {
+        auto o = item.toObject();
+        expandBBox(o["x"].toDouble(), o["y"].toDouble());
+    }
+    for (auto item : root["frames"].toArray()) {
+        auto o = item.toObject();
+        expandBBox(o["x"].toDouble(), o["y"].toDouble());
+        expandBBox(o["x"].toDouble() + o["width"].toDouble(),
+                   o["y"].toDouble() + o["height"].toDouble());
+    }
+
+    // If nothing in the bbox (empty clipboard somehow), fall back to no shift
+    double offsetX = 0, offsetY = 0;
+    if (minX <= maxX && minY <= maxY) {
+        double bboxCenterX = (minX + maxX) / 2.0;
+        double bboxCenterY = (minY + maxY) / 2.0;
+        offsetX = viewCenter.x() - bboxCenterX;
+        offsetY = viewCenter.y() - bboxCenterY;
+    }
 
     // Build old→new node ID map
     QMap<QString, QString> nodeIdMap;
@@ -129,16 +164,15 @@ bool Clipboard::pasteItems(TextureProjectPtr project,
     // Nodes
     for (auto item : root["nodes"].toArray()) {
         auto obj = item.toObject();
-        auto typeName = obj["typeName"].toString();
-        auto node = project->library->createNode(typeName);
+        auto node = project->library->createNode(obj["typeName"].toString());
         if (!node)
             continue;
 
         node->id = nodeIdMap[obj["id"].toString()];
         node->exportName = obj["exportName"].toString();
         node->randomSeed = (long)obj["randomSeed"].toDouble(0);
-        node->pos = QVector2D((float)obj["x"].toDouble() + OFFSET,
-                              (float)obj["y"].toDouble() + OFFSET);
+        node->pos = QVector2D((float)(obj["x"].toDouble() + offsetX),
+                              (float)(obj["y"].toDouble() + offsetY));
 
         auto propObj = obj["properties"].toObject();
         for (auto key : propObj.keys()) {
@@ -158,7 +192,6 @@ bool Clipboard::pasteItems(TextureProjectPtr project,
         if (newLeftId.isEmpty() || newRightId.isEmpty())
             continue;
 
-        // Find the model nodes from outNodes
         TextureNodePtr leftNode, rightNode;
         for (auto& n : outNodes) {
             if (n->id == newLeftId)
@@ -184,8 +217,8 @@ bool Clipboard::pasteItems(TextureProjectPtr project,
         auto comment = CommentPtr(new Comment());
         comment->id = QUuid::createUuid().toString(QUuid::WithoutBraces);
         comment->text = obj["text"].toString();
-        comment->pos = QVector2D((float)obj["x"].toDouble() + OFFSET,
-                                 (float)obj["y"].toDouble() + OFFSET);
+        comment->pos = QVector2D((float)(obj["x"].toDouble() + offsetX),
+                                 (float)(obj["y"].toDouble() + offsetY));
         outComments.append(comment);
     }
 
@@ -196,8 +229,8 @@ bool Clipboard::pasteItems(TextureProjectPtr project,
         frame->id = QUuid::createUuid().toString(QUuid::WithoutBraces);
         frame->text = obj["title"].toString();
         frame->color = QColor(obj["color"].toString());
-        frame->pos = QVector2D((float)obj["x"].toDouble() + OFFSET,
-                               (float)obj["y"].toDouble() + OFFSET);
+        frame->pos = QVector2D((float)(obj["x"].toDouble() + offsetX),
+                               (float)(obj["y"].toDouble() + offsetY));
         frame->size = QVector2D((float)obj["width"].toDouble(),
                                 (float)obj["height"].toDouble());
         outFrames.append(frame);

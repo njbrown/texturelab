@@ -11,6 +11,7 @@ public:
                           const QList<QString>& commentIds);
 
     static bool pasteItems(TextureProjectPtr project,
+                           QPointF viewCenter,
                            QList<TextureNodePtr>& outNodes,
                            QList<ConnectionPtr>& outConnections,
                            QList<CommentPtr>& outComments,

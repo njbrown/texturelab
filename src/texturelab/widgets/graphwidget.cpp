@@ -554,8 +554,10 @@ void GraphWidget::executePaste()
     QList<CommentPtr> newComments;
     QList<FramePtr> newFrames;
 
-    if (!Clipboard::pasteItems(project, newNodes, newConnections, newComments,
-                               newFrames))
+    QPointF viewCenter = graph->mapToScene(graph->viewport()->rect().center());
+
+    if (!Clipboard::pasteItems(project, viewCenter, newNodes, newConnections,
+                               newComments, newFrames))
         return;
 
     scene->clearSelection();
