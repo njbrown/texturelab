@@ -41,6 +41,7 @@
 #include "props.h"
 
 #include "graphics/texturerenderer.h"
+#include "graph/scene.h"
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 {
@@ -163,6 +164,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
                     // assign channel to viewer
                     // do this crudely by just reassigning all node textures
                     this->passTextureChannelsToViewer3D();
+                    this->syncChannelLabelsToScene();
                 }
 
                 // this->view3DWidget->update();
@@ -233,6 +235,38 @@ void MainWindow::passTextureChannelsToViewer3D()
     }
 }
 
+static QString channelName(TextureChannel ch)
+{
+    switch (ch) {
+    case TextureChannel::Albedo:    return "Albedo";
+    case TextureChannel::Normal:    return "Normal";
+    case TextureChannel::Metalness: return "Metalness";
+    case TextureChannel::Roughness: return "Roughness";
+    case TextureChannel::Height:    return "Height";
+    case TextureChannel::Alpha:     return "Alpha";
+    case TextureChannel::AO:        return "AO";
+    default:                        return "";
+    }
+}
+
+void MainWindow::syncChannelLabelsToScene()
+{
+    if (!project || !graphWidget->scene)
+        return;
+
+    // clear all labels first
+    for (auto& node : graphWidget->scene->nodes)
+        node->setChannel("");
+
+    // set labels from project state
+    for (auto ch : project->textureChannels.keys()) {
+        auto nodeId = project->textureChannels[ch];
+        auto sceneNode = graphWidget->scene->nodes.value(nodeId);
+        if (sceneNode)
+            sceneNode->setChannel(channelName(ch));
+    }
+}
+
 void MainWindow::setProject(TextureProjectPtr project)
 {
     // Clear widget state from the old project
@@ -251,6 +285,7 @@ void MainWindow::setProject(TextureProjectPtr project)
 
     this->project = project;
     this->graphWidget->setTextureProject(project);
+    this->syncChannelLabelsToScene();
     this->libraryWidget->setLibrary(project->library);
 
     this->propWidget->clearSelection();

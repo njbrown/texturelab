@@ -256,6 +256,16 @@ Node::Node()
     font.setPixelSize(12);
     text->setFont(font);
 
+    channelText = new QGraphicsTextItem(this);
+    channelText->setFlag(QGraphicsItem::ItemIsFocusable, false);
+    channelText->setFlag(QGraphicsItem::ItemIsSelectable, false);
+    channelText->setDefaultTextColor(QColor(200, 255, 200));
+    channelText->setZValue(5);
+    channelText->hide();
+    QFont chFont = channelText->font();
+    chFont.setPixelSize(12);
+    channelText->setFont(chFont);
+
     QGraphicsDropShadowEffect* effect = new QGraphicsDropShadowEffect;
     effect->setBlurRadius(20);
     effect->setXOffset(0);
@@ -298,6 +308,20 @@ void Node::setThumbnail(const QPixmap& pixmap)
 {
     this->thumbnail = pixmap;
     this->update();
+}
+
+void Node::setChannel(QString ch)
+{
+    this->channel = ch;
+    if (ch.isEmpty()) {
+        channelText->hide();
+    } else {
+        channelText->setPlainText(ch.toUpper());
+        QFontMetrics fm(channelText->font());
+        int textW = fm.horizontalAdvance(ch.toUpper());
+        channelText->setPos((width - textW) / 2.0, -20);
+        channelText->show();
+    }
 }
 
 const QVector<PortPtr> Node::getInPorts() const { return inPorts; }
@@ -584,6 +608,7 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
     // draw border
     painter->setPen(QPen(borderColor, 3));
     painter->drawRoundedRect(rect, titleRadius, titleRadius);
+
 }
 
 Node::~Node()

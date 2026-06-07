@@ -80,7 +80,9 @@ class Node : public QGraphicsObject, public QEnableSharedFromThis<Node> {
     GLuint texId = 0;
 
     QGraphicsTextItem* text;
+    QGraphicsTextItem* channelText;
     QString name;
+    QString channel;
 
     QPixmap thumbnail;
 
@@ -114,6 +116,7 @@ public:
     const QVector<PortPtr> getOutPorts() const;
 
     void setName(QString name);
+    void setChannel(QString ch);
     void setCenter(float x, float y);
     QPointF getCenter() const;
     void setThumbnail(const QPixmap& pixmap);

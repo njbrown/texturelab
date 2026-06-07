@@ -44,6 +44,7 @@ protected:
     void handleExport(const QString& destination, const QString& pattern);
 
     void passTextureChannelsToViewer3D();
+    void syncChannelLabelsToScene();
 
     void setProject(TextureProjectPtr project);
 
