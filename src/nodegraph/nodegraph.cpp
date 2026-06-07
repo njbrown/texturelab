@@ -391,6 +391,22 @@ bool NodeGraph::sceneMouseMoveEvent(QGraphicsSceneMouseEvent* event)
             activeCon->pos2 = scenePos;
         }
         activeCon->updatePathFromPositions();
+
+        // show socket names on nodes within proximity
+        for (auto node : _nodesWithSocketNamesShown)
+            node->setShowSocketNames(false);
+        _nodesWithSocketNamesShown.clear();
+
+        for (auto& nodePtr : _scene->nodes) {
+            auto node = nodePtr.data();
+            QPointF center = node->getCenter();
+            qreal dx = center.x() - scenePos.x();
+            qreal dy = center.y() - scenePos.y();
+            if (dx * dx + dy * dy < SOCKET_LABEL_RADIUS * SOCKET_LABEL_RADIUS) {
+                node->setShowSocketNames(true);
+                _nodesWithSocketNamesShown.append(node);
+            }
+        }
     }
 
     return false;
@@ -463,6 +479,11 @@ bool NodeGraph::sceneMouseReleaseEvent(QGraphicsSceneMouseEvent* event)
                 // todo: emit undo task
             }
         }
+
+        // clear proximity socket labels
+        for (auto node : _nodesWithSocketNamesShown)
+            node->setShowSocketNames(false);
+        _nodesWithSocketNamesShown.clear();
 
         // remove from scene
         _scene->removeItem(activeCon.data());

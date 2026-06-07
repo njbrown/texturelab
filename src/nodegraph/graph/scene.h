@@ -87,6 +87,7 @@ class Node : public QGraphicsObject, public QEnableSharedFromThis<Node> {
     QPixmap thumbnail;
 
     bool isHovered;
+    bool showingSocketNames;
     // bool isSelected;
 
     QColor defaultBorderColor;
@@ -120,6 +121,8 @@ public:
     void setCenter(float x, float y);
     QPointF getCenter() const;
     void setThumbnail(const QPixmap& pixmap);
+
+    void setShowSocketNames(bool show);
 
     void addInPort(QString name);
     void addOutPort(QString name);

@@ -100,6 +100,8 @@ protected:
     void handleSelectionChange();
 
 private:
+    static constexpr float SOCKET_LABEL_RADIUS = 150.0f;
+
     QPointF _clickPos;
     ScenePtr _scene;
     MouseButtonStates mbStates;
@@ -107,6 +109,7 @@ private:
 
     QList<NodePtr> nodes;
     QList<ConnectionPtr> cons;
+    QList<Node*> _nodesWithSocketNamesShown;
 
 signals:
     void connectionAdded(ConnectionPtr con);

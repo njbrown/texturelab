@@ -5,8 +5,8 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsView>
 #include <QOpenGLContext>
-#include <QOpenGLFunctions>
 #include <QOpenGLExtraFunctions>
+#include <QOpenGLFunctions>
 #include <QPaintEngine>
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
@@ -25,14 +25,16 @@ bool Node::glInitialized = false;
 
 void Node::initializeGL()
 {
-    if (glInitialized) return;
-    
+    if (glInitialized)
+        return;
+
     QOpenGLContext* ctx = QOpenGLContext::currentContext();
-    if (!ctx) return;
-    
+    if (!ctx)
+        return;
+
     // Create shader program
     shaderProgram = new QOpenGLShaderProgram();
-    
+
     const char* vertexShaderSource = R"(
         #version 150
         in vec2 position;
@@ -44,7 +46,7 @@ void Node::initializeGL()
             vTexCoord = texCoord;
         }
     )";
-    
+
     const char* fragmentShaderSource = R"(
         #version 150
         in vec2 vTexCoord;
@@ -60,41 +62,44 @@ void Node::initializeGL()
             fragColor = vec4(mix(bg, texColor.rgb, texColor.a), 1.0);
         }
     )";
-    
-    shaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
-    shaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
+
+    shaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex,
+                                           vertexShaderSource);
+    shaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment,
+                                           fragmentShaderSource);
     shaderProgram->link();
-    
+
     // Create VAO and VBO
     vao = new QOpenGLVertexArrayObject();
     vao->create();
-    
+
     vbo = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
     vbo->create();
     vbo->setUsagePattern(QOpenGLBuffer::DynamicDraw);
-    
+
     glInitialized = true;
 }
 
 void Node::cleanupGL()
 {
-    if (!glInitialized) return;
-    
+    if (!glInitialized)
+        return;
+
     delete shaderProgram;
     shaderProgram = nullptr;
-    
+
     if (vbo) {
         vbo->destroy();
         delete vbo;
         vbo = nullptr;
     }
-    
+
     if (vao) {
         vao->destroy();
         delete vao;
         vao = nullptr;
     }
-    
+
     glInitialized = false;
 }
 
@@ -222,6 +227,7 @@ Node::Node()
     width = NODE_WIDTH;
     height = NODE_HEIGHT;
     isHovered = false;
+    showingSocketNames = false;
 
     defaultBorderColor = QColor(0, 0, 0);
     highlightBorderColor = QColor(0, 0, 0);
@@ -280,6 +286,14 @@ Node::Node()
 
 NodePtr Node::create() { return NodePtr(new Node()); }
 
+void Node::setShowSocketNames(bool show)
+{
+    if (showingSocketNames == show)
+        return;
+    showingSocketNames = show;
+    update();
+}
+
 void Node::setCenter(float x, float y)
 {
     setPos(x - NODE_WIDTH / 2.0f, y - NODE_HEIGHT / 2.0f);
@@ -287,7 +301,8 @@ void Node::setCenter(float x, float y)
 
 QPointF Node::getCenter() const
 {
-    return QPointF(pos().x() + NODE_WIDTH / 2.0f, pos().y() + NODE_HEIGHT / 2.0f);
+    return QPointF(pos().x() + NODE_WIDTH / 2.0f,
+                   pos().y() + NODE_HEIGHT / 2.0f);
 }
 
 void Node::setName(QString name)
@@ -315,7 +330,8 @@ void Node::setChannel(QString ch)
     this->channel = ch;
     if (ch.isEmpty()) {
         channelText->hide();
-    } else {
+    }
+    else {
         channelText->setPlainText(ch.toUpper());
         QFontMetrics fm(channelText->font());
         int textW = fm.horizontalAdvance(ch.toUpper());
@@ -508,7 +524,8 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
             cp.fillRect(0, 0, 8, 8, QColor(0x80, 0x80, 0x80));
             cp.fillRect(8, 8, 8, 8, QColor(0x80, 0x80, 0x80));
         }
-        painter->fillRect(QRect(0, 0, nodeWidth, nodeHeight), QBrush(checkerTile));
+        painter->fillRect(QRect(0, 0, nodeWidth, nodeHeight),
+                          QBrush(checkerTile));
         painter->drawPixmap(QRect(0, 0, nodeWidth, nodeHeight), thumbnail);
     }
 
@@ -519,74 +536,97 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
 
         // Initialize OpenGL resources if needed
         initializeGL();
-        
+
         if (glInitialized && shaderProgram && vao && vbo) {
             QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
-            
+
             // Get the current viewport and create orthographic projection
             GLint viewport[4];
             f->glGetIntegerv(GL_VIEWPORT, viewport);
-            
+
             // Create orthographic projection matrix
             QTransform transform = painter->combinedTransform();
             QMatrix4x4 projectionMatrix;
             projectionMatrix.ortho(0, viewport[2], viewport[3], 0, -1, 1);
-            
-            // Build vertex data - transform scene coordinates to device coordinates
+
+            // Build vertex data - transform scene coordinates to device
+            // coordinates
             QPointF p0 = transform.map(QPointF(0, 0));
             QPointF p1 = transform.map(QPointF(100, 0));
             QPointF p2 = transform.map(QPointF(100, 100));
             QPointF p3 = transform.map(QPointF(0, 100));
-            
+
             // Two triangles for a quad: position (x,y) + texcoord (u,v)
             GLfloat vertices[] = {
                 // Triangle 1
-                (GLfloat)p0.x(), (GLfloat)p0.y(), 0.0f, 1.0f,
-                (GLfloat)p1.x(), (GLfloat)p1.y(), 1.0f, 1.0f,
-                (GLfloat)p2.x(), (GLfloat)p2.y(), 1.0f, 0.0f,
+                (GLfloat)p0.x(),
+                (GLfloat)p0.y(),
+                0.0f,
+                1.0f,
+                (GLfloat)p1.x(),
+                (GLfloat)p1.y(),
+                1.0f,
+                1.0f,
+                (GLfloat)p2.x(),
+                (GLfloat)p2.y(),
+                1.0f,
+                0.0f,
                 // Triangle 2
-                (GLfloat)p0.x(), (GLfloat)p0.y(), 0.0f, 1.0f,
-                (GLfloat)p2.x(), (GLfloat)p2.y(), 1.0f, 0.0f,
-                (GLfloat)p3.x(), (GLfloat)p3.y(), 0.0f, 0.0f,
+                (GLfloat)p0.x(),
+                (GLfloat)p0.y(),
+                0.0f,
+                1.0f,
+                (GLfloat)p2.x(),
+                (GLfloat)p2.y(),
+                1.0f,
+                0.0f,
+                (GLfloat)p3.x(),
+                (GLfloat)p3.y(),
+                0.0f,
+                0.0f,
             };
-            
+
             // Setup state
             f->glDisable(GL_BLEND);
             f->glDisable(GL_DEPTH_TEST);
-            
+
             // Bind shader
             shaderProgram->bind();
-            shaderProgram->setUniformValue("projectionMatrix", projectionMatrix);
+            shaderProgram->setUniformValue("projectionMatrix",
+                                           projectionMatrix);
             shaderProgram->setUniformValue("textureSampler", 0);
-            
+
             // Bind texture
             f->glActiveTexture(GL_TEXTURE0);
             f->glBindTexture(GL_TEXTURE_2D, texId);
-            
+
             // Setup VAO and VBO
             vao->bind();
             vbo->bind();
             vbo->allocate(vertices, sizeof(vertices));
-            
+
             // Setup vertex attributes
             int positionLoc = shaderProgram->attributeLocation("position");
             int texCoordLoc = shaderProgram->attributeLocation("texCoord");
-            
+
             shaderProgram->enableAttributeArray(positionLoc);
             shaderProgram->enableAttributeArray(texCoordLoc);
-            shaderProgram->setAttributeBuffer(positionLoc, GL_FLOAT, 0, 2, 4 * sizeof(GLfloat));
-            shaderProgram->setAttributeBuffer(texCoordLoc, GL_FLOAT, 2 * sizeof(GLfloat), 2, 4 * sizeof(GLfloat));
-            
+            shaderProgram->setAttributeBuffer(positionLoc, GL_FLOAT, 0, 2,
+                                              4 * sizeof(GLfloat));
+            shaderProgram->setAttributeBuffer(texCoordLoc, GL_FLOAT,
+                                              2 * sizeof(GLfloat), 2,
+                                              4 * sizeof(GLfloat));
+
             // Draw
             f->glDrawArrays(GL_TRIANGLES, 0, 6);
-            
+
             // Cleanup
             shaderProgram->disableAttributeArray(positionLoc);
             shaderProgram->disableAttributeArray(texCoordLoc);
             vbo->release();
             vao->release();
             shaderProgram->release();
-            
+
             f->glEnable(GL_BLEND);
         }
 
@@ -609,6 +649,46 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
     painter->setPen(QPen(borderColor, 3));
     painter->drawRoundedRect(rect, titleRadius, titleRadius);
 
+    // socket name labels — shown on hover or when cursor is nearby during drag
+    if (isHovered || showingSocketNames) {
+        painter->save();
+        painter->setRenderHint(QPainter::TextAntialiasing);
+
+        QFont labelFont = painter->font();
+        labelFont.setPixelSize(10);
+        painter->setFont(labelFont);
+
+        QFontMetrics fm(labelFont);
+        const int labelH = 14;
+        const int pad = 3;
+        const int portRadius = 7;
+        const int gap = 4;
+
+        auto drawLabel = [&](const QString& labelName, QPointF portPos,
+                             bool isIn) {
+            int textW = fm.horizontalAdvance(labelName);
+            int rectW = textW + pad * 2;
+            qreal x = isIn ? portPos.x() + portRadius + gap
+                           : portPos.x() - portRadius - gap - rectW;
+            qreal y = portPos.y() - labelH / 2.0;
+
+            QRectF bgRect(x, y, rectW, labelH);
+            painter->setPen(Qt::NoPen);
+            painter->setBrush(QColor(0, 0, 0, 160));
+            painter->drawRoundedRect(bgRect, 3, 3);
+
+            painter->setPen(QColor(255, 255, 255, 220));
+            painter->drawText(bgRect, Qt::AlignCenter, labelName);
+        };
+
+        for (auto& port : inPorts)
+            drawLabel(port->name, port->pos(), true);
+
+        // for (auto& port : outPorts)
+        //     drawLabel(port->name, port->pos(), false);
+
+        painter->restore();
+    }
 }
 
 Node::~Node()
