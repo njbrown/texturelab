@@ -27,6 +27,7 @@
 #include "DockSplitter.h"
 
 #include "exporter.h"
+#include "widgets/aboutdialog.h"
 #include "widgets/exportdialog.h"
 #include "widgets/graphwidget.h"
 #include "widgets/librarywidget.h"
@@ -411,8 +412,10 @@ void MainWindow::setupMenus()
     }
 
     auto optionsMenu = this->menuBar()->addMenu("Help");
-    optionsMenu->addAction("Documentation", []() {});
-    optionsMenu->addAction("About", []() {});
+    optionsMenu->addAction("About", [this]() {
+        AboutDialog dialog(this);
+        dialog.exec();
+    });
 }
 
 void MainWindow::setupToolbar()

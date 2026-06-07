@@ -179,6 +179,8 @@ set(PROJECT_SOURCES
         ./widgets/view2dwidget.cpp
         ./widgets/view3dwidget.h
         ./widgets/view3dwidget.cpp
+        ./widgets/aboutdialog.h
+        ./widgets/aboutdialog.cpp
         ./widgets/exportdialog.h
         ./widgets/exportdialog.cpp
         ./graphics/texturerenderer.h
