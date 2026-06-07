@@ -175,6 +175,8 @@ set(PROJECT_SOURCES
         ./widgets/properties/propwidgets.cpp
         ./widgets/properties/curvepropwidget.h
         ./widgets/properties/curvepropwidget.cpp
+        ./widgets/properties/accordionwidget.h
+        ./widgets/properties/accordionwidget.cpp
         ./widgets/view2dwidget.h
         ./widgets/view2dwidget.cpp
         ./widgets/view3dwidget.h

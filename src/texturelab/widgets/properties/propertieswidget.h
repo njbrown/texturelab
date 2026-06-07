@@ -12,6 +12,7 @@ typedef QSharedPointer<TextureNode> TextureNodePtr;
 typedef QSharedPointer<Comment> CommentPtr;
 typedef QSharedPointer<Frame> FramePtr;
 
+class Prop;
 class EnumProp;
 class IntProp;
 
@@ -47,6 +48,7 @@ public:
 
 private:
     void addBasePropsToLayout();
+    QWidget* createPropWidget(Prop* prop, const TextureNodePtr& node);
 
 signals:
     void propertyUpdated(const QString& name, const QVariant& value);
