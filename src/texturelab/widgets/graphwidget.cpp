@@ -14,6 +14,12 @@
 #include <QSignalBlocker>
 #include <QToolBar>
 
+class NoWheelComboBox : public QComboBox {
+public:
+    using QComboBox::QComboBox;
+    void wheelEvent(QWheelEvent* event) override { event->ignore(); }
+};
+
 #include "./graphics/texturerenderer.h"
 #include "./models.h"
 #include "./utils.h"
@@ -198,7 +204,7 @@ void GraphWidget::setupToolbar()
 
     toolbar->addWidget(new QLabel("Resolution: "));
 
-    resolutionPicker = new QComboBox();
+    resolutionPicker = new NoWheelComboBox();
     for (int res : {32, 64, 128, 256, 512, 1024, 2048, 4096})
         resolutionPicker->addItem(QString("%1 x %1").arg(res), res);
     resolutionPicker->setCurrentIndex(5); // default: 1024

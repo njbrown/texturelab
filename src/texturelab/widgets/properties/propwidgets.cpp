@@ -31,6 +31,12 @@ public:
     void wheelEvent(QWheelEvent* event) override { event->ignore(); }
 };
 
+class NoWheelComboBox : public QComboBox {
+public:
+    using QComboBox::QComboBox;
+    void wheelEvent(QWheelEvent* event) override { event->ignore(); }
+};
+
 // FLOAT PROP WIDGET
 // https://stackoverflow.com/a/19007951
 FloatPropWidget::FloatPropWidget()
@@ -210,7 +216,7 @@ EnumPropWidget::EnumPropWidget()
     vlayout->addWidget(label);
 
     // slider
-    comboBox = new QComboBox(this);
+    comboBox = new NoWheelComboBox(this);
     vlayout->addWidget(comboBox);
 
     this->setFixedHeight(80);
