@@ -66,6 +66,11 @@ private:
     QComboBox* resolutionPicker;
     QSpinBox* seedInput;
 
+public slots:
+    void executeCopy();
+    void executeCut();
+    void executePaste();
+
 signals:
     void nodeSelectionChanged(const TextureNodePtr& node);
     void nodeDoubleClicked(const TextureNodePtr& node);

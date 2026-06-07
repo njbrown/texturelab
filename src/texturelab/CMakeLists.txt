@@ -146,6 +146,8 @@ set(PROJECT_SOURCES
         ./main.cpp
         ./mainwindow.cpp
         ./mainwindow.h
+        ./clipboard.h
+        ./clipboard.cpp
         ./exporter.h
         ./exporter.cpp
         ./utils.h

@@ -1,4 +1,5 @@
 #include "graphwidget.h"
+#include "../clipboard.h"
 #include <QCursor>
 #include <QDragEnterEvent>
 #include <QKeyEvent>
@@ -9,6 +10,7 @@
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QOpenGLContext>
+#include <QShortcut>
 #include <QSignalBlocker>
 #include <QToolBar>
 
@@ -175,6 +177,18 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
             });
 
     // library = nullptr;
+
+    auto copyShortcut = new QShortcut(QKeySequence::Copy, this);
+    copyShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(copyShortcut, &QShortcut::activated, this, &GraphWidget::executeCopy);
+
+    auto cutShortcut = new QShortcut(QKeySequence::Cut, this);
+    cutShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(cutShortcut, &QShortcut::activated, this, &GraphWidget::executeCut);
+
+    auto pasteShortcut = new QShortcut(QKeySequence::Paste, this);
+    pasteShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(pasteShortcut, &QShortcut::activated, this, &GraphWidget::executePaste);
 }
 
 void GraphWidget::setupToolbar()
@@ -421,6 +435,167 @@ void GraphWidget::keyPressEvent(QKeyEvent* event)
     else {
         QMainWindow::keyPressEvent(event);
     }
+}
+
+void GraphWidget::executeCopy()
+{
+    if (!project || !scene)
+        return;
+
+    syncPositionsToModel();
+
+    QList<QString> nodeIds, frameIds, commentIds;
+    for (auto item : scene->selectedItems()) {
+        if (item->type() == (int)nodegraph::SceneItemType::Node) {
+            auto node = qgraphicsitem_cast<nodegraph::Node*>(item);
+            if (node)
+                nodeIds.append(node->id());
+        }
+        else if (item->type() == (int)nodegraph::SceneItemType::Frame) {
+            auto frame = qgraphicsitem_cast<nodegraph::Frame*>(item);
+            if (frame)
+                frameIds.append(frame->id());
+        }
+        else if (item->type() == (int)nodegraph::SceneItemType::Comment) {
+            auto comment = qgraphicsitem_cast<nodegraph::Comment*>(item);
+            if (comment)
+                commentIds.append(comment->id());
+        }
+    }
+
+    if (nodeIds.isEmpty() && frameIds.isEmpty() && commentIds.isEmpty())
+        return;
+
+    Clipboard::copyItems(project, nodeIds, frameIds, commentIds);
+}
+
+void GraphWidget::executeCut()
+{
+    if (!project || !scene)
+        return;
+
+    executeCopy();
+
+    // Collect IDs before modifying the scene
+    QList<QString> nodeIds, frameIds, commentIds;
+    for (auto item : scene->selectedItems()) {
+        if (item->type() == (int)nodegraph::SceneItemType::Node) {
+            auto node = qgraphicsitem_cast<nodegraph::Node*>(item);
+            if (node)
+                nodeIds.append(node->id());
+        }
+        else if (item->type() == (int)nodegraph::SceneItemType::Frame) {
+            auto frame = qgraphicsitem_cast<nodegraph::Frame*>(item);
+            if (frame)
+                frameIds.append(frame->id());
+        }
+        else if (item->type() == (int)nodegraph::SceneItemType::Comment) {
+            auto comment = qgraphicsitem_cast<nodegraph::Comment*>(item);
+            if (comment)
+                commentIds.append(comment->id());
+        }
+    }
+
+    // Remove nodes (and their connections) from scene + model
+    for (const auto& id : nodeIds) {
+        auto ngNode = scene->getNodeById(id);
+        if (ngNode)
+            scene->removeNode(ngNode);
+
+        for (auto key : project->connections.keys()) {
+            auto con = project->connections[key];
+            if (con->leftNode->id == id || con->rightNode->id == id) {
+                if (con->leftNode->id == id)
+                    con->rightNode->isDirty = true;
+                project->connections.remove(key);
+            }
+        }
+        project->nodes.remove(id);
+    }
+
+    // Remove frames
+    for (const auto& id : frameIds) {
+        auto ngFrame = scene->getFrameById(id);
+        if (ngFrame)
+            scene->removeFrame(ngFrame);
+        project->frames.remove(id);
+    }
+
+    // Remove comments
+    for (const auto& id : commentIds) {
+        auto ngComment = scene->getCommentById(id);
+        if (ngComment)
+            scene->removeComment(ngComment);
+        project->comments.remove(id);
+    }
+
+    emit nodeSelectionChanged(TextureNodePtr(nullptr));
+    if (renderer)
+        renderer->update();
+}
+
+void GraphWidget::executePaste()
+{
+    if (!project || !scene)
+        return;
+
+    QList<TextureNodePtr> newNodes;
+    QList<ConnectionPtr> newConnections;
+    QList<CommentPtr> newComments;
+    QList<FramePtr> newFrames;
+
+    if (!Clipboard::pasteItems(project, newNodes, newConnections, newComments,
+                               newFrames))
+        return;
+
+    scene->clearSelection();
+
+    // Add nodes
+    for (auto& node : newNodes) {
+        project->nodes[node->id] = node;
+        addNode(node);
+        auto ngNode = scene->getNodeById(node->id);
+        if (ngNode)
+            ngNode->setSelected(true);
+    }
+
+    // Add connections
+    for (auto& con : newConnections) {
+        project->connections[con->id] = con;
+        auto leftNgNode = scene->getNodeById(con->leftNode->id);
+        auto rightNgNode = scene->getNodeById(con->rightNode->id);
+        if (leftNgNode && rightNgNode)
+            scene->connectNodes(leftNgNode, "output", rightNgNode,
+                                con->rightNodeInputName);
+    }
+
+    // Add comments
+    for (auto& comment : newComments) {
+        project->comments[comment->id] = comment;
+        auto gcomment = nodegraph::Comment::create();
+        gcomment->setId(comment->id);
+        gcomment->setText(comment->text);
+        gcomment->setPos(comment->pos.x(), comment->pos.y());
+        scene->addComment(gcomment);
+        gcomment->setSelected(true);
+    }
+
+    // Add frames
+    for (auto& frame : newFrames) {
+        project->frames[frame->id] = frame;
+        auto gframe = nodegraph::Frame::create();
+        gframe->setId(frame->id);
+        gframe->setTitle(frame->text);
+        gframe->setColor(frame->color);
+        gframe->setPos(frame->pos.x(), frame->pos.y());
+        if (frame->size.x() > 0 && frame->size.y() > 0)
+            gframe->setSize(frame->size.x(), frame->size.y());
+        scene->addFrame(gframe);
+        gframe->setSelected(true);
+    }
+
+    if (renderer)
+        renderer->update();
 }
 
 void GraphWidget::addItemFromSearch(const QString& name, PopupItemType type,

@@ -372,9 +372,9 @@ void MainWindow::setupMenus()
     auto editMenu = this->menuBar()->addMenu("Edit");
     editMenu->addAction("Undo", []() {});
     editMenu->addAction("Redo", []() {});
-    editMenu->addAction("Cut", []() {});
-    editMenu->addAction("Copy", []() {});
-    editMenu->addAction("Paste", []() {});
+    editMenu->addAction("Cut", [=]() { graphWidget->executeCut(); });
+    editMenu->addAction("Copy", [=]() { graphWidget->executeCopy(); });
+    editMenu->addAction("Paste", [=]() { graphWidget->executePaste(); });
 
     auto examplesMenu = this->menuBar()->addMenu("Examples");
 

@@ -1,0 +1,207 @@
+#include "clipboard.h"
+#include "libraries/library.h"
+#include "props.h"
+#include <QApplication>
+#include <QClipboard>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QUuid>
+
+const QString Clipboard::PREFIX = "texturelab-clipboard:";
+
+void Clipboard::copyItems(TextureProjectPtr project,
+                          const QList<QString>& nodeIds,
+                          const QList<QString>& frameIds,
+                          const QList<QString>& commentIds)
+{
+    QSet<QString> nodeIdSet(nodeIds.begin(), nodeIds.end());
+
+    QJsonObject root;
+
+    // Nodes
+    QJsonArray nodeArray;
+    for (const auto& id : nodeIds) {
+        auto node = project->nodes.value(id);
+        if (!node)
+            continue;
+
+        QJsonObject obj;
+        obj["id"] = node->id;
+        obj["typeName"] = node->typeName;
+        obj["exportName"] = node->exportName;
+        obj["randomSeed"] = (double)node->randomSeed;
+        obj["x"] = node->pos.x();
+        obj["y"] = node->pos.y();
+
+        QJsonObject props;
+        for (auto key : node->props.keys())
+            props[key] = node->props[key]->toJsonValue();
+        obj["properties"] = props;
+
+        nodeArray.append(obj);
+    }
+    root["nodes"] = nodeArray;
+
+    // Connections — only those fully within the selection
+    QJsonArray conArray;
+    for (auto& con : project->connections) {
+        if (nodeIdSet.contains(con->leftNode->id) &&
+            nodeIdSet.contains(con->rightNode->id)) {
+            QJsonObject obj;
+            obj["leftNodeId"] = con->leftNode->id;
+            obj["rightNodeId"] = con->rightNode->id;
+            obj["rightNodeInput"] = con->rightNodeInputName;
+            conArray.append(obj);
+        }
+    }
+    root["connections"] = conArray;
+
+    // Comments
+    QJsonArray commentArray;
+    for (const auto& id : commentIds) {
+        auto comment = project->comments.value(id);
+        if (!comment)
+            continue;
+        QJsonObject obj;
+        obj["text"] = comment->text;
+        obj["x"] = comment->pos.x();
+        obj["y"] = comment->pos.y();
+        commentArray.append(obj);
+    }
+    root["comments"] = commentArray;
+
+    // Frames
+    QJsonArray frameArray;
+    for (const auto& id : frameIds) {
+        auto frame = project->frames.value(id);
+        if (!frame)
+            continue;
+        QJsonObject obj;
+        obj["title"] = frame->text;
+        obj["color"] = frame->color.name(QColor::HexRgb);
+        obj["x"] = frame->pos.x();
+        obj["y"] = frame->pos.y();
+        obj["width"] = frame->size.x();
+        obj["height"] = frame->size.y();
+        frameArray.append(obj);
+    }
+    root["frames"] = frameArray;
+
+    QJsonDocument doc(root);
+    QApplication::clipboard()->setText(PREFIX + doc.toJson(QJsonDocument::Compact));
+}
+
+bool Clipboard::hasData()
+{
+    return QApplication::clipboard()->text().startsWith(PREFIX);
+}
+
+bool Clipboard::pasteItems(TextureProjectPtr project,
+                           QList<TextureNodePtr>& outNodes,
+                           QList<ConnectionPtr>& outConnections,
+                           QList<CommentPtr>& outComments,
+                           QList<FramePtr>& outFrames)
+{
+    if (!project || !project->library)
+        return false;
+
+    QString text = QApplication::clipboard()->text();
+    if (!text.startsWith(PREFIX))
+        return false;
+
+    QJsonParseError err;
+    auto doc = QJsonDocument::fromJson(text.mid(PREFIX.length()).toUtf8(), &err);
+    if (err.error || !doc.isObject())
+        return false;
+
+    auto root = doc.object();
+
+    static constexpr double OFFSET = 20.0;
+
+    // Build old→new node ID map
+    QMap<QString, QString> nodeIdMap;
+    for (auto item : root["nodes"].toArray()) {
+        auto oldId = item.toObject()["id"].toString();
+        nodeIdMap[oldId] = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    }
+
+    // Nodes
+    for (auto item : root["nodes"].toArray()) {
+        auto obj = item.toObject();
+        auto typeName = obj["typeName"].toString();
+        auto node = project->library->createNode(typeName);
+        if (!node)
+            continue;
+
+        node->id = nodeIdMap[obj["id"].toString()];
+        node->exportName = obj["exportName"].toString();
+        node->randomSeed = (long)obj["randomSeed"].toDouble(0);
+        node->pos = QVector2D((float)obj["x"].toDouble() + OFFSET,
+                              (float)obj["y"].toDouble() + OFFSET);
+
+        auto propObj = obj["properties"].toObject();
+        for (auto key : propObj.keys()) {
+            auto prop = node->getProp(key);
+            if (prop)
+                prop->fromJsonValue(propObj[key]);
+        }
+
+        outNodes.append(node);
+    }
+
+    // Connections
+    for (auto item : root["connections"].toArray()) {
+        auto obj = item.toObject();
+        auto newLeftId = nodeIdMap.value(obj["leftNodeId"].toString());
+        auto newRightId = nodeIdMap.value(obj["rightNodeId"].toString());
+        if (newLeftId.isEmpty() || newRightId.isEmpty())
+            continue;
+
+        // Find the model nodes from outNodes
+        TextureNodePtr leftNode, rightNode;
+        for (auto& n : outNodes) {
+            if (n->id == newLeftId)
+                leftNode = n;
+            if (n->id == newRightId)
+                rightNode = n;
+        }
+        if (!leftNode || !rightNode)
+            continue;
+
+        auto con = ConnectionPtr(new Connection());
+        con->id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        con->leftNode = leftNode;
+        con->rightNode = rightNode;
+        con->leftNodeOutputName = "output";
+        con->rightNodeInputName = obj["rightNodeInput"].toString();
+        outConnections.append(con);
+    }
+
+    // Comments
+    for (auto item : root["comments"].toArray()) {
+        auto obj = item.toObject();
+        auto comment = CommentPtr(new Comment());
+        comment->id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        comment->text = obj["text"].toString();
+        comment->pos = QVector2D((float)obj["x"].toDouble() + OFFSET,
+                                 (float)obj["y"].toDouble() + OFFSET);
+        outComments.append(comment);
+    }
+
+    // Frames
+    for (auto item : root["frames"].toArray()) {
+        auto obj = item.toObject();
+        auto frame = FramePtr(new Frame());
+        frame->id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        frame->text = obj["title"].toString();
+        frame->color = QColor(obj["color"].toString());
+        frame->pos = QVector2D((float)obj["x"].toDouble() + OFFSET,
+                               (float)obj["y"].toDouble() + OFFSET);
+        frame->size = QVector2D((float)obj["width"].toDouble(),
+                                (float)obj["height"].toDouble());
+        outFrames.append(frame);
+    }
+
+    return !outNodes.isEmpty() || !outComments.isEmpty() || !outFrames.isEmpty();
+}
