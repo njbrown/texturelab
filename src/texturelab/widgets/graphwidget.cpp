@@ -496,20 +496,25 @@ void GraphWidget::executeCut()
         }
     }
 
-    // Remove nodes (and their connections) from scene + model
+    // Remove nodes, propagating dirty through the full downstream subgraph
     for (const auto& id : nodeIds) {
         auto ngNode = scene->getNodeById(id);
         if (ngNode)
             scene->removeNode(ngNode);
 
+        // Capture downstream nodes before their connections are removed
+        auto downstream = project->getNodeRightOfNode(id);
+
         for (auto key : project->connections.keys()) {
             auto con = project->connections[key];
-            if (con->leftNode->id == id || con->rightNode->id == id) {
-                if (con->leftNode->id == id)
-                    con->rightNode->isDirty = true;
+            if (con->leftNode->id == id || con->rightNode->id == id)
                 project->connections.remove(key);
-            }
         }
+
+        // BFS-mark all transitive dependents dirty so they re-render
+        for (auto& dep : downstream)
+            project->markNodeAsDirty(dep);
+
         project->nodes.remove(id);
     }
 
@@ -529,7 +534,12 @@ void GraphWidget::executeCut()
         project->comments.remove(id);
     }
 
+    // Clear properties panel regardless of which item type was selected
     emit nodeSelectionChanged(TextureNodePtr(nullptr));
+    emit frameSelectionChanged(FramePtr(nullptr));
+    emit commentSelectionChanged(CommentPtr(nullptr));
+
+    scene->update();
     if (renderer)
         renderer->update();
 }
@@ -559,9 +569,10 @@ void GraphWidget::executePaste()
             ngNode->setSelected(true);
     }
 
-    // Add connections
+    // Add connections and invalidate the receiving node so it re-renders
     for (auto& con : newConnections) {
         project->connections[con->id] = con;
+        con->rightNode->isDirty = true;
         auto leftNgNode = scene->getNodeById(con->leftNode->id);
         auto rightNgNode = scene->getNodeById(con->rightNode->id);
         if (leftNgNode && rightNgNode)
@@ -594,6 +605,7 @@ void GraphWidget::executePaste()
         gframe->setSelected(true);
     }
 
+    scene->update();
     if (renderer)
         renderer->update();
 }
