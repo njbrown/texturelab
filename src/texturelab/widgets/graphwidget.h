@@ -5,6 +5,7 @@
 #include <QMainWindow>
 #include <QSharedPointer>
 #include <QSpinBox>
+#include <QUndoStack>
 
 class QDragEnterEvent;
 class TextureRenderer;
@@ -33,6 +34,7 @@ public:
     GraphWidget();
 
     void setTextureProject(TextureProjectPtr project);
+    void setUndoStack(QUndoStack* stack);
 
     void dragEnterEvent(QDragEnterEvent* evt);
     void dragMoveEvent(QDragMoveEvent* event);
@@ -51,6 +53,7 @@ public:
     TextureProjectPtr project;
 
     TextureRenderer* renderer;
+    QUndoStack* undoStack = nullptr;
 
 protected:
     void addNode(const TextureNodePtr& node);

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QSharedPointer>
+#include <QUndoStack>
 #include <QVector>
 #include <QWidget>
 
@@ -11,6 +13,9 @@ typedef QSharedPointer<TextureProject> TextureProjectPtr;
 typedef QSharedPointer<TextureNode> TextureNodePtr;
 typedef QSharedPointer<Comment> CommentPtr;
 typedef QSharedPointer<Frame> FramePtr;
+
+namespace nodegraph { class Scene; }
+typedef QSharedPointer<nodegraph::Scene> NgScenePtr;
 
 class Prop;
 class EnumProp;
@@ -28,6 +33,8 @@ class PropertiesWidget : public QWidget {
     QVector<QWidget*> propWidgets;
 
     TextureProjectPtr project;
+    NgScenePtr scene;
+    QUndoStack* undoStack = nullptr;
     TextureNodePtr selectedNode;
     FramePtr selectedFrame;
     CommentPtr selectedComment;
@@ -45,6 +52,8 @@ public:
     void clearSelection();
 
     void setProject(const TextureProjectPtr& project);
+    void setScene(NgScenePtr ngScene);
+    void setUndoStack(QUndoStack* stack);
 
 private:
     void addBasePropsToLayout();

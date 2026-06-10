@@ -1,5 +1,7 @@
 #include "graphwidget.h"
 #include "../clipboard.h"
+#include "../undo/undocommands.h"
+#include <QUuid>
 #include <QCursor>
 #include <QDragEnterEvent>
 #include <QKeyEvent>
@@ -71,40 +73,40 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
 
     connect(graph, &nodegraph::NodeGraph::connectionAdded,
             [=](nodegraph::ConnectionPtr con) {
-                qDebug() << "CONNECTION ADDED";
-
-                // auto sceneCon = project->getConnectionById(con->id());
-                // sceneCon->rightNode->isDirty = true;
-
-                auto leftNode =
-                    project->getNodeById(con->startPort->node->id());
-                auto rightNode = project->getNodeById(con->endPort->node->id());
-                auto rightName = con->endPort->name;
-
-                project->addConnection(leftNode, rightNode, rightName);
-
-                // make ready for update
-                rightNode->isDirty = true;
-
-                // todo: try to update later
-                renderer->update();
+                auto leftNodeId  = con->startPort->node->id();
+                auto leftOutput  = con->startPort->name;
+                auto rightNodeId = con->endPort->node->id();
+                auto rightInput  = con->endPort->name;
+                if (undoStack)
+                    undoStack->push(new AddConnectionCommand(
+                        project, scene, renderer,
+                        leftNodeId, leftOutput, rightNodeId, rightInput));
+                else {
+                    project->addConnection(
+                        project->getNodeById(leftNodeId),
+                        project->getNodeById(rightNodeId), rightInput);
+                    project->getNodeById(rightNodeId)->isDirty = true;
+                    renderer->update();
+                }
             });
 
     connect(graph, &nodegraph::NodeGraph::connectionRemoved,
             [=](nodegraph::ConnectionPtr con) {
-                qDebug() << "CONNECTION REMOVED";
-
-                auto leftNodeId = con->startPort->node->id();
+                auto leftNodeId  = con->startPort->node->id();
+                auto leftOutput  = con->startPort->name;
                 auto rightNodeId = con->endPort->node->id();
-                auto portName = con->endPort->name;
-
-                auto removedCon = project->removeConnection(
-                    leftNodeId, rightNodeId, portName);
-
-                removedCon->rightNode->isDirty = true;
-
-                // todo: try to update later
-                renderer->update();
+                auto rightInput  = con->endPort->name;
+                if (undoStack)
+                    undoStack->push(new RemoveConnectionCommand(
+                        project, scene, renderer,
+                        leftNodeId, leftOutput, rightNodeId, rightInput));
+                else {
+                    auto con2 = project->removeConnection(
+                        leftNodeId, rightNodeId, rightInput);
+                    if (con2 && con2->rightNode)
+                        con2->rightNode->isDirty = true;
+                    renderer->update();
+                }
             });
 
     connect(graph, &nodegraph::NodeGraph::nodeSelectionChanged,
@@ -139,27 +141,44 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
                 }
             });
 
-    connect(graph, &nodegraph::NodeGraph::nodeRemoved,
-            [=](nodegraph::NodePtr node) {
-                auto nodeId = node->id();
-                auto texNode = project->getNodeById(nodeId);
-
-                // remove all connections involving this node from the model
-                for (auto key : project->connections.keys()) {
-                    auto con = project->connections[key];
-                    if (con->leftNode->id == nodeId ||
-                        con->rightNode->id == nodeId) {
-                        // mark downstream node dirty before disconnecting
-                        if (con->leftNode->id == nodeId)
-                            con->rightNode->isDirty = true;
-                        project->connections.remove(key);
+    connect(graph, &nodegraph::NodeGraph::deleteRequested,
+            [=](QList<nodegraph::NodePtr> nodes,
+                QList<nodegraph::FramePtr> frames,
+                QList<nodegraph::CommentPtr> comments) {
+                QList<QString> nodeIds, frameIds, commentIds;
+                for (auto& n : nodes)    nodeIds.append(n->id());
+                for (auto& f : frames)   frameIds.append(f->id());
+                for (auto& c : comments) commentIds.append(c->id());
+                if (undoStack)
+                    undoStack->push(new DeleteItemsCommand(
+                        project, scene, renderer, nodeIds, frameIds, commentIds));
+                else {
+                    // Fallback: direct deletion (no undo)
+                    for (auto& n : nodes) {
+                        scene->removeNode(n);
+                        for (auto key : project->connections.keys()) {
+                            auto con = project->connections.value(key);
+                            if (con->leftNode->id == n->id() || con->rightNode->id == n->id()) {
+                                if (con->leftNode->id == n->id())
+                                    con->rightNode->isDirty = true;
+                                project->connections.remove(key);
+                            }
+                        }
+                        project->nodes.remove(n->id());
                     }
+                    for (auto& f : frames)   { scene->removeFrame(f);   project->frames.remove(f->id()); }
+                    for (auto& c : comments) { scene->removeComment(c); project->comments.remove(c->id()); }
+                    renderer->update();
                 }
-
-                project->nodes.remove(nodeId);
-
                 emit nodeSelectionChanged(TextureNodePtr(nullptr));
-                renderer->update();
+                emit frameSelectionChanged(FramePtr(nullptr));
+                emit commentSelectionChanged(CommentPtr(nullptr));
+            });
+
+    connect(graph, &nodegraph::NodeGraph::itemsMoveFinished,
+            [=](QMap<QString, QPointF> oldPos, QMap<QString, QPointF> newPos) {
+                if (undoStack)
+                    undoStack->push(new MoveItemsCommand(project, scene, oldPos, newPos));
             });
 
     connect(graph, &nodegraph::NodeGraph::frameSelectionChanged,
@@ -378,37 +397,51 @@ void GraphWidget::dropEvent(QDropEvent* evt)
         auto scenePos = this->graph->mapToScene(evt->position().toPoint());
 
         if (data->itemType == PopupItemType::Frame) {
-            auto frame = nodegraph::Frame::create();
-            frame->setPos(scenePos);
-            scene->addFrame(frame);
-
-            if (project) {
-                auto modelFrame = FramePtr(new Frame());
-                modelFrame->id = frame->id();
-                modelFrame->text = frame->title();
-                modelFrame->pos = QVector2D(scenePos.x(), scenePos.y());
-                project->frames[modelFrame->id] = modelFrame;
+            QString frameId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+            if (undoStack)
+                undoStack->push(new AddFrameCommand(
+                    project, scene, frameId, QVector2D(scenePos)));
+            else {
+                auto frame = nodegraph::Frame::create();
+                frame->setPos(scenePos);
+                scene->addFrame(frame);
+                if (project) {
+                    auto modelFrame = FramePtr(new Frame());
+                    modelFrame->id  = frame->id();
+                    modelFrame->pos = QVector2D(scenePos);
+                    project->frames[modelFrame->id] = modelFrame;
+                }
             }
         }
         else if (data->itemType == PopupItemType::Comment) {
-            auto comment = nodegraph::Comment::create();
-            comment->setPos(scenePos);
-            scene->addComment(comment);
-
-            if (project) {
-                auto modelComment = CommentPtr(new Comment());
-                modelComment->id = comment->id();
-                modelComment->text = comment->text();
-                modelComment->pos = QVector2D(scenePos.x(), scenePos.y());
-                project->comments[modelComment->id] = modelComment;
+            QString commentId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+            if (undoStack)
+                undoStack->push(new AddCommentCommand(
+                    project, scene, commentId, QVector2D(scenePos)));
+            else {
+                auto comment = nodegraph::Comment::create();
+                comment->setPos(scenePos);
+                scene->addComment(comment);
+                if (project) {
+                    auto modelComment = CommentPtr(new Comment());
+                    modelComment->id  = comment->id();
+                    modelComment->pos = QVector2D(scenePos);
+                    project->comments[modelComment->id] = modelComment;
+                }
             }
         }
         else {
-            auto node = project->library->createNode(data->libraryItemName);
-            node->pos = QVector2D(scenePos);
-            this->project->addNode(node);
-            this->addNode(node);
-            this->renderer->update();
+            if (undoStack)
+                undoStack->push(new AddNodeCommand(
+                    project, scene, renderer,
+                    data->libraryItemName, QVector2D(scenePos)));
+            else {
+                auto node = project->library->createNode(data->libraryItemName);
+                node->pos = QVector2D(scenePos);
+                project->addNode(node);
+                addNode(node);
+                renderer->update();
+            }
         }
 
         evt->accept();
@@ -482,72 +515,55 @@ void GraphWidget::executeCut()
 
     executeCopy();
 
-    // Collect IDs before modifying the scene
     QList<QString> nodeIds, frameIds, commentIds;
     for (auto item : scene->selectedItems()) {
         if (item->type() == (int)nodegraph::SceneItemType::Node) {
             auto node = qgraphicsitem_cast<nodegraph::Node*>(item);
-            if (node)
-                nodeIds.append(node->id());
+            if (node) nodeIds.append(node->id());
         }
         else if (item->type() == (int)nodegraph::SceneItemType::Frame) {
             auto frame = qgraphicsitem_cast<nodegraph::Frame*>(item);
-            if (frame)
-                frameIds.append(frame->id());
+            if (frame) frameIds.append(frame->id());
         }
         else if (item->type() == (int)nodegraph::SceneItemType::Comment) {
             auto comment = qgraphicsitem_cast<nodegraph::Comment*>(item);
-            if (comment)
-                commentIds.append(comment->id());
+            if (comment) commentIds.append(comment->id());
         }
     }
 
-    // Remove nodes, propagating dirty through the full downstream subgraph
-    for (const auto& id : nodeIds) {
-        auto ngNode = scene->getNodeById(id);
-        if (ngNode)
-            scene->removeNode(ngNode);
+    if (nodeIds.isEmpty() && frameIds.isEmpty() && commentIds.isEmpty())
+        return;
 
-        // Capture downstream nodes before their connections are removed
-        auto downstream = project->getNodeRightOfNode(id);
-
-        for (auto key : project->connections.keys()) {
-            auto con = project->connections[key];
-            if (con->leftNode->id == id || con->rightNode->id == id)
-                project->connections.remove(key);
+    if (undoStack)
+        undoStack->push(new DeleteItemsCommand(
+            project, scene, renderer, nodeIds, frameIds, commentIds));
+    else {
+        for (const auto& id : nodeIds) {
+            auto ngNode = scene->getNodeById(id);
+            if (ngNode) scene->removeNode(ngNode);
+            for (auto key : project->connections.keys()) {
+                auto con = project->connections.value(key);
+                if (con->leftNode->id == id || con->rightNode->id == id)
+                    project->connections.remove(key);
+            }
+            project->nodes.remove(id);
         }
-
-        // BFS-mark all transitive dependents dirty so they re-render
-        for (auto& dep : downstream)
-            project->markNodeAsDirty(dep);
-
-        project->nodes.remove(id);
+        for (const auto& id : frameIds) {
+            auto f = scene->getFrameById(id);
+            if (f) scene->removeFrame(f);
+            project->frames.remove(id);
+        }
+        for (const auto& id : commentIds) {
+            auto c = scene->getCommentById(id);
+            if (c) scene->removeComment(c);
+            project->comments.remove(id);
+        }
+        if (renderer) renderer->update();
     }
 
-    // Remove frames
-    for (const auto& id : frameIds) {
-        auto ngFrame = scene->getFrameById(id);
-        if (ngFrame)
-            scene->removeFrame(ngFrame);
-        project->frames.remove(id);
-    }
-
-    // Remove comments
-    for (const auto& id : commentIds) {
-        auto ngComment = scene->getCommentById(id);
-        if (ngComment)
-            scene->removeComment(ngComment);
-        project->comments.remove(id);
-    }
-
-    // Clear properties panel regardless of which item type was selected
     emit nodeSelectionChanged(TextureNodePtr(nullptr));
     emit frameSelectionChanged(FramePtr(nullptr));
     emit commentSelectionChanged(CommentPtr(nullptr));
-
-    scene->update();
-    if (renderer)
-        renderer->update();
 }
 
 void GraphWidget::executePaste()
@@ -555,67 +571,59 @@ void GraphWidget::executePaste()
     if (!project || !scene)
         return;
 
-    QList<TextureNodePtr> newNodes;
-    QList<ConnectionPtr> newConnections;
-    QList<CommentPtr> newComments;
-    QList<FramePtr> newFrames;
-
     QPointF viewCenter = graph->mapToScene(graph->viewport()->rect().center());
 
-    if (!Clipboard::pasteItems(project, viewCenter, newNodes, newConnections,
-                               newComments, newFrames))
-        return;
+    if (undoStack) {
+        auto* cmd = new PasteCommand(project, scene, renderer, viewCenter);
+        if (cmd->isEmpty()) { delete cmd; return; }
+        undoStack->push(cmd);
+    } else {
+        QList<TextureNodePtr> newNodes;
+        QList<ConnectionPtr> newConnections;
+        QList<CommentPtr> newComments;
+        QList<FramePtr> newFrames;
 
-    scene->clearSelection();
+        if (!Clipboard::pasteItems(project, viewCenter, newNodes, newConnections,
+                                   newComments, newFrames))
+            return;
 
-    // Add nodes
-    for (auto& node : newNodes) {
-        project->nodes[node->id] = node;
-        addNode(node);
-        auto ngNode = scene->getNodeById(node->id);
-        if (ngNode)
-            ngNode->setSelected(true);
+        scene->clearSelection();
+        for (auto& node : newNodes) {
+            project->nodes[node->id] = node;
+            addNode(node);
+            auto ngNode = scene->getNodeById(node->id);
+            if (ngNode) ngNode->setSelected(true);
+        }
+        for (auto& con : newConnections) {
+            project->connections[con->id] = con;
+            con->rightNode->isDirty = true;
+            auto l = scene->getNodeById(con->leftNode->id);
+            auto r = scene->getNodeById(con->rightNode->id);
+            if (l && r) scene->connectNodes(l, "output", r, con->rightNodeInputName);
+        }
+        for (auto& comment : newComments) {
+            project->comments[comment->id] = comment;
+            auto gc = nodegraph::Comment::create();
+            gc->setId(comment->id); gc->setText(comment->text);
+            gc->setPos(comment->pos.x(), comment->pos.y());
+            scene->addComment(gc); gc->setSelected(true);
+        }
+        for (auto& frame : newFrames) {
+            project->frames[frame->id] = frame;
+            auto gf = nodegraph::Frame::create();
+            gf->setId(frame->id); gf->setTitle(frame->text); gf->setColor(frame->color);
+            gf->setPos(frame->pos.x(), frame->pos.y());
+            if (frame->size.x() > 0 && frame->size.y() > 0)
+                gf->setSize(frame->size.x(), frame->size.y());
+            scene->addFrame(gf); gf->setSelected(true);
+        }
+        if (renderer) renderer->update();
     }
+}
 
-    // Add connections and invalidate the receiving node so it re-renders
-    for (auto& con : newConnections) {
-        project->connections[con->id] = con;
-        con->rightNode->isDirty = true;
-        auto leftNgNode = scene->getNodeById(con->leftNode->id);
-        auto rightNgNode = scene->getNodeById(con->rightNode->id);
-        if (leftNgNode && rightNgNode)
-            scene->connectNodes(leftNgNode, "output", rightNgNode,
-                                con->rightNodeInputName);
-    }
-
-    // Add comments
-    for (auto& comment : newComments) {
-        project->comments[comment->id] = comment;
-        auto gcomment = nodegraph::Comment::create();
-        gcomment->setId(comment->id);
-        gcomment->setText(comment->text);
-        gcomment->setPos(comment->pos.x(), comment->pos.y());
-        scene->addComment(gcomment);
-        gcomment->setSelected(true);
-    }
-
-    // Add frames
-    for (auto& frame : newFrames) {
-        project->frames[frame->id] = frame;
-        auto gframe = nodegraph::Frame::create();
-        gframe->setId(frame->id);
-        gframe->setTitle(frame->text);
-        gframe->setColor(frame->color);
-        gframe->setPos(frame->pos.x(), frame->pos.y());
-        if (frame->size.x() > 0 && frame->size.y() > 0)
-            gframe->setSize(frame->size.x(), frame->size.y());
-        scene->addFrame(gframe);
-        gframe->setSelected(true);
-    }
-
-    scene->update();
-    if (renderer)
-        renderer->update();
+void GraphWidget::setUndoStack(QUndoStack* stack)
+{
+    undoStack = stack;
 }
 
 void GraphWidget::addItemFromSearch(const QString& name, PopupItemType type,
@@ -625,42 +633,52 @@ void GraphWidget::addItemFromSearch(const QString& name, PopupItemType type,
     auto scenePos = graph->mapToScene(localPos);
 
     if (type == PopupItemType::Frame) {
-        auto frame = nodegraph::Frame::create();
-        frame->setPos(scenePos);
-        scene->addFrame(frame);
-
-        if (project) {
-            auto modelFrame = FramePtr(new Frame());
-            modelFrame->id = frame->id();
-            modelFrame->text = frame->title();
-            modelFrame->pos = QVector2D(scenePos.x(), scenePos.y());
-            project->frames[modelFrame->id] = modelFrame;
+        QString frameId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        if (undoStack)
+            undoStack->push(new AddFrameCommand(
+                project, scene, frameId, QVector2D(scenePos)));
+        else {
+            auto frame = nodegraph::Frame::create();
+            frame->setPos(scenePos);
+            scene->addFrame(frame);
+            if (project) {
+                auto modelFrame = FramePtr(new Frame());
+                modelFrame->id  = frame->id();
+                modelFrame->pos = QVector2D(scenePos);
+                project->frames[modelFrame->id] = modelFrame;
+            }
         }
     }
     else if (type == PopupItemType::Comment) {
-        auto comment = nodegraph::Comment::create();
-        comment->setPos(scenePos);
-        scene->addComment(comment);
-
-        if (project) {
-            auto modelComment = CommentPtr(new Comment());
-            modelComment->id = comment->id();
-            modelComment->text = comment->text();
-            modelComment->pos = QVector2D(scenePos.x(), scenePos.y());
-            project->comments[modelComment->id] = modelComment;
+        QString commentId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        if (undoStack)
+            undoStack->push(new AddCommentCommand(
+                project, scene, commentId, QVector2D(scenePos)));
+        else {
+            auto comment = nodegraph::Comment::create();
+            comment->setPos(scenePos);
+            scene->addComment(comment);
+            if (project) {
+                auto modelComment = CommentPtr(new Comment());
+                modelComment->id  = comment->id();
+                modelComment->pos = QVector2D(scenePos);
+                project->comments[modelComment->id] = modelComment;
+            }
         }
     }
     else {
         if (!project || !project->library)
             return;
 
-        auto node = project->library->createNode(name);
-        node->pos = QVector2D(scenePos);
-        this->project->addNode(node);
-        this->addNode(node);
-
-        if (this->renderer) {
-            this->renderer->update();
+        if (undoStack)
+            undoStack->push(new AddNodeCommand(
+                project, scene, renderer, name, QVector2D(scenePos)));
+        else {
+            auto node = project->library->createNode(name);
+            node->pos = QVector2D(scenePos);
+            project->addNode(node);
+            addNode(node);
+            if (renderer) renderer->update();
         }
     }
 }

@@ -1,0 +1,16 @@
+#pragma once
+
+#include "addcommentcommand.h"
+#include "addconnectioncommand.h"
+#include "addframecommand.h"
+#include "addnodecommand.h"
+#include "deleteitemscommand.h"
+#include "editcommentcommand.h"
+#include "editframecommand.h"
+#include "moveitemscommand.h"
+#include "pastecommand.h"
+#include "propertychangecommand.h"
+#include "randomseedchangecommand.h"
+#include "removeconnectioncommand.h"
+#include "texturechannelassigncommand.h"
+#include "undocommandids.h"

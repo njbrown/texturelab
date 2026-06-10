@@ -27,6 +27,7 @@
 #include "DockSplitter.h"
 
 #include "exporter.h"
+#include "undo/undocommands.h"
 #include "widgets/aboutdialog.h"
 #include "widgets/exportdialog.h"
 #include "widgets/graphwidget.h"
@@ -47,6 +48,9 @@
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 {
     resize(1280, 720);
+
+    undoStack = new QUndoStack(this);
+    connect(undoStack, &QUndoStack::cleanChanged, this, &MainWindow::onCleanChanged);
 
     this->setupMenus();
     this->setupToolbar();
@@ -140,36 +144,41 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 
     connect(this->propWidget, &PropertiesWidget::textureChannelUpdated,
             [this](const TextureChannel& name, const TextureNodePtr& node) {
-                if (this->renderer && !!this->project) {
-                    this->renderer->update();
-                }
+                if (!this->project)
+                    return;
 
-                if (!!this->project) {
-                    if (name == TextureChannel::None) {
-                        // Find and remove any channel that points to this node
-                        auto it = this->project->textureChannels.begin();
-                        while (it != this->project->textureChannels.end()) {
-                            if (it.value() == node->id) {
-                                it = this->project->textureChannels.erase(it);
-                            }
-                            else {
-                                ++it;
-                            }
-                        }
-                    }
-                    else {
-
-                        this->project->textureChannels[name] = node->id;
-                    }
-
-                    // assign channel to viewer
-                    // do this crudely by just reassigning all node textures
+                auto syncViewer = [this]() {
                     this->passTextureChannelsToViewer3D();
                     this->syncChannelLabelsToScene();
-                }
+                    this->view3DWidget->reRender();
+                    if (this->renderer)
+                        this->renderer->update();
+                };
 
-                // this->view3DWidget->update();
-                this->view3DWidget->reRender();
+                if (name == TextureChannel::None) {
+                    // Unassign this node from whichever channel it's in
+                    for (auto ch : this->project->textureChannels.keys()) {
+                        if (this->project->textureChannels[ch] == node->id) {
+                            QString oldNodeId = node->id;
+                            // Apply immediately, then push command (first-redo no-op)
+                            this->project->textureChannels.remove(ch);
+                            syncViewer();
+                            if (undoStack)
+                                undoStack->push(new TextureChannelAssignCommand(
+                                    this->project, ch, oldNodeId, "", syncViewer));
+                            break;
+                        }
+                    }
+                }
+                else {
+                    QString oldNodeId = this->project->textureChannels.value(name, "");
+                    // Apply immediately, then push command (first-redo no-op)
+                    this->project->textureChannels[name] = node->id;
+                    syncViewer();
+                    if (undoStack)
+                        undoStack->push(new TextureChannelAssignCommand(
+                            this->project, name, oldNodeId, node->id, syncViewer));
+                }
             });
 
     // set default empty project
@@ -291,6 +300,7 @@ void MainWindow::setProject(TextureProjectPtr project)
 
     this->propWidget->clearSelection();
     this->propWidget->setProject(project);
+    this->propWidget->setScene(this->graphWidget->scene);
 
     renderer = new TextureRenderer();
     renderer->setProject(project);
@@ -349,8 +359,8 @@ void MainWindow::setProject(TextureProjectPtr project)
 
     renderer->update();
 
-    // Update window title with project name
     setWindowTitle(project->name + " - TextureLab");
+    undoStack->clear();
 }
 
 void MainWindow::setupMenus()
@@ -371,8 +381,12 @@ void MainWindow::setupMenus()
     fileMenu->addAction("Edit", []() {});
 
     auto editMenu = this->menuBar()->addMenu("Edit");
-    editMenu->addAction("Undo", []() {});
-    editMenu->addAction("Redo", []() {});
+    auto undoAction = undoStack->createUndoAction(this, tr("Undo"));
+    undoAction->setShortcut(QKeySequence::Undo);
+    editMenu->addAction(undoAction);
+    auto redoAction = undoStack->createRedoAction(this, tr("Redo"));
+    redoAction->setShortcut(QKeySequence::Redo);
+    editMenu->addAction(redoAction);
     editMenu->addAction("Cut", [=]() { graphWidget->executeCut(); });
     editMenu->addAction("Copy", [=]() { graphWidget->executeCopy(); });
     editMenu->addAction("Paste", [=]() { graphWidget->executePaste(); });
@@ -397,16 +411,12 @@ void MainWindow::setupMenus()
         displayName.replace(".texture", "");
 
         examplesMenu->addAction(displayName, [this, example]() {
-            QString examplePath = ":examples/" + example;
-
-            // Load the example project
-            auto project = Project::loadTexture(examplePath);
-
-            // Set project name from filename
+            if (!promptSaveIfDirty())
+                return;
+            auto project = Project::loadTexture(":examples/" + example);
             QString projectName = example;
             projectName.replace(".texture", "");
             project->name = projectName;
-
             setProject(project);
         });
     }
@@ -426,9 +436,9 @@ void MainWindow::setupToolbar()
     QWidget* spacer = new QWidget();
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    // undo redo
-    toolBar->addAction("Undo");
-    toolBar->addAction("Redo");
+    // undo redo — reuse the same actions wired to the stack
+    toolBar->addAction(undoStack->createUndoAction(this));
+    toolBar->addAction(undoStack->createRedoAction(this));
 
     // spacer
     toolBar->addWidget(spacer);
@@ -489,6 +499,7 @@ void MainWindow::setupDocks()
 
     // graph goes in the center
     this->graphWidget = new GraphWidget();
+    this->graphWidget->setUndoStack(undoStack);
     this->view2DWidget = new View2DWidget();
     this->view3DWidget = new View3DWidget();
 
@@ -498,6 +509,7 @@ void MainWindow::setupDocks()
                             this->view2DWidget, graphArea);
 
     this->propWidget = new PropertiesWidget();
+    this->propWidget->setUndoStack(undoStack);
     auto rightArea = addDock("Properties", ads::RightDockWidgetArea,
                              this->propWidget, graphArea);
 
@@ -531,12 +543,14 @@ ads::CDockAreaWidget* MainWindow::addDock(const QString& title,
 
 void MainWindow::openProject()
 {
+    if (!promptSaveIfDirty())
+        return;
+
     auto filePath = QFileDialog::getOpenFileName(this, "Open Texture File", "",
                                                  "Texturelab File (*.texture)");
 
-    if (filePath.isNull() || filePath.isEmpty()) {
+    if (filePath.isNull() || filePath.isEmpty())
         return;
-    }
 
     auto project = Project::loadTexture(filePath);
 
@@ -548,7 +562,12 @@ void MainWindow::openProject()
     addToRecentFiles(filePath);
 }
 
-void MainWindow::newProject() { setProject(TextureProject::createEmpty()); }
+void MainWindow::newProject()
+{
+    if (!promptSaveIfDirty())
+        return;
+    setProject(TextureProject::createEmpty());
+}
 
 void MainWindow::saveProject()
 {
@@ -572,6 +591,7 @@ void MainWindow::saveProject()
     file.open(QIODevice::WriteOnly);
     file.write(Project::saveTexture(project));
     file.close();
+    undoStack->setClean();
     addToRecentFiles(project->filePath);
 }
 
@@ -580,9 +600,8 @@ void MainWindow::saveProjectAs()
     QString filePath = QFileDialog::getSaveFileName(
         this, "Save Texture As...", QString(), "Texturelab File (*.texture)");
 
-    if (filePath.isNull() || filePath.isEmpty()) {
+    if (filePath.isNull() || filePath.isEmpty())
         return;
-    }
 
     if (!filePath.endsWith(".texture", Qt::CaseInsensitive))
         filePath += ".texture";
@@ -591,7 +610,6 @@ void MainWindow::saveProjectAs()
 
     QFileInfo fileInfo(filePath);
     project->name = fileInfo.baseName();
-    setWindowTitle(project->name + " - TextureLab");
 
     graphWidget->syncPositionsToModel();
 
@@ -599,6 +617,8 @@ void MainWindow::saveProjectAs()
     file.open(QIODevice::WriteOnly);
     file.write(Project::saveTexture(project));
     file.close();
+    undoStack->setClean();
+    setWindowTitle(project->name + " - TextureLab");
     addToRecentFiles(project->filePath);
 }
 
@@ -789,6 +809,8 @@ void MainWindow::updateRecentFilesMenu()
         QFileInfo info(filePath);
         auto action =
             recentFilesMenu->addAction(info.fileName(), [this, filePath]() {
+                if (!promptSaveIfDirty())
+                    return;
                 auto project = Project::loadTexture(filePath);
                 QFileInfo fileInfo(filePath);
                 project->name = fileInfo.baseName();
@@ -807,9 +829,43 @@ void MainWindow::updateRecentFilesMenu()
                                [this]() { QSettings().remove("recentFiles"); });
 }
 
+void MainWindow::onCleanChanged(bool clean)
+{
+    if (!project)
+        return;
+    QString title = project->name + " - TextureLab";
+    setWindowTitle(clean ? title : "*" + title);
+}
+
+bool MainWindow::promptSaveIfDirty()
+{
+    if (undoStack->isClean())
+        return true;
+
+    QString name = project ? project->name : "Untitled";
+    auto choice = QMessageBox::question(
+        this, "Unsaved Changes",
+        QString("Save changes to \"%1\" before continuing?").arg(name),
+        QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+
+    if (choice == QMessageBox::Save) {
+        saveProject();
+        return undoStack->isClean(); // false if save was cancelled
+    }
+    return choice == QMessageBox::Discard;
+}
+
+void MainWindow::closeEvent(QCloseEvent* event)
+{
+    if (!promptSaveIfDirty()) {
+        event->ignore();
+        return;
+    }
+    event->accept();
+}
+
 MainWindow::~MainWindow()
 {
-    // Clean up renderer
     if (this->renderer) {
         delete this->renderer;
         this->renderer = nullptr;

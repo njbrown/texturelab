@@ -181,6 +181,34 @@ set(PROJECT_SOURCES
         ./widgets/view2dwidget.cpp
         ./widgets/view3dwidget.h
         ./widgets/view3dwidget.cpp
+        ./undo/undocommands.h
+        ./undo/undocommandids.h
+        ./undo/addnodecommand.h
+        ./undo/addnodecommand.cpp
+        ./undo/deleteitemscommand.h
+        ./undo/deleteitemscommand.cpp
+        ./undo/addconnectioncommand.h
+        ./undo/addconnectioncommand.cpp
+        ./undo/removeconnectioncommand.h
+        ./undo/removeconnectioncommand.cpp
+        ./undo/moveitemscommand.h
+        ./undo/moveitemscommand.cpp
+        ./undo/propertychangecommand.h
+        ./undo/propertychangecommand.cpp
+        ./undo/randomseedchangecommand.h
+        ./undo/randomseedchangecommand.cpp
+        ./undo/addframecommand.h
+        ./undo/addframecommand.cpp
+        ./undo/addcommentcommand.h
+        ./undo/addcommentcommand.cpp
+        ./undo/editframecommand.h
+        ./undo/editframecommand.cpp
+        ./undo/editcommentcommand.h
+        ./undo/editcommentcommand.cpp
+        ./undo/pastecommand.h
+        ./undo/pastecommand.cpp
+        ./undo/texturechannelassigncommand.h
+        ./undo/texturechannelassigncommand.cpp
         ./widgets/aboutdialog.h
         ./widgets/aboutdialog.cpp
         ./widgets/exportdialog.h

@@ -2,11 +2,13 @@
 #define MAINWINDOW_H
 
 #include "DockManager.h"
+#include <QCloseEvent>
 #include <QMainWindow>
 #include <QMenu>
 #include <QSettings>
 #include <QSharedPointer>
 #include <QString>
+#include <QUndoStack>
 
 class GraphWidget;
 class LibraryWidget;
@@ -33,6 +35,7 @@ protected:
     void setupToolbar();
     void setupMenus();
     void setupDocks();
+    void closeEvent(QCloseEvent* event) override;
 
     // menu callbacks
     void openProject();
@@ -51,12 +54,19 @@ protected:
     void addToRecentFiles(const QString& filePath);
     void updateRecentFilesMenu();
 
+    void onCleanChanged(bool clean);
+
+    // Returns false if the user cancelled a "save changes?" dialog.
+    bool promptSaveIfDirty();
+
     ads::CDockAreaWidget* addDock(const QString& title,
                                   ads::DockWidgetArea area, QWidget* widget,
                                   ads::CDockAreaWidget* areaWidget);
 
 private:
     static constexpr int MaxRecentFiles = 10;
+
+    QUndoStack* undoStack;
 
     ads::CDockManager* dockManager;
     QMenu* recentFilesMenu;

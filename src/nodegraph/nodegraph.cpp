@@ -132,27 +132,24 @@ void NodeGraph::scaleDown()
 void NodeGraph::keyPressEvent(QKeyEvent* event)
 {
     if (event->key() == Qt::Key_Delete) {
-        auto items = this->_scene->selectedItems();
-        for (auto item : items) {
-            if (item->type() == (int)SceneItemType::Node) {
-                auto node = qgraphicsitem_cast<Node*>(item);
-                auto nodePtr = node->sharedFromThis();
-                this->_scene->removeNode(nodePtr);
-                emit nodeRemoved(nodePtr);
-            }
-            else if (item->type() == (int)SceneItemType::Frame) {
-                auto frame = qgraphicsitem_cast<Frame*>(item);
-                this->_scene->removeFrame(frame->sharedFromThis());
-            }
-            else if (item->type() == (int)SceneItemType::Comment) {
-                auto comment = qgraphicsitem_cast<Comment*>(item);
-                this->_scene->removeComment(comment->sharedFromThis());
-            }
+        QList<NodePtr> selectedNodes;
+        QList<FramePtr> selectedFrames;
+        QList<CommentPtr> selectedComments;
+
+        for (auto item : this->_scene->selectedItems()) {
+            if (item->type() == (int)SceneItemType::Node)
+                selectedNodes.append(qgraphicsitem_cast<Node*>(item)->sharedFromThis());
+            else if (item->type() == (int)SceneItemType::Frame)
+                selectedFrames.append(qgraphicsitem_cast<Frame*>(item)->sharedFromThis());
+            else if (item->type() == (int)SceneItemType::Comment)
+                selectedComments.append(qgraphicsitem_cast<Comment*>(item)->sharedFromThis());
         }
+
+        if (!selectedNodes.isEmpty() || !selectedFrames.isEmpty() || !selectedComments.isEmpty())
+            emit deleteRequested(selectedNodes, selectedFrames, selectedComments);
     }
 
     QGraphicsView::keyPressEvent(event);
-
     this->invalidateScene(QRect(-1000, -1000, 1000, 1000));
 }
 
@@ -315,6 +312,13 @@ bool NodeGraph::sceneMousePressEvent(QGraphicsSceneMouseEvent* event)
     if (mbStates.left) {
         auto scenePos = event->scenePos();
         auto rawPort = this->getPortAtScenePos(scenePos.x(), scenePos.y());
+        if (!rawPort) {
+            // Record node positions for move-tracking (no port drag starting)
+            _preDragPositions.clear();
+            for (auto& node : _scene->nodes)
+                _preDragPositions[node->id()] = node->getCenter();
+            _trackingMove = true;
+        }
         if (rawPort) {
             // auto port = rawPort->node->getPortById(rawPort->id());
             // gotta cast to get the non-const version
@@ -489,6 +493,24 @@ bool NodeGraph::sceneMouseReleaseEvent(QGraphicsSceneMouseEvent* event)
         _scene->removeItem(activeCon.data());
         activeCon.clear();
     }
+
+    // Emit move command if nodes changed position
+    if (_trackingMove && !activeCon) {
+        QMap<QString, QPointF> newPositions;
+        bool moved = false;
+        for (auto it = _preDragPositions.begin(); it != _preDragPositions.end(); ++it) {
+            auto node = _scene->nodes.value(it.key());
+            if (!node)
+                continue;
+            QPointF newPos = node->getCenter();
+            newPositions[it.key()] = newPos;
+            if (newPos != it.value())
+                moved = true;
+        }
+        if (moved)
+            emit itemsMoveFinished(_preDragPositions, newPositions);
+    }
+    _trackingMove = false;
 
     // important to reset drag!
     this->setDragMode(QGraphicsView::RubberBandDrag);

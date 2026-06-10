@@ -111,11 +111,24 @@ private:
     QList<ConnectionPtr> cons;
     QList<Node*> _nodesWithSocketNamesShown;
 
+    // Position tracking for move commands
+    bool _trackingMove = false;
+    QMap<QString, QPointF> _preDragPositions;
+
 signals:
     void connectionAdded(ConnectionPtr con);
     void connectionRemoved(ConnectionPtr con);
     void nodeAdded(NodePtr node);
     void nodeRemoved(NodePtr node);
+
+    // Emitted instead of directly deleting; GraphWidget pushes the undo command
+    void deleteRequested(QList<NodePtr> nodes,
+                         QList<FramePtr> frames,
+                         QList<CommentPtr> comments);
+
+    // Emitted on mouse-release when selected nodes moved; oldPos/newPos keyed by node id
+    void itemsMoveFinished(QMap<QString, QPointF> oldPositions,
+                           QMap<QString, QPointF> newPositions);
 
     // null nodeptr means no active node selected
     void nodeSelectionChanged(const NodePtr& node);
