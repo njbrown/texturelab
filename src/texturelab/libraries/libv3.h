@@ -49,6 +49,11 @@ public:
 // Phase 2 — Generator nodes
 // ---------------------------------------------------------------------------
 
+class Bricks2Node : public TextureNode {
+public:
+    void init() override;
+};
+
 class DirectionalScratchesNode : public TextureNode {
 public:
     void init() override;

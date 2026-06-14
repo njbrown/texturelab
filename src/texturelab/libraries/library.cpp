@@ -253,6 +253,8 @@ Library* createLibraryV3()
     // -----------------------------------------------------------------------
     // Phase 2 — Generators
     // -----------------------------------------------------------------------
+    lib->addNode<Bricks2Node>("bricks2", "Bricks 2",
+                              ":nodes/brickgenerator.png");
     lib->addNode<DirectionalScratchesNode>(
         "directionalscratches", "Directional Scratches", ":nodes/cell.png");
     lib->addNode<RoughGrainNode>("roughgrain", "Rough Grain",

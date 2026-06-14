@@ -123,6 +123,7 @@ set(LIBRARYV3
     ./libraries/v3/toongradient.cpp
     ./libraries/v3/autolevels.cpp
     # Phase 2 — Generators
+    ./libraries/v3/bricks2.cpp
     ./libraries/v3/directionalscratches.cpp
     ./libraries/v3/roughgrain.cpp
     ./libraries/v3/voronoifractal.cpp
