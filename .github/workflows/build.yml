@@ -208,15 +208,24 @@ jobs:
             esac
           }
 
+          download_line() {
+            local result="$1" label="$2" url="$3"
+            if [[ "$result" == "success" ]]; then
+              echo "$(status_emoji "$result") **$label** — [Download]($url)"
+            else
+              echo "$(status_emoji "$result") **$label** — build $result"
+            fi
+          }
+
           if [[ "$LINUX_RESULT" == "success" && "$WINDOWS_RESULT" == "success" && "$MACOS_RESULT" == "success" ]]; then
             TITLE="Build succeeded — $BRANCH @ $SHORT_SHA"
             COLOR=3066993
-            DESCRIPTION="[Linux]($S3_BASE/linux-$SHA.zip) · [Windows]($S3_BASE/windows-$SHA.zip) · [macOS]($S3_BASE/macos-$SHA.zip)"
           else
             TITLE="Build failed — $BRANCH @ $SHORT_SHA"
             COLOR=15158332
-            DESCRIPTION="$(status_emoji $LINUX_RESULT) Linux · $(status_emoji $WINDOWS_RESULT) Windows · $(status_emoji $MACOS_RESULT) macOS\n[View run]($RUN_URL)"
           fi
+
+          DESCRIPTION="$(download_line "$LINUX_RESULT" "Linux" "$S3_BASE/linux-$SHA.zip")\n$(download_line "$WINDOWS_RESULT" "Windows" "$S3_BASE/windows-$SHA.zip")\n$(download_line "$MACOS_RESULT" "macOS" "$S3_BASE/macos-$SHA.zip")\n\n[View run]($RUN_URL)"
 
           curl -s -X POST "$DISCORD_WEBHOOK" \
             -H "Content-Type: application/json" \
