@@ -15,6 +15,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QMimeData>
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
 #include <QProgressBar>
@@ -52,6 +53,7 @@
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 {
     resize(1280, 720);
+    setAcceptDrops(true);
 
     undoStack = new QUndoStack(this);
     connect(undoStack, &QUndoStack::cleanChanged, this, &MainWindow::onCleanChanged);
@@ -567,8 +569,20 @@ void MainWindow::openProject()
     if (filePath.isNull() || filePath.isEmpty())
         return;
 
+    openProjectFromPath(filePath);
+}
+
+void MainWindow::openProjectFromPath(const QString& filePath)
+{
+    if (!promptSaveIfDirty())
+        return;
+
     QFile file(filePath);
-    file.open(QIODevice::ReadOnly);
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::warning(this, "Open Texture",
+                             "Could not open file:\n" + filePath);
+        return;
+    }
     auto json = QJsonDocument::fromJson(file.readAll()).object();
     file.close();
 
@@ -601,6 +615,41 @@ void MainWindow::openProject()
 
     setProject(project);
     addToRecentFiles(filePath);
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent* event)
+{
+    if (!event->mimeData()->hasUrls()) {
+        event->ignore();
+        return;
+    }
+
+    for (const auto& url : event->mimeData()->urls()) {
+        if (url.isLocalFile() &&
+            url.toLocalFile().endsWith(".texture", Qt::CaseInsensitive)) {
+            event->acceptProposedAction();
+            return;
+        }
+    }
+    event->ignore();
+}
+
+void MainWindow::dropEvent(QDropEvent* event)
+{
+    for (const auto& url : event->mimeData()->urls()) {
+        if (!url.isLocalFile())
+            continue;
+
+        auto filePath = url.toLocalFile();
+        if (!filePath.endsWith(".texture", Qt::CaseInsensitive))
+            continue;
+
+        event->acceptProposedAction();
+        openProjectFromPath(filePath);
+        return;
+    }
+
+    event->ignore();
 }
 
 void MainWindow::upgradeCurrentProjectLibrary()
@@ -882,17 +931,8 @@ void MainWindow::updateRecentFilesMenu()
 
     for (const QString& filePath : files) {
         QFileInfo info(filePath);
-        auto action =
-            recentFilesMenu->addAction(info.fileName(), [this, filePath]() {
-                if (!promptSaveIfDirty())
-                    return;
-                auto project = Project::loadTexture(filePath);
-                QFileInfo fileInfo(filePath);
-                project->name = fileInfo.baseName();
-                project->filePath = filePath;
-                setProject(project);
-                addToRecentFiles(filePath);
-            });
+        auto action = recentFilesMenu->addAction(
+            info.fileName(), [this, filePath]() { openProjectFromPath(filePath); });
         action->setToolTip(filePath);
     }
 

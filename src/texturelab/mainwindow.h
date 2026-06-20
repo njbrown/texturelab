@@ -3,6 +3,8 @@
 
 #include "DockManager.h"
 #include <QCloseEvent>
+#include <QDragEnterEvent>
+#include <QDropEvent>
 #include <QMainWindow>
 #include <QMenu>
 #include <QSettings>
@@ -36,9 +38,16 @@ protected:
     void setupMenus();
     void setupDocks();
     void closeEvent(QCloseEvent* event) override;
+    void dragEnterEvent(QDragEnterEvent* event) override;
+    void dropEvent(QDropEvent* event) override;
 
     // menu callbacks
     void openProject();
+
+    // Shared by the Open dialog, recent-files menu, and drag-and-drop:
+    // prompts to save if dirty, reads the file, offers the
+    // version-upgrade dialog if needed, then loads it.
+    void openProjectFromPath(const QString& filePath);
     void newProject();
     void saveProject();
     void saveProjectAs();

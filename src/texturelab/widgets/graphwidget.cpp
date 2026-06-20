@@ -379,14 +379,22 @@ void GraphWidget::syncPositionsToModel()
 
 void GraphWidget::dragEnterEvent(QDragEnterEvent* evt)
 {
-    // qDebug() << "Drag enter";
-    evt->acceptProposedAction();
+    // Only claim drags we actually handle (nodes/frames/comments dragged
+    // from the Library panel). Anything else — e.g. a .texture file
+    // dragged in from the OS — must be left ignored so Qt forwards it up
+    // to MainWindow's dragEnterEvent instead of it being swallowed here.
+    if (evt->mimeData()->hasFormat(LIBRARY_ITEM_MIME_FORMAT))
+        evt->acceptProposedAction();
+    else
+        evt->ignore();
 }
 
 void GraphWidget::dragMoveEvent(QDragMoveEvent* evt)
 {
-    // qDebug() << "drag move";
-    evt->acceptProposedAction();
+    if (evt->mimeData()->hasFormat(LIBRARY_ITEM_MIME_FORMAT))
+        evt->acceptProposedAction();
+    else
+        evt->ignore();
 }
 
 void GraphWidget::dropEvent(QDropEvent* evt)
@@ -445,6 +453,9 @@ void GraphWidget::dropEvent(QDropEvent* evt)
         }
 
         evt->accept();
+    }
+    else {
+        evt->ignore();
     }
 }
 
