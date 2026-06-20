@@ -65,6 +65,7 @@ struct Material {
     GLuint roughnessMapId = 0;
     GLuint heightMapId = 0;
     GLuint aoMapId = 0;
+    GLuint alphaMapId = 0;
 
     // QOpenGLTexture* albedoMap = nullptr;
     // QOpenGLTexture* normalMap = nullptr;

@@ -108,6 +108,8 @@ public:
     void setHeightScale(float scale);
     void setAoTexture(GLuint texId);
     void clearAoTexture();
+    void setAlphaTexture(GLuint texId);
+    void clearAlphaTexture();
     void resetMaterial();
 
     void clearTextures();

@@ -142,11 +142,21 @@ void Viewer3D::paintGL()
         gl->glDepthFunc(GL_LESS);
     }
 
-    // render gltf mesh
+    // render gltf mesh, double-sided: draw the back faces first and the
+    // front faces second so alpha-blended fragments composite back-to-front
     gl->glEnable(GL_BLEND);
     gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    gl->glEnable(GL_CULL_FACE);
+
+    gl->glCullFace(GL_FRONT);
     renderer->renderGltfMesh(gltfMesh, material, camPos, worldMatrix,
                              viewMatrix, projMatrix);
+
+    gl->glCullFace(GL_BACK);
+    renderer->renderGltfMesh(gltfMesh, material, camPos, worldMatrix,
+                             viewMatrix, projMatrix);
+
+    gl->glDisable(GL_CULL_FACE);
     gl->glDisable(GL_BLEND);
 
     // test several in a row
@@ -549,6 +559,20 @@ void Viewer3D::clearAoTexture()
     this->material->needsUpdate = true;
 }
 
+void Viewer3D::setAlphaTexture(GLuint texId)
+{
+    this->material->alphaMapId = texId;
+    this->material->needsUpdate = true;
+}
+
+void Viewer3D::clearAlphaTexture()
+{
+    if (!this->material)
+        return;
+    this->material->alphaMapId = 0;
+    this->material->needsUpdate = true;
+}
+
 void Viewer3D::clearTextures()
 {
     this->clearAlbedoTexture();
@@ -557,6 +581,7 @@ void Viewer3D::clearTextures()
     this->clearRoughnessTexture();
     this->clearHeightTexture();
     this->clearAoTexture();
+    this->clearAlphaTexture();
 }
 
 void Viewer3D::resetCamera()

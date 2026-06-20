@@ -239,6 +239,9 @@ void MainWindow::passTextureChannelsToViewer3D()
         case TextureChannel::AO:
             viewer->setAoTexture(node->textureId());
             break;
+        case TextureChannel::Alpha:
+            viewer->setAlphaTexture(node->textureId());
+            break;
         default:
             break;
         }
@@ -347,6 +350,9 @@ void MainWindow::setProject(TextureProjectPtr project)
                             break;
                         case TextureChannel::AO:
                             viewer->setAoTexture(texId);
+                            break;
+                        case TextureChannel::Alpha:
+                            viewer->setAlphaTexture(texId);
                             break;
                         default:
                             break;
