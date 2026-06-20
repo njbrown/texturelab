@@ -616,14 +616,15 @@ public:
             return;
 
         auto parts = stringData.split(";base64,");
-        if (parts.length() == 0 || parts.length() == 1)
+        if (parts.length() < 2)
             return;
 
-        auto bytes = QByteArray::fromBase64(parts[0].toUtf8());
+        auto bytes = QByteArray::fromBase64(parts[1].toUtf8());
 
         QImage image;
-        image.loadFromData(QByteArray::fromBase64(stringData.toUtf8()));
-        this->value = value;
+        image.loadFromData(bytes);
+        this->value = image;
+        _textureDirty = true;
     }
 
     QJsonValue toJsonValue() override
@@ -647,13 +648,14 @@ public:
             return;
 
         auto parts = stringData.split(";base64,");
-        if (parts.length() == 0 || parts.length() == 1)
+        if (parts.length() < 2)
             return;
 
-        auto bytes = QByteArray::fromBase64(parts[0].toUtf8());
+        auto bytes = QByteArray::fromBase64(parts[1].toUtf8());
 
         QImage image;
-        image.loadFromData(QByteArray::fromBase64(stringData.toUtf8()));
-        this->value = value;
+        image.loadFromData(bytes);
+        this->value = image;
+        _textureDirty = true;
     }
 };
