@@ -618,6 +618,18 @@ void MainWindow::upgradeCurrentProjectLibrary()
     if (!migrator.needsMigration())
         return;
 
+    auto choice = QMessageBox::warning(
+        this, "Upgrade Library Version?",
+        "Upgrading the library version is irreversible and clears the "
+        "undo/redo history for this session.\n\n"
+        "Save your project (or save a copy) first if you want to keep the "
+        "ability to go back to the current version.\n\n"
+        "Continue with the upgrade?",
+        QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel);
+
+    if (choice != QMessageBox::Yes)
+        return;
+
     auto newProject = Project::loadTextureFromJson(migrator.migrate());
     newProject->name = this->project->name;
     newProject->filePath = this->project->filePath;
