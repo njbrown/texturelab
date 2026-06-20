@@ -125,6 +125,13 @@ bool LibraryVersionMigrator::looksLegacy(const QJsonObject& json)
     for (const auto& item : nodes) {
         auto typeName = item.toObject()["typeName"].toString();
         for (const auto& entry : v2ToV3Table()) {
+            // Entries where oldTypeName == newTypeName (blend, cell,
+            // linecell, solidcell) only changed which class backs that
+            // name — the name itself is just as valid in a current-version
+            // file, so it can't be used as a legacy signal. Only count
+            // typeNames that were actually removed/renamed.
+            if (entry.oldTypeName == entry.newTypeName)
+                continue;
             if (entry.oldTypeName == typeName)
                 return true;
         }
