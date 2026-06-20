@@ -165,6 +165,10 @@ set(PROJECT_SOURCES
         ./libraries/libv3.h
         ./libraries/library.h
         ./libraries/library.cpp
+        ./libraries/libversion.h
+        ./libraries/libversion.cpp
+        ./libraries/libraryversionmigrator.h
+        ./libraries/libraryversionmigrator.cpp
         ./widgets/graphwidget.h
         ./widgets/graphwidget.cpp
         ./widgets/librarywidget.h

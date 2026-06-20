@@ -7,6 +7,8 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
 #include <QLayout>
 #include <QList>
@@ -39,6 +41,8 @@
 #include "viewer3d.h"
 
 #include "models.h"
+#include "libraries/libraryversionmigrator.h"
+#include "libraries/libversion.h"
 #include "project.h"
 #include "props.h"
 
@@ -300,6 +304,9 @@ void MainWindow::setProject(TextureProjectPtr project)
     this->graphWidget->setTextureProject(project);
     this->syncChannelLabelsToScene();
     this->libraryWidget->setLibrary(project->library);
+    this->libraryWidget->setLibraryVersion(
+        project->libraryVersion,
+        project->libraryVersion == libVersionToString(currentLibVersion()));
 
     this->propWidget->clearSelection();
     this->propWidget->setProject(project);
@@ -520,6 +527,8 @@ void MainWindow::setupDocks()
                              this->propWidget, graphArea);
 
     this->libraryWidget = new LibraryWidget();
+    connect(this->libraryWidget, &LibraryWidget::upgradeRequested, this,
+            &MainWindow::upgradeCurrentProjectLibrary);
     setWidgetRatiosInArea(graphArea, {1.0f / 5, 3.0f / 5, 1.0f / 5});
 
     addDock("3D View", ads::BottomDockWidgetArea, this->view3DWidget, leftArea);
@@ -558,7 +567,33 @@ void MainWindow::openProject()
     if (filePath.isNull() || filePath.isEmpty())
         return;
 
-    auto project = Project::loadTexture(filePath);
+    QFile file(filePath);
+    file.open(QIODevice::ReadOnly);
+    auto json = QJsonDocument::fromJson(file.readAll()).object();
+    file.close();
+
+    LibraryVersionMigrator migrator(json);
+    if (migrator.needsMigration()) {
+        QStringList chain;
+        chain << libVersionToString(migrator.sourceVersion());
+        for (auto v : migrator.versionsCrossed())
+            chain << libVersionToString(v);
+
+        auto choice = QMessageBox::question(
+            this, "Upgrade Texture?",
+            QString("This texture was created with library version %1.\n\n"
+                    "Upgrade it to %2 (%3) to use the latest nodes and "
+                    "improvements? A few node behaviors may change slightly.")
+                .arg(libVersionToString(migrator.sourceVersion()),
+                     libVersionToString(migrator.targetVersion()),
+                     chain.join(" → ")),
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+
+        if (choice == QMessageBox::Yes)
+            json = migrator.migrate();
+    }
+
+    auto project = Project::loadTextureFromJson(json);
 
     QFileInfo fileInfo(filePath);
     project->name = fileInfo.baseName();
@@ -566,6 +601,28 @@ void MainWindow::openProject()
 
     setProject(project);
     addToRecentFiles(filePath);
+}
+
+void MainWindow::upgradeCurrentProjectLibrary()
+{
+    if (!this->project)
+        return;
+
+    // Round-trip through the same JSON the file format uses, so the live
+    // "Upgrade" button in the Library dock goes through the exact same
+    // pure-JSON migration path as opening a legacy file does.
+    auto bytes = Project::saveTexture(this->project);
+    auto json = QJsonDocument::fromJson(bytes).object();
+
+    LibraryVersionMigrator migrator(json);
+    if (!migrator.needsMigration())
+        return;
+
+    auto newProject = Project::loadTextureFromJson(migrator.migrate());
+    newProject->name = this->project->name;
+    newProject->filePath = this->project->filePath;
+
+    setProject(newProject);
 }
 
 void MainWindow::newProject()

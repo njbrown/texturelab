@@ -1,5 +1,7 @@
 #include "project.h"
 #include "libraries/library.h"
+#include "libraries/libraryversionmigrator.h"
+#include "libraries/libversion.h"
 #include "props.h"
 #include <QFile>
 #include <QJsonArray>
@@ -12,7 +14,7 @@ TextureProjectPtr Project::loadTexture(QString path)
     QFile file(path);
     file.open(QIODevice::ReadOnly);
     QJsonParseError error;
-    auto json = QJsonDocument::fromJson(file.readAll(), &error);
+    auto doc = QJsonDocument::fromJson(file.readAll(), &error);
     file.close();
 
     if (error.error) {
@@ -20,13 +22,21 @@ TextureProjectPtr Project::loadTexture(QString path)
         return TextureProjectPtr(nullptr);
     }
 
+    return Project::loadTextureFromJson(doc.object());
+}
+
+TextureProjectPtr Project::loadTextureFromJson(QJsonObject json)
+{
     TextureProjectPtr texture(new TextureProject());
 
-    // qDebug() << json["libraryVersion"].toString();
-
-    // create library from version
-    // Library *lib = new LibraryV1();
-    Library* lib = createLibraryV3();
+    // Pick the library matching this JSON's own version, so legacy
+    // typeNames (e.g. "floodfill", "bevel", "perlin3d") that no longer
+    // exist in the current library still resolve instead of crashing.
+    // Callers that want the file upgraded should run it through
+    // LibraryVersionMigrator first and pass in the migrated JSON.
+    LibVersion version = LibraryVersionMigrator(json).sourceVersion();
+    Library* lib = createLibraryForVersion(version);
+    texture->libraryVersion = libVersionToString(version);
 
     // scene objects
     auto sceneObj = json["scene"].toObject();
@@ -227,6 +237,9 @@ QByteArray Project::saveTexture(TextureProjectPtr texture)
         conArray.append(conObj);
     }
     json["connections"] = conArray;
+
+    // library version this project's nodes/properties were saved against
+    json["libraryVersion"] = texture->libraryVersion;
 
     // export settings
     QJsonObject exportObj;

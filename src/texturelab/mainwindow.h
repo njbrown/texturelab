@@ -51,6 +51,10 @@ protected:
 
     void setProject(TextureProjectPtr project);
 
+    // Upgrades the currently open project's library in place, via the
+    // Library dock panel's "Upgrade" button.
+    void upgradeCurrentProjectLibrary();
+
     void addToRecentFiles(const QString& filePath);
     void updateRecentFilesMenu();
 

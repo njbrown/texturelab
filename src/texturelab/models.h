@@ -72,6 +72,7 @@ public:
     QMap<TextureChannel, QString> textureChannels;
 
     Library* library = nullptr;
+    QString libraryVersion = "v3";
 
     QMap<QString, TextureNodePtr> nodes;
     QMap<QString, ConnectionPtr> connections;

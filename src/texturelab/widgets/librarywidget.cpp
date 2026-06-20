@@ -3,11 +3,14 @@
 #include "./libraries/library.h"
 
 #include <QFont>
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QMimeData>
+#include <QPushButton>
 #include <QResizeEvent>
 #include <QScrollBar>
 #include <QVBoxLayout>
@@ -28,6 +31,24 @@ LibraryWidget::LibraryWidget() : QWidget()
     this->setMinimumWidth(100);
     this->setLayout(new QVBoxLayout());
 
+    // library version indicator + upgrade button
+    auto versionRow = new QWidget(this);
+    auto versionLayout = new QHBoxLayout(versionRow);
+    versionLayout->setContentsMargins(0, 0, 0, 0);
+
+    versionLabel = new QLabel(versionRow);
+    versionLayout->addWidget(versionLabel);
+
+    versionLayout->addStretch();
+
+    upgradeButton = new QPushButton("Upgrade", versionRow);
+    upgradeButton->setVisible(false);
+    connect(upgradeButton, &QPushButton::clicked,
+            this, &LibraryWidget::upgradeRequested);
+    versionLayout->addWidget(upgradeButton);
+
+    this->layout()->addWidget(versionRow);
+
     // search box
     searchBar = new QLineEdit(this);
     searchBar->setPlaceholderText("search");
@@ -43,6 +64,19 @@ LibraryWidget::LibraryWidget() : QWidget()
     this->layout()->addWidget(listWidget);
 
     this->setLibrary(nullptr);
+}
+
+void LibraryWidget::setLibraryVersion(const QString& version, bool isCurrent)
+{
+    if (isCurrent) {
+        versionLabel->setText(QString("Library: %1").arg(version));
+        versionLabel->setStyleSheet("");
+    }
+    else {
+        versionLabel->setText(QString("Library: %1 (outdated)").arg(version));
+        versionLabel->setStyleSheet("color: orange;");
+    }
+    upgradeButton->setVisible(!isCurrent);
 }
 
 void LibraryWidget::addSpecialItem(const QString& name,
