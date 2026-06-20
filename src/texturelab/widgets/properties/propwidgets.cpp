@@ -394,9 +394,10 @@ bool ColorPropWidget::eventFilter(QObject* obj, QEvent* event)
                         emit valueChanged(color); // signal value changed
                     }
                 });
+        connect(picker, &ColorPicker::onClosed, picker,
+                &ColorPicker::deleteLater);
 
-        picker->exec();
-        delete picker;
+        picker->show();
 
         return true;
     }
