@@ -33,6 +33,11 @@ public:
     void init() override;
 };
 
+class SetAlphaNode : public TextureNode {
+public:
+    void init() override;
+};
+
 class ToonGradientNode : public TextureNode {
 public:
     void init() override;

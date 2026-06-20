@@ -245,6 +245,7 @@ Library* createLibraryV3()
     lib->addNode<VibranceNode>("vibrance", "Vibrance", ":nodes/hsl.png");
     lib->addNode<ColorToMaskNode>("colortomask", "Color To Mask",
                                   ":nodes/extractchannel.png");
+    lib->addNode<SetAlphaNode>("setalpha", "Set Alpha", ":nodes/rgbamerge.png");
     lib->addNode<ToonGradientNode>("toongradient", "Toon Gradient",
                                    ":nodes/gradientmap.png");
     lib->addNode<AutoLevelsNode>("autolevels", "Auto Levels",

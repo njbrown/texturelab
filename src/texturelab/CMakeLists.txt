@@ -120,6 +120,7 @@ set(LIBRARYV3
     ./libraries/v3/emboss.cpp
     ./libraries/v3/vibrance.cpp
     ./libraries/v3/colortomask.cpp
+    ./libraries/v3/setalpha.cpp
     ./libraries/v3/toongradient.cpp
     ./libraries/v3/autolevels.cpp
     # Phase 2 — Generators
