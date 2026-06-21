@@ -22,7 +22,17 @@ const QVector<NodeTypeMigration>& v2ToV3Table()
         {"floodfilltogradient", "floodfillv2togradient", {}},
         {"floodfilltorandomcolor", "floodfillv2torandomcolor", {}},
         {"floodfilltorandomintensity", "floodfillv2torandomintensity", {}},
-        {"bevel", "bevelv2", {}},
+        // bevelv2 added "invert" and "scaleInvariant" toggles that don't
+        // exist on the old bevel node. Their library defaults (false,
+        // true) are tuned for new nodes; a migrated node needs the
+        // opposite of both to reproduce the old node's look: old bevel's
+        // output polarity was flipped relative to bevelv2's, and old
+        // bevel always worked in raw pixel distance (not normalized
+        // against texture resolution).
+        {"bevel", "bevelv2", {}, QJsonObject{
+            {"invert", true},
+            {"scaleInvariant", false},
+        }},
         {"perlin3d", "perlinnoise3d", {}},
         {"blend", "blend", {}},       // same name, new class (BlendV3Node)
         {"cell", "cell", {}},         // same name, new class (CellV3Node)
@@ -100,8 +110,10 @@ QJsonArray LibraryVersionMigrator::applyStep(
 
             nodeObj["typeName"] = entry.newTypeName;
 
-            if (!entry.propertyKeyRenames.isEmpty()) {
+            if (!entry.propertyKeyRenames.isEmpty() ||
+                !entry.migratedPropertyDefaults.isEmpty()) {
                 auto props = nodeObj["properties"].toObject();
+
                 for (auto it = entry.propertyKeyRenames.begin();
                      it != entry.propertyKeyRenames.end(); ++it) {
                     if (props.contains(it.key())) {
@@ -109,6 +121,12 @@ QJsonArray LibraryVersionMigrator::applyStep(
                         props.remove(it.key());
                     }
                 }
+
+                for (auto it = entry.migratedPropertyDefaults.begin();
+                     it != entry.migratedPropertyDefaults.end(); ++it) {
+                    props[it.key()] = it.value();
+                }
+
                 nodeObj["properties"] = props;
             }
             break;

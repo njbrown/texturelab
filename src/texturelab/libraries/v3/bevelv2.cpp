@@ -15,6 +15,8 @@ struct BevelV2RenderData : public NodeRenderData {
     float distance = 50.0f;
     float threshold = 0.5f;
     int shape = 0; // 0=Linear, 1=Round, 2=Smooth
+    bool invert = false;
+    bool scaleInvariant = true;
 };
 
 // ============================================================================
@@ -23,8 +25,7 @@ struct BevelV2RenderData : public NodeRenderData {
 
 class BevelV2Renderer : public NodeTextureRenderer {
 public:
-    void render(NodeRenderContext& ctx,
-                const NodeRenderData& baseData) override
+    void render(NodeRenderContext& ctx, const NodeRenderData& baseData) override
     {
         auto& data = static_cast<const BevelV2RenderData&>(baseData);
         auto gl = ctx.gl;
@@ -43,12 +44,12 @@ public:
         }
 
         // Compile shaders (cached after first call)
-        GLuint seedShader = cache->getOrCompileShader(
-            "jfa_seed", standardVert(), seedFrag());
-        GLuint jfaShader = cache->getOrCompileShader(
-            "jfa_step", standardVert(), jfaFrag());
-        GLuint bevelShader = cache->getOrCompileShader(
-            "jfa_bevel", standardVert(), bevelFrag());
+        GLuint seedShader =
+            cache->getOrCompileShader("jfa_seed", standardVert(), seedFrag());
+        GLuint jfaShader =
+            cache->getOrCompileShader("jfa_step", standardVert(), jfaFrag());
+        GLuint bevelShader =
+            cache->getOrCompileShader("jfa_bevel", standardVert(), bevelFrag());
 
         // Acquire two intermediate textures for ping-pong
         GLuint texA = cache->acquireTexture(w, h);
@@ -58,9 +59,10 @@ public:
         cache->bindFboToTexture(texA);
         ctx.useShader(seedShader);
         ctx.bindTexture(seedShader, "image", ctx.inputs[0].textureId, 0);
-        gl->glUniform1f(
-            gl->glGetUniformLocation(seedShader, "u_threshold"),
-            data.threshold);
+        gl->glUniform1f(gl->glGetUniformLocation(seedShader, "u_threshold"),
+                        data.threshold);
+        gl->glUniform1i(gl->glGetUniformLocation(seedShader, "u_invert"),
+                        data.invert ? 1 : 0);
         ctx.drawQuad();
 
         // --- JFA iteration (ping-pong) ---
@@ -71,8 +73,8 @@ public:
             cache->bindFboToTexture(texB);
             ctx.useShader(jfaShader);
             ctx.bindTexture(jfaShader, "u_input", texA, 0);
-            gl->glUniform1i(
-                gl->glGetUniformLocation(jfaShader, "u_stepSize"), stepSize);
+            gl->glUniform1i(gl->glGetUniformLocation(jfaShader, "u_stepSize"),
+                            stepSize);
             ctx.drawQuad();
 
             std::swap(texA, texB);
@@ -83,12 +85,15 @@ public:
         cache->bindFboToTexture(ctx.outputTextureId);
         ctx.useShader(bevelShader);
         ctx.bindTexture(bevelShader, "u_jfa", texA, 0);
-        gl->glUniform1f(
-            gl->glGetUniformLocation(bevelShader, "u_distance"),
-            data.distance);
+        gl->glUniform1f(gl->glGetUniformLocation(bevelShader, "u_distance"),
+                        data.distance);
+        gl->glUniform1i(gl->glGetUniformLocation(bevelShader, "u_shape"),
+                        data.shape);
+        gl->glUniform1i(gl->glGetUniformLocation(bevelShader, "u_invert"),
+                        data.invert ? 1 : 0);
         gl->glUniform1i(
-            gl->glGetUniformLocation(bevelShader, "u_shape"),
-            data.shape);
+            gl->glGetUniformLocation(bevelShader, "u_scaleInvariant"),
+            data.scaleInvariant ? 1 : 0);
         ctx.drawQuad();
     }
 
@@ -108,14 +113,24 @@ private:
             uniform sampler2D image;
             uniform vec2 _textureSize;
             uniform float u_threshold;
+            uniform int u_invert;
 
             void main() {
                 vec2 uv = v_texCoord;
                 float v = texture(image, uv).r;
 
-                // Black pixels (below threshold) are seeds —
-                // JFA spreads distance from them into white regions
-                if (v < u_threshold)
+                // Black pixels (below threshold) are seeds by default —
+                // JFA spreads distance from them into white regions, so
+                // white shapes end up raised and black background stays
+                // flat. `invert` swaps which side is treated as the seed
+                // (matching the old bevel node, whose two-sided signed
+                // distance field meant flipping its single "invert" had
+                // the effect of swapping which side the flat plateau fell
+                // on, on top of flipping the output polarity below).
+                bool isSeed = (u_invert == 1) ? (v >= u_threshold)
+                                              : (v < u_threshold);
+
+                if (isSeed)
                     fragColor = vec4(uv, v, 1.0);  // Seed: store own UV
                 else
                     fragColor = vec4(-1.0, -1.0, v, 0.0);  // No seed
@@ -175,6 +190,8 @@ private:
             uniform vec2 _textureSize;
             uniform float u_distance;
             uniform int u_shape;
+            uniform int u_invert;
+            uniform int u_scaleInvariant;
 
             #define SHAPE_LINEAR 0
             #define SHAPE_ROUND  1
@@ -194,8 +211,15 @@ private:
                 float dist = length(uv - data.xy)
                            * max(_textureSize.x, _textureSize.y);
 
-                float pixelDistance = u_distance
-                    * (max(_textureSize.x, _textureSize.y) / 512.0);
+                // Scale-invariant: normalize against texture resolution so
+                // the bevel width in UV space stays consistent across
+                // resolutions (512 is the reference size the prop range
+                // was tuned against). Disabled, `distance` is read as a
+                // raw pixel count instead — matching the old (v1/v2) Bevel
+                // node, which always operated in absolute pixel terms.
+                float pixelDistance = (u_scaleInvariant == 1)
+                    ? u_distance * (max(_textureSize.x, _textureSize.y) / 512.0)
+                    : u_distance;
                 float t = clamp(dist / pixelDistance, 0.0, 1.0);
 
                 float bevel;
@@ -209,6 +233,9 @@ private:
                     // Linear ramp (default)
                     bevel = t;
                 }
+
+                // if (u_invert == 1)
+                //     bevel = 1.0 - bevel;
 
                 fragColor = vec4(vec3(bevel), 1.0);
             }
@@ -227,6 +254,8 @@ void BevelV2Node::init()
     this->addFloatProp("distance", "Distance", 50.0, 0.0, 200.0, 0.5);
     this->addFloatProp("threshold", "Threshold", 0.5, 0.0, 1.0, 0.01);
     this->addEnumProp("shape", "Shape", {"Linear", "Round", "Smooth"});
+    this->addBoolProp("invert", "Invert", false);
+    this->addBoolProp("scaleInvariant", "Scale Invariant", true);
 
     // Passthrough shader for initialization (not used during rendering —
     // custom renderer handles all passes)
@@ -259,6 +288,15 @@ std::shared_ptr<NodeRenderData> BevelV2Node::createRenderData()
     auto shapeProp = static_cast<EnumProp*>(this->getProp("shape"));
     if (shapeProp)
         data->shape = shapeProp->index;
+
+    auto invertProp = static_cast<BoolProp*>(this->getProp("invert"));
+    if (invertProp)
+        data->invert = invertProp->value;
+
+    auto scaleInvariantProp =
+        static_cast<BoolProp*>(this->getProp("scaleInvariant"));
+    if (scaleInvariantProp)
+        data->scaleInvariant = scaleInvariantProp->value;
 
     return data;
 }

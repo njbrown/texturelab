@@ -17,6 +17,15 @@ struct NodeTypeMigration {
     // node. Old key -> new key. Empty for every step table that exists
     // today (see libraryversionmigrator.cpp).
     QMap<QString, QString> propertyKeyRenames;
+
+    // Values for properties that only exist on the *new* node, set to
+    // whatever reproduces the old node's look instead of the new node's
+    // normal default. E.g. bevelv2 added an "invert" toggle (new-node
+    // default: false) that must be `true` for a migrated bevel node to
+    // match the old bevel's polarity. Only applied to nodes going through
+    // this migration step — a freshly-added bevelv2 node still gets its
+    // ordinary library default. Key -> value (any QJsonValue).
+    QJsonObject migratedPropertyDefaults;
 };
 
 // Returns the migration table to apply when stepping from `from` to
