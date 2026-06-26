@@ -278,12 +278,14 @@ target_compile_definitions(texturelab PRIVATE
 )
 
 # Copy crashpad_handler next to the executable so handler_path resolves at runtime
-add_custom_command(TARGET texturelab POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:crashpad_handler>
-        $<TARGET_FILE_DIR:texturelab>
-    COMMENT "Copying crashpad_handler next to texturelab"
-)
+if(TARGET crashpad_handler)
+    add_custom_command(TARGET texturelab POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:crashpad_handler>
+            $<TARGET_FILE_DIR:texturelab>
+        COMMENT "Copying crashpad_handler next to texturelab"
+    )
+endif()
 
 set_target_properties(texturelab PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER io.texturelab.app

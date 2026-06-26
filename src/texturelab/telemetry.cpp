@@ -24,7 +24,6 @@ void Telemetry::init(bool enabled)
 
     sentry_options_set_dsn(options, dsn);
     sentry_options_set_release(options, "texturelab@" TEXTURELAB_VERSION);
-    sentry_options_set_send_default_pii(options, 0);
     sentry_options_set_debug(options, 0);
 
     // Writable per-user directory for Crashpad's crash database
