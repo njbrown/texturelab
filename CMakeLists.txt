@@ -9,8 +9,9 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/getsentry/sentry-native.git
   GIT_TAG        0.7.20
 )
-set(SENTRY_BACKEND "crashpad" CACHE STRING "" FORCE)
 set(SENTRY_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(SENTRY_BACKEND "crashpad" CACHE STRING "" FORCE)
+set(SENTRY_TRANSPORT "curl" CACHE STRING "" FORCE)
 FetchContent_MakeAvailable(sentry)
 
 # Find Qt6 with GuiPrivate before adding subdirectories that need it
