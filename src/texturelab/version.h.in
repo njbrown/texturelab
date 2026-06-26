@@ -1,0 +1,2 @@
+#pragma once
+#define TEXTURELAB_BUILD_HASH "@TEXTURELAB_BUILD_HASH@"

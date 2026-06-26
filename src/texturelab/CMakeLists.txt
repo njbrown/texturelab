@@ -266,7 +266,6 @@ target_include_directories(texturelab PUBLIC
                             ../viewer3d
                             ../colorpicker
                             )
-
 # DSN is empty by default for local builds (Sentry init becomes a no-op)
 if(NOT DEFINED TEXTURELAB_SENTRY_DSN)
     set(TEXTURELAB_SENTRY_DSN "")
@@ -276,6 +275,18 @@ target_compile_definitions(texturelab PRIVATE
     TEXTURELAB_VERSION="0.4.0-beta"
     TEXTURELAB_SENTRY_DSN="${TEXTURELAB_SENTRY_DSN}"
 )
+
+# Generate version.h (with git hash) at every build, not just configure time
+add_custom_target(texturelab_version
+    COMMAND ${CMAKE_COMMAND}
+        -DSOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+        -DBINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/GetGitHash.cmake"
+    BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/version.h"
+    COMMENT "Generating version.h"
+)
+add_dependencies(texturelab texturelab_version)
+target_include_directories(texturelab PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
 # Copy crashpad_handler next to the executable so handler_path resolves at runtime
 if(TARGET crashpad_handler)

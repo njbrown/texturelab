@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "telemetry.h"
+#include "version.h"
 
 #include <QApplication>
 #include <QSettings>
@@ -67,7 +68,7 @@ int main(int argc, char* argv[])
     QApplication a(argc, argv);
     a.setOrganizationName("texturelab");
     a.setApplicationName("texturelab");
-    a.setApplicationVersion(TEXTURELAB_VERSION);
+    a.setApplicationVersion(QString(TEXTURELAB_VERSION) + "+" + TEXTURELAB_BUILD_HASH);
 
     // Now applicationDirPath() is valid — init Sentry
     Telemetry::init(crashReportingEnabled);
