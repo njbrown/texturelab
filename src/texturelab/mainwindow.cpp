@@ -30,6 +30,7 @@
 #include "DockSplitter.h"
 
 #include "exporter.h"
+#include "telemetry.h"
 #include "undo/undocommands.h"
 #include "widgets/aboutdialog.h"
 #include "widgets/exportdialog.h"
@@ -441,6 +442,17 @@ void MainWindow::setupMenus()
         AboutDialog dialog(this);
         dialog.exec();
     });
+
+    optionsMenu->addSeparator();
+
+    auto crashReportingAction = optionsMenu->addAction("Send Anonymous Crash Reports");
+    crashReportingAction->setCheckable(true);
+    QSettings settings(QSettings::UserScope, "texturelab", "texturelab");
+    crashReportingAction->setChecked(settings.value("crashReporting", true).toBool());
+    connect(crashReportingAction, &QAction::toggled, [](bool checked) {
+        QSettings s(QSettings::UserScope, "texturelab", "texturelab");
+        s.setValue("crashReporting", checked);
+    });
 }
 
 void MainWindow::setupToolbar()
@@ -613,6 +625,7 @@ void MainWindow::openProjectFromPath(const QString& filePath)
     project->name = fileInfo.baseName();
     project->filePath = filePath;
 
+    Telemetry::breadcrumb("project", "open: " + fileInfo.baseName().toStdString());
     setProject(project);
     addToRecentFiles(filePath);
 }
@@ -690,6 +703,7 @@ void MainWindow::newProject()
 {
     if (!promptSaveIfDirty())
         return;
+    Telemetry::breadcrumb("project", "new project");
     setProject(TextureProject::createEmpty());
 }
 
@@ -711,6 +725,7 @@ void MainWindow::saveProject()
 
     graphWidget->syncPositionsToModel();
 
+    Telemetry::breadcrumb("project", "save: " + project->name.toStdString());
     QFile file(project->filePath);
     file.open(QIODevice::WriteOnly);
     file.write(Project::saveTexture(project));
@@ -797,6 +812,7 @@ void MainWindow::directExport()
 void MainWindow::handleExport(const QString& destination,
                               const QString& pattern)
 {
+    Telemetry::breadcrumb("project", "export to: " + destination.toStdString());
     if (!this->project || !this->renderer) {
         QMessageBox::warning(this, "Export Error",
                              "No project loaded or renderer not initialized.");

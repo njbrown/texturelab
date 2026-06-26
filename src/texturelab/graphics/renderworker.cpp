@@ -1,5 +1,6 @@
 #include "renderworker.h"
 #include "../models.h"
+#include "../telemetry.h"
 #include "../curve.h"
 #include "gradient.h"
 #include "texturerenderer.h"
@@ -84,6 +85,8 @@ void RenderWorker::setup()
 {
     running = true;
 
+    Telemetry::breadcrumb("render.setup", "RenderWorker::setup() start");
+
     // Surface must already be created via initSurface() from main thread
     if (!surface || !surface->isValid()) {
         qFatal("Surface not initialized! Call initSurface() from main thread before run()");
@@ -100,6 +103,7 @@ void RenderWorker::setup()
         qFatal("unable to create surface!");
     }
 
+    Telemetry::breadcrumb("render.setup", "OpenGL context created, making current");
     ctx->makeCurrent(surface);
 
     // https://doc-snapshots.qt.io/qt6-dev/gui-changes-qt6.html
@@ -206,6 +210,8 @@ void RenderWorker::setup()
     // gl->glReadBuffer(GL_NONE);
     gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    Telemetry::breadcrumb("render.setup", "RenderWorker::setup() complete");
+
     // Initialize resource cache for custom node renderers
     resourceCache.init(gl, fboId);
 
@@ -223,6 +229,8 @@ void RenderWorker::setup()
 
 void RenderWorker::processRenderCommand(const RenderCommand& command)
 {
+    Telemetry::breadcrumb("render", "node: " + command.nodeId.toStdString());
+
     if (rdoc_api)
         rdoc_api->StartFrameCapture(NULL, NULL);
 

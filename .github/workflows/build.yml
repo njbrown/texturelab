@@ -41,7 +41,7 @@ jobs:
             libxcb-shape0-dev
 
       - name: Configure CMake
-        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
 
       - name: Build
         run: cmake --build build --target texturelab --parallel $(nproc)
@@ -72,6 +72,10 @@ jobs:
 
           # Create a placeholder icon (256x256 PNG with "TL" text)
           cp src/icons/logo.png texturelab.png
+
+          # Bundle crashpad_handler alongside the main binary
+          cp build/src/texturelab/crashpad_handler AppDir/usr/bin/ || \
+          cp build/_deps/sentry-build/crashpad_build/handler/crashpad_handler AppDir/usr/bin/
 
           linuxdeploy-x86_64.AppImage \
             --appdir AppDir \
@@ -108,7 +112,7 @@ jobs:
           cache: true
 
       - name: Configure CMake
-        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
 
       - name: Build
         run: cmake --build build --target texturelab --config Release --parallel
@@ -118,6 +122,7 @@ jobs:
           mkdir deploy
           copy build\src\texturelab\Release\texturelab.exe deploy\
           ${{ github.workspace }}\Qt\Qt\6.7.0\msvc2019_64\bin\windeployqt.exe deploy\texturelab.exe --release --no-translations
+          copy build\src\texturelab\crashpad_handler.exe deploy\ 2>nul || copy build\_deps\sentry-build\crashpad_build\handler\Release\crashpad_handler.exe deploy\
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
@@ -145,10 +150,17 @@ jobs:
           cache: true
 
       - name: Configure CMake
-        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
 
       - name: Build
         run: cmake --build build --target texturelab --parallel $(sysctl -n hw.ncpu)
+
+      - name: Bundle crashpad_handler into .app
+        run: |
+          cp build/src/texturelab/crashpad_handler \
+            build/src/texturelab/texturelab.app/Contents/MacOS/ 2>/dev/null || \
+          cp build/_deps/sentry-build/crashpad_build/handler/crashpad_handler \
+            build/src/texturelab/texturelab.app/Contents/MacOS/
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4

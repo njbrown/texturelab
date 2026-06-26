@@ -146,6 +146,8 @@ set(LIBRARYV3
 
 set(PROJECT_SOURCES
         ./main.cpp
+        ./telemetry.h
+        ./telemetry.cpp
         ./mainwindow.cpp
         ./mainwindow.h
         ./clipboard.h
@@ -247,14 +249,15 @@ else()
 endif()
 
 # note: openglwidgets is qt6 only
-target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets 
-                                         Qt${QT_VERSION_MAJOR}::OpenGL 
-                                         Qt${QT_VERSION_MAJOR}::OpenGLWidgets 
+target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
+                                         Qt${QT_VERSION_MAJOR}::OpenGL
+                                         Qt${QT_VERSION_MAJOR}::OpenGLWidgets
                                          OpenGL::GL
-                                         qtadvanceddocking-qt6 
+                                         qtadvanceddocking-qt6
                                          nodegraph
                                          viewer3d
                                          colorpicker
+                                         sentry
                                          )
                                          
 target_include_directories(texturelab PUBLIC
@@ -263,6 +266,24 @@ target_include_directories(texturelab PUBLIC
                             ../viewer3d
                             ../colorpicker
                             )
+
+# DSN is empty by default for local builds (Sentry init becomes a no-op)
+if(NOT DEFINED TEXTURELAB_SENTRY_DSN)
+    set(TEXTURELAB_SENTRY_DSN "")
+endif()
+
+target_compile_definitions(texturelab PRIVATE
+    TEXTURELAB_VERSION="0.4.0-beta"
+    TEXTURELAB_SENTRY_DSN="${TEXTURELAB_SENTRY_DSN}"
+)
+
+# Copy crashpad_handler next to the executable so handler_path resolves at runtime
+add_custom_command(TARGET texturelab POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:crashpad_handler>
+        $<TARGET_FILE_DIR:texturelab>
+    COMMENT "Copying crashpad_handler next to texturelab"
+)
 
 set_target_properties(texturelab PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER io.texturelab.app

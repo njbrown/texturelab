@@ -2,6 +2,17 @@ cmake_minimum_required(VERSION 3.10)
 
 project(qtcompleteapp VERSION 0.1 LANGUAGES CXX)
 
+# sentry-native (Crashpad backend for out-of-process crash capture)
+include(FetchContent)
+FetchContent_Declare(
+  sentry
+  GIT_REPOSITORY https://github.com/getsentry/sentry-native.git
+  GIT_TAG        0.7.20
+)
+set(SENTRY_BACKEND "crashpad" CACHE STRING "" FORCE)
+set(SENTRY_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(sentry)
+
 # Find Qt6 with GuiPrivate before adding subdirectories that need it
 find_package(Qt6 COMPONENTS Core Gui Widgets REQUIRED)
 
