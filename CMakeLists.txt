@@ -11,7 +11,11 @@ FetchContent_Declare(
 )
 set(SENTRY_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(SENTRY_BACKEND "crashpad" CACHE STRING "" FORCE)
-set(SENTRY_TRANSPORT "curl" CACHE STRING "" FORCE)
+if(WIN32)
+  set(SENTRY_TRANSPORT "winhttp" CACHE STRING "" FORCE)
+else()
+  set(SENTRY_TRANSPORT "curl" CACHE STRING "" FORCE)
+endif()
 FetchContent_MakeAvailable(sentry)
 
 # Find Qt6 with GuiPrivate before adding subdirectories that need it

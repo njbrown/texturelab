@@ -75,6 +75,7 @@ jobs:
           cp src/icons/logo.png texturelab.png
 
           # Bundle crashpad_handler alongside the main binary
+          mkdir -p AppDir/usr/bin
           cp build/src/texturelab/crashpad_handler AppDir/usr/bin/ || \
           cp build/_deps/sentry-build/crashpad_build/handler/crashpad_handler AppDir/usr/bin/
 
@@ -151,7 +152,7 @@ jobs:
           cache: true
 
       - name: Configure CMake
-        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}" -DCMAKE_OSX_SYSROOT=$(xcrun --show-sdk-path)
 
       - name: Build
         run: cmake --build build --target texturelab --parallel $(sysctl -n hw.ncpu)
