@@ -120,11 +120,17 @@ jobs:
         run: cmake --build build --target texturelab --config Release --parallel
 
       - name: Deploy Qt dependencies
+        shell: pwsh
         run: |
-          mkdir deploy
-          copy build\src\texturelab\Release\texturelab.exe deploy\
-          ${{ github.workspace }}\Qt\Qt\6.7.0\msvc2019_64\bin\windeployqt.exe deploy\texturelab.exe --release --no-translations
-          copy build\src\texturelab\crashpad_handler.exe deploy\ 2>nul || copy build\_deps\sentry-build\crashpad_build\handler\Release\crashpad_handler.exe deploy\
+          New-Item -ItemType Directory -Path deploy
+          Copy-Item "build\src\texturelab\Release\texturelab.exe" deploy\
+          & "${{ github.workspace }}\Qt\Qt\6.7.0\msvc2019_64\bin\windeployqt.exe" "deploy\texturelab.exe" --release --no-translations
+          $handler = @(
+            "build\src\texturelab\Release\crashpad_handler.exe",
+            "build\src\texturelab\crashpad_handler.exe",
+            "build\_deps\sentry-build\crashpad_build\handler\Release\crashpad_handler.exe"
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if ($handler) { Copy-Item $handler deploy\ } else { Write-Warning "crashpad_handler.exe not found, skipping" }
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
@@ -152,17 +158,10 @@ jobs:
           cache: true
 
       - name: Configure CMake
-        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}" -DCMAKE_OSX_SYSROOT=$(xcrun --show-sdk-path)
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
 
       - name: Build
         run: cmake --build build --target texturelab --parallel $(sysctl -n hw.ncpu)
-
-      - name: Bundle crashpad_handler into .app
-        run: |
-          cp build/src/texturelab/crashpad_handler \
-            build/src/texturelab/texturelab.app/Contents/MacOS/ 2>/dev/null || \
-          cp build/_deps/sentry-build/crashpad_build/handler/crashpad_handler \
-            build/src/texturelab/texturelab.app/Contents/MacOS/
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
