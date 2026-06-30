@@ -42,10 +42,24 @@ jobs:
             libcurl4-openssl-dev
 
       - name: Configure CMake
-        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
 
       - name: Build
         run: cmake --build build --target texturelab --parallel $(nproc)
+
+      - name: Upload debug symbols to Sentry
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          curl -sL https://sentry.io/get-cli/ | bash
+          objcopy --only-keep-debug \
+            build/src/texturelab/texturelab \
+            build/src/texturelab/texturelab.debug
+          strip build/src/texturelab/texturelab
+          sentry-cli debug-files upload --include-sources \
+            build/src/texturelab/texturelab.debug
 
       - name: Install LinuxDeploy
         uses: miurahr/install-linuxdeploy-action@v1
@@ -114,10 +128,20 @@ jobs:
           cache: true
 
       - name: Configure CMake
-        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}" -DCMAKE_CXX_FLAGS_RELEASE="/MD /O2 /Ob2 /DNDEBUG /Zi" -DCMAKE_EXE_LINKER_FLAGS_RELEASE="/INCREMENTAL:NO /DEBUG /OPT:REF /OPT:ICF"
 
       - name: Build
         run: cmake --build build --target texturelab --config Release --parallel
+
+      - name: Upload debug symbols to Sentry
+        shell: pwsh
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/getsentry/sentry-cli/releases/latest/download/sentry-cli-Windows-x86_64.exe" -OutFile "sentry-cli.exe"
+          .\sentry-cli.exe debug-files upload --include-sources "build\src\texturelab\Release\"
 
       - name: Deploy Qt dependencies
         shell: pwsh
@@ -158,10 +182,22 @@ jobs:
           cache: true
 
       - name: Configure CMake
-        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
 
       - name: Build
         run: cmake --build build --target texturelab --parallel $(sysctl -n hw.ncpu)
+
+      - name: Generate dSYM and upload to Sentry
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          dsymutil build/src/texturelab/texturelab.app/Contents/MacOS/texturelab \
+            -o texturelab.dSYM
+          strip build/src/texturelab/texturelab.app/Contents/MacOS/texturelab
+          curl -sL https://sentry.io/get-cli/ | bash
+          sentry-cli debug-files upload --include-sources texturelab.dSYM
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
