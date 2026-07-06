@@ -343,22 +343,22 @@ void TextureRenderer::update()
         }
 
         // if the resolution has changed, resize texture
-        if (project->textureWidth != node->textureWidth ||
-            project->textureHeight != node->textureHeight) {
-            // resize
-            // resizeNodeTexture(node);
-            // node->textureWidth = project->textureWidth;
-            // node->textureHeight = project->textureHeight;
-            // node->texture = new QOpenGLFramebufferObject(node->textureWidth,
-            //                                              node->textureHeight);
-
+        // Deferred while a render is in flight: the texture/FBO being
+        // replaced here may be captured as an input GLuint in the command
+        // currently queued/executing on the worker thread. Once that
+        // command completes, nodeRendered() re-invokes update(), which will
+        // pick this resize back up.
+        if (!renderInFlight &&
+            (project->textureWidth != node->textureWidth ||
+             project->textureHeight != node->textureHeight)) {
             this->createNodeTexture(node);
 
             // clear pixmap and emit thumbnail changed?
         }
     }
 
-    this->queueNextNodeToRender();
+    if (!renderInFlight)
+        this->queueNextNodeToRender();
 }
 
 void TextureRenderer::updateOld()
@@ -431,6 +431,14 @@ void TextureRenderer::createNodeTexture(const TextureNodePtr& node)
 {
     ctx->makeCurrent(surface);
 
+    // Safe to free now: callers only reach here when !renderInFlight, so no
+    // queued/executing RenderCommand can be holding this texture's GLuint
+    // as an input.
+    if (node->texture) {
+        delete node->texture;
+        node->texture = nullptr;
+    }
+
     // create fbo
     QOpenGLFramebufferObjectFormat fboFormat;
     fboFormat.setInternalTextureFormat(GL_RGBA32F);
@@ -448,6 +456,10 @@ void TextureRenderer::createNodeTexture(const TextureNodePtr& node)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     gl->glBindTexture(GL_TEXTURE_2D, 0);
+
+    // This texture ID is shared into the render worker's context on another
+    // thread; flush so its creation is visible there before it's used.
+    gl->glFlush();
 
     ctx->doneCurrent();
 }
@@ -597,8 +609,11 @@ void TextureRenderer::initRenderWorker()
 void TextureRenderer::nodeRendered(const QString& nodeId, GLuint texId)
 {
     qDebug() << "TextureRenderer: Node rendered:" << nodeId;
+    renderInFlight = false;
     emit thumbnailGenerated(nodeId, texId, QPixmap());
-    this->queueNextNodeToRender();
+    // update() re-checks pending resizes deferred while a render was in
+    // flight, then queues the next node.
+    this->update();
     if (project) {
         int total = project->nodes.size();
         int clean = 0;
@@ -630,7 +645,10 @@ void TextureRenderer::queueNextNodeToRender()
 
         // CPU processing support
         cmd.usesCpuProcessing = nextNode->usesCpuProcessing;
-        cmd.nodePtr = nextNode.data(); // Store raw pointer for CPU processing
+        // Keep the node alive for the lifetime of the command (it may still
+        // be queued or mid-render on the worker thread if the node is
+        // removed from the project in the meantime).
+        cmd.nodePtr = nextNode;
 
         cmd.totalInputs = nextNode->inputs.size();
 
@@ -661,6 +679,10 @@ void TextureRenderer::queueNextNodeToRender()
 
                     rnp.textureId = imageProp->getTextureId();
 
+                    // Shared into the render worker's context on another
+                    // thread; flush so the upload is visible there.
+                    gl->glFlush();
+
                     ctx->doneCurrent();
                 }
             }
@@ -676,6 +698,7 @@ void TextureRenderer::queueNextNodeToRender()
 
         // pass to render worker to process
         renderWorker->setRenderQueue(queue);
+        renderInFlight = true;
 
         // mark node as clean before rendering to avoid double-queuing
         nextNode->isDirty = false;
@@ -773,6 +796,10 @@ TextureRenderer::buildShaderForNode(const TextureNodePtr& node)
         qDebug() << "SHADER LINK ERROR";
         qDebug() << program->log();
     }
+
+    // Shared into the render worker's context on another thread; flush so
+    // the link is visible there before glUseProgram() is called on it.
+    gl->glFlush();
 
     ctx->doneCurrent();
 

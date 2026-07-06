@@ -39,6 +39,12 @@ class TextureRenderer : public QObject {
     QThread* renderThread;
     RenderWorker* renderWorker;
 
+    // True from the moment a RenderCommand is handed to the worker until its
+    // nodeRendered() callback fires. GUI-thread only. While true, node
+    // textures/FBOs must not be resized/recreated: their GLuints may be
+    // captured as inputs in the in-flight command.
+    bool renderInFlight = false;
+
 public:
     TextureRenderer();
     ~TextureRenderer();

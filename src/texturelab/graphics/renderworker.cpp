@@ -270,8 +270,8 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
     }
 
     // CPU processing path
-    if (command.usesCpuProcessing && command.nodePtr != nullptr) {
-        TextureNode* node = static_cast<TextureNode*>(command.nodePtr);
+    if (command.usesCpuProcessing && command.nodePtr) {
+        TextureNode* node = command.nodePtr.data();
         node->cpuProcess(gl, command);
 
         ctx->doneCurrent();

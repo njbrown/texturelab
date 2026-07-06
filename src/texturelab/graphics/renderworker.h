@@ -7,6 +7,7 @@
 #include <QObject>
 #include <QOpenGLFunctions>
 #include <QQueue>
+#include <QSharedPointer>
 #include <atomic>
 #include <memory>
 
@@ -18,6 +19,9 @@ class QOpenGLBuffer;
 class QOpenGLShader;
 class QOpenGLShaderProgram;
 class QOpenGLFramebufferObject;
+
+class TextureNode;
+typedef QSharedPointer<TextureNode> TextureNodePtr;
 
 struct RenderNodeInput {
     QString nodeId;
@@ -47,7 +51,9 @@ struct RenderCommand {
 
     // CPU processing support
     bool usesCpuProcessing = false;
-    void* nodePtr = nullptr; // TextureNode* pointer for CPU processing
+    // Shared (not raw) so the node stays alive for the lifetime of this
+    // command even if it's removed from the project while queued/in-flight.
+    TextureNodePtr nodePtr;
 
     // all expected inputs need to be cleared
     int totalInputs;
