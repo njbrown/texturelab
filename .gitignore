@@ -11,3 +11,7 @@ CTestTestfile.cmake
 _deps
 
 build/
+build-sentry-test/
+
+# Secrets — Sentry auth token, org/project slugs
+.env

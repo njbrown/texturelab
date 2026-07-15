@@ -288,6 +288,16 @@ add_custom_target(texturelab_version
 add_dependencies(texturelab texturelab_version)
 target_include_directories(texturelab PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
+# MSVC: deterministically emit a PDB and embed a CodeView record in the exe, in
+# every config (incl. Release). Without the CodeView record the shipped exe has
+# no debug_id, so Sentry cannot match any PDB to a crash minidump ("Unknown
+# function" frames). Attaching to the target is reliable; injecting /Zi + /DEBUG
+# via CMAKE_*_FLAGS_RELEASE on the command line was not (VS generator + Qt).
+if(MSVC)
+    target_compile_options(texturelab PRIVATE /Zi)
+    target_link_options(texturelab PRIVATE /DEBUG /OPT:REF /OPT:ICF /INCREMENTAL:NO)
+endif()
+
 # Copy crashpad_handler next to the executable so handler_path resolves at runtime
 if(TARGET crashpad_handler)
     add_custom_command(TARGET texturelab POST_BUILD

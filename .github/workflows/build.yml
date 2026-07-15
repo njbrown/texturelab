@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main, master]
   workflow_dispatch:
+    inputs:
+      sentry_crash_test:
+        description: "After building, run --sentry-crash-test to send a real crash to Sentry (verifies symbolication)"
+        type: boolean
+        default: false
 
 jobs:
   build-linux:
@@ -64,6 +69,16 @@ jobs:
           # (== Sentry Debug ID) survives stripping, so the DIF we just
           # uploaded still matches the binary that ships and crashes.
           strip build/src/texturelab/texturelab
+
+      - name: Sentry crash test (manual)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.sentry_crash_test == 'true' }}
+        run: |
+          export QT_QPA_PLATFORM=offscreen
+          # Crashes before the main window opens; crashpad_handler (copied next to
+          # the binary at build time) uploads the minidump via the built-in DSN.
+          build/src/texturelab/texturelab --sentry-crash-test || true
+          echo "waiting for crashpad to upload the minidump..."
+          sleep 25
 
       - name: Install LinuxDeploy
         uses: miurahr/install-linuxdeploy-action@v1
@@ -132,7 +147,7 @@ jobs:
           cache: true
 
       - name: Configure CMake
-        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}" -DCMAKE_CXX_FLAGS_RELEASE="/MD /O2 /Ob2 /DNDEBUG /Zi" -DCMAKE_EXE_LINKER_FLAGS_RELEASE="/INCREMENTAL:NO /DEBUG /OPT:REF /OPT:ICF"
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
 
       - name: Build
         run: cmake --build build --target texturelab --config Release --parallel
@@ -145,6 +160,13 @@ jobs:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         run: |
           Invoke-WebRequest -Uri "https://github.com/getsentry/sentry-cli/releases/latest/download/sentry-cli-Windows-x86_64.exe" -OutFile "sentry-cli.exe"
+          $exe = "build\src\texturelab\Release\texturelab.exe"
+          $pdb = "build\src\texturelab\Release\texturelab.pdb"
+          if (-not (Test-Path $pdb)) { Write-Error "texturelab.pdb not found — build produced no debug info; Sentry cannot symbolicate."; exit 1 }
+          # Log the Debug IDs. The exe's Debug ID (from its CodeView record) MUST
+          # be non-null and match the pdb, or crash minidumps stay unsymbolicated.
+          Write-Host "== exe Debug ID =="; .\sentry-cli.exe debug-files check $exe
+          Write-Host "== pdb Debug ID =="; .\sentry-cli.exe debug-files check $pdb
           .\sentry-cli.exe debug-files upload --include-sources "build\src\texturelab\Release\"
 
       - name: Deploy Qt dependencies
@@ -159,6 +181,20 @@ jobs:
             "build\_deps\sentry-build\crashpad_build\handler\Release\crashpad_handler.exe"
           ) | Where-Object { Test-Path $_ } | Select-Object -First 1
           if ($handler) { Copy-Item $handler deploy\ } else { Write-Warning "crashpad_handler.exe not found, skipping" }
+
+      - name: Sentry crash test (manual)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.sentry_crash_test == 'true' }}
+        shell: pwsh
+        run: |
+          $env:QT_QPA_PLATFORM = "offscreen"
+          # Run the deployed bundle (Qt DLLs + crashpad_handler.exe alongside the
+          # exe). Crashes before the main window; crashpad uploads the minidump
+          # via the built-in DSN. Debug IDs match the PDB uploaded above.
+          $p = Start-Process -FilePath "deploy\texturelab.exe" -ArgumentList "--sentry-crash-test" -PassThru
+          if (-not $p.WaitForExit(60000)) { $p.Kill(); Write-Warning "timed out waiting for crash" }
+          else { Write-Host "app exited with code $($p.ExitCode) (crash expected)" }
+          Write-Host "waiting for crashpad to upload the minidump..."
+          Start-Sleep -Seconds 25
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
