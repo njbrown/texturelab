@@ -203,7 +203,11 @@ jobs:
           path: deploy/
 
   build-macos:
-    runs-on: macos-latest
+    # macos-13 (Xcode 15) still ships AGL.framework, which Qt 6.7.0's macOS
+    # CMake config references. macos-latest (Xcode 16 / macOS 15 SDK) removed
+    # AGL, causing "ld: framework 'AGL' not found". This pins to x86_64; switch
+    # back to macos-latest once Qt is bumped to >= 6.7.3 (AGL reference removed).
+    runs-on: macos-13
 
     steps:
       - name: Checkout repository
@@ -239,6 +243,16 @@ jobs:
           curl -sL https://sentry.io/get-cli/ | bash
           sentry-cli debug-files upload --include-sources texturelab.dSYM
 
+      - name: Sentry crash test (manual)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.sentry_crash_test == 'true' }}
+        run: |
+          export QT_QPA_PLATFORM=offscreen
+          # inproc backend captures the crash in-process; the dSYM uploaded above
+          # (matching Mach-O UUID, preserved by strip) symbolicates it server-side.
+          build/src/texturelab/texturelab.app/Contents/MacOS/texturelab --sentry-crash-test || true
+          echo "waiting for the event to flush..."
+          sleep 25
+
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
@@ -270,7 +284,7 @@ jobs:
           if [ -d texturelab-macos ];   then zip -r ../macos-$SHA.zip   texturelab-macos/;   fi
           cd ..
           for f in linux-$SHA.zip windows-$SHA.zip macos-$SHA.zip; do
-            [ -f "$f" ] && aws s3 cp "$f" s3://texturelab-nightlies/
+            if [ -f "$f" ]; then aws s3 cp "$f" s3://texturelab-nightlies/; fi
           done
 
       - name: Post to Discord
