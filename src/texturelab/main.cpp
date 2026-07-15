@@ -6,6 +6,8 @@
 #include <QSettings>
 #include <QSurfaceFormat>
 
+#include <cstring>
+
 // Hints that a dedicated GPU should be used whenever possible
 // https://stackoverflow.com/a/39047129/991834
 #ifdef Q_OS_WIN
@@ -37,6 +39,22 @@ static void qtMessageHandler(QtMsgType type, const QMessageLogContext& /*ctx*/,
         // Allow default abort() so Crashpad captures the minidump
         abort();
     }
+}
+
+#if defined(_MSC_VER)
+#define TL_NOINLINE __declspec(noinline)
+#else
+#define TL_NOINLINE __attribute__((noinline))
+#endif
+
+// Deliberately dereference a null pointer so Crashpad captures a minidump.
+// Kept in a named, non-inlined function so the symbolicated Sentry stack trace
+// shows a recognizable frame. Triggered only via the --sentry-crash-test flag;
+// remove this hook once symbolication is confirmed in production.
+TL_NOINLINE static void sentryCrashTest()
+{
+    volatile int* p = nullptr;
+    *p = 0xC0FFEE;
 }
 
 int main(int argc, char* argv[])
@@ -72,6 +90,13 @@ int main(int argc, char* argv[])
 
     // Now applicationDirPath() is valid — init Sentry
     Telemetry::init(crashReportingEnabled);
+
+    // Crash-test hook for verifying Sentry symbolication end-to-end.
+    // Must run after Telemetry::init so Crashpad is armed to catch it.
+    for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--sentry-crash-test") == 0)
+            sentryCrashTest();
+    }
 
     // Install message handler after Sentry is up so breadcrumbs are captured
     qInstallMessageHandler(qtMessageHandler);
