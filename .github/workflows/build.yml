@@ -54,12 +54,16 @@ jobs:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         run: |
           curl -sL https://sentry.io/get-cli/ | bash
-          objcopy --only-keep-debug \
-            build/src/texturelab/texturelab \
-            build/src/texturelab/texturelab.debug
-          strip build/src/texturelab/texturelab
+          # Upload the FULL, unstripped binary. It contains debug info AND the
+          # .eh_frame unwind info (CFI) that Sentry needs to walk a minidump's
+          # stack. objcopy --only-keep-debug drops the unwind info, which left
+          # crashes unsymbolicated ("debug information files are missing").
           sentry-cli debug-files upload --include-sources \
-            build/src/texturelab/texturelab.debug
+            build/src/texturelab/texturelab
+          # Strip the shipped copy to shrink the AppImage. The GNU build-id
+          # (== Sentry Debug ID) survives stripping, so the DIF we just
+          # uploaded still matches the binary that ships and crashes.
+          strip build/src/texturelab/texturelab
 
       - name: Install LinuxDeploy
         uses: miurahr/install-linuxdeploy-action@v1
