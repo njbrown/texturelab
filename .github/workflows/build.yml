@@ -203,11 +203,12 @@ jobs:
           path: deploy/
 
   build-macos:
-    # macos-13 (Xcode 15) still ships AGL.framework, which Qt 6.7.0's macOS
-    # CMake config references. macos-latest (Xcode 16 / macOS 15 SDK) removed
-    # AGL, causing "ld: framework 'AGL' not found". This pins to x86_64; switch
-    # back to macos-latest once Qt is bumped to >= 6.7.3 (AGL reference removed).
-    runs-on: macos-13
+    # Apple Silicon runner with good availability. Qt 6.7.0's macOS CMake config
+    # references AGL.framework, which was removed in the macOS 15 SDK (Xcode 16).
+    # We pin Xcode 15 (macOS 14 SDK, AGL still present) and build a universal
+    # x86_64+arm64 binary so it runs on both Intel and Apple Silicon Macs.
+    # (Drop the Xcode pin once Qt is bumped to >= 6.7.3, which removes the AGL ref.)
+    runs-on: macos-14
 
     steps:
       - name: Checkout repository
@@ -216,6 +217,14 @@ jobs:
           submodules: recursive
           fetch-depth: 0
           fetch-tags: true
+
+      - name: Select Xcode 15 (macOS 14 SDK still ships AGL.framework)
+        run: |
+          XC=$(ls -d /Applications/Xcode_15*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XC" ]; then echo "No Xcode 15.x found on runner"; ls -d /Applications/Xcode_*.app; exit 1; fi
+          echo "Using $XC"
+          sudo xcode-select -s "$XC/Contents/Developer"
+          xcodebuild -version
 
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4
@@ -226,7 +235,7 @@ jobs:
           cache: true
 
       - name: Configure CMake
-        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
 
       - name: Build
         run: cmake --build build --target texturelab --parallel $(sysctl -n hw.ncpu)
