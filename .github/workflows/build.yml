@@ -235,7 +235,15 @@ jobs:
           cache: true
 
       - name: Configure CMake
-        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
+        run: |
+          # Crashpad's CMake locates the Mach mig defs at
+          # ${CMAKE_OSX_SYSROOT}/usr/include/mach/exc.defs. If CMAKE_OSX_SYSROOT
+          # is empty it resolves to /usr/include/mach (absent on modern macOS)
+          # and configure fails. Point it explicitly at the selected SDK, which
+          # ships the defs (and AGL.framework).
+          SDKROOT=$(xcrun --show-sdk-path)
+          echo "Using SDK: $SDKROOT"
+          cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_OSX_SYSROOT="$SDKROOT" -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
 
       - name: Build
         run: cmake --build build --target texturelab --parallel $(sysctl -n hw.ncpu)
