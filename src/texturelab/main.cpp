@@ -5,6 +5,7 @@
 #include <QApplication>
 #include <QSettings>
 #include <QSurfaceFormat>
+#include <QThread>
 
 #include <cstring>
 
@@ -92,10 +93,18 @@ int main(int argc, char* argv[])
     Telemetry::init(crashReportingEnabled);
 
     // Crash-test hook for verifying Sentry symbolication end-to-end.
-    // Must run after Telemetry::init so Crashpad is armed to catch it.
+    // Must run after Telemetry::init so the crash handler is armed.
     for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--sentry-crash-test") == 0)
+        if (std::strcmp(argv[i], "--sentry-crash-test") == 0) {
+            // Give the SDK's network transport a moment to spin up before we
+            // crash. Crashpad (Win/Linux) uploads out-of-process so this isn't
+            // needed there, but the macOS inproc backend must send the event
+            // synchronously from the dying process — an instant crash at
+            // startup dies before the transport is ready. A real crash happens
+            // after the app has been running, so this warm-up is representative.
+            QThread::sleep(4);
             sentryCrashTest();
+        }
     }
 
     // Install message handler after Sentry is up so breadcrumbs are captured
