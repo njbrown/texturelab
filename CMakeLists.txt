@@ -14,7 +14,10 @@ if(WIN32)
   set(SENTRY_BACKEND "crashpad" CACHE STRING "" FORCE)
   set(SENTRY_TRANSPORT "winhttp" CACHE STRING "" FORCE)
 elseif(APPLE)
-  set(SENTRY_BACKEND "inproc" CACHE STRING "" FORCE)
+  # Crashpad: out-of-process minidumps with full thread stacks (symbolicated via
+  # the uploaded dSYM), same as Win/Linux. The inproc backend delivered crashes
+  # but with no stack frames on Apple Silicon, so reports were unsymbolicatable.
+  set(SENTRY_BACKEND "crashpad" CACHE STRING "" FORCE)
   set(SENTRY_TRANSPORT "curl" CACHE STRING "" FORCE)
 else()
   set(SENTRY_BACKEND "crashpad" CACHE STRING "" FORCE)
