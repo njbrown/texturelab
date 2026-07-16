@@ -256,11 +256,17 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.sentry_crash_test == 'true' }}
         run: |
           export QT_QPA_PLATFORM=offscreen
-          # inproc backend captures the crash in-process; the dSYM uploaded above
-          # (matching Mach-O UUID, preserved by strip) symbolicates it server-side.
-          build/src/texturelab/texturelab.app/Contents/MacOS/texturelab --sentry-crash-test || true
+          BIN="build/src/texturelab/texturelab.app/Contents/MacOS/texturelab"
+          # The inproc backend (used on macOS) does not upload in-handler like
+          # Crashpad — it persists the crash and delivers it on the NEXT launch.
+          # 1st run: crash, persisting the event to the sentry DB.
+          "$BIN" --sentry-crash-test || true
+          # 2nd run: sentry_init flushes the previous crash to Sentry; the built-in
+          # warm-up delay gives the transport time to upload before it crashes again.
+          # (This mirrors a real user reopening the app after a crash.)
+          "$BIN" --sentry-crash-test || true
           echo "waiting for the event to flush..."
-          sleep 25
+          sleep 30
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
