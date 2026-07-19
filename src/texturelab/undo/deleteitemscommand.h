@@ -56,4 +56,8 @@ private:
     QList<SerializedConnection> _connections;
     QList<SerializedFrame> _frames;
     QList<SerializedComment> _comments;
+
+    // Texture-channel (Albedo/Normal/…) assignments that pointed at a deleted
+    // node; captured so redo() can drop them and undo() can restore them.
+    QMap<TextureChannel, QString> _channelAssignments;
 };

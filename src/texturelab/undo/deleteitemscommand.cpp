@@ -35,6 +35,15 @@ DeleteItemsCommand::DeleteItemsCommand(TextureProjectPtr project,
 
     QSet<QString> deletedNodeIds(nodeIds.begin(), nodeIds.end());
 
+    // Capture any texture-channel assignments pointing at a deleted node so we
+    // can remove them in redo() and restore them in undo(). Left behind, a
+    // stale id here is later looked up by passTextureChannelsToViewer3D().
+    for (auto it = _project->textureChannels.constBegin();
+         it != _project->textureChannels.constEnd(); ++it) {
+        if (deletedNodeIds.contains(it.value()))
+            _channelAssignments.insert(it.key(), it.value());
+    }
+
     for (const auto& id : nodeIds) {
         auto node = _project->getNodeById(id);
         if (!node)
@@ -129,6 +138,12 @@ void DeleteItemsCommand::redo()
         _project->comments.remove(sc.id);
     }
 
+    // Drop channel assignments that referenced the now-deleted nodes.
+    for (auto it = _channelAssignments.constBegin();
+         it != _channelAssignments.constEnd(); ++it) {
+        _project->textureChannels.remove(it.key());
+    }
+
     if (_renderer)
         _renderer->update();
 }
@@ -195,6 +210,12 @@ void DeleteItemsCommand::undo()
         gcomment->setText(sc.text);
         gcomment->setPos(sc.pos.x(), sc.pos.y());
         _scene->addComment(gcomment);
+    }
+
+    // Restore channel assignments now that the nodes they reference exist again.
+    for (auto it = _channelAssignments.constBegin();
+         it != _channelAssignments.constEnd(); ++it) {
+        _project->textureChannels.insert(it.key(), it.value());
     }
 
     if (_renderer)
