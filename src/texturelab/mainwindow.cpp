@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include <QCoreApplication>
 #include <QDebug>
 #include <QFile>
 #include <QFileDialog>
@@ -78,6 +79,13 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     statusLayout->setContentsMargins(0, 0, 0, 0);
     statusLayout->setSpacing(6);
     statusLayout->addStretch();
+    // Version + build hash on the left so it's legible in screenshots
+    // (matches the build artifact name, e.g. texturelab-win-v0.4.0-beta-<hash>).
+    auto* versionLabel = new QLabel(QCoreApplication::applicationVersion());
+    versionLabel->setStyleSheet("color: #888888; padding: 0 6px;");
+    versionLabel->setToolTip("Application version and build hash");
+    statusBar()->addWidget(versionLabel);
+
     statusLayout->addWidget(statusLabel, 0, Qt::AlignVCenter);
     statusLayout->addWidget(progressBar, 0, Qt::AlignVCenter);
     statusBar()->addWidget(statusWidget, 1);

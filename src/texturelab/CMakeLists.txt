@@ -2,6 +2,13 @@ cmake_minimum_required(VERSION 3.10)
 
 project(texturelab VERSION 0.4.0 LANGUAGES CXX)
 
+# Optional pre-release suffix appended to the numeric project() version above to
+# form the full app version (e.g. "0.4.0" + "-beta" = "0.4.0-beta"); leave empty
+# for a final release. The full string is the in-app version / Sentry release
+# (TEXTURELAB_VERSION compile def below) and is reconstructed from these same two
+# lines by the build workflow (.github/workflows/build.yml) for artifact names.
+set(TEXTURELAB_VERSION_SUFFIX "-beta")
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_AUTOUIC ON)
@@ -272,7 +279,7 @@ if(NOT DEFINED TEXTURELAB_SENTRY_DSN)
 endif()
 
 target_compile_definitions(texturelab PRIVATE
-    TEXTURELAB_VERSION="0.4.0-beta"
+    TEXTURELAB_VERSION="${PROJECT_VERSION}${TEXTURELAB_VERSION_SUFFIX}"
     TEXTURELAB_SENTRY_DSN="${TEXTURELAB_SENTRY_DSN}"
 )
 
