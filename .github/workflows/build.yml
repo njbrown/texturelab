@@ -13,7 +13,28 @@ on:
         default: false
 
 jobs:
+  # Single source of truth for the build tag used in artifact names.
+  # tag = v<cmake project version>-<short git hash>, where the short hash is the
+  # SAME `git rev-parse --short HEAD` the app embeds (TEXTURELAB_BUILD_HASH), so
+  # a build file name matches the version shown in-app / in screenshots.
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.v.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compute build tag
+        id: v
+        run: |
+          # tag = v<app version>-<short hash>, where <app version> is the numeric
+          # project() version + optional suffix — the same string the app embeds
+          # as TEXTURELAB_VERSION, so file names match the in-app version.
+          NUM=$(grep -oP 'project\(texturelab VERSION \K[0-9.]+' src/texturelab/CMakeLists.txt)
+          SUFFIX=$(grep -oP 'set\(TEXTURELAB_VERSION_SUFFIX "\K[^"]*' src/texturelab/CMakeLists.txt)
+          echo "tag=v${NUM}${SUFFIX}-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
   build-linux:
+    needs: version
     # runs-on: ubuntu-20.04
     runs-on: ubuntu-22.04
 
@@ -120,13 +141,19 @@ jobs:
             --plugin qt \
             --output appimage
 
+      - name: Rename Linux artifact
+        run: |
+          APP=$(ls *.AppImage | head -1)
+          mv "$APP" "texturelab-linux-${{ needs.version.outputs.tag }}.AppImage"
+
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
-          name: texturelab-linux
-          path: "*.AppImage"
+          name: texturelab-linux-${{ needs.version.outputs.tag }}
+          path: "texturelab-linux-${{ needs.version.outputs.tag }}.AppImage"
 
   build-windows:
+    needs: version
     runs-on: windows-2022
 
     steps:
@@ -196,13 +223,21 @@ jobs:
           Write-Host "waiting for crashpad to upload the minidump..."
           Start-Sleep -Seconds 25
 
+      # Rename after the crash-test step above (which runs deploy\texturelab.exe)
+      # so the exe ships as texturelab-win-v<version>-<hash>.exe alongside its DLLs.
+      - name: Rename Windows executable
+        shell: pwsh
+        run: |
+          Rename-Item "deploy\texturelab.exe" "texturelab-win-${{ needs.version.outputs.tag }}.exe"
+
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: texturelab-windows
+          name: texturelab-win-${{ needs.version.outputs.tag }}
           path: deploy/
 
   build-macos:
+    needs: version
     # Qt 6.7.x still references AGL.framework, which modern macOS SDKs (Xcode 16+)
     # removed — so we pin Xcode 15 (macOS 14 SDK, AGL present) on macos-14. Build
     # universal x86_64+arm64 so it runs on both Intel and Apple Silicon Macs.
@@ -270,13 +305,15 @@ jobs:
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
-          name: texturelab-macos
+          name: texturelab-mac-${{ needs.version.outputs.tag }}
           path: build/src/texturelab/texturelab.app
 
   deploy:
-    needs: [build-linux, build-windows, build-macos]
+    needs: [version, build-linux, build-windows, build-macos]
     if: always()
     runs-on: ubuntu-latest
+    env:
+      TAG: ${{ needs.version.outputs.tag }}
     steps:
       - name: Download artifacts
         if: ${{ needs.build-linux.result == 'success' || needs.build-windows.result == 'success' || needs.build-macos.result == 'success' }}
@@ -290,14 +327,32 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-2
-          SHA: ${{ github.sha }}
         run: |
+          # Artifacts already arrive as texturelab-<platform>-<TAG>/ with the
+          # primary file (exe/AppImage) renamed. Here we just zip each bundle
+          # under the same texturelab-<platform>-<TAG>.zip name.
           cd artifacts
-          if [ -d texturelab-linux ];   then zip -r ../linux-$SHA.zip   texturelab-linux/;   fi
-          if [ -d texturelab-windows ]; then zip -r ../windows-$SHA.zip texturelab-windows/; fi
-          if [ -d texturelab-macos ];   then zip -r ../macos-$SHA.zip   texturelab-macos/;   fi
+
+          # Linux — single AppImage.
+          if [ -d "texturelab-linux-${TAG}" ]; then
+            zip -j "../texturelab-linux-${TAG}.zip" "texturelab-linux-${TAG}"/*.AppImage
+          fi
+
+          # Windows — exe + sibling Qt DLLs + crashpad_handler.
+          if [ -d "texturelab-win-${TAG}" ]; then
+            (cd "texturelab-win-${TAG}" && zip -r "../../texturelab-win-${TAG}.zip" .)
+          fi
+
+          # macOS — re-wrap the uploaded bundle contents as a proper .app, zip it.
+          if [ -d "texturelab-mac-${TAG}" ]; then
+            mkdir -p "wrap/texturelab.app"
+            cp -R "texturelab-mac-${TAG}/." "wrap/texturelab.app/"
+            (cd wrap && zip -r "../../texturelab-mac-${TAG}.zip" texturelab.app)
+            rm -rf wrap
+          fi
+
           cd ..
-          for f in linux-$SHA.zip windows-$SHA.zip macos-$SHA.zip; do
+          for f in texturelab-linux-${TAG}.zip texturelab-win-${TAG}.zip texturelab-mac-${TAG}.zip; do
             if [ -f "$f" ]; then aws s3 cp "$f" s3://texturelab-nightlies/; fi
           done
 
@@ -305,14 +360,12 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           BRANCH: ${{ github.ref_name }}
-          SHA: ${{ github.sha }}
           RUN_ID: ${{ github.run_id }}
           REPO: ${{ github.repository }}
           LINUX_RESULT: ${{ needs.build-linux.result }}
           WINDOWS_RESULT: ${{ needs.build-windows.result }}
           MACOS_RESULT: ${{ needs.build-macos.result }}
         run: |
-          SHORT_SHA="${SHA:0:7}"
           RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
           S3_BASE="https://texturelab-nightlies.s3.us-east-2.amazonaws.com"
 
@@ -335,14 +388,14 @@ jobs:
           }
 
           if [[ "$LINUX_RESULT" == "success" && "$WINDOWS_RESULT" == "success" && "$MACOS_RESULT" == "success" ]]; then
-            TITLE="Build succeeded — $BRANCH @ $SHORT_SHA"
+            TITLE="Build succeeded — $BRANCH @ $TAG"
             COLOR=3066993
           else
-            TITLE="Build failed — $BRANCH @ $SHORT_SHA"
+            TITLE="Build failed — $BRANCH @ $TAG"
             COLOR=15158332
           fi
 
-          DESCRIPTION="$(download_line "$LINUX_RESULT" "Linux" "$S3_BASE/linux-$SHA.zip")\n$(download_line "$WINDOWS_RESULT" "Windows" "$S3_BASE/windows-$SHA.zip")\n$(download_line "$MACOS_RESULT" "macOS" "$S3_BASE/macos-$SHA.zip")\n\n[View run]($RUN_URL)"
+          DESCRIPTION="$(download_line "$LINUX_RESULT" "Linux" "$S3_BASE/texturelab-linux-$TAG.zip")\n$(download_line "$WINDOWS_RESULT" "Windows" "$S3_BASE/texturelab-win-$TAG.zip")\n$(download_line "$MACOS_RESULT" "macOS" "$S3_BASE/texturelab-mac-$TAG.zip")\n\n[View run]($RUN_URL)"
 
           curl -s -X POST "$DISCORD_WEBHOOK" \
             -H "Content-Type: application/json" \
