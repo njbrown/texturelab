@@ -35,6 +35,14 @@ enum class MeshType { Generated, Gltf };
 class MeshPrivate;
 class Mesh {
 public:
+    Mesh() = default;
+    // Frees the owned GL objects (vao, vbos, indexBuffer). Defined in
+    // renderer.cpp where those types are complete.
+    ~Mesh();
+    // Owns raw GL pointers; non-copyable to avoid double-free.
+    Mesh(const Mesh&) = delete;
+    Mesh& operator=(const Mesh&) = delete;
+
     QOpenGLVertexArrayObject* vao = nullptr;
     std::map<int, QOpenGLBuffer*> vbos;
     QList<VertexUsage> attribs;

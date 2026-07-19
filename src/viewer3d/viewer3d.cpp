@@ -148,13 +148,15 @@ void Viewer3D::paintGL()
     gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     gl->glEnable(GL_CULL_FACE);
 
-    gl->glCullFace(GL_FRONT);
-    renderer->renderGltfMesh(gltfMesh, material, camPos, worldMatrix,
-                             viewMatrix, projMatrix);
+    if (gltfMesh) {
+        gl->glCullFace(GL_FRONT);
+        renderer->renderGltfMesh(gltfMesh, material, camPos, worldMatrix,
+                                 viewMatrix, projMatrix);
 
-    gl->glCullFace(GL_BACK);
-    renderer->renderGltfMesh(gltfMesh, material, camPos, worldMatrix,
-                             viewMatrix, projMatrix);
+        gl->glCullFace(GL_BACK);
+        renderer->renderGltfMesh(gltfMesh, material, camPos, worldMatrix,
+                                 viewMatrix, projMatrix);
+    }
 
     gl->glDisable(GL_CULL_FACE);
     gl->glDisable(GL_BLEND);
@@ -606,46 +608,45 @@ void Viewer3D::setModel(const QString& modelType)
     // Bind OpenGL context
     makeCurrent();
 
-    // Clean up old mesh
-    if (gltfMesh) {
-        delete gltfMesh;
-        gltfMesh = nullptr;
-    }
-
-    // Create new mesh based on type
+    // Build the new mesh into a local first; only swap in (and free the old
+    // one) once creation succeeds, so a failed allocation can't leave gltfMesh
+    // null or delete the current mesh prematurely.
+    Mesh* newMesh = nullptr;
     if (modelType == "sphere") {
-        gltfMesh = createSphere(this->gl, 2, 1000, 1000);
+        newMesh = createSphere(this->gl, 2, 1000, 1000);
     }
     else if (modelType == "plane_xy") {
         // Create a subdivided plane in XY orientation
-        gltfMesh =
-            createPlane(this->gl, 4, 4, 1000, 1000, PlaneOrientation::XY);
+        newMesh = createPlane(this->gl, 4, 4, 1000, 1000, PlaneOrientation::XY);
     }
     else if (modelType == "plane_yz") {
         // Create a subdivided plane in YZ orientation
-        gltfMesh =
-            createPlane(this->gl, 4, 4, 1000, 1000, PlaneOrientation::YZ);
+        newMesh = createPlane(this->gl, 4, 4, 1000, 1000, PlaneOrientation::YZ);
     }
     else if (modelType == "plane_xz") {
         // Create a subdivided plane in XZ orientation
-        gltfMesh =
-            createPlane(this->gl, 4, 4, 1000, 1000, PlaneOrientation::XZ);
+        newMesh = createPlane(this->gl, 4, 4, 1000, 1000, PlaneOrientation::XZ);
     }
     else if (modelType == "cylinder") {
         // Create a cylinder with height subdivisions for displacement mapping
-        gltfMesh = createCylinder(this->gl, 1, 1, 2, 1000, 1000, 0.1f, 16);
+        newMesh = createCylinder(this->gl, 1, 1, 2, 1000, 1000, 0.1f, 16);
     }
     else if (modelType == "cube") {
         // Create a subdivided cube
-        gltfMesh = createCube(this->gl, 2, 2, 2, 1000, 1000, 1000);
+        newMesh = createCube(this->gl, 2, 2, 2, 1000, 1000, 1000);
     }
     else if (modelType == "cubesphere") {
         // CubeSphere - a sphere with low segments for a more cubic look
-        gltfMesh = createSphere(this->gl, 2, 8, 8);
+        newMesh = createSphere(this->gl, 2, 8, 8);
     }
     else {
         // Default to sphere
-        gltfMesh = createSphere(this->gl, 2, 1000, 1000);
+        newMesh = createSphere(this->gl, 2, 1000, 1000);
+    }
+
+    if (newMesh) {
+        delete gltfMesh;
+        gltfMesh = newMesh;
     }
 
     // Release OpenGL context

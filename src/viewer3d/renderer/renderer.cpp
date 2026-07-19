@@ -28,6 +28,22 @@ public:
     tinygltf::Accessor indexAccessor;
 };
 
+Mesh::~Mesh()
+{
+    // For glTF meshes, indexBuffer aliases one of the vbos entries (see
+    // loadMeshFromRc), so delete it only if it isn't already owned by vbos.
+    bool indexAliased = false;
+    for (auto& kv : vbos) {
+        if (kv.second == indexBuffer)
+            indexAliased = true;
+        delete kv.second;
+    }
+    if (indexBuffer && !indexAliased)
+        delete indexBuffer;
+    delete vao;
+    // material is not owned by the mesh (shared, owned by Viewer3D) — not freed.
+}
+
 void Renderer::init(QOpenGLFunctions* gl)
 {
     this->gl = gl;
@@ -260,6 +276,9 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
                               const QMatrix4x4& viewMatrix,
                               const QMatrix4x4& projMatrix)
 {
+    if (!mesh || !material)
+        return;
+
     // setup material
     auto mat = material;
     if (mat->needsUpdate) {
