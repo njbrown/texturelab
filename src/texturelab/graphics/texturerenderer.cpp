@@ -337,6 +337,11 @@ void TextureRenderer::update()
 
     // check for nodes that need updating and update
     for (auto& node : project->nodes) {
+        // Defensive: a null entry should never reach the map now that lookups
+        // use .value() (Step 1), but guard the render loop regardless.
+        if (!node)
+            continue;
+
         if (!node->isGraphicsResourcesInitialized()) {
             // create texture
             initializeNodeGraphicsResources(node);
@@ -727,6 +732,9 @@ TextureNodePtr TextureRenderer::getNextUpdatableNode() const
     // non-dirty the this is a valid node
 
     for (auto node : project->nodes) {
+        if (!node)
+            continue;
+
         if (!node->isDirty)
             continue;
 
@@ -735,7 +743,10 @@ TextureNodePtr TextureRenderer::getNextUpdatableNode() const
         // we have a dirty node, check if all deps are clean
         auto deps = project->getNodeDependencies(node->id);
         for (auto dep : deps) {
-            if (dep->isDirty) {
+            // A null dep means an input connection references a node that no
+            // longer exists; treat it as not-yet-renderable rather than
+            // dereferencing it.
+            if (!dep || dep->isDirty) {
                 hasCleanDeps = false;
                 break;
             }

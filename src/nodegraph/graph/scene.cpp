@@ -141,7 +141,9 @@ ConnectionPtr Scene::connectNodes(NodePtr leftNode, QString leftOutputName,
     return connPtr;
 }
 
-NodePtr Scene::getNodeById(QString id) { return nodes[id]; }
+// .value() (not operator[]): a read-only lookup must never default-insert a
+// null entry into the map, which paint/drag/label iteration would dereference.
+NodePtr Scene::getNodeById(QString id) { return nodes.value(id); }
 
 void Scene::addFrame(FramePtr frame)
 {
@@ -149,7 +151,7 @@ void Scene::addFrame(FramePtr frame)
     frames[frame->id()] = frame;
 }
 
-FramePtr Scene::getFrameById(QString id) { return frames[id]; }
+FramePtr Scene::getFrameById(QString id) { return frames.value(id); }
 
 void Scene::removeFrame(FramePtr frame)
 {
@@ -165,7 +167,7 @@ void Scene::addComment(CommentPtr comment)
     comments[comment->id()] = comment;
 }
 
-CommentPtr Scene::getCommentById(QString id) { return comments[id]; }
+CommentPtr Scene::getCommentById(QString id) { return comments.value(id); }
 
 void Scene::removeComment(CommentPtr comment)
 {

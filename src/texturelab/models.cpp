@@ -7,17 +7,19 @@
 
 TextureNodePtr TextureProject::getNodeById(const QString& id)
 {
-    return nodes[id];
+    // .value() (not operator[]): a read-only lookup must never default-insert a
+    // null entry into the map, which the renderer would later dereference.
+    return nodes.value(id);
 }
 
 ConnectionPtr TextureProject::getConnectionById(const QString& id)
 {
-    return connections[id];
+    return connections.value(id);
 }
 
 QVector<TextureNodePtr> TextureProject::getNodeDependencies(const QString& id)
 {
-    auto node = nodes[id];
+    auto node = nodes.value(id);
 
     QVector<TextureNodePtr> cons;
     for (auto con : connections) {
@@ -32,7 +34,7 @@ QVector<TextureNodePtr> TextureProject::getNodeDependencies(const QString& id)
 
 QVector<TextureNodePtr> TextureProject::getNodeRightOfNode(const QString& id)
 {
-    auto node = nodes[id];
+    auto node = nodes.value(id);
 
     QVector<TextureNodePtr> cons;
     for (auto con : connections) {
