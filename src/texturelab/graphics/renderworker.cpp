@@ -236,8 +236,11 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
 
     ctx->makeCurrent(surface);
 
-    // Custom renderer path — node defines its own multi-pass rendering
-    if (command.renderer) {
+    // Custom renderer path — node defines its own multi-pass rendering.
+    // Require renderData too: the renderer immediately downcasts and reads
+    // fields off it, so a null (a node that overrides createRenderer() but not
+    // createRenderData()) would form a null reference and crash here.
+    if (command.renderer && command.renderData) {
         NodeRenderContext renderCtx;
         renderCtx.gl = gl;
         renderCtx.cache = &resourceCache;
