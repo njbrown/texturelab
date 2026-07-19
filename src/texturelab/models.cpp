@@ -77,6 +77,9 @@ ConnectionPtr TextureProject::removeConnection(const QString& leftNode,
     for (auto conKey : connections.keys()) {
         auto con = connections[conKey];
 
+        if (!con || !con->leftNode || !con->rightNode)
+            continue;
+
         if (con->leftNode->id == leftNode && con->rightNode->id == rightNode &&
             con->rightNodeInputName == rightNodeInput) {
             connections.remove(conKey);
@@ -155,7 +158,12 @@ Prop* TextureNode::getProp(QString propName)
 
 bool TextureNode::hasProp(QString propName) { return props.contains(propName); }
 
-unsigned int TextureNode::textureId() { return this->texture->texture(); }
+unsigned int TextureNode::textureId()
+{
+    // texture is null until the node's graphics resources are initialized;
+    // return 0 (the GL "no texture" name) rather than dereferencing null.
+    return this->texture ? this->texture->texture() : 0;
+}
 
 PropertyGroup* TextureNode::createGroup(const QString& name)
 {

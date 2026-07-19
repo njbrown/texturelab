@@ -227,6 +227,12 @@ void MainWindow::passTextureChannelsToViewer3D()
         if (!node)
             continue;
 
+        // Skip nodes whose FBO/shader aren't ready yet: textureId() would
+        // otherwise dereference a null texture. They'll be picked up on the
+        // next sync once the render worker has produced their texture.
+        if (!node->isGraphicsResourcesInitialized())
+            continue;
+
         switch (channel) {
         case TextureChannel::Albedo:
             viewer->setAlbedoTexture(node->textureId());

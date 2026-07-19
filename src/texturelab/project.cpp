@@ -48,6 +48,10 @@ TextureProjectPtr Project::loadTextureFromJson(QJsonObject json)
         auto nodeDef = item.toObject();
         auto nodeName = nodeDef["typeName"].toString();
         auto node = lib->createNode(nodeName);
+        // createNode returns null for an unknown/legacy typeName the resolved
+        // library can't build; skip it rather than dereferencing null.
+        if (!node)
+            continue;
         node->exportName = nodeDef["exportName"].toString("");
         node->id = nodeDef["id"].toString();
         node->randomSeed = (long)nodeDef["randomSeed"].toDouble(0);
@@ -88,6 +92,12 @@ TextureProjectPtr Project::loadTextureFromJson(QJsonObject json)
 
         QString rightNodeId = conObj["rightNodeId"].toString();
         TextureNodePtr rightNode = texture->getNodeById(rightNodeId);
+
+        // Drop connections whose endpoints didn't load (unknown/legacy node
+        // that was skipped, or a hand-edited/migrated file). Storing a
+        // connection with a null endpoint would crash save/remove later.
+        if (!leftNode || !rightNode)
+            continue;
 
         QString rightNodeInputId = conObj["rightNodeInput"].toString();
         texture->addConnection(leftNode, rightNode, rightNodeInputId);
@@ -230,6 +240,10 @@ QByteArray Project::saveTexture(TextureProjectPtr texture)
     // connections
     QJsonArray conArray;
     for (auto& con : texture->connections) {
+        // Never serialize a connection with a missing endpoint (would crash on
+        // the deref below and produce an unloadable file).
+        if (!con || !con->leftNode || !con->rightNode)
+            continue;
         QJsonObject conObj;
         conObj["leftNodeId"] = con->leftNode->id;
         conObj["rightNodeId"] = con->rightNode->id;
