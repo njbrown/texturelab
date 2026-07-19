@@ -45,6 +45,11 @@ public:
         int w = ctx.textureWidth;
         int h = ctx.textureHeight;
 
+        // Guard against zero/negative dimensions: wrapAround() below divides by
+        // w/h, and a negative product would wrap to a huge size_t allocation.
+        if (w <= 0 || h <= 0)
+            return;
+
         // No input — output black
         if (ctx.inputs.isEmpty() || ctx.inputs[0].textureId == 0) {
             cache->bindFboToTexture(ctx.outputTextureId);
@@ -54,7 +59,8 @@ public:
             return;
         }
 
-        int gridSize = w * h;
+        // size_t so w*h*4 can't overflow int for large textures.
+        size_t gridSize = (size_t)w * h;
 
         // Read input pixels via FBO
         std::vector<float> readPixels(gridSize * 4);

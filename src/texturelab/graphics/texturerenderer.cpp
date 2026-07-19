@@ -448,7 +448,7 @@ void TextureRenderer::createNodeTexture(const TextureNodePtr& node)
     QOpenGLFramebufferObjectFormat fboFormat;
     fboFormat.setInternalTextureFormat(GL_RGBA32F);
     node->texture = new QOpenGLFramebufferObject(
-        project->textureWidth, project->textureWidth, fboFormat);
+        project->textureWidth, project->textureHeight, fboFormat);
     node->textureWidth = project->textureWidth;
     node->textureHeight = project->textureHeight;
 
