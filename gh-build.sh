@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source .env
+
+# Force gh to use the keyring login (which has repo scope). gh prefers the
+# GH_TOKEN / GITHUB_TOKEN env vars over keyring auth, and the token exported
+# from the shell only has read:packages scope, which 403s on workflow dispatch.
+unset GH_TOKEN GITHUB_TOKEN
+
 REPO="njbrown/texturelab"
 WORKFLOW="build.yml"
 BRANCH="${1:-$(git rev-parse --abbrev-ref HEAD)}"
