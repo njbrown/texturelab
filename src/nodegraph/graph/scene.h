@@ -5,9 +5,9 @@
 #include <QGraphicsScene>
 #include <QList>
 #include <QMap>
+#include <QOpenGLBuffer>
 #include <QOpenGLContext>
 #include <QOpenGLShaderProgram>
-#include <QOpenGLBuffer>
 #include <QOpenGLVertexArrayObject>
 #include <QPixmap>
 #include <QRectF>
@@ -33,7 +33,13 @@ typedef QSharedPointer<Scene> ScenePtr;
 typedef QSharedPointer<Frame> FramePtr;
 typedef QSharedPointer<Comment> CommentPtr;
 
-enum class SceneItemType : int { Node = 1, Port = 2, Connection = 3, Comment = 4, Frame = 5 };
+enum class SceneItemType : int {
+    Node = 1,
+    Port = 2,
+    Connection = 3,
+    Comment = 4,
+    Frame = 5
+};
 
 class Scene : public QGraphicsScene, public QEnableSharedFromThis<Scene> {
 public:
@@ -93,7 +99,7 @@ class Node : public QGraphicsObject, public QEnableSharedFromThis<Node> {
     QColor defaultBorderColor;
     QColor highlightBorderColor;
     QColor selectedBorderColor;
-    
+
     // Modern OpenGL resources
     static QOpenGLShaderProgram* shaderProgram;
     static QOpenGLBuffer* vbo;
@@ -238,7 +244,10 @@ public:
     void updatePosFromPorts();
     void updatePathFromPositions();
 
-    QPainterPath* p;
+    // Value member (was a raw QPainterPath* that leaked on every
+    // updatePathFromPositions() call and was read uninitialized before the
+    // first update).
+    QPainterPath p;
 
     // virtual int type() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option,

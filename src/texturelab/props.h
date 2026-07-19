@@ -1,7 +1,7 @@
 #pragma once
 
-#include "curve.h"
 #include "../colorpicker/gradient.h"
+#include "curve.h"
 #include <QBuffer>
 #include <QColor>
 #include <QIODevice>
@@ -46,7 +46,7 @@ public:
     QString name;
     QString displayName;
     PropType::Value type;
-    int order = 0;// for tracking order in UI
+    int order = 0; // for tracking order in UI
 
     PropertyGroup* group = nullptr;
 
@@ -288,7 +288,7 @@ public:
         index = obj["index"].toInt();
 
         auto list = obj["values"].toArray();
-        values.empty();
+        values.clear();
         for (auto item : list) {
             values.append(item.toString());
         }

@@ -64,7 +64,7 @@ public:
 class TextureProject : public QEnableSharedFromThis<TextureProject> {
 public:
     QString name = "untitled";
-    int randomSeed;
+    int randomSeed = 0;
     int textureWidth = 1024;
     int textureHeight = 1024;
 
@@ -127,8 +127,8 @@ public:
     // flag to indicate this node processes on CPU instead of GPU shader
     bool usesCpuProcessing = false;
 
-    int textureWidth;
-    int textureHeight;
+    int textureWidth = 0;
+    int textureHeight = 0;
     QOpenGLFramebufferObject* texture = nullptr;
     QOpenGLShaderProgram* shader = nullptr;
     QString shaderSource;

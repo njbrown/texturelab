@@ -200,6 +200,8 @@ void Scene::removeNode(NodePtr node)
     node->hide(); // fix display cache issue
     this->removeItem(node.data());
 
+    nodes.remove(node->id());
+
     // reshow here in case i forget when re-adding node for
     // undo-redo
     node->show();
@@ -806,8 +808,8 @@ void Connection::updatePosFromPorts()
 
 void Connection::updatePathFromPositions()
 {
-    p = new QPainterPath;
-    p->moveTo(pos1);
+    p = QPainterPath();
+    p.moveTo(pos1);
 
     qreal dx = pos2.x() - pos1.x();
     qreal dy = pos2.y() - pos1.y();
@@ -815,10 +817,10 @@ void Connection::updatePathFromPositions()
     QPointF ctr1(pos1.x() + dx * 0.5, pos1.y());
     QPointF ctr2(pos2.x() - dx * 0.5, pos2.y());
 
-    p->cubicTo(ctr1, ctr2, pos2);
-    p->setFillRule(Qt::OddEvenFill);
+    p.cubicTo(ctr1, ctr2, pos2);
+    p.setFillRule(Qt::OddEvenFill);
 
-    setPath(*p);
+    setPath(p);
 }
 
 void Connection::paint(QPainter* painter,
@@ -832,7 +834,7 @@ void Connection::paint(QPainter* painter,
         pen.setStyle(Qt::DashLine);
         pen.setDashOffset(4);
         painter->setPen(pen);
-        painter->drawPath(*p);
+        painter->drawPath(p);
 
         painter->setPen(QPen(QColor(0, 0, 0), 3));
         painter->setBrush(QBrush(QColor(150, 150, 150)));
@@ -845,7 +847,7 @@ void Connection::paint(QPainter* painter,
         // create gradient for line
         QPen pen(QColor(170, 170, 170), lineThickness);
         painter->setPen(pen);
-        painter->drawPath(*p);
+        painter->drawPath(p);
 
         painter->setPen(QPen(QColor(0, 0, 0), 3));
         painter->setBrush(QBrush(QColor(170, 170, 170)));
