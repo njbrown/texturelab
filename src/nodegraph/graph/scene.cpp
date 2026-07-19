@@ -120,8 +120,10 @@ ConnectionPtr Scene::connectNodes(NodePtr leftNode, QString leftOutputName,
                                   NodePtr rightNode, QString rightInputName)
 {
     auto leftPort = leftNode->getOutPortByName(leftOutputName);
-    qDebug() << rightNode->getInPorts();
     auto rightPort = rightNode->getInPortByName(rightInputName);
+
+    if (!leftPort || !rightPort)
+        return ConnectionPtr(nullptr);
 
     // create new connection item from ports
     auto conn = new Connection();
@@ -404,7 +406,7 @@ PortPtr Node::getPortById(QString id)
             return port;
     }
 
-    Q_ASSERT(false);
+    return PortPtr(nullptr);
 }
 
 PortPtr Node::getInPortByName(QString name)
@@ -414,7 +416,7 @@ PortPtr Node::getInPortByName(QString name)
             return port;
     }
 
-    Q_ASSERT(false);
+    return PortPtr(nullptr);
 }
 
 PortPtr Node::getOutPortByName(QString name)
@@ -424,7 +426,7 @@ PortPtr Node::getOutPortByName(QString name)
             return port;
     }
 
-    Q_ASSERT(false);
+    return PortPtr(nullptr);
 }
 
 QRectF Node::boundingRect() const { return QRectF(0, 0, 100, 100); }
