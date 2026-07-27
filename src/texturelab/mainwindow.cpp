@@ -105,9 +105,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
         // (e.g. #AccordionHeader) don't reach widgets inside docks unless we also
         // hand them to the dock manager. Order: ADS default -> ADS overrides ->
         // app rules (last so our tokens win over ADS's palette()-based defaults).
-        this->dockManager->setStyleSheet(this->adsDefaultStyleSheet + "\n"
-                                         + tm.adsStyleSheet() + "\n"
-                                         + tm.appStyleSheet());
+        const QString sheet = this->adsDefaultStyleSheet + "\n" + tm.adsStyleSheet()
+                              + "\n" + tm.appStyleSheet();
+        this->dockManager->setStyleSheet(sheet); // theme-exempt: applies composed theme sheet
     };
     applyDockTheme();
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, applyDockTheme);

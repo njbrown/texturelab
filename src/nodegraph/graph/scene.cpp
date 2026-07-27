@@ -284,7 +284,7 @@ Node::Node()
     effect->setBlurRadius(20);
     effect->setXOffset(0);
     effect->setYOffset(0);
-    effect->setColor(QColor(00, 00, 00, 70));
+    effect->setColor(QColor(00, 00, 00, 70)); // theme-exempt: unused shadow effect (setGraphicsEffect disabled)
     // setGraphicsEffect(effect); // forces node to raster remder
     // maybe render to node behind this to get same effect
 

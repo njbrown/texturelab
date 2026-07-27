@@ -33,6 +33,16 @@ jobs:
           SUFFIX=$(grep -oP 'set\(TEXTURELAB_VERSION_SUFFIX "\K[^"]*' src/texturelab/CMakeLists.txt)
           echo "tag=v${NUM}${SUFFIX}-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
+  # Fails the build if inline widget stylesheets or hardcoded QColor literals
+  # creep into the UI/rendering code (they'd bypass the theme system and break
+  # --dev-theme hot-reload). See scripts/check-theme-hygiene.sh + UI_DESIGN_SYSTEM_PRD.md.
+  theme-hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check theme hygiene
+        run: bash scripts/check-theme-hygiene.sh
+
   build-linux:
     needs: version
     # runs-on: ubuntu-20.04

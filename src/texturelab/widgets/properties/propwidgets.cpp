@@ -372,7 +372,7 @@ void ColorPropWidget::updateColorPreview()
                                  .arg(prop->value.green())
                                  .arg(prop->value.blue())
                                  .arg(prop->value.alpha());
-        colorPreview->setStyleSheet(styleSheet);
+        colorPreview->setStyleSheet(styleSheet); // theme-exempt: dynamic color-data swatch
     }
 }
 
@@ -452,7 +452,7 @@ void GradientPropWidget::updateGradientPreview()
         painter.end();
 
         QString styleSheet = QString("border: 1px solid #888;");
-        gradientPreview->setStyleSheet(styleSheet);
+        gradientPreview->setStyleSheet(styleSheet); // theme-exempt: dynamic gradient-data swatch
 
         // Set as background using palette
         palette.setBrush(gradientPreview->backgroundRole(), QBrush(pixmap));

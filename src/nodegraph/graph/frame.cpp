@@ -237,7 +237,7 @@ void Frame::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
 
     // Draw resize handles when selected
     if (isSelected()) {
-        painter->setBrush(QColor(100, 100, 100, 100));
+        painter->setBrush(QColor(100, 100, 100, 100)); // theme-exempt: neutral resize-handle overlay
         painter->setPen(Qt::NoPen);
 
         qreal h = RESIZE_HANDLE_SIZE;
