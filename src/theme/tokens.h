@@ -23,19 +23,23 @@ constexpr const char* Accent        = "accent";
 
 // --- node graph (surface C) ---
 constexpr const char* NodeBg          = "node.bg";
-constexpr const char* NodeBgSelected  = "node.bg.selected";
 constexpr const char* NodeBorder      = "node.border";
 constexpr const char* NodeBorderHover = "node.border.hover";
 constexpr const char* NodeBorderSelect = "node.border.select";
 constexpr const char* NodeTitle       = "node.title";
+constexpr const char* NodeChannel     = "node.channel";
+constexpr const char* SocketFill      = "socket.fill";
 constexpr const char* Wire            = "wire";
+constexpr const char* WireDragging    = "wire.dragging";
 constexpr const char* WireSelected    = "wire.selected";
-constexpr const char* PortIn          = "port.in";
-constexpr const char* PortOut         = "port.out";
-constexpr const char* GridDot         = "grid.dot";
 constexpr const char* GridBg          = "grid.bg";
+constexpr const char* GridFine        = "grid.fine";
+constexpr const char* GridCoarse      = "grid.coarse";
 constexpr const char* CheckerA        = "checker.a";
 constexpr const char* CheckerB        = "checker.b";
+constexpr const char* FrameSelect     = "frame.select";
+constexpr const char* CommentFill     = "comment.fill";
+constexpr const char* CommentText     = "comment.text";
 
 // --- 3D viewport (surface D) ---
 constexpr const char* View3dClear = "view3d.clear";

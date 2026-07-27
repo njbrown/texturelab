@@ -16,12 +16,9 @@
 #include <cmath>
 #include <iostream>
 
-const QColor BackgroundColor(53, 53, 53);
-const QColor FineGridColor(60, 60, 60);
-const QColor CoarseGridColor(25, 25, 25);
-
 #include "graph/comment.h"
 #include "graph/frame.h"
+#include "graph/nodetheme.h"
 #include "graph/scene.h"
 #include "nodegraph.h"
 
@@ -48,8 +45,18 @@ NodeGraph::NodeGraph(QWidget* parent) : QGraphicsView(parent)
     setDragMode(QGraphicsView::RubberBandDrag);
     setRenderHint(QPainter::Antialiasing);
 
-    // setBackgroundBrush(BackgroundColor);
-    setBackgroundBrush(QColor(53, 53, 53));
+    setBackgroundBrush(ntColor(Tokens::GridBg));
+
+    // Repaint (and refresh the themed background brush) whenever the theme
+    // changes, so the node graph follows --dev-theme hot-reloads like the rest
+    // of the app. drawBackground() reads grid colors from tokens at paint time.
+    QObject::connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
+                     [this]() {
+                         setBackgroundBrush(ntColor(Tokens::GridBg));
+                         if (scene())
+                             scene()->update();
+                         viewport()->update();
+                     });
 
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -251,14 +258,12 @@ void NodeGraph::drawBackground(QPainter* painter, const QRectF& r)
         }
     };
 
-    QBrush bBrush = backgroundBrush();
-
-    QPen pfine(FineGridColor, 1.0);
+    QPen pfine(ntColor(Tokens::GridFine), 1.0);
 
     painter->setPen(pfine);
     drawGrid(15);
 
-    QPen p(CoarseGridColor, 1.0);
+    QPen p(ntColor(Tokens::GridCoarse), 1.0);
 
     painter->setPen(p);
     drawGrid(150);

@@ -1,6 +1,7 @@
 #include "scene.h"
 #include "comment.h"
 #include "frame.h"
+#include "nodetheme.h"
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsView>
@@ -235,10 +236,11 @@ Node::Node()
     isHovered = false;
     showingSocketNames = false;
 
-    defaultBorderColor = QColor(0, 0, 0);
-    highlightBorderColor = QColor(0, 0, 0);
-    // highlightBorderColor = QColor(120, 120, 120);
-    selectedBorderColor = QColor(200, 200, 200);
+    // Border colors are read from tokens at paint time (see Node::paint); these
+    // members are kept only for any external callers.
+    defaultBorderColor = ntColor(Tokens::NodeBorder);
+    highlightBorderColor = ntColor(Tokens::NodeBorderHover);
+    selectedBorderColor = ntColor(Tokens::NodeBorderSelect);
 
     setCacheMode(QGraphicsItem::NoCache);
 
@@ -255,7 +257,7 @@ Node::Node()
 
     text->setPos(0, 0);
     text->setTextWidth(100);
-    text->setDefaultTextColor(QColor(255, 255, 255));
+    text->setDefaultTextColor(ntColor(Tokens::NodeTitle));
     text->setZValue(5);
 
     // center title
@@ -271,7 +273,7 @@ Node::Node()
     channelText = new QGraphicsTextItem(this);
     channelText->setFlag(QGraphicsItem::ItemIsFocusable, false);
     channelText->setFlag(QGraphicsItem::ItemIsSelectable, false);
-    channelText->setDefaultTextColor(QColor(200, 255, 200));
+    channelText->setDefaultTextColor(ntColor(Tokens::NodeChannel));
     channelText->setZValue(5);
     channelText->hide();
     QFont chFont = channelText->font();
@@ -482,11 +484,11 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
 
     QColor borderColor;
     if (isSelected())
-        borderColor = this->selectedBorderColor;
+        borderColor = ntColor(Tokens::NodeBorderSelect);
     else if (isHovered)
-        borderColor = this->highlightBorderColor;
+        borderColor = ntColor(Tokens::NodeBorderHover);
     else
-        borderColor = this->defaultBorderColor;
+        borderColor = ntColor(Tokens::NodeBorder);
 
     // not really needed
     // painter->setClipRect(option->exposedRect);
@@ -518,17 +520,18 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
     bgPath.setFillRule(Qt::WindingFill);
     bgPath.addRoundedRect(0, 0, nodeWidth, nodeHeight, titleRadius,
                           titleRadius);
-    painter->fillPath(bgPath, QBrush(QColor(10, 10, 10, 255)));
+    painter->fillPath(bgPath, QBrush(ntColor(Tokens::NodeBg)));
 
     if (!thumbnail.isNull()) {
-        // Checkerboard background for alpha-transparent thumbnails
+        // Checkerboard background for alpha-transparent thumbnails.
+        // (Built once and cached, so it reflects the theme at first draw.)
         static QPixmap checkerTile;
         if (checkerTile.isNull()) {
             checkerTile = QPixmap(16, 16);
-            checkerTile.fill(QColor(0xC0, 0xC0, 0xC0));
+            checkerTile.fill(ntColor(Tokens::CheckerA));
             QPainter cp(&checkerTile);
-            cp.fillRect(0, 0, 8, 8, QColor(0x80, 0x80, 0x80));
-            cp.fillRect(8, 8, 8, 8, QColor(0x80, 0x80, 0x80));
+            cp.fillRect(0, 0, 8, 8, ntColor(Tokens::CheckerB));
+            cp.fillRect(8, 8, 8, 8, ntColor(Tokens::CheckerB));
         }
         painter->fillRect(QRect(0, 0, nodeWidth, nodeHeight),
                           QBrush(checkerTile));
@@ -646,7 +649,7 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
         QPainterPath bgPath;
         bgPath.setFillRule(Qt::WindingFill);
         bgPath.addRoundedRect(0, 0, nodeWidth, 18, titleRadius, titleRadius);
-        painter->fillPath(bgPath, QBrush(QColor(0, 0, 0, 255)));
+        painter->fillPath(bgPath, QBrush(ntColor(Tokens::NodeBorder)));
 
         text->paint(painter, option, widget);
     }
@@ -680,10 +683,10 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
 
             QRectF bgRect(x, y, rectW, labelH);
             painter->setPen(Qt::NoPen);
-            painter->setBrush(QColor(0, 0, 0, 160));
+            painter->setBrush(ntColor(Tokens::NodeBorder, 160));
             painter->drawRoundedRect(bgRect, 3, 3);
 
-            painter->setPen(QColor(255, 255, 255, 220));
+            painter->setPen(ntColor(Tokens::NodeTitle, 220));
             painter->drawText(bgRect, Qt::AlignCenter, labelName);
         };
 
@@ -762,7 +765,7 @@ void Port::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
 {
     auto rect = actualRect();
 
-    QPen pen(QColor(00, 00, 00, 250), 1.0f);
+    QPen pen(ntColor(Tokens::NodeBorder, 250), 1.0f);
     painter->setPen(pen);
 
     // background
@@ -771,10 +774,10 @@ void Port::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
     // bgPath.addRoundedRect(-_radius, _radius, rect.width(), rect.height(),
     // rect.width() / 2, rect.height() / 2);
     bgPath.addRoundedRect(rect, _radius, _radius);
-    painter->fillPath(bgPath, QBrush(QColor(170, 170, 170, 255)));
+    painter->fillPath(bgPath, QBrush(ntColor(Tokens::SocketFill)));
 
     // draw border
-    painter->setPen(QPen(QColor(0, 0, 0), 3));
+    painter->setPen(QPen(ntColor(Tokens::NodeBorder), 3));
     painter->drawRoundedRect(rect, rect.width() / 2, rect.height() / 2);
 }
 
@@ -793,8 +796,8 @@ Connection::Connection()
 
     connectState = ConnectionState::Complete;
 
-    auto pen = QPen(QColor(200, 200, 200));
-    pen.setBrush(QColor(50, 150, 250));
+    auto pen = QPen(ntColor(Tokens::Wire));
+    pen.setBrush(ntColor(Tokens::WireSelected));
     pen.setCapStyle(Qt::RoundCap);
     pen.setWidth(lineThickness);
     setPen(pen);
@@ -830,27 +833,26 @@ void Connection::paint(QPainter* painter,
     painter->save();
 
     if (connectState == ConnectionState::Dragging) {
-        QPen pen(QColor(150, 150, 150), lineThickness);
+        QPen pen(ntColor(Tokens::WireDragging), lineThickness);
         pen.setStyle(Qt::DashLine);
         pen.setDashOffset(4);
         painter->setPen(pen);
         painter->drawPath(p);
 
-        painter->setPen(QPen(QColor(0, 0, 0), 3));
-        painter->setBrush(QBrush(QColor(150, 150, 150)));
+        painter->setPen(QPen(ntColor(Tokens::NodeBorder), 3));
+        painter->setBrush(QBrush(ntColor(Tokens::WireDragging)));
         painter->drawEllipse(pos1, 7, 7);
 
         painter->setPen(Qt::NoPen);
         painter->drawEllipse(pos2, 6, 6);
     }
     if (connectState == ConnectionState::Complete) {
-        // create gradient for line
-        QPen pen(QColor(170, 170, 170), lineThickness);
+        QPen pen(ntColor(Tokens::Wire), lineThickness);
         painter->setPen(pen);
         painter->drawPath(p);
 
-        painter->setPen(QPen(QColor(0, 0, 0), 3));
-        painter->setBrush(QBrush(QColor(170, 170, 170)));
+        painter->setPen(QPen(ntColor(Tokens::NodeBorder), 3));
+        painter->setBrush(QBrush(ntColor(Tokens::Wire)));
         painter->drawEllipse(pos1, 7, 7);
         painter->drawEllipse(pos2, 7, 7);
     }

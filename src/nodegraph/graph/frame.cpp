@@ -1,4 +1,5 @@
 #include "frame.h"
+#include "nodetheme.h"
 #include "scene.h"
 #include <QApplication>
 #include <QCursor>
@@ -208,18 +209,18 @@ void Frame::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
         painter->setFont(font);
 
         // shadow pass
-        painter->setPen(QColor(0, 0, 0, 160));
+        painter->setPen(ntColor(Tokens::NodeBorder, 160));
         painter->drawText(handleRect.translated(1, 1), Qt::AlignCenter, _title);
 
         // text pass
-        painter->setPen(QColor(255, 255, 255));
+        painter->setPen(ntColor(Tokens::NodeTitle));
         painter->drawText(handleRect, Qt::AlignCenter, _title);
     }
 
     // Draw frame border
     QPen borderPen;
     if (isSelected()) {
-        borderPen.setColor(QColor(255, 165, 0)); // Orange for selected
+        borderPen.setColor(ntColor(Tokens::FrameSelect)); // themed "selected" accent
         borderPen.setWidth(2);
     }
     else {
