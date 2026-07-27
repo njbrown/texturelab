@@ -13,21 +13,7 @@ AccordionWidget::AccordionWidget(const QString& title, bool startCollapsed,
     this->setLayout(outerLayout);
 
     headerButton = new QPushButton(this);
-    headerButton->setStyleSheet(
-        "QPushButton {"
-        "  background: #333333;"
-        "  color: #cccccc;"
-        "  font-weight: bold;"
-        "  font-size: 12px;"
-        "  text-align: left;"
-        "  padding: 5px 8px;"
-        "  border: none;"
-        "  border-top: 1px solid #444444;"
-        "  border-bottom: 1px solid #444444;"
-        "}"
-        "QPushButton:hover {"
-        "  background: #3d3d3d;"
-        "}");
+    headerButton->setObjectName("AccordionHeader"); // styled in app.qss.in
     headerButton->setFlat(true);
     headerButton->setCursor(Qt::PointingHandCursor);
     outerLayout->addWidget(headerButton);

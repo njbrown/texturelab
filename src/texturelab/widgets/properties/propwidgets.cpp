@@ -530,8 +530,7 @@ ImagePropWidget::ImagePropWidget()
     imagePreview->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     imagePreview->setAlignment(Qt::AlignCenter);
     imagePreview->setCursor(Qt::PointingHandCursor);
-    imagePreview->setStyleSheet(
-        "QLabel { background-color: #333; border: 1px solid #888; }");
+    imagePreview->setObjectName("ImagePreview"); // styled in app.qss.in
     imagePreview->setText("Click to select image");
     imagePreview->setScaledContents(false);
     imagePreview->installEventFilter(this);

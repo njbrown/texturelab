@@ -11,6 +11,7 @@
 
 PropertiesWidget::PropertiesWidget() : QWidget()
 {
+    setObjectName("PropertiesPanel"); // for QSS scoping (app.qss.in)
     displayMode = PropertyDisplayMode::None;
 
     textureChannelProp = new EnumProp();
@@ -269,7 +270,7 @@ void PropertiesWidget::setSelectedFrame(const FramePtr& frame)
     auto layout = (QVBoxLayout*)this->layout();
 
     auto titleLabel = new QLabel("Frame");
-    titleLabel->setStyleSheet("font-weight: bold; margin-bottom: 4px;");
+    titleLabel->setObjectName("PropSectionTitle"); // styled in app.qss.in
     layout->addWidget(titleLabel);
 
     auto titleProp = new StringProp();
@@ -331,7 +332,7 @@ void PropertiesWidget::setSelectedComment(const CommentPtr& comment)
     auto layout = (QVBoxLayout*)this->layout();
 
     auto titleLabel = new QLabel("Comment");
-    titleLabel->setStyleSheet("font-weight: bold; margin-bottom: 4px;");
+    titleLabel->setObjectName("PropSectionTitle"); // styled in app.qss.in
     layout->addWidget(titleLabel);
 
     auto textProp = new StringProp();

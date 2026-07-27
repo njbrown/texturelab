@@ -100,8 +100,14 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     // every theme change so it also picks up --dev-theme hot-reloads.
     this->adsDefaultStyleSheet = this->dockManager->styleSheet();
     auto applyDockTheme = [this]() {
+        ThemeManager& tm = ThemeManager::instance();
+        // Qt prefers an ancestor widget's stylesheet over qApp, so app.qss rules
+        // (e.g. #AccordionHeader) don't reach widgets inside docks unless we also
+        // hand them to the dock manager. Order: ADS default -> ADS overrides ->
+        // app rules (last so our tokens win over ADS's palette()-based defaults).
         this->dockManager->setStyleSheet(this->adsDefaultStyleSheet + "\n"
-                                         + ThemeManager::instance().adsStyleSheet());
+                                         + tm.adsStyleSheet() + "\n"
+                                         + tm.appStyleSheet());
     };
     applyDockTheme();
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, applyDockTheme);

@@ -270,3 +270,51 @@ QProgressBar {
     max-height: 14px;
 }
 QProgressBar::chunk { background: {{accent}}; border-radius: {{radius.sm}}px; }
+
+/* ============================================= properties / inspector ===== */
+
+/* Collapsible section header (AccordionWidget).
+   NOTE: min-height MUST be positive. With min-height:0 the flat header button
+   collapses to ~0px inside PropertiesWidget's dense QVBoxLayout, clipping the
+   title to invisibility (it survives in a looser layout, which masked it). The
+   original inline style set no min-height; keep an explicit one here since the
+   global QPushButton rule's 18px is what we're overriding. */
+#AccordionHeader {
+    background: {{gray.800}};
+    color: {{text.secondary}};
+    font-weight: bold;
+    text-align: left;
+    padding: 5px 8px;
+    border: none;
+    border-top: 1px solid {{border.subtle}};
+    border-bottom: 1px solid {{border.subtle}};
+    min-height: 20px;
+}
+#AccordionHeader:hover { background: {{gray.700}}; }
+
+/* "Frame" / "Comment" section titles in the properties panel */
+#PropSectionTitle {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Curve editor readout (In/Out values while dragging) */
+#CurveReadout {
+    color: {{text.disabled}};
+    font-size: 10px;
+}
+
+/* Image property placeholder / preview */
+#ImagePreview {
+    background: {{bg.input}};
+    border: 1px solid {{border.input}};
+    border-radius: {{radius.sm}}px;
+    color: {{text.disabled}};
+}
+
+/* Compact buttons (e.g. curve "Reset") */
+QPushButton[size="small"] {
+    font-size: 10px;
+    padding: 2px 6px;
+    min-height: 0;
+}

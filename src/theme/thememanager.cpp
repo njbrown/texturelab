@@ -156,6 +156,11 @@ QString ThemeManager::adsStyleSheet() const
     return QssBuilder::build(m_adsTemplate, m_theme);
 }
 
+QString ThemeManager::appStyleSheet() const
+{
+    return QssBuilder::build(m_qssTemplate, m_theme);
+}
+
 QPalette ThemeManager::buildPalette() const
 {
     const QHash<QString, QColor>& p = m_theme.paletteColors();

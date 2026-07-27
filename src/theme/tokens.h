@@ -41,4 +41,17 @@ constexpr const char* CheckerB        = "checker.b";
 constexpr const char* View3dClear = "view3d.clear";
 constexpr const char* View3dGrid  = "view3d.grid";
 
+// --- curve editor (surface B) ---
+constexpr const char* CurveBg           = "curve.bg";
+constexpr const char* CurveGrid         = "curve.grid";
+constexpr const char* CurveIdentity     = "curve.identity";
+constexpr const char* CurveLine         = "curve.line";
+constexpr const char* CurveAnchor       = "curve.anchor";
+constexpr const char* CurveAnchorHover  = "curve.anchor.hover";
+constexpr const char* CurveAnchorSelect = "curve.anchor.select";
+constexpr const char* CurveHandleLine   = "curve.handle.line";
+constexpr const char* CurveHandleDot    = "curve.handle.dot";
+constexpr const char* CurveHandleHover  = "curve.handle.hover";
+constexpr const char* CurveHandleCorner = "curve.handle.corner";
+
 } // namespace Tokens

@@ -1,5 +1,8 @@
 #include "curvepropwidget.h"
 
+#include "thememanager.h"
+#include "tokens.h"
+
 #include <QContextMenuEvent>
 #include <QHBoxLayout>
 #include <QMenu>
@@ -10,20 +13,8 @@
 #include <QtMath>
 
 // ============================================================================
-// Colour constants
+// Metrics (colours are theme-driven; see CurveCanvas::refreshColors)
 // ============================================================================
-
-static const QColor COL_BG         { 0x1a, 0x1a, 0x1a };
-static const QColor COL_GRID       { 0x25, 0x25, 0x25 };
-static const QColor COL_IDENTITY   { 0x30, 0x30, 0x30 };
-static const QColor COL_CURVE      { 0xe0, 0xe0, 0xe0 };
-static const QColor COL_ANCHOR_DEF { 0x88, 0x88, 0x88 };
-static const QColor COL_ANCHOR_HOV { 0xff, 0xff, 0xff };
-static const QColor COL_ANCHOR_SEL { 0x4a, 0x9e, 0xff };
-static const QColor COL_HANDLE_LINE{ 0x55, 0x55, 0x55 };
-static const QColor COL_HANDLE_DOT { 0x88, 0x88, 0x88 };
-static const QColor COL_HANDLE_HOV { 0xcc, 0xcc, 0xcc };
-static const QColor COL_HANDLE_COR { 0xff, 0x99, 0x44 }; // corner (broken) mode
 
 static constexpr int   CANVAS_PAD  = 8;  // px padding inside canvas
 static constexpr float ANCHOR_R    = 5.0f;
@@ -43,6 +34,28 @@ CurveCanvas::CurveCanvas(QWidget* parent) : QWidget(parent)
     QSizePolicy sp = sizePolicy();
     sp.setHeightForWidth(true);
     setSizePolicy(sp);
+
+    refreshColors();
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this]() {
+        refreshColors();
+        update();
+    });
+}
+
+void CurveCanvas::refreshColors()
+{
+    const Theme& t = ThemeManager::instance().theme();
+    colBg         = t.color(Tokens::CurveBg);
+    colGrid       = t.color(Tokens::CurveGrid);
+    colIdentity   = t.color(Tokens::CurveIdentity);
+    colCurve      = t.color(Tokens::CurveLine);
+    colAnchorDef  = t.color(Tokens::CurveAnchor);
+    colAnchorHov  = t.color(Tokens::CurveAnchorHover);
+    colAnchorSel  = t.color(Tokens::CurveAnchorSelect);
+    colHandleLine = t.color(Tokens::CurveHandleLine);
+    colHandleDot  = t.color(Tokens::CurveHandleDot);
+    colHandleHov  = t.color(Tokens::CurveHandleHover);
+    colHandleCor  = t.color(Tokens::CurveHandleCorner);
 }
 
 int CurveCanvas::heightForWidth(int w) const { return w; }
@@ -160,9 +173,9 @@ void CurveCanvas::paintEvent(QPaintEvent*)
 
 void CurveCanvas::drawGrid(QPainter& p)
 {
-    p.fillRect(rect(), COL_BG);
+    p.fillRect(rect(), colBg);
 
-    QPen pen(COL_GRID, 1);
+    QPen pen(colGrid, 1);
     p.setPen(pen);
 
     for (int i = 0; i <= 4; i++) {
@@ -179,7 +192,7 @@ void CurveCanvas::drawGrid(QPainter& p)
 
 void CurveCanvas::drawIdentityLine(QPainter& p)
 {
-    QPen pen(COL_IDENTITY, 1, Qt::DashLine);
+    QPen pen(colIdentity, 1, Qt::DashLine);
     p.setPen(pen);
     p.drawLine(toWidget(0, 0), toWidget(1, 1));
 }
@@ -201,7 +214,7 @@ void CurveCanvas::drawCurvePath(QPainter& p)
         path.cubicTo(cp1, cp2, end);
     }
 
-    QPen pen(COL_CURVE, 1.5f);
+    QPen pen(colCurve, 1.5f);
     p.setPen(pen);
     p.setBrush(Qt::NoBrush);
     p.drawPath(path);
@@ -216,17 +229,17 @@ void CurveCanvas::drawHandles(QPainter& p)
     QPointF lh     = toWidget(pt.x + pt.lx, pt.y + pt.ly);
     QPointF rh     = toWidget(pt.x + pt.rx, pt.y + pt.ry);
 
-    QColor dotColor = pt.smooth ? COL_HANDLE_DOT : COL_HANDLE_COR;
+    QColor dotColor = pt.smooth ? colHandleDot : colHandleCor;
 
     // Lines from anchor to handles
-    QPen linePen(COL_HANDLE_LINE, 1);
+    QPen linePen(colHandleLine, 1);
     p.setPen(linePen);
     p.drawLine(anchor, lh);
     p.drawLine(anchor, rh);
 
     // Handle dots
     auto drawHandle = [&](QPointF pos, bool isHovered) {
-        QColor c = isHovered ? COL_HANDLE_HOV : dotColor;
+        QColor c = isHovered ? colHandleHov : dotColor;
         p.setPen(QPen(c, 1));
         p.setBrush(Qt::NoBrush);
         p.drawEllipse(pos, HANDLE_R, HANDLE_R);
@@ -249,17 +262,17 @@ void CurveCanvas::drawAnchors(QPainter& p)
 
         if (i == selectedPoint) {
             r = ANCHOR_R_HL;
-            fill = COL_ANCHOR_SEL;
+            fill = colAnchorSel;
             // ring
-            p.setPen(QPen(COL_ANCHOR_SEL, 1));
+            p.setPen(QPen(colAnchorSel, 1));
             p.setBrush(Qt::NoBrush);
             p.drawEllipse(wp, r + 2, r + 2);
         } else if (i == hoveredPoint) {
             r = ANCHOR_R_HL;
-            fill = COL_ANCHOR_HOV;
+            fill = colAnchorHov;
         } else {
             r = ANCHOR_R;
-            fill = COL_ANCHOR_DEF;
+            fill = colAnchorDef;
         }
 
         p.setPen(Qt::NoPen);
@@ -449,7 +462,7 @@ CurvePropWidget::CurvePropWidget(CurveProp* prop, QWidget* parent)
     resetBtn    = new QPushButton("Reset", this);
     resetBtn->setFixedWidth(50);
     resetBtn->setFixedHeight(20);
-    resetBtn->setStyleSheet("font-size: 10px;");
+    resetBtn->setProperty("size", "small"); // styled in app.qss.in
 
     headerRow->addWidget(label);
     headerRow->addStretch();
@@ -463,7 +476,7 @@ CurvePropWidget::CurvePropWidget(CurveProp* prop, QWidget* parent)
 
     // Readout label
     readout = new QLabel(this);
-    readout->setStyleSheet("color: #888; font-size: 10px;");
+    readout->setObjectName("CurveReadout"); // styled in app.qss.in
     readout->setVisible(false);
     vLayout->addWidget(readout);
 

@@ -40,6 +40,12 @@ public:
     // own default sheet. Rebuilds from the current theme on each call.
     QString adsStyleSheet() const;
 
+    // The built application stylesheet (same one applied to qApp). MainWindow also
+    // appends this to the dock-manager sheet: Qt prefers an ancestor widget's
+    // stylesheet over qApp, so without this the app rules don't reach widgets
+    // living inside ADS docks (e.g. the properties panel). Rebuilds each call.
+    QString appStyleSheet() const;
+
     const Theme& theme() const { return m_theme; }
 
     // Apply Fusion style, dark color scheme, the built QPalette, and the built

@@ -3,6 +3,7 @@
 #include "../../curve.h"
 #include "../../props.h"
 
+#include <QColor>
 #include <QLabel>
 #include <QPushButton>
 #include <QWidget>
@@ -60,6 +61,13 @@ private:
     void drawCurvePath(QPainter& p);
     void drawAnchors(QPainter& p);
     void drawHandles(QPainter& p);
+
+    // Theme colors, refreshed from the active theme (surface B: QSS can't reach
+    // QPainter code). Repopulated on construction and on themeChanged().
+    void refreshColors();
+    QColor colBg, colGrid, colIdentity, colCurve;
+    QColor colAnchorDef, colAnchorHov, colAnchorSel;
+    QColor colHandleLine, colHandleDot, colHandleHov, colHandleCor;
 };
 
 class CurvePropWidget : public QWidget {

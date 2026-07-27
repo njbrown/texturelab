@@ -56,7 +56,19 @@
     "checker.b":          "@gray.600",
 
     "view3d.clear":       "@gray.700",
-    "view3d.grid":        "@gray.600"
+    "view3d.grid":        "@gray.600",
+
+    "curve.bg":             "@bg.elevated",
+    "curve.grid":           "@gray.850",
+    "curve.identity":       "@gray.800",
+    "curve.line":           "@text.secondary",
+    "curve.anchor":         "@text.disabled",
+    "curve.anchor.hover":   "@text.primary",
+    "curve.anchor.select":  "@accent",
+    "curve.handle.line":    "@gray.600",
+    "curve.handle.dot":     "@text.disabled",
+    "curve.handle.hover":   "@text.secondary",
+    "curve.handle.corner":  "@warn"
   },
 
   "palette": {
