@@ -59,7 +59,8 @@
     "comment.fill":       "@white",
     "comment.text":       "#F0F0F0",
 
-    "view3d.clear":       "@gray.700",
+    "view2d.bg":          "#212121",
+    "view3d.clear":       "#1A1A1A",
     "view3d.grid":        "@gray.600",
 
     "curve.bg":             "@bg.elevated",

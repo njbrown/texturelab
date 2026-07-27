@@ -319,6 +319,17 @@ QPushButton[size="small"] {
     min-height: 0;
 }
 
+/* ================================================== viewport overlays ===== */
+
+/* 2D view "Texture copied" toast (bottom-center, fades in/out) */
+#ViewToast {
+    background: {{bg.elevated}};
+    color: {{text.primary}};
+    border: 1px solid {{border.subtle}};
+    padding: 10px 20px;
+    border-radius: {{radius.md}}px;
+}
+
 /* ==================================================== library panel ======= */
 
 /* Library version indicator; turns warn-colored when the library is outdated */

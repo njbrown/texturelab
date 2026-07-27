@@ -1,4 +1,6 @@
 #include "viewer3d.h"
+#include "thememanager.h"
+#include "tokens.h"
 #include <QMatrix4x4>
 #include <QOpenGLWindow>
 #include <QQuaternion>
@@ -127,7 +129,9 @@ void Viewer3D::paintGL()
     // also, the supplied width and height are incorrect
     // gl->glViewport(0, 0, this->width(), this->height());
     gl->glClearDepthf(1.0);
-    gl->glClearColor(0.1, 0.1, 0.1, 1);
+    // Themed clear color; read each frame so it follows --dev-theme hot-reload.
+    const QColor clear = ThemeManager::instance().theme().color(Tokens::View3dClear);
+    gl->glClearColor(clear.redF(), clear.greenF(), clear.blueF(), 1);
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     gl->glEnable(GL_DEPTH_TEST);

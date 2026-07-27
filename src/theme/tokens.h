@@ -41,6 +41,9 @@ constexpr const char* FrameSelect     = "frame.select";
 constexpr const char* CommentFill     = "comment.fill";
 constexpr const char* CommentText     = "comment.text";
 
+// --- 2D viewport (surface B/D) ---
+constexpr const char* View2dBg = "view2d.bg";
+
 // --- 3D viewport (surface D) ---
 constexpr const char* View3dClear = "view3d.clear";
 constexpr const char* View3dGrid  = "view3d.grid";
