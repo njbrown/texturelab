@@ -330,6 +330,34 @@ QPushButton[size="small"] {
     border-radius: {{radius.md}}px;
 }
 
+/* ================================================= popups & dialogs ======= */
+
+/* Floating node-search popup (Blender-style quick add). Frameless top-level, so
+   a crisp border reads as elevation; no radius (avoids frameless-corner artifacts). */
+#NodeSearchPopup {
+    background: {{bg.elevated}};
+    border: 1px solid {{border.strong}};
+}
+
+/* Export dialog destination field + help text */
+#ExportDestination {
+    background: {{bg.input}};
+    border: 1px solid {{border.input}};
+    border-radius: {{radius.sm}}px;
+    padding: 5px;
+}
+#ExportDestination[empty="true"] { color: {{text.disabled}}; }
+#ExportHelp { color: {{text.disabled}}; }
+
+/* About dialog typography */
+#AboutTitle     { color: {{text.primary}};   font-size: 26px; font-weight: bold; }
+#AboutTag       { color: {{text.secondary}}; font-size: 12px; }
+#AboutVersion   { color: {{text.secondary}}; font-size: 13px; }
+#AboutDesc      { color: {{text.secondary}}; font-size: 13px; }
+#AboutLink      { font-size: 12px; }
+#AboutCopyright { color: {{text.disabled}};  font-size: 11px; }
+#AboutSeparator { color: {{border.subtle}}; }
+
 /* ==================================================== library panel ======= */
 
 /* Library version indicator; turns warn-colored when the library is outdated */

@@ -13,10 +13,9 @@ NodeSearchPopup::NodeSearchPopup(QWidget* parent) : QFrame(parent)
 {
     library = nullptr;
 
-    // Setup frame styling for a floating popup
+    // Setup frame styling for a floating popup (see #NodeSearchPopup in app.qss.in)
+    setObjectName("NodeSearchPopup");
     setWindowFlags(Qt::Popup | Qt::FramelessWindowHint);
-    setFrameStyle(QFrame::StyledPanel | QFrame::Raised);
-    setLineWidth(2);
 
     // Set fixed size for the popup
     setFixedSize(300, 400);
