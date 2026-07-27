@@ -318,3 +318,34 @@ QPushButton[size="small"] {
     padding: 2px 6px;
     min-height: 0;
 }
+
+/* ==================================================== library panel ======= */
+
+/* Library version indicator; turns warn-colored when the library is outdated */
+#LibraryVersionLabel { color: {{text.secondary}}; }
+#LibraryVersionLabel[outdated="true"] { color: {{warn}}; }
+
+/* Library search: a bit larger/taller than the default input */
+#LibrarySearch {
+    font-size: 13px;
+    padding: 4px 6px;
+    min-height: 24px;
+}
+
+/* Node-thumbnail grid: transparent card that gets an accent ring on hover/select */
+#LibraryList {
+    background: {{bg.base}};
+    border: none;
+}
+#LibraryList::item {
+    border: 1px solid transparent;
+    border-radius: {{radius.sm}}px;
+    margin-left: 6px;
+    padding: 2px;
+}
+#LibraryList::item:hover    { border: 1px solid {{accent}}; }
+#LibraryList::item:selected {
+    border: 1px solid {{accent}};
+    background: {{ctrl.hover}};
+    color: {{text.primary}};
+}

@@ -13,6 +13,7 @@
 #include <QPushButton>
 #include <QResizeEvent>
 #include <QScrollBar>
+#include <QStyle>
 #include <QVBoxLayout>
 
 // https://doc.qt.io/qt-6/qmimedata.html
@@ -28,6 +29,7 @@ bool LibraryItemMimeData::hasFormat(const QString& format) const
 
 LibraryWidget::LibraryWidget() : QWidget()
 {
+    this->setObjectName("LibraryPanel"); // QSS scoping (app.qss.in)
     this->setMinimumWidth(100);
     this->setLayout(new QVBoxLayout());
 
@@ -37,11 +39,13 @@ LibraryWidget::LibraryWidget() : QWidget()
     versionLayout->setContentsMargins(0, 0, 0, 0);
 
     versionLabel = new QLabel(versionRow);
+    versionLabel->setObjectName("LibraryVersionLabel"); // styled in app.qss.in
     versionLayout->addWidget(versionLabel);
 
     versionLayout->addStretch();
 
     upgradeButton = new QPushButton("Upgrade", versionRow);
+    upgradeButton->setProperty("variant", "primary"); // draw attention to the action
     upgradeButton->setVisible(false);
     connect(upgradeButton, &QPushButton::clicked,
             this, &LibraryWidget::upgradeRequested);
@@ -51,6 +55,7 @@ LibraryWidget::LibraryWidget() : QWidget()
 
     // search box
     searchBar = new QLineEdit(this);
+    searchBar->setObjectName("LibrarySearch");
     searchBar->setPlaceholderText("search");
     searchBar->setAlignment(Qt::AlignLeft);
     connect(searchBar, &QLineEdit::textChanged,
@@ -68,14 +73,16 @@ LibraryWidget::LibraryWidget() : QWidget()
 
 void LibraryWidget::setLibraryVersion(const QString& version, bool isCurrent)
 {
-    if (isCurrent) {
-        versionLabel->setText(QString("Library: %1").arg(version));
-        versionLabel->setStyleSheet("");
-    }
-    else {
-        versionLabel->setText(QString("Library: %1 (outdated)").arg(version));
-        versionLabel->setStyleSheet("color: orange;");
-    }
+    versionLabel->setText(isCurrent
+                              ? QString("Library: %1").arg(version)
+                              : QString("Library: %1 (outdated)").arg(version));
+
+    // Drive the color from a dynamic property so the "outdated" tint lives in
+    // app.qss.in (uses the theme's warn token) rather than a hardcoded hex.
+    versionLabel->setProperty("outdated", !isCurrent);
+    versionLabel->style()->unpolish(versionLabel);
+    versionLabel->style()->polish(versionLabel);
+
     upgradeButton->setVisible(!isCurrent);
 }
 
@@ -158,10 +165,7 @@ LibraryListWidget::LibraryListWidget() : QListWidget()
     // setAcceptDrops(true);
     setDropIndicatorShown(true);
 
-    setStyleSheet(
-        "QListView::item{ border-radius: 2px; border: 0px solid rgba(0,0,0,1); "
-        "margin-left: 6px;  }"
-        "QListView::item:hover{border: 1px solid rgba(50,150,250,1); }");
+    setObjectName("LibraryList"); // item styling in app.qss.in
 }
 
 void LibraryListWidget::resizeEvent(QResizeEvent* event)
