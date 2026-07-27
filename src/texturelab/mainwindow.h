@@ -82,6 +82,7 @@ private:
     QUndoStack* undoStack;
 
     ads::CDockManager* dockManager;
+    QString adsDefaultStyleSheet; // ADS's own default sheet, captured before we theme it
     QMenu* recentFilesMenu;
     QToolBar* toolBar;
     QWidget* editor;

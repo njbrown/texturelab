@@ -69,6 +69,7 @@ static void applyDarkTheme(QApplication& app)
     ThemeManager& tm = ThemeManager::instance();
     tm.loadFromResource(":/themes/dark.json");
     tm.setStyleSheetTemplate(":/qss/app.qss");
+    tm.setAdsStyleSheetTemplate(":/qss/ads.qss"); // applied to the dock manager by MainWindow
     tm.applyToApplication(app);
 }
 
@@ -114,7 +115,8 @@ int main(int argc, char* argv[])
 #ifdef TEXTURELAB_SOURCE_RESOURCES
             const QString res = QStringLiteral(TEXTURELAB_SOURCE_RESOURCES);
             ThemeManager::instance().enableHotReload(res + "/themes/dark.json",
-                                                     res + "/qss/app.qss.in");
+                                                     res + "/qss/app.qss.in",
+                                                     res + "/qss/ads.qss.in");
             qInfo("Theme hot-reload enabled, watching %s", qPrintable(res));
 #else
             qWarning("--dev-theme: TEXTURELAB_SOURCE_RESOURCES not compiled in");

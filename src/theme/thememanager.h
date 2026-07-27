@@ -31,6 +31,15 @@ public:
     // re-read on hot-reload without re-parsing the theme.
     void setStyleSheetTemplate(const QString& resourcePath);
 
+    // Load the dock-system (ADS) QSS override template. Applied by MainWindow to
+    // the CDockManager, not to qApp (ADS sets its own sheet on the manager). Kept
+    // here so it participates in token substitution and hot-reload.
+    void setAdsStyleSheetTemplate(const QString& resourcePath);
+
+    // Token-substituted ADS override stylesheet. MainWindow appends this to ADS's
+    // own default sheet. Rebuilds from the current theme on each call.
+    QString adsStyleSheet() const;
+
     const Theme& theme() const { return m_theme; }
 
     // Apply Fusion style, dark color scheme, the built QPalette, and the built
@@ -47,7 +56,8 @@ public:
     // live on save (no rebuild needed). Pass real filesystem paths, not ":/..."
     // resource paths — the compiled-in resources can't be watched. Does an
     // initial load from those paths, so in dev the disk files win over the qrc.
-    void enableHotReload(const QString& themeFilePath, const QString& qssFilePath);
+    void enableHotReload(const QString& themeFilePath, const QString& qssFilePath,
+                         const QString& adsFilePath);
 
 signals:
     void themeChanged();
@@ -58,7 +68,8 @@ private:
     void reloadFromDisk();
 
     Theme m_theme;
-    QString m_qssTemplate;   // raw template text (with {{tokens}})
+    QString m_qssTemplate;    // raw app template text (with {{tokens}})
+    QString m_adsTemplate;    // raw dock-system (ADS) override template
     QApplication* m_app = nullptr;
 
     // hot-reload (dev only; null unless enableHotReload() was called)
@@ -66,4 +77,5 @@ private:
     QTimer* m_reloadTimer = nullptr;
     QString m_themePath;
     QString m_qssPath;
+    QString m_adsPath;
 };

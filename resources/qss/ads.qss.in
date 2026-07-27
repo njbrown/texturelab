@@ -1,0 +1,68 @@
+/*
+ * Dock-system (Qt Advanced Docking System) color overrides.
+ *
+ * IMPORTANT: this is APPENDED to ADS's own default stylesheet by MainWindow
+ * (see mainwindow.cpp), not used on its own. ADS's default carries button icons,
+ * layout metrics, and auto-hide geometry -- we keep all of that and only override
+ * colors/borders here. Rules must match or exceed the default's selector
+ * specificity to win; since we're appended, equal specificity is enough.
+ *
+ * ADS's default is palette()-driven, so much already follows our theme (e.g.
+ * highlight == accent). These overrides replace the muddy derived-palette bits
+ * (inactive tab text = palette(dark), active-tab gradient) with crisp tokens.
+ *
+ * Hot-reloads with --dev-theme (edit + save; MainWindow re-applies on themeChanged).
+ */
+
+/* ---- containers & areas ---- */
+ads--CDockContainerWidget { background: {{bg.window}}; }
+ads--CDockAreaWidget      { background: {{bg.panel}}; }
+ads--CDockWidget          { background: {{bg.panel}}; border: none; }
+
+/* Title bar = the strip holding the tabs + area buttons */
+ads--CDockAreaTitleBar { background: {{bg.window}}; border: none; }
+
+/* ---- dock widget tabs ---- */
+ads--CDockWidgetTab {
+    background: {{bg.window}};
+    border: none;
+    border-right: 1px solid {{border.subtle}};
+    padding: 5px 14px;
+}
+/* Active tab merges with the content panel below + gets an accent top indicator.
+   padding-top compensates for the 2px border so the label doesn't shift. */
+ads--CDockWidgetTab[activeTab="true"] {
+    background: {{bg.panel}};
+    border-top: 2px solid {{accent}};
+    padding-top: 3px;
+}
+ads--CDockWidgetTab QLabel { color: {{text.disabled}}; }
+ads--CDockWidgetTab[activeTab="true"] QLabel { color: {{text.primary}}; }
+ads--CDockWidgetTab:hover QLabel { color: {{text.secondary}}; }
+
+/* ---- splitters / resize handles ---- */
+ads--CDockSplitter::handle { background: {{border.subtle}}; }
+ads--CDockSplitter::handle:hover { background: {{accent}}; }
+ads--CResizeHandle { background: {{border.subtle}}; }
+
+/* ---- title-bar & tab buttons ---- */
+ads--CTitleBarButton {
+    background: transparent;
+    border: none;
+    border-radius: {{radius.sm}}px;
+    padding: 2px;
+}
+ads--CTitleBarButton:hover   { background: {{ctrl.hover}}; }
+ads--CTitleBarButton:pressed { background: {{ctrl.pressed}}; }
+
+#tabCloseButton:hover   { background: {{ctrl.hover}}; border: 1px solid {{border.subtle}}; }
+#tabCloseButton:pressed { background: {{ctrl.pressed}}; }
+
+/* ---- floating docks ---- */
+ads--CFloatingWidgetTitleBar { background: {{bg.window}}; }
+#floatingTitleCloseButton:hover, #floatingTitleMaximizeButton:hover { background: {{ctrl.hover}}; }
+
+/* ---- auto-hide side panels ---- */
+ads--CAutoHideSideBar       { background: {{bg.window}}; }
+ads--CAutoHideDockContainer { background: {{bg.panel}}; }
+#autoHideTitleLabel         { color: {{text.secondary}}; }

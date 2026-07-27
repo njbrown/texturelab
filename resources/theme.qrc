@@ -4,5 +4,6 @@
     </qresource>
     <qresource prefix="/qss">
         <file alias="app.qss">qss/app.qss.in</file>
+        <file alias="ads.qss">qss/ads.qss.in</file>
     </qresource>
 </RCC>

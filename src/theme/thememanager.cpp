@@ -140,6 +140,22 @@ void ThemeManager::setStyleSheetTemplate(const QString& resourcePath)
     m_qssTemplate = QString::fromUtf8(file.readAll());
 }
 
+void ThemeManager::setAdsStyleSheetTemplate(const QString& resourcePath)
+{
+    QFile file(resourcePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning("ThemeManager: cannot open ADS QSS template '%s'", qPrintable(resourcePath));
+        m_adsTemplate.clear();
+        return;
+    }
+    m_adsTemplate = QString::fromUtf8(file.readAll());
+}
+
+QString ThemeManager::adsStyleSheet() const
+{
+    return QssBuilder::build(m_adsTemplate, m_theme);
+}
+
 QPalette ThemeManager::buildPalette() const
 {
     const QHash<QString, QColor>& p = m_theme.paletteColors();
@@ -198,10 +214,12 @@ void ThemeManager::reapply()
     emit themeChanged();
 }
 
-void ThemeManager::enableHotReload(const QString& themeFilePath, const QString& qssFilePath)
+void ThemeManager::enableHotReload(const QString& themeFilePath, const QString& qssFilePath,
+                                   const QString& adsFilePath)
 {
     m_themePath = themeFilePath;
     m_qssPath = qssFilePath;
+    m_adsPath = adsFilePath;
 
     if (!m_watcher) {
         m_watcher = new QFileSystemWatcher(this);
@@ -225,7 +243,9 @@ void ThemeManager::reloadFromDisk()
     // QFile handles plain filesystem paths as well as ":/..." resources.
     const bool ok = loadFromResource(m_themePath); // keeps previous theme if parse fails
     setStyleSheetTemplate(m_qssPath);
-    reapply();
+    if (!m_adsPath.isEmpty())
+        setAdsStyleSheetTemplate(m_adsPath);
+    reapply(); // emits themeChanged() -> MainWindow re-applies the ADS sheet
 
     // --dev-theme feedback. Use fprintf, NOT qInfo/qWarning: the app installs a
     // custom Qt message handler that routes logging to Sentry breadcrumbs, which
@@ -239,8 +259,8 @@ void ThemeManager::reloadFromDisk()
     // the watch. Re-add any path the watcher is no longer following.
     if (m_watcher) {
         const QStringList watched = m_watcher->files();
-        for (const QString& p : { m_themePath, m_qssPath }) {
-            if (!watched.contains(p) && QFile::exists(p))
+        for (const QString& p : { m_themePath, m_qssPath, m_adsPath }) {
+            if (!p.isEmpty() && !watched.contains(p) && QFile::exists(p))
                 m_watcher->addPath(p);
         }
     }

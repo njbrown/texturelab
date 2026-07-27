@@ -32,6 +32,7 @@
 
 #include "exporter.h"
 #include "telemetry.h"
+#include "thememanager.h"
 #include "undo/undocommands.h"
 #include "widgets/aboutdialog.h"
 #include "widgets/exportdialog.h"
@@ -91,6 +92,19 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     statusBar()->addWidget(statusWidget, 1);
 
     this->dockManager = new ads::CDockManager(this);
+
+    // Theme the dock system. ADS installs its own default stylesheet on the dock
+    // manager (constructor -> loadStylesheet), which overrides the global app
+    // sheet for ads--* widgets. We keep that default (it carries button icons and
+    // layout metrics) and append our token-driven color overrides. Rebuilt on
+    // every theme change so it also picks up --dev-theme hot-reloads.
+    this->adsDefaultStyleSheet = this->dockManager->styleSheet();
+    auto applyDockTheme = [this]() {
+        this->dockManager->setStyleSheet(this->adsDefaultStyleSheet + "\n"
+                                         + ThemeManager::instance().adsStyleSheet());
+    };
+    applyDockTheme();
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, applyDockTheme);
 
     this->setupDocks();
 
