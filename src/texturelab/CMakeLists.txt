@@ -240,7 +240,8 @@ set(PROJECT_SOURCES
 )
 
 set(PROJECT_RESOURCES
-    ./assets.qrc)
+    ./assets.qrc
+    ${CMAKE_SOURCE_DIR}/resources/theme.qrc)
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(texturelab
@@ -261,6 +262,7 @@ target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
                                          Qt${QT_VERSION_MAJOR}::OpenGLWidgets
                                          OpenGL::GL
                                          qtadvanceddocking-qt6
+                                         theme
                                          nodegraph
                                          viewer3d
                                          colorpicker
@@ -269,6 +271,7 @@ target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
                                          
 target_include_directories(texturelab PUBLIC
                             ../ads/src
+                            ../theme
                             ../nodegraph
                             ../viewer3d
                             ../colorpicker
@@ -281,6 +284,9 @@ endif()
 target_compile_definitions(texturelab PRIVATE
     TEXTURELAB_VERSION="${PROJECT_VERSION}${TEXTURELAB_VERSION_SUFFIX}"
     TEXTURELAB_SENTRY_DSN="${TEXTURELAB_SENTRY_DSN}"
+    # Absolute path to the theme source files, so `--dev-theme` can live-reload
+    # colors/QSS from disk without a rebuild. Dev convenience only.
+    TEXTURELAB_SOURCE_RESOURCES="${CMAKE_SOURCE_DIR}/resources"
 )
 
 # Generate version.h (with git hash) at every build, not just configure time

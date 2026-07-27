@@ -82,7 +82,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     // Version + build hash on the left so it's legible in screenshots
     // (matches the build artifact name, e.g. texturelab-win-v0.4.0-beta-<hash>).
     auto* versionLabel = new QLabel(QCoreApplication::applicationVersion());
-    versionLabel->setStyleSheet("color: #888888; padding: 0 6px;");
+    versionLabel->setObjectName("StatusVersionLabel"); // styled in resources/qss/app.qss.in
     versionLabel->setToolTip("Application version and build hash");
     statusBar()->addWidget(versionLabel);
 

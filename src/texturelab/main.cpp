@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "telemetry.h"
+#include "thememanager.h"
 #include "version.h"
 
 #include <QApplication>
@@ -58,6 +59,19 @@ TL_NOINLINE static void sentryCrashTest()
     *p = 0xC0FFEE;
 }
 
+// Force a consistent dark theme on every platform, independent of the host
+// system theme. Loads the design-token theme (Fusion + dark palette + app
+// stylesheet) from resources so it works even in a minimal Linux AppImage that
+// has no desktop theme plugin — which is why CI builds otherwise render in light
+// mode. See src/theme/ and UI_DESIGN_SYSTEM_PRD.md.
+static void applyDarkTheme(QApplication& app)
+{
+    ThemeManager& tm = ThemeManager::instance();
+    tm.loadFromResource(":/themes/dark.json");
+    tm.setStyleSheetTemplate(":/qss/app.qss");
+    tm.applyToApplication(app);
+}
+
 int main(int argc, char* argv[])
 {
     // Read opt-out before constructing QApplication so we can use QSettings
@@ -88,6 +102,26 @@ int main(int argc, char* argv[])
     a.setOrganizationName("texturelab");
     a.setApplicationName("texturelab");
     a.setApplicationVersion(QString(TEXTURELAB_VERSION) + "+" + TEXTURELAB_BUILD_HASH);
+
+    // Consistent dark UI on every platform, regardless of the host system theme.
+    applyDarkTheme(a);
+
+    // Dev convenience: `--dev-theme` live-reloads the theme from the on-disk
+    // source files (resources/…) on save, so colors and QSS can be tuned without
+    // rebuilding. Off by default; production always uses the compiled-in resources.
+    for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--dev-theme") == 0) {
+#ifdef TEXTURELAB_SOURCE_RESOURCES
+            const QString res = QStringLiteral(TEXTURELAB_SOURCE_RESOURCES);
+            ThemeManager::instance().enableHotReload(res + "/themes/dark.json",
+                                                     res + "/qss/app.qss.in");
+            qInfo("Theme hot-reload enabled, watching %s", qPrintable(res));
+#else
+            qWarning("--dev-theme: TEXTURELAB_SOURCE_RESOURCES not compiled in");
+#endif
+            break;
+        }
+    }
 
     // Now applicationDirPath() is valid — init Sentry
     Telemetry::init(crashReportingEnabled);

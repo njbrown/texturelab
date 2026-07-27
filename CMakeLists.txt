@@ -39,6 +39,9 @@ set(BUILD_EXAMPLES OFF CACHE BOOL "Don't build ADS examples" FORCE)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/ads)
 # set_target_properties(qtadvanceddocking-qt6 PROPERTIES BUILD_STATIC TRUE)
 
+# Theme / design-token system (single source of truth for colors, QSS, palette)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/theme)
+
 # Node Graph
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/nodegraph)
 

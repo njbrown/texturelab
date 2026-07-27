@@ -1,0 +1,272 @@
+/*
+ * TextureLab application stylesheet (template).
+ *
+ * Double-brace placeholders are substituted from the active theme JSON by
+ * QssBuilder at load time -- a placeholder naming the color token bg.panel
+ * becomes #353535, radius.sm becomes 3, font.ui.family becomes the UI font
+ * family, and so on. (This comment avoids writing a literal placeholder so the
+ * substituter has nothing to flag.)
+ *
+ * PHASE 1 -- app chrome: menus, toolbars, status bar, and the common controls
+ * that appear across every panel (buttons, inputs, combos, checks, sliders,
+ * scrollbars, tooltips, splitters). Panel-specific styling lands in later
+ * phases (see UI_DESIGN_SYSTEM_PRD.md section 6).
+ *
+ * Edit + save this file with the app running as `--dev-theme` to see changes
+ * live (no rebuild). See section on hot-reload in the PRD.
+ */
+
+/* ============================================================= base ======= */
+
+QWidget {
+    font-family: {{font.ui.family}};
+    font-size: {{font.ui.size}}px;
+    color: {{text.primary}};
+}
+
+QToolTip {
+    background: {{bg.elevated}};
+    color: {{text.primary}};
+    border: 1px solid {{border.subtle}};
+    padding: 3px 6px;
+}
+
+/* ======================================================= menu bar ========= */
+
+QMenuBar {
+    background: {{bg.panel}};
+    border: none;
+    padding: 2px 4px;
+}
+QMenuBar::item {
+    background: transparent;
+    padding: 4px 10px;
+    border-radius: {{radius.sm}}px;
+}
+QMenuBar::item:selected { background: {{ctrl.hover}}; }
+QMenuBar::item:pressed  { background: {{selection}}; color: {{text.primary}}; }
+
+QMenu {
+    background: {{bg.elevated}};
+    border: 1px solid {{border.subtle}};
+    padding: 4px;
+}
+QMenu::item {
+    padding: 5px 24px 5px 22px;
+    border-radius: {{radius.sm}}px;
+}
+QMenu::item:selected  { background: {{selection}}; color: {{text.primary}}; }
+QMenu::item:disabled  { color: {{text.disabled}}; }
+QMenu::separator {
+    height: 1px;
+    background: {{border.subtle}};
+    margin: 4px 8px;
+}
+QMenu::icon { padding-left: 6px; }
+
+/* ======================================================= tool bar ========= */
+
+QToolBar {
+    background: {{bg.panel}};
+    border: none;
+    border-bottom: 1px solid {{border.subtle}};
+    padding: 3px;
+    spacing: {{space.sm}}px;
+}
+QToolBar::separator {
+    width: 1px;
+    background: {{border.subtle}};
+    margin: 4px 4px;
+}
+QToolButton {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: {{radius.sm}}px;
+    padding: 4px 6px;
+}
+QToolButton:hover   { background: {{ctrl.hover}}; }
+QToolButton:pressed { background: {{ctrl.pressed}}; }
+QToolButton:checked { background: {{selection}}; border-color: {{accent.press}}; }
+QToolButton::menu-indicator { image: none; }
+
+/* ====================================================== status bar ======== */
+
+QStatusBar {
+    background: {{bg.panel}};
+    border-top: 1px solid {{border.subtle}};
+}
+QStatusBar::item { border: none; }
+QStatusBar QLabel { background: transparent; }
+
+#StatusVersionLabel {
+    color: {{text.disabled}};
+    padding: 0 6px;
+}
+
+/* ========================================================= buttons ======== */
+
+QPushButton {
+    background: {{ctrl.bg}};
+    border: 1px solid {{border.input}};
+    border-radius: {{radius.sm}}px;
+    padding: 4px 12px;
+    min-height: 18px;
+}
+QPushButton:hover    { background: {{ctrl.hover}}; }
+QPushButton:pressed  { background: {{ctrl.pressed}}; }
+QPushButton:disabled { color: {{text.disabled}}; border-color: {{border.subtle}}; }
+QPushButton:default  { border-color: {{accent}}; }
+
+QPushButton[variant="primary"] {
+    background: {{accent}};
+    border: 1px solid {{accent.press}};
+    color: {{text.primary}};
+}
+QPushButton[variant="primary"]:hover   { background: {{accent.hover}}; }
+QPushButton[variant="primary"]:pressed { background: {{accent.press}}; }
+
+/* ==================================================== text inputs ========= */
+
+QLineEdit, QPlainTextEdit, QTextEdit, QSpinBox, QDoubleSpinBox {
+    background: {{bg.input}};
+    border: 1px solid {{border.input}};
+    border-radius: {{radius.sm}}px;
+    padding: 3px 6px;
+    selection-background-color: {{selection}};
+    selection-color: {{text.primary}};
+}
+QLineEdit:focus, QPlainTextEdit:focus, QTextEdit:focus,
+QSpinBox:focus, QDoubleSpinBox:focus {
+    border-color: {{accent}};
+}
+QLineEdit:disabled, QSpinBox:disabled, QDoubleSpinBox:disabled {
+    color: {{text.disabled}};
+}
+
+QSpinBox::up-button, QDoubleSpinBox::up-button,
+QSpinBox::down-button, QDoubleSpinBox::down-button {
+    width: 14px;
+    background: transparent;
+    border: none;
+}
+QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover,
+QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {
+    background: {{ctrl.hover}};
+}
+
+/* ==================================================== combo boxes ========= */
+
+QComboBox {
+    background: {{ctrl.bg}};
+    border: 1px solid {{border.input}};
+    border-radius: {{radius.sm}}px;
+    padding: 3px 6px;
+    min-height: 18px;
+}
+QComboBox:hover  { background: {{ctrl.hover}}; }
+QComboBox:focus  { border-color: {{accent}}; }
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    width: 18px;
+    border: none;
+}
+QComboBox QAbstractItemView {
+    background: {{bg.elevated}};
+    border: 1px solid {{border.subtle}};
+    selection-background-color: {{selection}};
+    selection-color: {{text.primary}};
+    outline: none;
+}
+
+/* ============================================= checks & radios ============ */
+
+QCheckBox, QRadioButton { spacing: 6px; background: transparent; }
+QCheckBox::indicator, QRadioButton::indicator {
+    width: 15px;
+    height: 15px;
+    background: {{bg.input}};
+    border: 1px solid {{border.input}};
+}
+QCheckBox::indicator { border-radius: {{radius.sm}}px; }
+QRadioButton::indicator { border-radius: 8px; }
+QCheckBox::indicator:hover, QRadioButton::indicator:hover { border-color: {{accent}}; }
+QCheckBox::indicator:checked, QRadioButton::indicator:checked {
+    background: {{ctrl.checked}};
+    border-color: {{accent.press}};
+}
+
+/* ========================================================= sliders ======== */
+
+QSlider::groove:horizontal {
+    height: 4px;
+    background: {{bg.input}};
+    border-radius: 2px;
+}
+QSlider::sub-page:horizontal { background: {{accent}}; border-radius: 2px; }
+QSlider::handle:horizontal {
+    background: {{text.secondary}};
+    width: 12px;
+    height: 12px;
+    margin: -5px 0;
+    border-radius: 6px;
+}
+QSlider::handle:horizontal:hover { background: {{text.primary}}; }
+
+/* ======================================================= scrollbars ======= */
+
+QScrollBar:vertical {
+    background: transparent;
+    width: 12px;
+    margin: 0;
+}
+QScrollBar:horizontal {
+    background: transparent;
+    height: 12px;
+    margin: 0;
+}
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background: {{gray.600}};
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: padding;
+}
+QScrollBar::handle:vertical { min-height: 28px; }
+QScrollBar::handle:horizontal { min-width: 28px; }
+QScrollBar::handle:hover { background: {{gray.550}}; }
+QScrollBar::add-line, QScrollBar::sub-line { height: 0; width: 0; background: none; }
+QScrollBar::add-page, QScrollBar::sub-page { background: none; }
+
+/* ========================================================= tab bar ======== */
+
+QTabBar::tab {
+    background: {{bg.window}};
+    color: {{text.secondary}};
+    padding: 5px 12px;
+    border: none;
+}
+QTabBar::tab:selected {
+    background: {{bg.panel}};
+    color: {{text.primary}};
+    border-bottom: 2px solid {{accent}};
+}
+QTabBar::tab:hover:!selected { color: {{text.primary}}; }
+
+/* ========================================================= splitter ======= */
+
+QSplitter::handle { background: {{border.subtle}}; }
+QSplitter::handle:horizontal { width: 1px; }
+QSplitter::handle:vertical { height: 1px; }
+QSplitter::handle:hover { background: {{accent}}; }
+
+/* ======================================================= progress ========= */
+
+QProgressBar {
+    background: {{bg.input}};
+    border: none;
+    border-radius: {{radius.sm}}px;
+    text-align: center;
+    color: {{text.primary}};
+    max-height: 14px;
+}
+QProgressBar::chunk { background: {{accent}}; border-radius: {{radius.sm}}px; }

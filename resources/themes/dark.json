@@ -1,0 +1,93 @@
+{
+  "meta": { "name": "TextureLab Dark", "base": "dark" },
+
+  "color": {
+    "gray.900": "#191919",
+    "gray.850": "#232323",
+    "gray.800": "#2B2B2B",
+    "gray.750": "#2E2E2E",
+    "gray.700": "#353535",
+    "gray.650": "#404040",
+    "gray.600": "#505050",
+    "gray.550": "#5C5C5C",
+    "gray.400": "#7F7F7F",
+    "gray.300": "#787878",
+    "gray.200": "#C8C8C8",
+    "white":    "#FFFFFF",
+    "black":    "#000000",
+    "accent":   "#2A82DA",
+    "accent.hover": "#3D93E8",
+    "accent.press": "#2069B8",
+    "warn":     "#E5A54B",
+    "danger":   "#E5484D",
+    "ok":       "#3DAF6E",
+
+    "bg.window":      "@gray.700",
+    "bg.panel":       "@gray.700",
+    "bg.base":        "@gray.850",
+    "bg.elevated":    "@gray.900",
+    "bg.input":       "@gray.750",
+    "border.subtle":  "@gray.900",
+    "border.strong":  "@black",
+    "border.input":   "@gray.600",
+    "text.primary":   "@white",
+    "text.secondary": "@gray.200",
+    "text.disabled":  "@gray.400",
+    "selection":      "@accent",
+
+    "ctrl.bg":       "@gray.650",
+    "ctrl.hover":    "@gray.600",
+    "ctrl.pressed":  "@gray.550",
+    "ctrl.checked":  "@accent",
+
+    "node.bg":            "@gray.700",
+    "node.bg.selected":   "@gray.600",
+    "node.border":        "@black",
+    "node.border.hover":  "@gray.300",
+    "node.border.select": "@gray.200",
+    "node.title":         "@white",
+    "wire":               "@gray.200",
+    "wire.selected":      "@accent",
+    "port.in":            "@accent",
+    "port.out":           "@ok",
+    "grid.dot":           "@gray.600",
+    "grid.bg":            "@gray.850",
+    "checker.a":          "@gray.700",
+    "checker.b":          "@gray.600",
+
+    "view3d.clear":       "@gray.700",
+    "view3d.grid":        "@gray.600"
+  },
+
+  "palette": {
+    "window":          "@bg.window",
+    "windowText":      "@text.primary",
+    "base":            "@bg.base",
+    "alternateBase":   "@bg.window",
+    "toolTipBase":     "@gray.900",
+    "toolTipText":     "@text.primary",
+    "text":            "@text.primary",
+    "button":          "@bg.window",
+    "buttonText":      "@text.primary",
+    "brightText":      "@danger",
+    "link":            "@accent",
+    "highlight":       "@accent",
+    "highlightedText": "@black",
+
+    "disabled.windowText":      "@text.disabled",
+    "disabled.text":            "@text.disabled",
+    "disabled.buttonText":      "@text.disabled",
+    "disabled.highlightedText": "@text.disabled",
+    "disabled.highlight":       "@gray.600"
+  },
+
+  "radius": { "sm": 3, "md": 5, "lg": 8, "pill": 999 },
+  "space":  { "xs": 2, "sm": 4, "md": 8, "lg": 12, "xl": 16 },
+  "motion": { "fast": 120, "base": 180, "slow": 260 },
+
+  "font": {
+    "ui":    { "family": "Segoe UI, Inter, sans-serif", "size": 12, "weight": 400 },
+    "mono":  { "family": "Consolas, JetBrains Mono, monospace", "size": 12, "weight": 400 },
+    "title": { "family": "Segoe UI, Inter, sans-serif", "size": 13, "weight": 600 }
+  }
+}
