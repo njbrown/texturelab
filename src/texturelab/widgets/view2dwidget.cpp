@@ -43,10 +43,11 @@ const QColor CoarseGridColor(25, 25, 25);
 
 View2DWidget::View2DWidget() : QMainWindow()
 {
-    // Create toolbar
+    // Create toolbar (compact — see #View2DToolbar in app.qss.in)
     toolbar = new QToolBar(this);
+    toolbar->setObjectName("View2DToolbar");
     toolbar->setMovable(false);
-    toolbar->setIconSize(QSize(24, 24));
+    toolbar->setIconSize(QSize(18, 18));
     this->addToolBar(Qt::TopToolBarArea, toolbar);
 
     // Add save button

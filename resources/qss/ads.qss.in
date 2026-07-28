@@ -16,15 +16,18 @@
 
 /* ---- containers & areas ---- */
 ads--CDockContainerWidget { background: {{bg.window}}; }
-ads--CDockAreaWidget      { background: {{bg.panel}}; }
+/* Strong frame around each panel (DaVinci Resolve-style hard separation). */
+ads--CDockAreaWidget      { background: {{bg.panel}}; border: 1px solid {{border.strong}}; }
 ads--CDockWidget          { background: {{bg.panel}}; border: none; }
 
-/* Title bar = the strip holding the tabs + area buttons */
-ads--CDockAreaTitleBar { background: {{bg.window}}; border: none; }
+/* Title bar = the strip holding the tabs + area buttons. Darker than the panel
+   so the active tab (panel-colored) reads as raised out of a near-black header. */
+ads--CDockAreaTitleBar { background: {{bg.elevated}}; border: none; }
 
 /* ---- dock widget tabs ---- */
+/* Inactive tabs sit in the dark header. */
 ads--CDockWidgetTab {
-    background: {{bg.window}};
+    background: {{bg.elevated}};
     border: none;
     border-right: 1px solid {{border.subtle}};
     padding: 5px 14px;
@@ -41,9 +44,10 @@ ads--CDockWidgetTab[activeTab="true"] QLabel { color: {{text.primary}}; }
 ads--CDockWidgetTab:hover QLabel { color: {{text.secondary}}; }
 
 /* ---- splitters / resize handles ---- */
-ads--CDockSplitter::handle { background: {{border.subtle}}; }
+/* Strong (black) gutters between panels to match the panel frames. */
+ads--CDockSplitter::handle { background: {{border.strong}}; }
 ads--CDockSplitter::handle:hover { background: {{accent}}; }
-ads--CResizeHandle { background: {{border.subtle}}; }
+ads--CResizeHandle { background: {{border.strong}}; }
 
 /* ---- title-bar & tab buttons ---- */
 ads--CTitleBarButton {
@@ -63,6 +67,35 @@ ads--CFloatingWidgetTitleBar { background: {{bg.window}}; }
 #floatingTitleCloseButton:hover, #floatingTitleMaximizeButton:hover { background: {{ctrl.hover}}; }
 
 /* ---- auto-hide side panels ---- */
-ads--CAutoHideSideBar       { background: {{bg.window}}; }
+ads--CAutoHideSideBar       { background: {{bg.elevated}}; }
 ads--CAutoHideDockContainer { background: {{bg.panel}}; }
 #autoHideTitleLabel         { color: {{text.secondary}}; }
+
+/* ---- white icons ---- (override ADS's black default SVGs; see resources/icons/ads/,
+   generated white/gray copies. Static URLs, no token substitution.) */
+#tabCloseButton {
+    qproperty-icon: url(:/adsicons/close-button.svg),
+                    url(:/adsicons/close-button-disabled.svg) disabled;
+}
+#dockAreaCloseButton {
+    qproperty-icon: url(:/adsicons/close-button.svg),
+                    url(:/adsicons/close-button-disabled.svg) disabled;
+}
+#tabsMenuButton { qproperty-icon: url(:/adsicons/tabs-menu-button.svg); }
+#detachGroupButton {
+    qproperty-icon: url(:/adsicons/detach-button.svg),
+                    url(:/adsicons/detach-button-disabled.svg) disabled;
+}
+#floatingTitleCloseButton { qproperty-icon: url(:/adsicons/close-button.svg); }
+#dockAreaMinimizeButton { qproperty-icon: url(:/adsicons/minimize-button-focused.svg); }
+#dockAreaAutoHideButton {
+    qproperty-icon: url(:/adsicons/vs-pin-button.svg),
+                    url(:/adsicons/vs-pin-button-disabled.svg) disabled;
+}
+ads--CAutoHideDockContainer #dockAreaAutoHideButton {
+    qproperty-icon: url(:/adsicons/vs-pin-button-pinned-focused.svg);
+}
+ads--CFloatingWidgetTitleBar {
+    qproperty-maximizeIcon: url(:/adsicons/maximize-button.svg);
+    qproperty-normalIcon: url(:/adsicons/restore-button.svg);
+}

@@ -94,6 +94,9 @@
     <file alias="icons/grid.svg">../icons/grid.svg</file>
     <file alias="icons/crosshair.svg">../icons/crosshair.svg</file>
     <file alias="icons/copy.svg">../icons/copy.svg</file>
+    <file alias="icons/undo.svg">../icons/undo.svg</file>
+    <file alias="icons/redo.svg">../icons/redo.svg</file>
+    <file alias="icons/export.svg">../icons/export.svg</file>
     <file alias="icons/logo.png">../icons/logo.png</file>
     
     <!-- Environment HDR files -->

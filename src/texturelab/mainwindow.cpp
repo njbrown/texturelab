@@ -493,13 +493,19 @@ void MainWindow::setupToolbar()
 {
     // https://www.setnode.com/blog/right-aligning-a-button-in-a-qtoolbar/
     toolBar = this->addToolBar("main toolbar");
+    toolBar->setIconSize(QSize(18, 18));
+    toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
     QWidget* spacer = new QWidget();
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    // undo redo — reuse the same actions wired to the stack
-    toolBar->addAction(undoStack->createUndoAction(this));
-    toolBar->addAction(undoStack->createRedoAction(this));
+    // undo redo — reuse the same actions wired to the stack, with icons
+    auto undoAction = undoStack->createUndoAction(this);
+    undoAction->setIcon(QIcon(":/icons/undo.svg"));
+    toolBar->addAction(undoAction);
+    auto redoAction = undoStack->createRedoAction(this);
+    redoAction->setIcon(QIcon(":/icons/redo.svg"));
+    toolBar->addAction(redoAction);
 
     // spacer
     toolBar->addWidget(spacer);
@@ -507,6 +513,7 @@ void MainWindow::setupToolbar()
     // Export button with dropdown menu
     auto exportBtn = new QToolButton(this);
     exportBtn->setText("Export");
+    exportBtn->setIcon(QIcon(":/icons/export.svg"));
     exportBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
     auto directExportAction = new QAction("Export", this);

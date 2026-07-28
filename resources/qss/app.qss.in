@@ -321,6 +321,10 @@ QPushButton[size="small"] {
 
 /* ================================================== viewport overlays ===== */
 
+/* Compact 2D-view toolbar (save/copy/tile/recenter) */
+#View2DToolbar { padding: 1px; spacing: 1px; }
+#View2DToolbar QToolButton { padding: 2px; }
+
 /* 2D view "Texture copied" toast (bottom-center, fades in/out) */
 #ViewToast {
     background: {{bg.elevated}};
