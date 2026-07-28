@@ -15,9 +15,12 @@
  */
 
 /* ---- containers & areas ---- */
-ads--CDockContainerWidget { background: {{bg.window}}; }
-/* Strong frame around each panel (DaVinci Resolve-style hard separation). */
-ads--CDockAreaWidget      { background: {{bg.panel}}; border: 1px solid {{border.strong}}; }
+/* Container is black so the only thing between panels is a single strong line
+   (the splitter), not a grey gutter -> no "double line" around panels. */
+ads--CDockContainerWidget { background: {{border.strong}}; }
+/* Kill the default 1px splitter padding that otherwise shows a grey gap. */
+ads--CDockContainerWidget > QSplitter { padding: 0; }
+ads--CDockAreaWidget      { background: {{bg.panel}}; border: none; }
 ads--CDockWidget          { background: {{bg.panel}}; border: none; }
 
 /* Title bar = the strip holding the tabs + area buttons. Darker than the panel
@@ -25,9 +28,10 @@ ads--CDockWidget          { background: {{bg.panel}}; border: none; }
 ads--CDockAreaTitleBar { background: {{bg.elevated}}; border: none; }
 
 /* ---- dock widget tabs ---- */
-/* Inactive tabs sit in the dark header. */
+/* Inactive tabs sit in the dark header but stay a step lighter than it so they
+   don't blend in (header = bg.elevated, inactive tab = gray.800, active = bg.panel). */
 ads--CDockWidgetTab {
-    background: {{bg.elevated}};
+    background: {{gray.800}};
     border: none;
     border-right: 1px solid {{border.subtle}};
     padding: 5px 14px;
@@ -44,9 +48,14 @@ ads--CDockWidgetTab[activeTab="true"] QLabel { color: {{text.primary}}; }
 ads--CDockWidgetTab:hover QLabel { color: {{text.secondary}}; }
 
 /* ---- splitters / resize handles ---- */
-/* Strong (black) gutters between panels to match the panel frames. */
-ads--CDockSplitter::handle { background: {{border.strong}}; }
-ads--CDockSplitter::handle:hover { background: {{accent}}; }
+/* Strong (black) gutters between panels. NOTE: the gutter THICKNESS is the
+   splitter handleWidth, which QSplitter ignores from QSS (both ::handle width
+   and qproperty-handleWidth) — so it's set in C++ (MainWindow, via setHandleWidth
+   on dockAreaCreated). This rule only colors the gutter. */
+/* Match ADS's own selector specificity (it uses the CDockContainerWidget
+   descendant form), else its palette(dark) grey wins over our black. */
+ads--CDockContainerWidget ads--CDockSplitter::handle { background: {{border.strong}}; }
+ads--CDockContainerWidget ads--CDockSplitter::handle:hover { background: {{accent}}; }
 ads--CResizeHandle { background: {{border.strong}}; }
 
 /* ---- title-bar & tab buttons ---- */

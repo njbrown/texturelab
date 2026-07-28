@@ -44,14 +44,14 @@
 
 #include "viewer3d.h"
 
-#include "models.h"
 #include "libraries/libraryversionmigrator.h"
 #include "libraries/libversion.h"
+#include "models.h"
 #include "project.h"
 #include "props.h"
 
-#include "graphics/texturerenderer.h"
 #include "graph/scene.h"
+#include "graphics/texturerenderer.h"
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 {
@@ -59,7 +59,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     setAcceptDrops(true);
 
     undoStack = new QUndoStack(this);
-    connect(undoStack, &QUndoStack::cleanChanged, this, &MainWindow::onCleanChanged);
+    connect(undoStack, &QUndoStack::cleanChanged, this,
+            &MainWindow::onCleanChanged);
 
     this->setupMenus();
     this->setupToolbar();
@@ -81,9 +82,11 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     statusLayout->setSpacing(6);
     statusLayout->addStretch();
     // Version + build hash on the left so it's legible in screenshots
-    // (matches the build artifact name, e.g. texturelab-win-v0.4.0-beta-<hash>).
+    // (matches the build artifact name, e.g.
+    // texturelab-win-v0.4.0-beta-<hash>).
     auto* versionLabel = new QLabel(QCoreApplication::applicationVersion());
-    versionLabel->setObjectName("StatusVersionLabel"); // styled in resources/qss/app.qss.in
+    versionLabel->setObjectName(
+        "StatusVersionLabel"); // styled in resources/qss/app.qss.in
     versionLabel->setToolTip("Application version and build hash");
     statusBar()->addWidget(versionLabel);
 
@@ -93,26 +96,42 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 
     this->dockManager = new ads::CDockManager(this);
 
-    // Theme the dock system. ADS installs its own default stylesheet on the dock
-    // manager (constructor -> loadStylesheet), which overrides the global app
-    // sheet for ads--* widgets. We keep that default (it carries button icons and
-    // layout metrics) and append our token-driven color overrides. Rebuilt on
-    // every theme change so it also picks up --dev-theme hot-reloads.
+    // Theme the dock system. ADS installs its own default stylesheet on the
+    // dock manager (constructor -> loadStylesheet), which overrides the global
+    // app sheet for ads--* widgets. We keep that default (it carries button
+    // icons and layout metrics) and append our token-driven color overrides.
+    // Rebuilt on every theme change so it also picks up --dev-theme
+    // hot-reloads.
     this->adsDefaultStyleSheet = this->dockManager->styleSheet();
     auto applyDockTheme = [this]() {
         ThemeManager& tm = ThemeManager::instance();
-        // Qt prefers an ancestor widget's stylesheet over qApp, so app.qss rules
-        // (e.g. #AccordionHeader) don't reach widgets inside docks unless we also
-        // hand them to the dock manager. Order: ADS default -> ADS overrides ->
-        // app rules (last so our tokens win over ADS's palette()-based defaults).
-        const QString sheet = this->adsDefaultStyleSheet + "\n" + tm.adsStyleSheet()
-                              + "\n" + tm.appStyleSheet();
-        this->dockManager->setStyleSheet(sheet); // theme-exempt: applies composed theme sheet
+        // Qt prefers an ancestor widget's stylesheet over qApp, so app.qss
+        // rules (e.g. #AccordionHeader) don't reach widgets inside docks unless
+        // we also hand them to the dock manager. Order: ADS default -> ADS
+        // overrides -> app rules (last so our tokens win over ADS's
+        // palette()-based defaults).
+        const QString sheet = this->adsDefaultStyleSheet + "\n" +
+                              tm.adsStyleSheet() + "\n" + tm.appStyleSheet();
+        this->dockManager->setStyleSheet(
+            sheet); // theme-exempt: applies composed theme sheet
     };
     applyDockTheme();
-    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, applyDockTheme);
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
+            applyDockTheme);
+
+    // Thicker gutters between panels. ADS/QSplitter ignore QSS handle width, so
+    // set handleWidth in code — on the initial layout and whenever a new dock
+    // area (hence a new splitter) is created (drag-docking).
+    auto applySplitterWidth = [this]() {
+        for (auto* s : this->dockManager->findChildren<ads::CDockSplitter*>())
+            s->setHandleWidth(1);
+    };
+    connect(
+        this->dockManager, &ads::CDockManager::dockAreaCreated, this,
+        [applySplitterWidth](ads::CDockAreaWidget*) { applySplitterWidth(); });
 
     this->setupDocks();
+    applySplitterWidth();
 
     // setup callbacks for the widgets that are created once
     connect(this->graphWidget, &GraphWidget::nodeSelectionChanged,
@@ -177,44 +196,47 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
                 this->view3DWidget->reRender();
             });
 
-    connect(this->propWidget, &PropertiesWidget::textureChannelUpdated,
-            [this](const TextureChannel& name, const TextureNodePtr& node) {
-                if (!this->project)
-                    return;
+    connect(
+        this->propWidget, &PropertiesWidget::textureChannelUpdated,
+        [this](const TextureChannel& name, const TextureNodePtr& node) {
+            if (!this->project)
+                return;
 
-                auto syncViewer = [this]() {
-                    this->passTextureChannelsToViewer3D();
-                    this->syncChannelLabelsToScene();
-                    this->view3DWidget->reRender();
-                    if (this->renderer)
-                        this->renderer->update();
-                };
+            auto syncViewer = [this]() {
+                this->passTextureChannelsToViewer3D();
+                this->syncChannelLabelsToScene();
+                this->view3DWidget->reRender();
+                if (this->renderer)
+                    this->renderer->update();
+            };
 
-                if (name == TextureChannel::None) {
-                    // Unassign this node from whichever channel it's in
-                    for (auto ch : this->project->textureChannels.keys()) {
-                        if (this->project->textureChannels[ch] == node->id) {
-                            QString oldNodeId = node->id;
-                            // Apply immediately, then push command (first-redo no-op)
-                            this->project->textureChannels.remove(ch);
-                            syncViewer();
-                            if (undoStack)
-                                undoStack->push(new TextureChannelAssignCommand(
-                                    this->project, ch, oldNodeId, "", syncViewer));
-                            break;
-                        }
+            if (name == TextureChannel::None) {
+                // Unassign this node from whichever channel it's in
+                for (auto ch : this->project->textureChannels.keys()) {
+                    if (this->project->textureChannels[ch] == node->id) {
+                        QString oldNodeId = node->id;
+                        // Apply immediately, then push command (first-redo
+                        // no-op)
+                        this->project->textureChannels.remove(ch);
+                        syncViewer();
+                        if (undoStack)
+                            undoStack->push(new TextureChannelAssignCommand(
+                                this->project, ch, oldNodeId, "", syncViewer));
+                        break;
                     }
                 }
-                else {
-                    QString oldNodeId = this->project->textureChannels.value(name, "");
-                    // Apply immediately, then push command (first-redo no-op)
-                    this->project->textureChannels[name] = node->id;
-                    syncViewer();
-                    if (undoStack)
-                        undoStack->push(new TextureChannelAssignCommand(
-                            this->project, name, oldNodeId, node->id, syncViewer));
-                }
-            });
+            }
+            else {
+                QString oldNodeId =
+                    this->project->textureChannels.value(name, "");
+                // Apply immediately, then push command (first-redo no-op)
+                this->project->textureChannels[name] = node->id;
+                syncViewer();
+                if (undoStack)
+                    undoStack->push(new TextureChannelAssignCommand(
+                        this->project, name, oldNodeId, node->id, syncViewer));
+            }
+        });
 
     // set default empty project
     auto project = TextureProject::createEmpty();
@@ -292,14 +314,22 @@ void MainWindow::passTextureChannelsToViewer3D()
 static QString channelName(TextureChannel ch)
 {
     switch (ch) {
-    case TextureChannel::Albedo:    return "Albedo";
-    case TextureChannel::Normal:    return "Normal";
-    case TextureChannel::Metalness: return "Metalness";
-    case TextureChannel::Roughness: return "Roughness";
-    case TextureChannel::Height:    return "Height";
-    case TextureChannel::Alpha:     return "Alpha";
-    case TextureChannel::AO:        return "AO";
-    default:                        return "";
+    case TextureChannel::Albedo:
+        return "Albedo";
+    case TextureChannel::Normal:
+        return "Normal";
+    case TextureChannel::Metalness:
+        return "Metalness";
+    case TextureChannel::Roughness:
+        return "Roughness";
+    case TextureChannel::Height:
+        return "Height";
+    case TextureChannel::Alpha:
+        return "Alpha";
+    case TextureChannel::AO:
+        return "AO";
+    default:
+        return "";
     }
 }
 
@@ -479,10 +509,12 @@ void MainWindow::setupMenus()
 
     optionsMenu->addSeparator();
 
-    auto crashReportingAction = optionsMenu->addAction("Send Anonymous Crash Reports");
+    auto crashReportingAction =
+        optionsMenu->addAction("Send Anonymous Crash Reports");
     crashReportingAction->setCheckable(true);
     QSettings settings(QSettings::UserScope, "texturelab", "texturelab");
-    crashReportingAction->setChecked(settings.value("crashReporting", true).toBool());
+    crashReportingAction->setChecked(
+        settings.value("crashReporting", true).toBool());
     connect(crashReportingAction, &QAction::toggled, [](bool checked) {
         QSettings s(QSettings::UserScope, "texturelab", "texturelab");
         s.setValue("crashReporting", checked);
@@ -499,12 +531,21 @@ void MainWindow::setupToolbar()
     QWidget* spacer = new QWidget();
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    // undo redo — reuse the same actions wired to the stack, with icons
-    auto undoAction = undoStack->createUndoAction(this);
-    undoAction->setIcon(QIcon(":/icons/undo.svg"));
+    // undo redo — plain "Undo"/"Redo" labels (not the createUndoAction text,
+    // which appends the command name). Shortcuts stay on the Edit-menu actions
+    // to avoid an ambiguous-shortcut clash.
+    auto undoAction = new QAction(QIcon(":/icons/undo.svg"), "Undo", this);
+    undoAction->setEnabled(undoStack->canUndo());
+    connect(undoAction, &QAction::triggered, undoStack, &QUndoStack::undo);
+    connect(undoStack, &QUndoStack::canUndoChanged, undoAction,
+            &QAction::setEnabled);
     toolBar->addAction(undoAction);
-    auto redoAction = undoStack->createRedoAction(this);
-    redoAction->setIcon(QIcon(":/icons/redo.svg"));
+
+    auto redoAction = new QAction(QIcon(":/icons/redo.svg"), "Redo", this);
+    redoAction->setEnabled(undoStack->canRedo());
+    connect(redoAction, &QAction::triggered, undoStack, &QUndoStack::redo);
+    connect(undoStack, &QUndoStack::canRedoChanged, redoAction,
+            &QAction::setEnabled);
     toolBar->addAction(redoAction);
 
     // spacer
@@ -666,7 +707,8 @@ void MainWindow::openProjectFromPath(const QString& filePath)
     project->name = fileInfo.baseName();
     project->filePath = filePath;
 
-    Telemetry::breadcrumb("project", "open: " + fileInfo.baseName().toStdString());
+    Telemetry::breadcrumb("project",
+                          "open: " + fileInfo.baseName().toStdString());
     setProject(project);
     addToRecentFiles(filePath);
 }
@@ -988,8 +1030,10 @@ void MainWindow::updateRecentFilesMenu()
 
     for (const QString& filePath : files) {
         QFileInfo info(filePath);
-        auto action = recentFilesMenu->addAction(
-            info.fileName(), [this, filePath]() { openProjectFromPath(filePath); });
+        auto action =
+            recentFilesMenu->addAction(info.fileName(), [this, filePath]() {
+                openProjectFromPath(filePath);
+            });
         action->setToolTip(filePath);
     }
 
