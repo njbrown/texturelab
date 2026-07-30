@@ -1,4 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#ffffff" viewBox="0 0 24 24">
-<!--Boxicons v3.0.6 https://boxicons.com | License https://docs.boxicons.com/free-->
-<path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm1 17.93V17h-2v2.93A8.01 8.01 0 0 1 4.07 13H7v-2H4.07A8.01 8.01 0 0 1 11 4.07V7h2V4.07A8.01 8.01 0 0 1 19.93 11H17v2h2.93A8.01 8.01 0 0 1 13 19.93z"></path>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="12" r="10"/>
+  <line x1="22" y1="12" x2="18" y2="12"/>
+  <line x1="6" y1="12" x2="2" y2="12"/>
+  <line x1="12" y1="6" x2="12" y2="2"/>
+  <line x1="12" y1="18" x2="12" y2="22"/>
 </svg>

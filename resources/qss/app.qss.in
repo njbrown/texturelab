@@ -79,6 +79,16 @@ QToolBar::separator {
     background: {{border.subtle}};
     margin: 4px 4px;
 }
+/* Main window toolbar: strong (black) top border matching the ADS dock gutters.
+   Extra right padding so the Export button isn't flush against the window edge. */
+#MainToolbar {
+    border-top: 1px solid {{border.strong}};
+    padding-right: 10px;
+}
+/* Hover/pressed on the main toolbar buttons (undo/redo/export): a lighter fill,
+   no colored outline. */
+#MainToolbar QToolButton:hover   { background: {{ctrl.hover}}; }
+#MainToolbar QToolButton:pressed { background: {{ctrl.pressed}}; }
 QToolButton {
     background: transparent;
     border: 1px solid transparent;
@@ -88,6 +98,9 @@ QToolButton {
 QToolButton:hover   { background: {{ctrl.hover}}; }
 QToolButton:pressed { background: {{ctrl.pressed}}; }
 QToolButton:checked { background: {{selection}}; border-color: {{accent.press}}; }
+/* Disabled: the global QWidget color rule forces text.primary even when
+   disabled (QSS color doesn't auto-dim), so dim it back explicitly. */
+QToolButton:disabled { color: {{text.disabled}}; }
 QToolButton::menu-indicator { image: none; }
 
 /* ====================================================== status bar ======== */
@@ -154,6 +167,17 @@ QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover,
 QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {
     background: {{ctrl.hover}};
 }
+/* Styling the up/down buttons drops the native arrows, so supply them. */
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
+    image: url(:/icons/chevron-up.svg);
+    width: 9px;
+    height: 9px;
+}
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {
+    image: url(:/icons/chevron-down.svg);
+    width: 9px;
+    height: 9px;
+}
 
 /* ==================================================== combo boxes ========= */
 
@@ -171,6 +195,12 @@ QComboBox::drop-down {
     subcontrol-position: center right;
     width: 18px;
     border: none;
+}
+/* Styling ::drop-down drops the native arrow, so supply our own chevron. */
+QComboBox::down-arrow {
+    image: url(:/icons/chevron-down.svg);
+    width: 12px;
+    height: 12px;
 }
 QComboBox QAbstractItemView {
     background: {{bg.elevated}};

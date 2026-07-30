@@ -8,9 +8,12 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
+#include <QPainter>
+#include <QPixmap>
 #include <QLayout>
 #include <QList>
 #include <QMenu>
@@ -33,6 +36,7 @@
 #include "exporter.h"
 #include "telemetry.h"
 #include "thememanager.h"
+#include "tokens.h"
 #include "undo/undocommands.h"
 #include "widgets/aboutdialog.h"
 #include "widgets/exportdialog.h"
@@ -110,10 +114,13 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
         // we also hand them to the dock manager. Order: ADS default -> ADS
         // overrides -> app rules (last so our tokens win over ADS's
         // palette()-based defaults).
+        // The call below applies the composed theme sheet (ADS default + ADS
+        // overrides + app rules) to the dock manager — it IS the theming, not an
+        // inline widget style; the short marker keeps the hygiene gate happy even
+        // if a formatter wraps the line.
         const QString sheet = this->adsDefaultStyleSheet + "\n" +
                               tm.adsStyleSheet() + "\n" + tm.appStyleSheet();
-        this->dockManager->setStyleSheet(
-            sheet); // theme-exempt: applies composed theme sheet
+        this->dockManager->setStyleSheet(sheet); // theme-exempt
     };
     applyDockTheme();
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
@@ -521,11 +528,39 @@ void MainWindow::setupMenus()
     });
 }
 
+// Recolor a rendered (white) icon pixmap to `color`, keeping its alpha shape.
+static QPixmap tintPixmap(const QPixmap& src, const QColor& color)
+{
+    QPixmap out(src.size());
+    out.setDevicePixelRatio(src.devicePixelRatio());
+    out.fill(Qt::transparent);
+    QPainter p(&out);
+    p.drawPixmap(0, 0, src);
+    p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+    p.fillRect(out.rect(), color);
+    p.end();
+    return out;
+}
+
+// Build a toolbar QIcon whose Normal/Disabled variants are tinted to the theme's
+// text colors, so the icon always matches the button label's color in each state
+// (Qt's auto-generated disabled fade doesn't match text.disabled exactly).
+static QIcon themedToolIcon(const QString& svgPath)
+{
+    const Theme& t = ThemeManager::instance().theme();
+    const QPixmap base = QIcon(svgPath).pixmap(QSize(32, 32)); // white source SVG
+    QIcon icon;
+    icon.addPixmap(tintPixmap(base, t.color(Tokens::TextPrimary)), QIcon::Normal);
+    icon.addPixmap(tintPixmap(base, t.color(Tokens::TextDisabled)), QIcon::Disabled);
+    return icon;
+}
+
 void MainWindow::setupToolbar()
 {
     // https://www.setnode.com/blog/right-aligning-a-button-in-a-qtoolbar/
     toolBar = this->addToolBar("main toolbar");
-    toolBar->setIconSize(QSize(18, 18));
+    toolBar->setObjectName("MainToolbar"); // styled in app.qss.in
+    toolBar->setIconSize(QSize(14, 14)); // small, to sit level with the button text
     toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
     QWidget* spacer = new QWidget();
@@ -534,14 +569,14 @@ void MainWindow::setupToolbar()
     // undo redo — plain "Undo"/"Redo" labels (not the createUndoAction text,
     // which appends the command name). Shortcuts stay on the Edit-menu actions
     // to avoid an ambiguous-shortcut clash.
-    auto undoAction = new QAction(QIcon(":/icons/undo.svg"), "Undo", this);
+    auto undoAction = new QAction(themedToolIcon(":/icons/undo.svg"), "Undo", this);
     undoAction->setEnabled(undoStack->canUndo());
     connect(undoAction, &QAction::triggered, undoStack, &QUndoStack::undo);
     connect(undoStack, &QUndoStack::canUndoChanged, undoAction,
             &QAction::setEnabled);
     toolBar->addAction(undoAction);
 
-    auto redoAction = new QAction(QIcon(":/icons/redo.svg"), "Redo", this);
+    auto redoAction = new QAction(themedToolIcon(":/icons/redo.svg"), "Redo", this);
     redoAction->setEnabled(undoStack->canRedo());
     connect(redoAction, &QAction::triggered, undoStack, &QUndoStack::redo);
     connect(undoStack, &QUndoStack::canRedoChanged, redoAction,
@@ -554,7 +589,7 @@ void MainWindow::setupToolbar()
     // Export button with dropdown menu
     auto exportBtn = new QToolButton(this);
     exportBtn->setText("Export");
-    exportBtn->setIcon(QIcon(":/icons/export.svg"));
+    exportBtn->setIcon(themedToolIcon(":/icons/export.svg"));
     exportBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
     auto directExportAction = new QAction("Export", this);

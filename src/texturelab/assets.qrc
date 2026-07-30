@@ -97,6 +97,8 @@
     <file alias="icons/undo.svg">../icons/undo.svg</file>
     <file alias="icons/redo.svg">../icons/redo.svg</file>
     <file alias="icons/export.svg">../icons/export.svg</file>
+    <file alias="icons/chevron-down.svg">../icons/chevron-down.svg</file>
+    <file alias="icons/chevron-up.svg">../icons/chevron-up.svg</file>
     <file alias="icons/logo.png">../icons/logo.png</file>
     
     <!-- Environment HDR files -->
