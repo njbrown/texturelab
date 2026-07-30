@@ -36,12 +36,9 @@ ads--CDockWidgetTab {
     border-right: 1px solid {{border.subtle}};
     padding: 5px 14px;
 }
-/* Active tab merges with the content panel below + gets an accent top indicator.
-   padding-top compensates for the 2px border so the label doesn't shift. */
+/* Active tab is distinguished by its panel-colored background (no top indicator). */
 ads--CDockWidgetTab[activeTab="true"] {
     background: {{bg.panel}};
-    border-top: 2px solid {{accent}};
-    padding-top: 3px;
 }
 ads--CDockWidgetTab QLabel { color: {{text.disabled}}; }
 ads--CDockWidgetTab[activeTab="true"] QLabel { color: {{text.primary}}; }

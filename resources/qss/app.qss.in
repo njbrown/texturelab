@@ -12,8 +12,9 @@
  * scrollbars, tooltips, splitters). Panel-specific styling lands in later
  * phases (see UI_DESIGN_SYSTEM_PRD.md section 6).
  *
- * Edit + save this file with the app running as `--dev-theme` to see changes
- * live (no rebuild). See section on hot-reload in the PRD.
+ * Edit + save this file to see changes live (no rebuild): hot-reload is ON by
+ * default in Debug builds (also `--dev-theme` in any build; `--no-dev-theme` to
+ * disable). See the hot-reload section in UI_DESIGN_SYSTEM_PRD.md.
  */
 
 /* ============================================================= base ======= */

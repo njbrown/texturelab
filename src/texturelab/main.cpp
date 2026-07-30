@@ -107,22 +107,30 @@ int main(int argc, char* argv[])
     // Consistent dark UI on every platform, regardless of the host system theme.
     applyDarkTheme(a);
 
-    // Dev convenience: `--dev-theme` live-reloads the theme from the on-disk
-    // source files (resources/…) on save, so colors and QSS can be tuned without
-    // rebuilding. Off by default; production always uses the compiled-in resources.
-    for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--dev-theme") == 0) {
-#ifdef TEXTURELAB_SOURCE_RESOURCES
-            const QString res = QStringLiteral(TEXTURELAB_SOURCE_RESOURCES);
-            ThemeManager::instance().enableHotReload(res + "/themes/dark.json",
-                                                     res + "/qss/app.qss.in",
-                                                     res + "/qss/ads.qss.in");
-            qInfo("Theme hot-reload enabled, watching %s", qPrintable(res));
-#else
-            qWarning("--dev-theme: TEXTURELAB_SOURCE_RESOURCES not compiled in");
+    // Theme hot-reload: live-reloads the theme from the on-disk source files
+    // (resources/…) on save, so colors and QSS can be tuned without rebuilding.
+    // ON BY DEFAULT in Debug builds (TEXTURELAB_DEV_BUILD); off in Release.
+    // `--dev-theme` forces it on in any build; `--no-dev-theme` forces it off.
+    bool devTheme = false;
+#ifdef TEXTURELAB_DEV_BUILD
+    devTheme = true;
 #endif
-            break;
-        }
+    for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--dev-theme") == 0)
+            devTheme = true;
+        else if (std::strcmp(argv[i], "--no-dev-theme") == 0)
+            devTheme = false;
+    }
+    if (devTheme) {
+#ifdef TEXTURELAB_SOURCE_RESOURCES
+        const QString res = QStringLiteral(TEXTURELAB_SOURCE_RESOURCES);
+        ThemeManager::instance().enableHotReload(res + "/themes/dark.json",
+                                                 res + "/qss/app.qss.in",
+                                                 res + "/qss/ads.qss.in");
+        qInfo("Theme hot-reload enabled, watching %s", qPrintable(res));
+#else
+        qWarning("theme hot-reload requested but TEXTURELAB_SOURCE_RESOURCES not compiled in");
+#endif
     }
 
     // Now applicationDirPath() is valid — init Sentry

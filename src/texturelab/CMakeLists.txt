@@ -287,6 +287,9 @@ target_compile_definitions(texturelab PRIVATE
     # Absolute path to the theme source files, so `--dev-theme` can live-reload
     # colors/QSS from disk without a rebuild. Dev convenience only.
     TEXTURELAB_SOURCE_RESOURCES="${CMAKE_SOURCE_DIR}/resources"
+    # Debug builds auto-enable theme hot-reload (no --dev-theme flag needed);
+    # override at runtime with --no-dev-theme.
+    $<$<CONFIG:Debug>:TEXTURELAB_DEV_BUILD>
 )
 
 # Generate version.h (with git hash) at every build, not just configure time
