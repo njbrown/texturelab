@@ -33,10 +33,14 @@ class Viewer3D : public QOpenGLWidget {
     QOpenGLBuffer* mesh = nullptr;
     QOpenGLVertexArrayObject* vao = nullptr;
 
-    Renderer* renderer;
-    Material* material;
-    Mesh* gltfMesh;
-    Mesh* skydomeMesh;
+    // Initialized to nullptr: these are only assigned in initializeGL() (first
+    // paint), but setProject()/clearTextures() can run earlier (from the
+    // MainWindow constructor). Without this, the null-guards in clear*Texture()
+    // dereference uninitialized garbage and crash. See viewer3d.cpp clear*.
+    Renderer* renderer = nullptr;
+    Material* material = nullptr;
+    Mesh* gltfMesh = nullptr;
+    Mesh* skydomeMesh = nullptr;
     QString defaultEnvPath;
 
     QOpenGLFunctions* gl = nullptr;
