@@ -282,6 +282,7 @@ Library* createLibraryV3()
     lib->addNode<DistanceTransformNode>(
         "distancetransform", "Distance Transform", ":nodes/bevel.png");
     lib->addNode<ColorSpreadNode>("spread", "Spread", ":nodes/bevel.png");
+    lib->addNode<FastAONode>("fastao", "Fast AO", ":nodes/bevel.png");
     lib->addNode<HeightBlendNode>("heightblend", "Height Blend",
                                   ":nodes/blend.png");
     // lib->addNode<MakeItTileNode>("makeittile", "Make It Tile",

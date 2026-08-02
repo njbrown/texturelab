@@ -52,51 +52,40 @@ public:
             RenderResourceCache::standardVertexSource(),
             verticalFrag());
 
-        // Intermediate texture for the horizontal pass result.
-        // GL_LINEAR is required for the bilinear tap trick in the shaders —
-        // sampling at fractional offsets must interpolate rather than snap.
         GLuint intermediate = cache->acquireTexture(w, h);
-        gl->glBindTexture(GL_TEXTURE_2D, intermediate);
-        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
         GLuint inputTex = ctx.inputs[0].textureId;
-        gl->glBindTexture(GL_TEXTURE_2D, inputTex);
-        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        gl->glBindTexture(GL_TEXTURE_2D, 0);
 
-        // --- Pass 1: horizontal blur ---
-        cache->bindFboToTexture(intermediate);
-        ctx.useShader(hShader);
-        ctx.bindTexture(hShader, "u_image", inputTex, 0);
-        gl->glUniform1f(
-            gl->glGetUniformLocation(hShader, "u_radius"), data.radius);
-        gl->glUniform2f(
-            gl->glGetUniformLocation(hShader, "_textureSize"),
-            float(w), float(h));
-        ctx.drawQuad();
+        {
+            // GL_LINEAR is required for the bilinear tap trick in the shaders —
+            // sampling at fractional offsets must interpolate rather than snap.
+            // The guards put GL_NEAREST back on the way out: the input texture
+            // belongs to the node upstream and outlives this render.
+            ScopedTextureParams intermediateParams(gl, intermediate, GL_LINEAR,
+                                                   GL_LINEAR);
+            ScopedTextureParams inputParams(gl, inputTex, GL_LINEAR, GL_LINEAR);
 
-        // --- Pass 2: vertical blur ---
-        cache->bindFboToTexture(ctx.outputTextureId);
-        ctx.useShader(vShader);
-        ctx.bindTexture(vShader, "u_image", intermediate, 0);
-        gl->glUniform1f(
-            gl->glGetUniformLocation(vShader, "u_radius"), data.radius);
-        gl->glUniform2f(
-            gl->glGetUniformLocation(vShader, "_textureSize"),
-            float(w), float(h));
-        ctx.drawQuad();
+            // --- Pass 1: horizontal blur ---
+            cache->bindFboToTexture(intermediate);
+            ctx.useShader(hShader);
+            ctx.bindTexture(hShader, "u_image", inputTex, 0);
+            gl->glUniform1f(
+                gl->glGetUniformLocation(hShader, "u_radius"), data.radius);
+            gl->glUniform2f(
+                gl->glGetUniformLocation(hShader, "_textureSize"),
+                float(w), float(h));
+            ctx.drawQuad();
 
-        // Restore GL_NEAREST on both textures — pooled textures are expected
-        // to be GL_NEAREST; the input texture is owned by another node.
-        gl->glBindTexture(GL_TEXTURE_2D, inputTex);
-        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        gl->glBindTexture(GL_TEXTURE_2D, intermediate);
-        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        gl->glBindTexture(GL_TEXTURE_2D, 0);
+            // --- Pass 2: vertical blur ---
+            cache->bindFboToTexture(ctx.outputTextureId);
+            ctx.useShader(vShader);
+            ctx.bindTexture(vShader, "u_image", intermediate, 0);
+            gl->glUniform1f(
+                gl->glGetUniformLocation(vShader, "u_radius"), data.radius);
+            gl->glUniform2f(
+                gl->glGetUniformLocation(vShader, "_textureSize"),
+                float(w), float(h));
+            ctx.drawQuad();
+        }
 
         cache->releaseTexture(intermediate);
     }

@@ -151,6 +151,14 @@ public:
     virtual void init() override;
 };
 
+// High-quality multi-pass AO — see v3/fastao.cpp
+class FastAONode : public TextureNode {
+public:
+    void init() override;
+    std::shared_ptr<NodeTextureRenderer> createRenderer() override;
+    std::shared_ptr<NodeRenderData>      createRenderData() override;
+};
+
 class CurvatureNode : public TextureNode {
 public:
     virtual void init() override;

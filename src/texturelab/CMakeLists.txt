@@ -146,6 +146,7 @@ set(LIBRARYV3
     ./libraries/v3/blurhq.cpp
     ./libraries/v3/distancetransform.cpp
     ./libraries/v3/spread.cpp
+    ./libraries/v3/fastao.cpp
     ./libraries/v3/heightblend.cpp
     ./libraries/v3/makeittile.cpp
     ./libraries/v3/normalmapv3.cpp
