@@ -54,16 +54,8 @@ void AddNodeCommand::undo()
     if (sceneNode)
         _scene->removeNode(sceneNode);
 
-    for (auto key : _project->connections.keys()) {
-        auto con = _project->connections.value(key);
-        if (con->leftNode->id == _nodeId || con->rightNode->id == _nodeId) {
-            if (con->leftNode->id == _nodeId)
-                con->rightNode->isDirty = true;
-            _project->connections.remove(key);
-        }
-    }
-
-    _project->nodes.remove(_nodeId);
+    // also drops the node's connections, marking every downstream chain dirty
+    _project->removeNode(_nodeId);
     if (_renderer)
         _renderer->update();
 }

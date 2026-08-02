@@ -4,6 +4,7 @@
 #include <QOpenGLFramebufferObject>
 #include <QQueue>
 #include <QRandomGenerator>
+#include <QSet>
 
 TextureNodePtr TextureProject::getNodeById(const QString& id)
 {
@@ -67,7 +68,9 @@ void TextureProject::addConnection(TextureNodePtr leftNode,
 
     this->connections[con->id] = con;
 
-    // todo: request updates
+    // the right node now has a different input, so it and everything
+    // downstream of it must re-render
+    markNodeAsDirty(rightNode);
 }
 
 ConnectionPtr TextureProject::removeConnection(const QString& leftNode,
@@ -84,6 +87,10 @@ ConnectionPtr TextureProject::removeConnection(const QString& leftNode,
             con->rightNodeInputName == rightNodeInput) {
             connections.remove(conKey);
 
+            // the input is gone: the right node and its whole downstream
+            // chain render from stale textures until they're re-rendered
+            markNodeAsDirty(con->rightNode);
+
             return con;
         }
     }
@@ -93,16 +100,57 @@ ConnectionPtr TextureProject::removeConnection(const QString& leftNode,
 
 void TextureProject::removeConnection(ConnectionPtr con)
 {
+    if (!con)
+        return;
+
     this->connections.remove(con->id);
+    markNodeAsDirty(con->rightNode);
 }
 
 void TextureProject::removeConnection(const QString& id)
 {
+    auto con = connections.value(id);
     this->connections.remove(id);
+
+    if (con)
+        markNodeAsDirty(con->rightNode);
+}
+
+void TextureProject::removeNode(const QString& id)
+{
+    // remove every connection touching the node first — removeConnection()
+    // marks each affected chain dirty so downstream nodes re-render without
+    // this node's output
+    for (auto key : connections.keys()) {
+        auto con = connections.value(key);
+        if (!con)
+            continue;
+
+        if ((con->leftNode && con->leftNode->id == id) ||
+            (con->rightNode && con->rightNode->id == id))
+            removeConnection(con);
+    }
+
+    // drop any texture-channel assignment for this node so its stale id can't
+    // be looked up after deletion
+    for (auto channel : textureChannels.keys()) {
+        if (textureChannels.value(channel) == id)
+            textureChannels.remove(channel);
+    }
+
+    nodes.remove(id);
 }
 
 void TextureProject::markNodeAsDirty(const TextureNodePtr& node)
 {
+    if (!node)
+        return;
+
+    // visited guards two things: a diamond graph re-walking shared subtrees,
+    // and a cyclic graph looping here forever
+    QSet<QString> visited;
+    visited.insert(node->id);
+
     QQueue<TextureNodePtr> queue;
     queue.enqueue(node);
 
@@ -111,8 +159,13 @@ void TextureProject::markNodeAsDirty(const TextureNodePtr& node)
         nextNode->isDirty = true;
 
         auto list = getNodeRightOfNode(nextNode->id);
-        for (auto item : list)
+        for (auto item : list) {
+            if (!item || visited.contains(item->id))
+                continue;
+
+            visited.insert(item->id);
             queue.enqueue(item);
+        }
     }
 }
 

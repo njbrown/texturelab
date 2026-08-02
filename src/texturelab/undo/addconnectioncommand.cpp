@@ -26,10 +26,8 @@ void AddConnectionCommand::redo()
         // Scene already has the connection — just add to project model
         auto left  = _project->getNodeById(_leftNodeId);
         auto right = _project->getNodeById(_rightNodeId);
-        if (left && right) {
+        if (left && right)
             _project->addConnection(left, right, _rightInput);
-            right->isDirty = true;
-        }
         _firstRedo = false;
     } else {
         auto leftG  = _scene->getNodeById(_leftNodeId);
@@ -39,10 +37,8 @@ void AddConnectionCommand::redo()
 
         auto left  = _project->getNodeById(_leftNodeId);
         auto right = _project->getNodeById(_rightNodeId);
-        if (left && right) {
+        if (left && right)
             _project->addConnection(left, right, _rightInput);
-            right->isDirty = true;
-        }
     }
     if (_renderer)
         _renderer->update();
@@ -56,9 +52,7 @@ void AddConnectionCommand::undo()
         if (port && !port->connections.isEmpty())
             _scene->removeConnection(port->connections.first());
     }
-    auto right = _project->getNodeById(_rightNodeId);
-    if (right)
-        right->isDirty = true;
+    // removeConnection() marks the right node and its downstream chain dirty
     _project->removeConnection(_leftNodeId, _rightNodeId, _rightInput);
     if (_renderer)
         _renderer->update();

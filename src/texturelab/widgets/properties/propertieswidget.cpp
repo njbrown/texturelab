@@ -34,33 +34,51 @@ PropertiesWidget::PropertiesWidget() : QWidget()
 
 // Helper: push PropertyChangeCommand if undoStack is set; otherwise apply directly.
 // The value is applied before calling this (first-redo pattern).
+// The renderer must be passed through: marking a node dirty doesn't render it,
+// something has to call TextureRenderer::update() to kick the render loop, and
+// on undo/redo there's no propertyUpdated signal to do it.
 static void pushPropChange(QUndoStack* stack, TextureNodePtr node,
                             TextureProjectPtr project,
-                            TextureRenderer* /*renderer*/,
+                            TextureRenderer* renderer,
                             const QString& propName,
                             QVariant oldVal, QVariant newVal)
 {
     if (stack)
         stack->push(new PropertyChangeCommand(
-            node, project, nullptr, propName, oldVal, newVal));
-    // renderer=nullptr: PropertiesWidget doesn't hold the renderer;
-    // markNodeAsDirty already triggers re-render via the renderer's update loop.
+            node, project, renderer, propName, oldVal, newVal));
+}
+
+QVariant PropertiesWidget::takePropBaseline(Prop* prop,
+                                            const QVariant& newValue)
+{
+    QVariant oldValue = propBaselines.value(prop, newValue);
+    propBaselines[prop] = newValue;
+
+    return oldValue;
+}
+
+void PropertiesWidget::syncPropBaselines()
+{
+    for (auto it = propBaselines.begin(); it != propBaselines.end(); ++it)
+        it.value() = it.key()->getValue();
 }
 
 QWidget* PropertiesWidget::createPropWidget(Prop* prop,
                                             const TextureNodePtr& node)
 {
+    propBaselines[prop] = prop->getValue();
+
     switch (prop->type) {
     case PropType::Float: {
         auto widget = new FloatPropWidget();
         widget->setProp((FloatProp*)prop);
         propWidgets.append(widget);
         connect(widget, &FloatPropWidget::valueChanged, [=](double value) {
-            QVariant oldVal = prop->getValue();
+            QVariant oldVal = takePropBaseline(prop, value);
             node->setProp(prop->name, value);
             project->markNodeAsDirty(node);
             emit propertyUpdated(prop->name, value);
-            pushPropChange(undoStack, node, project, nullptr, prop->name, oldVal, value);
+            pushPropChange(undoStack, node, project, renderer, prop->name, oldVal, value);
         });
         return widget;
     }
@@ -69,11 +87,11 @@ QWidget* PropertiesWidget::createPropWidget(Prop* prop,
         widget->setProp((BoolProp*)prop);
         propWidgets.append(widget);
         connect(widget, &BoolPropWidget::valueChanged, [=](bool value) {
-            QVariant oldVal = prop->getValue();
+            QVariant oldVal = takePropBaseline(prop, value);
             node->setProp(prop->name, value);
             project->markNodeAsDirty(node);
             emit propertyUpdated(prop->name, value);
-            pushPropChange(undoStack, node, project, nullptr, prop->name, oldVal, value);
+            pushPropChange(undoStack, node, project, renderer, prop->name, oldVal, value);
         });
         return widget;
     }
@@ -82,11 +100,11 @@ QWidget* PropertiesWidget::createPropWidget(Prop* prop,
         widget->setProp((IntProp*)prop);
         propWidgets.append(widget);
         connect(widget, &IntPropWidget::valueChanged, [=](long value) {
-            QVariant oldVal = prop->getValue();
+            QVariant oldVal = takePropBaseline(prop, (int)value);
             node->setProp(prop->name, (int)value);
             project->markNodeAsDirty(node);
             emit propertyUpdated(prop->name, (int)value);
-            pushPropChange(undoStack, node, project, nullptr, prop->name, oldVal, (int)value);
+            pushPropChange(undoStack, node, project, renderer, prop->name, oldVal, (int)value);
         });
         return widget;
     }
@@ -95,11 +113,11 @@ QWidget* PropertiesWidget::createPropWidget(Prop* prop,
         widget->setProp((EnumProp*)prop);
         propWidgets.append(widget);
         connect(widget, &EnumPropWidget::valueChanged, [=](int value) {
-            QVariant oldVal = prop->getValue();
+            QVariant oldVal = takePropBaseline(prop, value);
             node->setProp(prop->name, value);
             project->markNodeAsDirty(node);
             emit propertyUpdated(prop->name, value);
-            pushPropChange(undoStack, node, project, nullptr, prop->name, oldVal, value);
+            pushPropChange(undoStack, node, project, renderer, prop->name, oldVal, value);
         });
         return widget;
     }
@@ -108,11 +126,11 @@ QWidget* PropertiesWidget::createPropWidget(Prop* prop,
         widget->setProp((ColorProp*)prop);
         propWidgets.append(widget);
         connect(widget, &ColorPropWidget::valueChanged, [=](const QColor& value) {
-            QVariant oldVal = prop->getValue();
+            QVariant oldVal = takePropBaseline(prop, value);
             node->setProp(prop->name, value);
             project->markNodeAsDirty(node);
             emit propertyUpdated(prop->name, value);
-            pushPropChange(undoStack, node, project, nullptr, prop->name, oldVal, value);
+            pushPropChange(undoStack, node, project, renderer, prop->name, oldVal, value);
         });
         return widget;
     }
@@ -121,12 +139,12 @@ QWidget* PropertiesWidget::createPropWidget(Prop* prop,
         widget->setProp((GradientProp*)prop);
         propWidgets.append(widget);
         connect(widget, &GradientPropWidget::valueChanged, [=](const Gradient& value) {
-            QVariant oldVal = prop->getValue();
             QVariant newVal = QVariant::fromValue(value);
+            QVariant oldVal = takePropBaseline(prop, newVal);
             node->setProp(prop->name, newVal);
             project->markNodeAsDirty(node);
             emit propertyUpdated(prop->name, newVal);
-            pushPropChange(undoStack, node, project, nullptr, prop->name, oldVal, newVal);
+            pushPropChange(undoStack, node, project, renderer, prop->name, oldVal, newVal);
         });
         return widget;
     }
@@ -135,11 +153,11 @@ QWidget* PropertiesWidget::createPropWidget(Prop* prop,
         widget->setProp((ImageProp*)prop);
         propWidgets.append(widget);
         connect(widget, &ImagePropWidget::valueChanged, [=](const QImage& value) {
-            QVariant oldVal = prop->getValue();
+            QVariant oldVal = takePropBaseline(prop, value);
             node->setProp(prop->name, value);
             project->markNodeAsDirty(node);
             emit propertyUpdated(prop->name, value);
-            pushPropChange(undoStack, node, project, nullptr, prop->name, oldVal, value);
+            pushPropChange(undoStack, node, project, renderer, prop->name, oldVal, value);
         });
         return widget;
     }
@@ -148,11 +166,11 @@ QWidget* PropertiesWidget::createPropWidget(Prop* prop,
         widget->setProp((StringProp*)prop);
         propWidgets.append(widget);
         connect(widget, &StringPropWidget::valueChanged, [=](const QString& value) {
-            QVariant oldVal = prop->getValue();
+            QVariant oldVal = takePropBaseline(prop, value);
             node->setProp(prop->name, value);
             project->markNodeAsDirty(node);
             emit propertyUpdated(prop->name, value);
-            pushPropChange(undoStack, node, project, nullptr, prop->name, oldVal, value);
+            pushPropChange(undoStack, node, project, renderer, prop->name, oldVal, value);
         });
         return widget;
     }
@@ -160,12 +178,12 @@ QWidget* PropertiesWidget::createPropWidget(Prop* prop,
         auto widget = new CurvePropWidget((CurveProp*)prop);
         propWidgets.append(widget);
         connect(widget, &CurvePropWidget::valueChanged, [=](const Curve& value) {
-            QVariant oldVal = prop->getValue();
             QVariant newVal = QVariant::fromValue(value);
+            QVariant oldVal = takePropBaseline(prop, newVal);
             node->setProp(prop->name, newVal);
             project->markNodeAsDirty(node);
             emit propertyUpdated(prop->name, newVal);
-            pushPropChange(undoStack, node, project, nullptr, prop->name, oldVal, newVal);
+            pushPropChange(undoStack, node, project, renderer, prop->name, oldVal, newVal);
         });
         return widget;
     }
@@ -253,7 +271,7 @@ void PropertiesWidget::addBasePropsToLayout()
         emit this->propertyUpdated("randomSeed", value);
         if (undoStack)
             undoStack->push(new RandomSeedChangeCommand(
-                this->selectedNode, this->project, nullptr, oldSeed, value));
+                this->selectedNode, this->project, renderer, oldSeed, value));
     });
     layout->addWidget(seedWidget);
 }
@@ -385,6 +403,8 @@ void PropertiesWidget::clearSelection()
     }
 
     propWidgets.clear();
+    // the props these pointed at may belong to a node that's going away
+    propBaselines.clear();
 }
 
 void PropertiesWidget::setProject(const TextureProjectPtr& project)
@@ -400,4 +420,9 @@ void PropertiesWidget::setScene(NgScenePtr ngScene)
 void PropertiesWidget::setUndoStack(QUndoStack* stack)
 {
     undoStack = stack;
+}
+
+void PropertiesWidget::setTextureRenderer(TextureRenderer* renderer)
+{
+    this->renderer = renderer;
 }

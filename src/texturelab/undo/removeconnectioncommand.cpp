@@ -24,9 +24,8 @@ void RemoveConnectionCommand::redo()
 {
     if (_firstRedo) {
         // Scene already removed it — just remove from project model
-        auto con = _project->removeConnection(_leftNodeId, _rightNodeId, _rightInput);
-        if (con && con->rightNode)
-            con->rightNode->isDirty = true;
+        // (removeConnection() marks the downstream chain dirty)
+        _project->removeConnection(_leftNodeId, _rightNodeId, _rightInput);
         _firstRedo = false;
     } else {
         auto rightG = _scene->getNodeById(_rightNodeId);
@@ -35,9 +34,7 @@ void RemoveConnectionCommand::redo()
             if (port && !port->connections.isEmpty())
                 _scene->removeConnection(port->connections.first());
         }
-        auto con = _project->removeConnection(_leftNodeId, _rightNodeId, _rightInput);
-        if (con && con->rightNode)
-            con->rightNode->isDirty = true;
+        _project->removeConnection(_leftNodeId, _rightNodeId, _rightInput);
     }
     if (_renderer)
         _renderer->update();
@@ -52,10 +49,8 @@ void RemoveConnectionCommand::undo()
 
     auto left  = _project->getNodeById(_leftNodeId);
     auto right = _project->getNodeById(_rightNodeId);
-    if (left && right) {
+    if (left && right)
         _project->addConnection(left, right, _rightInput);
-        right->isDirty = true;
-    }
     if (_renderer)
         _renderer->update();
 }

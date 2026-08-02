@@ -82,10 +82,11 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
                         project, scene, renderer, leftNodeId, leftOutput,
                         rightNodeId, rightInput));
                 else {
+                    // addConnection() marks the right node and everything
+                    // downstream of it dirty
                     project->addConnection(project->getNodeById(leftNodeId),
                                            project->getNodeById(rightNodeId),
                                            rightInput);
-                    project->getNodeById(rightNodeId)->isDirty = true;
                     renderer->update();
                 }
             });
@@ -101,10 +102,10 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
                         project, scene, renderer, leftNodeId, leftOutput,
                         rightNodeId, rightInput));
                 else {
-                    auto con2 = project->removeConnection(
-                        leftNodeId, rightNodeId, rightInput);
-                    if (con2 && con2->rightNode)
-                        con2->rightNode->isDirty = true;
+                    // removeConnection() marks the right node and everything
+                    // downstream of it dirty
+                    project->removeConnection(leftNodeId, rightNodeId,
+                                              rightInput);
                     renderer->update();
                 }
             });
@@ -160,23 +161,9 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
                 for (auto& n : nodes) {
                     scene->removeNode(n);
 
-                    // todo: move this into project class
-                    for (auto key : project->connections.keys()) {
-                        auto con = project->connections.value(key);
-                        if (con->leftNode->id == n->id() ||
-                            con->rightNode->id == n->id()) {
-                            if (con->leftNode->id == n->id())
-                                con->rightNode->isDirty = true;
-                            project->connections.remove(key);
-                        }
-                    }
-                    // Drop any texture-channel assignment for this node so
-                    // its stale id can't be looked up after deletion.
-                    for (auto ch : project->textureChannels.keys()) {
-                        if (project->textureChannels.value(ch) == n->id())
-                            project->textureChannels.remove(ch);
-                    }
-                    project->nodes.remove(n->id());
+                    // also drops the node's connections and channel
+                    // assignment, marking downstream nodes dirty
+                    project->removeNode(n->id());
                 }
                 for (auto& f : frames) {
                     scene->removeFrame(f);
@@ -579,18 +566,9 @@ void GraphWidget::executeCut()
             auto ngNode = scene->getNodeById(id);
             if (ngNode)
                 scene->removeNode(ngNode);
-            for (auto key : project->connections.keys()) {
-                auto con = project->connections.value(key);
-                if (con->leftNode->id == id || con->rightNode->id == id)
-                    project->connections.remove(key);
-            }
-            // Drop any texture-channel assignment for this node so its stale id
-            // can't be looked up after deletion.
-            for (auto ch : project->textureChannels.keys()) {
-                if (project->textureChannels.value(ch) == id)
-                    project->textureChannels.remove(ch);
-            }
-            project->nodes.remove(id);
+            // also drops the node's connections and channel assignment,
+            // marking downstream nodes dirty
+            project->removeNode(id);
         }
         for (const auto& id : frameIds) {
             auto f = scene->getFrameById(id);
@@ -648,7 +626,7 @@ void GraphWidget::executePaste()
         }
         for (auto& con : newConnections) {
             project->connections[con->id] = con;
-            con->rightNode->isDirty = true;
+            project->markNodeAsDirty(con->rightNode);
             auto l = scene->getNodeById(con->leftNode->id);
             auto r = scene->getNodeById(con->rightNode->id);
             if (l && r)

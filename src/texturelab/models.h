@@ -90,7 +90,14 @@ public:
 
     void addNode(const TextureNodePtr& node);
 
+    // Removes the node along with every connection touching it and any
+    // texture-channel assignment pointing at it. Downstream nodes are marked
+    // dirty so they re-render without this node's output.
+    void removeNode(const QString& id);
+
     // todo: make two port variant
+    // Adding or removing a connection marks the right node and everything
+    // downstream of it dirty — callers don't need to do it themselves.
     void addConnection(TextureNodePtr leftNode, TextureNodePtr rightNode,
                        QString rightNodeInput);
 
@@ -100,6 +107,7 @@ public:
     void removeConnection(ConnectionPtr con);
     void removeConnection(const QString& id);
 
+    // Marks the node and every node downstream of it as needing a re-render.
     void markNodeAsDirty(const TextureNodePtr& node);
 
     static TextureProjectPtr createEmpty(Library* library = nullptr);

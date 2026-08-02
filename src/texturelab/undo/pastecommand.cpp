@@ -53,8 +53,10 @@ void PasteCommand::redo()
     }
 
     for (auto& con : _connections) {
+        // inserted directly (rather than via addConnection) to keep the
+        // pasted connection's id stable across undo/redo
         _project->connections[con->id] = con;
-        con->rightNode->isDirty = true;
+        _project->markNodeAsDirty(con->rightNode);
         auto leftG  = _scene->getNodeById(con->leftNode->id);
         auto rightG = _scene->getNodeById(con->rightNode->id);
         if (leftG && rightG)
@@ -90,14 +92,15 @@ void PasteCommand::redo()
 
 void PasteCommand::undo()
 {
+    // removeConnection() marks the downstream chain dirty
     for (auto& con : _connections)
-        _project->connections.remove(con->id);
+        _project->removeConnection(con->id);
 
     for (auto& node : _nodes) {
         auto gnode = _scene->getNodeById(node->id);
         if (gnode)
             _scene->removeNode(gnode);
-        _project->nodes.remove(node->id);
+        _project->removeNode(node->id);
     }
 
     for (auto& comment : _comments) {

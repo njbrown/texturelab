@@ -66,6 +66,32 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     connect(undoStack, &QUndoStack::cleanChanged, this,
             &MainWindow::onCleanChanged);
 
+    // Any command (or its undo) can add, remove or re-point the node a
+    // texture channel maps to — deleting an assigned node being the obvious
+    // one. Re-sync the viewer and the graph's channel labels from the model
+    // after every stack move so they can't drift, and kick the render loop in
+    // case the command marked nodes dirty without rendering them.
+    connect(undoStack, &QUndoStack::indexChanged, this, [this](int) {
+        if (!this->project)
+            return;
+
+        // undo/redo changes prop values behind the properties panel's back
+        this->propWidget->syncPropBaselines();
+
+        // this fires on every push too (including merged ones, i.e. every
+        // step of a slider scrub), so only touch the viewer when the channel
+        // mapping actually changed
+        if (this->syncedChannels != this->project->textureChannels) {
+            this->syncedChannels = this->project->textureChannels;
+            this->passTextureChannelsToViewer3D();
+            this->syncChannelLabelsToScene();
+            this->view3DWidget->reRender();
+        }
+
+        if (this->renderer)
+            this->renderer->update();
+    });
+
     this->setupMenus();
     this->setupToolbar();
 
@@ -369,12 +395,14 @@ void MainWindow::setProject(TextureProjectPtr project)
     if (this->renderer) {
         this->graphWidget->setTextureRenderer(nullptr);
         this->view2DWidget->setTextureRenderer(nullptr);
+        this->propWidget->setTextureRenderer(nullptr);
 
         delete this->renderer;
         this->renderer = nullptr;
     }
 
     this->project = project;
+    this->syncedChannels = project->textureChannels;
     this->graphWidget->setTextureProject(project);
     this->syncChannelLabelsToScene();
     this->libraryWidget->setLibrary(project->library);
@@ -390,6 +418,9 @@ void MainWindow::setProject(TextureProjectPtr project)
     renderer->setProject(project);
     this->graphWidget->setTextureRenderer(renderer);
     this->view2DWidget->setTextureRenderer(renderer);
+    // undo/redo of a property change has no propertyUpdated signal to kick the
+    // render loop, so the commands need the renderer directly
+    this->propWidget->setTextureRenderer(renderer);
 
     connect(renderer, &TextureRenderer::renderProgress,
             [this](int clean, int total) {

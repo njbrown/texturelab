@@ -2,7 +2,9 @@
 #define MAINWINDOW_H
 
 #include "DockManager.h"
+#include "models.h"
 #include <QCloseEvent>
+#include <QMap>
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QMainWindow>
@@ -100,5 +102,9 @@ private:
     QLabel* statusLabel;
 
     TextureProjectPtr project;
+
+    // channel→node mapping last pushed to the 3D viewer and the graph's node
+    // labels, so undo-stack moves that didn't touch it can skip the re-sync
+    QMap<TextureChannel, QString> syncedChannels;
 };
 #endif // MAINWINDOW_H

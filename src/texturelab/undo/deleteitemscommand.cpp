@@ -111,11 +111,9 @@ DeleteItemsCommand::DeleteItemsCommand(TextureProjectPtr project,
 
 void DeleteItemsCommand::redo()
 {
-    for (const auto& sc : _connections) {
-        auto con = _project->removeConnection(sc.leftNodeId, sc.rightNodeId, sc.rightInput);
-        if (con && con->rightNode)
-            con->rightNode->isDirty = true;
-    }
+    // removeConnection() marks each right node and its downstream chain dirty
+    for (const auto& sc : _connections)
+        _project->removeConnection(sc.leftNodeId, sc.rightNodeId, sc.rightInput);
 
     for (const auto& sn : _nodes) {
         auto gnode = _scene->getNodeById(sn.id);
@@ -172,7 +170,6 @@ void DeleteItemsCommand::undo()
         if (!leftNode || !rightNode)
             continue;
         _project->addConnection(leftNode, rightNode, sc.rightInput);
-        rightNode->isDirty = true;
         auto leftG  = _scene->getNodeById(sc.leftNodeId);
         auto rightG = _scene->getNodeById(sc.rightNodeId);
         if (leftG && rightG)
