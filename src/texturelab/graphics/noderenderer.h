@@ -36,7 +36,17 @@ public:
     void init(QOpenGLFunctions_3_2_Core* glFuncs, GLuint fboId);
     void cleanup();
 
+    // The parameters every texture in the pipeline is expected to carry.
+    // Node shaders sample at exact texel centres, so NEAREST is the correct
+    // default; CLAMP_TO_EDGE is the default because shaders that want to tile
+    // fract() their own coordinates.
+    static void applyDefaultTextureParams(QOpenGLFunctions_3_2_Core* gl,
+                                          GLuint textureId);
+
     // --- Intermediate textures ---
+    // Pooled textures are reset to the default parameters on acquire, so a
+    // renderer can never inherit filtering or wrapping left behind by whoever
+    // used the texture last.
     GLuint acquireTexture(int width, int height);
     void releaseTexture(GLuint textureId);
     void releaseAllTextures();
@@ -110,6 +120,29 @@ struct NodeRenderContext {
 
     // Draw a fullscreen quad using the currently bound shader
     void drawQuad();
+};
+
+// Temporarily re-parameterises a texture — LINEAR for bilinear taps, REPEAT
+// for wrapping, a mipmap filter for cone taps — and puts the pipeline defaults
+// back when it goes out of scope.
+//
+// Prefer this over hand-written glTexParameteri pairs. Input textures belong
+// to the node upstream and outlive the renderer that borrowed them, so a
+// missed restore silently changes how some unrelated node is sampled later;
+// with the guard the restore cannot be skipped, including on an early return.
+class ScopedTextureParams {
+public:
+    ScopedTextureParams(QOpenGLFunctions_3_2_Core* glFuncs, GLuint textureId,
+                        GLint minFilter, GLint magFilter,
+                        GLint wrap = GL_CLAMP_TO_EDGE);
+    ~ScopedTextureParams();
+
+    ScopedTextureParams(const ScopedTextureParams&) = delete;
+    ScopedTextureParams& operator=(const ScopedTextureParams&) = delete;
+
+private:
+    QOpenGLFunctions_3_2_Core* gl;
+    GLuint tex;
 };
 
 // Abstract base for custom node renderers.

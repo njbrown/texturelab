@@ -32,12 +32,28 @@ void RenderResourceCache::cleanup()
     shaderCache.clear();
 }
 
+void RenderResourceCache::applyDefaultTextureParams(
+    QOpenGLFunctions_3_2_Core* gl, GLuint textureId)
+{
+    gl->glBindTexture(GL_TEXTURE_2D, textureId);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    gl->glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 GLuint RenderResourceCache::acquireTexture(int width, int height)
 {
     // Reuse an existing free texture of matching size
     for (auto& tex : texturePool) {
         if (!tex.inUse && tex.width == width && tex.height == height) {
             tex.inUse = true;
+            // Reset here rather than trusting the previous user to have put
+            // things back: a renderer that returned early, or simply forgot,
+            // would otherwise hand the next one LINEAR or REPEAT sampling and
+            // produce a bug that only shows up in certain node orderings.
+            applyDefaultTextureParams(gl, tex.id);
             return tex.id;
         }
     }
@@ -48,11 +64,8 @@ GLuint RenderResourceCache::acquireTexture(int width, int height)
     gl->glBindTexture(GL_TEXTURE_2D, texId);
     gl->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA,
                      GL_FLOAT, nullptr);
-    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     gl->glBindTexture(GL_TEXTURE_2D, 0);
+    applyDefaultTextureParams(gl, texId);
 
     CachedTexture cached;
     cached.id = texId;
@@ -413,6 +426,28 @@ QString RenderResourceCache::generatePropDeclarations(
         }
     }
     return code + "\n";
+}
+
+// ============================================================================
+// ScopedTextureParams
+// ============================================================================
+
+ScopedTextureParams::ScopedTextureParams(QOpenGLFunctions_3_2_Core* glFuncs,
+                                         GLuint textureId, GLint minFilter,
+                                         GLint magFilter, GLint wrap)
+    : gl(glFuncs), tex(textureId)
+{
+    gl->glBindTexture(GL_TEXTURE_2D, tex);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
+    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
+    gl->glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+ScopedTextureParams::~ScopedTextureParams()
+{
+    RenderResourceCache::applyDefaultTextureParams(gl, tex);
 }
 
 // ============================================================================
