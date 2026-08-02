@@ -655,7 +655,7 @@ void TextureRenderer::queueNextNodeToRender()
         // removed from the project in the meantime).
         cmd.nodePtr = nextNode;
 
-        cmd.totalInputs = nextNode->inputs.size();
+        cmd.inputNames = nextNode->inputs;
 
         // inputs
         auto nodeInputs = getNodeInputs(nextNode);

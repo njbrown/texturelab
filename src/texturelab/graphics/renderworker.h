@@ -55,8 +55,13 @@ struct RenderCommand {
     // command even if it's removed from the project while queued/in-flight.
     TextureNodePtr nodePtr;
 
-    // all expected inputs need to be cleared
-    int totalInputs;
+    // Every input the node declares, connected or not. Uniform state lives on
+    // the shader program, so an input left over from a previous render still
+    // has its sampler and <name>_connected flag set: all declared inputs have
+    // to be cleared each render, not just the connected ones.
+    QStringList inputNames;
+
+    // only the inputs that currently have a connection
     QList<RenderNodeInput> inputs;
 
     // props

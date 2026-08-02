@@ -323,18 +323,20 @@ void RenderWorker::renderSinglePass(const RenderCommand& command)
     if (command.shaderLinked) {
         gl->glUseProgram(command.shaderId);
 
-        // clear all inputs
+        // Clear every declared input, not just the connected ones: uniforms
+        // live on the shader program, so an input that was connected the last
+        // time this node rendered would otherwise keep its stale texture and
+        // <name>_connected == true after being disconnected.
         int texIndex = 0;
-        for (auto input : command.inputs) {
+        for (const auto& inputName : command.inputNames) {
             gl->glActiveTexture(GL_TEXTURE0 + texIndex);
             gl->glBindTexture(GL_TEXTURE_2D, 0);
 
             gl->glUniform1i(
                 gl->glGetUniformLocation(command.shaderId,
-                                         input.inputName.toStdString().c_str()),
-                0);
-            std::string connectedName =
-                input.inputName.toStdString() + "_connected";
+                                         inputName.toStdString().c_str()),
+                texIndex);
+            std::string connectedName = inputName.toStdString() + "_connected";
             gl->glUniform1i(gl->glGetUniformLocation(command.shaderId,
                                                      connectedName.c_str()),
                             0);
@@ -343,21 +345,25 @@ void RenderWorker::renderSinglePass(const RenderCommand& command)
         }
 
         // pass inputs
-        texIndex = 0;
         for (auto nodeInput : command.inputs) {
-            gl->glActiveTexture(GL_TEXTURE0 + texIndex);
+            auto name = nodeInput.inputName;
+
+            // reuse the unit the clear loop above assigned to this input so
+            // the two stay in sync; unknown names get a fresh unit
+            int unit = command.inputNames.indexOf(name);
+            if (unit < 0)
+                unit = texIndex++;
+
+            gl->glActiveTexture(GL_TEXTURE0 + unit);
             gl->glBindTexture(GL_TEXTURE_2D, nodeInput.textureId);
 
-            auto name = nodeInput.inputName;
             gl->glUniform1i(gl->glGetUniformLocation(
                                 command.shaderId, name.toStdString().c_str()),
-                            texIndex);
+                            unit);
             std::string connectedName = name.toStdString() + "_connected";
             gl->glUniform1i(gl->glGetUniformLocation(command.shaderId,
                                                      connectedName.c_str()),
                             1);
-
-            texIndex++;
         }
 
         // pass seed
