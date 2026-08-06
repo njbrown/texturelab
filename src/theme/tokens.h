@@ -41,6 +41,17 @@ constexpr const char* FrameSelect     = "frame.select";
 constexpr const char* CommentFill     = "comment.fill";
 constexpr const char* CommentText     = "comment.text";
 
+// --- launcher / project manager (surface B) ---
+constexpr const char* LauncherCard       = "launcher.card";
+constexpr const char* LauncherCardHover  = "launcher.card.hover";
+constexpr const char* LauncherCardBorder = "launcher.card.border";
+constexpr const char* LauncherThumbBg    = "launcher.thumb.bg";
+constexpr const char* LauncherStar       = "launcher.star";
+constexpr const char* LauncherBadge      = "launcher.badge";
+constexpr const char* LauncherPipOff     = "launcher.pip.off";
+constexpr const char* LauncherPipOn      = "launcher.pip.on";
+constexpr const char* LauncherOpenDot    = "launcher.open.dot";
+
 // --- 2D viewport (surface B/D) ---
 constexpr const char* View2dBg = "view2d.bg";
 

@@ -42,6 +42,9 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/ads)
 # Theme / design-token system (single source of truth for colors, QSS, palette)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/theme)
 
+# Launcher data layer (index.db + thumbs.db). Headless, no widgets.
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/catalog)
+
 # Node Graph
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/nodegraph)
 
@@ -53,4 +56,16 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/colorpicker)
 
 # Main App
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/texturelab)
+
+# Unit tests (QtTest). Off in release builds; enable with -DTEXTURELAB_BUILD_TESTS=ON.
+option(TEXTURELAB_BUILD_TESTS "Build the unit test suite" ON)
+if(TEXTURELAB_BUILD_TESTS)
+    find_package(Qt6 COMPONENTS Test QUIET)
+    if(Qt6Test_FOUND)
+        enable_testing()
+        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    else()
+        message(STATUS "Qt6 Test module not found — skipping unit tests")
+    endif()
+endif()
 

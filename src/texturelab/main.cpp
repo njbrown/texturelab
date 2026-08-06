@@ -1,3 +1,4 @@
+#include "catalogservice.h"
 #include "mainwindow.h"
 #include "telemetry.h"
 #include "thememanager.h"
@@ -136,6 +137,12 @@ int main(int argc, char* argv[])
     // Now applicationDirPath() is valid — init Sentry
     Telemetry::init(crashReportingEnabled);
 
+    // Launcher index + thumbnail cache. Failure is not fatal: the app runs
+    // normally without them, it just has nothing to show in the launcher.
+    // Seeds from the legacy recent-files list on first run (LAUNCHER_PRD.md §1.1).
+    if (CatalogService::instance().init())
+        CatalogService::instance().reconcileAsync();
+
     // Crash-test hook for verifying Sentry symbolication end-to-end.
     // Must run after Telemetry::init so the crash handler is armed.
     for (int i = 1; i < argc; ++i) {
@@ -155,10 +162,32 @@ int main(int argc, char* argv[])
     qInstallMessageHandler(qtMessageHandler);
 
     MainWindow w;
-    w.show();
-    w.showMaximized();
+
+    // The launcher comes up first and MainWindow stays hidden until something
+    // is opened or created. Constructing it here is unavoidable — it owns the
+    // renderer and the dock layout — but not showing it keeps the empty editor
+    // off screen behind the launcher. `--no-launcher` skips straight to the
+    // editor, which is what you want when iterating on the editor itself.
+    bool useLauncher = true;
+    for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--no-launcher") == 0)
+            useLauncher = false;
+    }
+
+    if (useLauncher) {
+        w.showLauncher();
+    }
+    else {
+        w.show();
+        w.showMaximized();
+    }
 
     int ret = a.exec();
+
+    // Close the catalog databases here, while Qt's SQL layer is still alive.
+    // Leaving it to static destruction crashes on exit (see instance()).
+    CatalogService::instance().shutdown();
+
     Telemetry::close();
     return ret;
 }

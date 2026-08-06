@@ -1,0 +1,654 @@
+#include "launcherwindow.h"
+
+#include "catalogservice.h"
+#include "libraries/libversion.h"
+#include "texturecarddelegate.h"
+#include "texturelistmodel.h"
+#include "texturerowdelegate.h"
+
+#include <QButtonGroup>
+#include <QCloseEvent>
+#include <QComboBox>
+#include <QDesktopServices>
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QHBoxLayout>
+#include <QKeyEvent>
+#include <QLabel>
+#include <QLineEdit>
+#include <QListView>
+#include <QMenu>
+#include <QMessageBox>
+#include <QMimeData>
+#include <QPushButton>
+#include <QSettings>
+#include <QSlider>
+#include <QToolButton>
+#include <QUrl>
+#include <QVBoxLayout>
+
+namespace {
+
+// Object names are the hook for resources/qss/app.qss.in — the launcher adds no
+// inline stylesheets (see scripts/check-theme-hygiene.sh).
+constexpr const char* kTopBarName = "launcherTopBar";
+constexpr const char* kActionBarName = "launcherActionBar";
+constexpr const char* kGridName = "launcherGrid";
+constexpr const char* kFilterTabName = "launcherFilterTab";
+constexpr const char* kEmptyLabelName = "launcherEmptyLabel";
+
+bool isTextureFile(const QUrl& url)
+{
+    return url.isLocalFile() && url.toLocalFile().endsWith(QStringLiteral(".texture"),
+                                                           Qt::CaseInsensitive);
+}
+
+} // namespace
+
+LauncherWindow::LauncherWindow(QWidget* parent) : QWidget(parent)
+{
+    setWindowTitle(QStringLiteral("TextureLab"));
+    setMinimumSize(800, 600);
+    resize(1280, 820);
+    setAcceptDrops(true);
+
+    model = new TextureListModel(this);
+    cardDelegate = new TextureCardDelegate(this);
+    rowDelegate = new TextureRowDelegate(this);
+
+    const QString currentVersion = libVersionToString(currentLibVersion());
+    model->setCurrentLibVersion(currentVersion);
+    cardDelegate->setCurrentVersionLabel(currentVersion);
+    rowDelegate->setCurrentVersionLabel(currentVersion);
+
+    CatalogService& catalog = CatalogService::instance();
+    if (catalog.isReady()) {
+        model->setIndex(&catalog.index());
+        model->setThumbnailCache(&catalog.thumbnails());
+    }
+
+    // The index changes from save, open, and the reconciliation pass; the grid
+    // follows rather than polling.
+    connect(&catalog, &CatalogService::catalogChanged, this, &LauncherWindow::refresh);
+
+    grid = new QListView(this);
+    grid->setObjectName(QLatin1String(kGridName));
+    grid->setModel(model);
+    grid->setViewMode(QListView::IconMode);
+    grid->setResizeMode(QListView::Adjust);
+    grid->setMovement(QListView::Static);
+    grid->setUniformItemSizes(true);
+    grid->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    grid->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    grid->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    grid->setMouseTracking(true);
+    grid->setSpacing(6);
+    grid->setContextMenuPolicy(Qt::CustomContextMenu);
+    grid->setFrameShape(QFrame::NoFrame);
+
+    connect(grid, &QListView::doubleClicked, this, [this]() { openSelected(); });
+    connect(grid, &QWidget::customContextMenuRequested, this, &LauncherWindow::showContextMenu);
+
+    // Sits over the grid rather than replacing it, so switching filters can't
+    // leave the window structurally empty.
+    emptyLabel = new QLabel(grid);
+    emptyLabel->setObjectName(QLatin1String(kEmptyLabelName));
+    emptyLabel->setAlignment(Qt::AlignCenter);
+    emptyLabel->setWordWrap(true);
+    emptyLabel->hide();
+
+    auto* layout = new QVBoxLayout(this);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+    layout->addWidget(buildTopBar());
+    layout->addWidget(grid, 1);
+    layout->addWidget(buildActionBar());
+
+    connect(model, &QAbstractItemModel::modelReset, this, &LauncherWindow::updateEmptyState);
+    connect(model, &QAbstractItemModel::rowsInserted, this, &LauncherWindow::updateEmptyState);
+
+    // Last, so it can drive widgets the two build* methods created.
+    restoreViewState();
+    updateEmptyState();
+}
+
+LauncherWindow::~LauncherWindow() = default;
+
+QWidget* LauncherWindow::buildTopBar()
+{
+    auto* bar = new QWidget(this);
+    bar->setObjectName(QLatin1String(kTopBarName));
+
+    auto* layout = new QHBoxLayout(bar);
+    layout->setContentsMargins(12, 8, 12, 8);
+    layout->setSpacing(8);
+
+    // All · Recents · Starred — the saved views, as three text tabs rather than
+    // a sidebar.
+    auto* group = new QButtonGroup(bar);
+    group->setExclusive(true);
+
+    auto makeTab = [&](const QString& text, catalog::Filter filter, bool checked) {
+        auto* tab = new QToolButton(bar);
+        tab->setObjectName(QLatin1String(kFilterTabName));
+        tab->setText(text);
+        tab->setCheckable(true);
+        tab->setChecked(checked);
+        tab->setCursor(Qt::PointingHandCursor);
+        group->addButton(tab);
+        layout->addWidget(tab);
+        connect(tab, &QToolButton::clicked, this, [this, filter]() {
+            model->setFilter(filter);
+            updateEmptyState();
+            saveViewState();
+        });
+        return tab;
+    };
+
+    allTab = makeTab(QStringLiteral("All"), catalog::Filter::All, true);
+    recentsTab = makeTab(QStringLiteral("Recents"), catalog::Filter::Recents, false);
+    starredTab = makeTab(QStringLiteral("Starred"), catalog::Filter::Starred, false);
+
+    layout->addStretch(1);
+
+    search = new QLineEdit(bar);
+    search->setPlaceholderText(QStringLiteral("Search…"));
+    search->setClearButtonEnabled(true);
+    search->setFixedWidth(240);
+    connect(search, &QLineEdit::textChanged, this, [this](const QString& text) {
+        model->setSearchTerm(text);
+        updateEmptyState();
+    });
+    layout->addWidget(search);
+
+    // Sort dropdown, parked for now. sortBox stays null while this is commented
+    // out, and every other use of it is null-guarded, so the launcher just runs
+    // on the model's default order (Last Modified, newest first). Uncomment to
+    // bring it back — applySort() and the saved "sort" setting are still wired.
+    //
+    // sortBox = new QComboBox(bar);
+    // sortBox->addItem(QStringLiteral("Last Modified"));
+    // sortBox->addItem(QStringLiteral("Last Opened"));
+    // sortBox->addItem(QStringLiteral("Name"));
+    // sortBox->addItem(QStringLiteral("Size"));
+    // connect(sortBox, &QComboBox::currentIndexChanged, this, [this](int comboIndex) {
+    //     applySort(comboIndex);
+    //     saveViewState();
+    // });
+    // layout->addWidget(sortBox);
+
+    auto* gear = new QToolButton(bar);
+    gear->setText(QStringLiteral("⚙"));
+    gear->setPopupMode(QToolButton::InstantPopup);
+    auto* menu = new QMenu(gear);
+    menu->addAction(QStringLiteral("Clear Missing Textures"), this, [this]() {
+        CatalogService& catalog = CatalogService::instance();
+        if (!catalog.isReady())
+            return;
+        const int removed = catalog.index().removeAllMissing();
+        if (removed > 0)
+            refresh();
+    });
+    gear->setMenu(menu);
+    layout->addWidget(gear);
+
+    return bar;
+}
+
+QWidget* LauncherWindow::buildActionBar()
+{
+    auto* bar = new QWidget(this);
+    bar->setObjectName(QLatin1String(kActionBarName));
+
+    auto* layout = new QHBoxLayout(bar);
+    layout->setContentsMargins(12, 8, 12, 8);
+    layout->setSpacing(8);
+
+    // ⊞ / ☰ — same model, different delegate. This is the payoff for keeping
+    // formatting out of the model.
+    auto* viewGroup = new QButtonGroup(bar);
+    viewGroup->setExclusive(true);
+
+    auto makeViewToggle = [&](const QString& glyph, const QString& tip, bool checked) {
+        auto* button = new QToolButton(bar);
+        button->setObjectName(QLatin1String(kFilterTabName));
+        button->setText(glyph);
+        button->setToolTip(tip);
+        button->setCheckable(true);
+        button->setChecked(checked);
+        button->setCursor(Qt::PointingHandCursor);
+        viewGroup->addButton(button);
+        layout->addWidget(button);
+        return button;
+    };
+
+    gridToggle = makeViewToggle(QStringLiteral("⊞"), tr("Grid"), true);
+    listToggle = makeViewToggle(QStringLiteral("☰"), tr("List"), false);
+    connect(gridToggle, &QToolButton::clicked, this, [this]() { setGridMode(true); });
+    connect(listToggle, &QToolButton::clicked, this, [this]() { setGridMode(false); });
+
+    sizeSlider = new QSlider(Qt::Horizontal, bar);
+    sizeSlider->setRange(TextureCardDelegate::MinCardWidth, TextureCardDelegate::MaxCardWidth);
+    sizeSlider->setValue(cardDelegate->cardWidth());
+    sizeSlider->setFixedWidth(120);
+    connect(sizeSlider, &QSlider::valueChanged, this, [this](int value) {
+        // setCardWidth emits sizeHintChanged; reset() forces the icon-mode
+        // layout to actually recompute positions rather than reflow within the
+        // old grid metrics.
+        cardDelegate->setCardWidth(value);
+        if (gridMode)
+            grid->reset();
+        saveViewState();
+    });
+    layout->addWidget(sizeSlider);
+
+    layout->addStretch(1);
+
+    auto* newButton = new QPushButton(QStringLiteral("New Texture"), bar);
+    connect(newButton, &QPushButton::clicked, this, &LauncherWindow::newTextureRequested);
+    layout->addWidget(newButton);
+
+    openButton = new QPushButton(QStringLiteral("Open"), bar);
+    openButton->setDefault(true);
+    openButton->setAutoDefault(true);
+    connect(openButton, &QPushButton::clicked, this, [this]() { openSelected(); });
+    layout->addWidget(openButton);
+
+    return bar;
+}
+
+void LauncherWindow::applySort(int comboIndex)
+{
+    switch (comboIndex) {
+    case 1:
+        model->setSort(catalog::SortKey::Opened, false);
+        break;
+    case 2:
+        model->setSort(catalog::SortKey::Name, true);
+        break;
+    case 3:
+        model->setSort(catalog::SortKey::Size, false);
+        break;
+    default:
+        model->setSort(catalog::SortKey::Modified, false);
+        break;
+    }
+}
+
+void LauncherWindow::setGridMode(bool useGrid)
+{
+    gridMode = useGrid;
+
+    if (useGrid) {
+        grid->setItemDelegate(cardDelegate);
+        grid->setViewMode(QListView::IconMode);
+        grid->setSpacing(6);
+        grid->setWordWrap(false);
+    }
+    else {
+        grid->setItemDelegate(rowDelegate);
+        grid->setViewMode(QListView::ListMode);
+        // Rows are separated by their own hairline, so view spacing would only
+        // break the continuous surface a table wants.
+        grid->setSpacing(0);
+    }
+
+    // Icon mode caches item positions; swapping the delegate changes every
+    // sizeHint, and only a reset makes the view ask again.
+    grid->reset();
+
+    if (gridToggle)
+        gridToggle->setChecked(useGrid);
+    if (listToggle)
+        listToggle->setChecked(!useGrid);
+    if (sizeSlider)
+        sizeSlider->setEnabled(useGrid); // the row height is fixed
+
+    saveViewState();
+}
+
+void LauncherWindow::restoreViewState()
+{
+    QSettings settings;
+    settings.beginGroup(QStringLiteral("launcher"));
+
+    if (sizeSlider) {
+        const int width = settings.value(QStringLiteral("cardWidth"),
+                                         cardDelegate->cardWidth()).toInt();
+        cardDelegate->setCardWidth(width);
+        QSignalBlocker block(sizeSlider);
+        sizeSlider->setValue(cardDelegate->cardWidth());
+    }
+
+    if (sortBox) {
+        const int sortIndex = settings.value(QStringLiteral("sort"), 0).toInt();
+        if (sortIndex >= 0 && sortIndex < sortBox->count()) {
+            QSignalBlocker block(sortBox);
+            sortBox->setCurrentIndex(sortIndex);
+            applySort(sortIndex);
+        }
+    }
+
+    // Filter last: All is the safe default if the stored value is nonsense.
+    const int filter = settings.value(QStringLiteral("filter"), 0).toInt();
+    if (filter == 1 && recentsTab) {
+        recentsTab->setChecked(true);
+        model->setFilter(catalog::Filter::Recents);
+    }
+    else if (filter == 2 && starredTab) {
+        starredTab->setChecked(true);
+        model->setFilter(catalog::Filter::Starred);
+    }
+
+    setGridMode(settings.value(QStringLiteral("gridMode"), true).toBool());
+
+    settings.endGroup();
+}
+
+void LauncherWindow::saveViewState() const
+{
+    QSettings settings;
+    settings.beginGroup(QStringLiteral("launcher"));
+    settings.setValue(QStringLiteral("gridMode"), gridMode);
+    if (cardDelegate)
+        settings.setValue(QStringLiteral("cardWidth"), cardDelegate->cardWidth());
+    if (sortBox)
+        settings.setValue(QStringLiteral("sort"), sortBox->currentIndex());
+
+    int filter = 0;
+    if (model->filter() == catalog::Filter::Recents)
+        filter = 1;
+    else if (model->filter() == catalog::Filter::Starred)
+        filter = 2;
+    settings.setValue(QStringLiteral("filter"), filter);
+
+    settings.endGroup();
+}
+
+void LauncherWindow::refresh()
+{
+    model->refresh();
+    updateEmptyState();
+}
+
+void LauncherWindow::updateEmptyState()
+{
+    if (model->totalCount() > 0) {
+        emptyLabel->hide();
+        return;
+    }
+
+    // Three different nothings, and conflating them is how a first-run window
+    // ends up looking broken instead of new.
+    QString message;
+    if (!model->searchTerm().isEmpty()) {
+        message = tr("No textures match “%1”").arg(model->searchTerm());
+    }
+    else if (model->filter() == catalog::Filter::Starred) {
+        message = tr("No starred textures yet.\nStar one from its right-click menu.");
+    }
+    else if (model->filter() == catalog::Filter::Recents) {
+        message = tr("Nothing opened yet.");
+    }
+    else {
+        message = tr("No textures yet.\n\nTextures you create or open will appear here.");
+    }
+
+    emptyLabel->setText(message);
+    emptyLabel->resize(grid->viewport()->size());
+    emptyLabel->move(0, 0);
+    emptyLabel->show();
+    emptyLabel->raise();
+}
+
+void LauncherWindow::showEvent(QShowEvent* event)
+{
+    QWidget::showEvent(event);
+    refresh();
+    search->setFocus();
+}
+
+void LauncherWindow::openSelected()
+{
+    const QModelIndexList selection = grid->selectionModel()->selectedIndexes();
+
+    // With nothing selected, Open falls back to the file dialog. That's also
+    // how a texture the launcher has never seen gets in, so it must never be
+    // disabled (LAUNCHER_PRD.md §3.1).
+    if (selection.isEmpty()) {
+        emit openDialogRequested();
+        return;
+    }
+
+    const catalog::TextureRecord rec = model->recordAt(selection.first());
+    if (rec.path.isEmpty())
+        return;
+
+    if (!QFileInfo::exists(rec.path)) {
+        // Offer to fix it rather than just reporting the problem. Moves aren't
+        // detected automatically, so this is how a relocated texture keeps its
+        // stars and history.
+        const auto answer = QMessageBox::question(
+            this, tr("Texture Not Found"),
+            tr("This texture is no longer at:\n%1\n\nIf you moved it, you can point the "
+               "launcher at its new location.")
+                .arg(rec.path),
+            QMessageBox::Cancel | QMessageBox::Open, QMessageBox::Open);
+
+        if (answer == QMessageBox::Open)
+            locate(rec);
+        return;
+    }
+
+    emit openPathRequested(rec.path);
+}
+
+void LauncherWindow::locate(const catalog::TextureRecord& rec)
+{
+    CatalogService& catalog = CatalogService::instance();
+    if (!catalog.isReady())
+        return;
+
+    // Start where it used to live: a moved file is usually a sibling of its old
+    // home, or the user at least remembers the neighbourhood.
+    const QString startDir = QFileInfo(rec.path).absolutePath();
+
+    const QString chosen = QFileDialog::getOpenFileName(
+        this, tr("Locate “%1”").arg(rec.name), startDir,
+        tr("Texturelab File (*.texture)"));
+
+    if (chosen.isEmpty())
+        return;
+
+    const QFileInfo info(chosen);
+    const qint64 survivor = catalog.index().relocate(rec.id, info.absoluteFilePath(), info.size(),
+                                                     info.lastModified().toMSecsSinceEpoch());
+
+    if (survivor < 0) {
+        QMessageBox::warning(this, tr("Locate Texture"),
+                             tr("Could not update the launcher entry:\n%1")
+                                 .arg(catalog.index().lastError()));
+        return;
+    }
+
+    // The file at the new path may be different content entirely, so the old
+    // thumbnail can't be trusted. It regenerates on the next open or save.
+    catalog.thumbnails().removeTexture(survivor);
+
+    refresh();
+
+    const QModelIndex found = model->indexForId(survivor);
+    if (found.isValid()) {
+        grid->setCurrentIndex(found);
+        grid->scrollTo(found);
+    }
+}
+
+void LauncherWindow::showContextMenu(const QPoint& pos)
+{
+    const QModelIndex index = grid->indexAt(pos);
+    if (!index.isValid())
+        return;
+
+    if (!grid->selectionModel()->isSelected(index))
+        grid->setCurrentIndex(index);
+
+    const catalog::TextureRecord rec = model->recordAt(index);
+
+    QMenu menu(this);
+    menu.addAction(tr("Open"), this, [this]() { openSelected(); });
+    if (rec.isMissing())
+        menu.addAction(tr("Locate…"), this, [this, rec]() { locate(rec); });
+    menu.addSeparator();
+    menu.addAction(rec.starred ? tr("Unstar") : tr("Star"), this,
+                   [this]() { toggleStarOnSelection(); });
+    menu.addAction(tr("Show in File Manager"), this, [rec]() {
+        // Opens the containing directory; selecting the file itself needs
+        // per-platform shell calls that aren't worth it here.
+        QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(rec.path).absolutePath()));
+    });
+    menu.addSeparator();
+    menu.addAction(tr("Remove from Launcher"), this,
+                   [this]() { removeSelectionFromLauncher(); });
+
+    menu.exec(grid->viewport()->mapToGlobal(pos));
+}
+
+void LauncherWindow::toggleStarOnSelection()
+{
+    CatalogService& catalog = CatalogService::instance();
+    if (!catalog.isReady())
+        return;
+
+    const QModelIndexList selection = grid->selectionModel()->selectedIndexes();
+    if (selection.isEmpty())
+        return;
+
+    // One toggle for the whole selection, driven by the first item, so a
+    // multi-select doesn't half-star and half-unstar.
+    const bool starred = model->recordAt(selection.first()).starred;
+    for (const QModelIndex& index : selection) {
+        const catalog::TextureRecord rec = model->recordAt(index);
+        if (rec.isValid())
+            catalog.index().setStarred(rec.id, !starred);
+    }
+
+    refresh();
+}
+
+void LauncherWindow::removeSelectionFromLauncher()
+{
+    CatalogService& catalog = CatalogService::instance();
+    if (!catalog.isReady())
+        return;
+
+    const QModelIndexList selection = grid->selectionModel()->selectedIndexes();
+    if (selection.isEmpty())
+        return;
+
+    const auto answer = QMessageBox::question(
+        this, tr("Remove from Launcher"),
+        tr("Remove %n texture(s) from the launcher?\n\nThe files stay on disk — this only "
+           "forgets them here.",
+           nullptr, int(selection.size())),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+
+    if (answer != QMessageBox::Yes)
+        return;
+
+    for (const QModelIndex& index : selection) {
+        const catalog::TextureRecord rec = model->recordAt(index);
+        if (rec.isValid())
+            catalog.forget(rec.id);
+    }
+
+    refresh();
+}
+
+void LauncherWindow::setOpenPath(const QString& path)
+{
+    model->setOpenPath(path);
+}
+
+void LauncherWindow::setHasDocument(bool value)
+{
+    hasDocument = value;
+}
+
+void LauncherWindow::keyPressEvent(QKeyEvent* event)
+{
+    if (event->matches(QKeySequence::Find)) {
+        search->setFocus();
+        search->selectAll();
+        event->accept();
+        return;
+    }
+
+    if (event->key() == Qt::Key_Escape) {
+        // Clear the search first if there is one; only then close. And never
+        // close when there's no document behind us — that would leave the user
+        // staring at nothing.
+        if (!search->text().isEmpty()) {
+            search->clear();
+            event->accept();
+            return;
+        }
+        if (hasDocument)
+            emit closeRequested();
+        event->accept();
+        return;
+    }
+
+    if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
+        openSelected();
+        event->accept();
+        return;
+    }
+
+    QWidget::keyPressEvent(event);
+}
+
+void LauncherWindow::closeEvent(QCloseEvent* event)
+{
+    if (!hasDocument) {
+        // The window manager's close button on first launch means "quit", not
+        // "show me the empty editor behind this".
+        event->accept();
+        return;
+    }
+
+    event->ignore();
+    emit closeRequested();
+}
+
+void LauncherWindow::dragEnterEvent(QDragEnterEvent* event)
+{
+    if (!event->mimeData()->hasUrls()) {
+        event->ignore();
+        return;
+    }
+
+    for (const QUrl& url : event->mimeData()->urls()) {
+        if (isTextureFile(url)) {
+            event->acceptProposedAction();
+            return;
+        }
+    }
+    event->ignore();
+}
+
+void LauncherWindow::dropEvent(QDropEvent* event)
+{
+    // Dropping a .texture adds it and opens it — the explicit recovery path if
+    // index.db is ever lost (LAUNCHER_PRD.md §1.1).
+    for (const QUrl& url : event->mimeData()->urls()) {
+        if (isTextureFile(url)) {
+            event->acceptProposedAction();
+            emit openPathRequested(url.toLocalFile());
+            return;
+        }
+    }
+    event->ignore();
+}

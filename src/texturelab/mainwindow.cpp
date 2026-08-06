@@ -33,7 +33,9 @@
 #include "DockAreaWidget.h"
 #include "DockSplitter.h"
 
+#include "catalogservice.h"
 #include "exporter.h"
+#include "launcher/launcherwindow.h"
 #include "telemetry.h"
 #include "thememanager.h"
 #include "tokens.h"
@@ -119,6 +121,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
         "StatusVersionLabel"); // styled in resources/qss/app.qss.in
     versionLabel->setToolTip("Application version and build hash");
     statusBar()->addWidget(versionLabel);
+
+    // Home: reopens the launcher over the editor (LAUNCHER_PRD.md §7).
+    auto* homeButton = new QToolButton();
+    homeButton->setObjectName("StatusHomeButton");
+    homeButton->setText("⌂");
+    homeButton->setToolTip("Show all textures");
+    homeButton->setCursor(Qt::PointingHandCursor);
+    connect(homeButton, &QToolButton::clicked, this, &MainWindow::showLauncher);
+    statusBar()->addWidget(homeButton);
 
     statusLayout->addWidget(statusLabel, 0, Qt::AlignVCenter);
     statusLayout->addWidget(progressBar, 0, Qt::AlignVCenter);
@@ -428,6 +439,13 @@ void MainWindow::setProject(TextureProjectPtr project)
                 progressBar->setValue(total == 0 ? 1 : clean);
                 if (total == 0 || clean == total) {
                     statusLabel->setText("Ready");
+
+                    // The graph is fully evaluated: this is the first moment a
+                    // freshly opened document is worth photographing.
+                    if (thumbnailCapturePending) {
+                        thumbnailCapturePending = false;
+                        captureLauncherThumbnail(int(catalog::ThumbSource::Open));
+                    }
                 }
                 else {
                     statusLabel->setText(
@@ -718,6 +736,88 @@ ads::CDockAreaWidget* MainWindow::addDock(const QString& title,
     return newAreaWidget;
 }
 
+void MainWindow::captureLauncherThumbnail(int source)
+{
+    CatalogService& catalog = CatalogService::instance();
+    if (!catalog.isReady() || !project || project->filePath.isEmpty())
+        return;
+
+    auto* viewer = view3DWidget ? view3DWidget->viewer : nullptr;
+    if (!viewer || !viewer->isValid())
+        return;
+
+    // The one moment the whole graph is evaluated and resident on the GPU, so
+    // we just take the picture — no headless evaluator, no second GL context
+    // (LAUNCHER_PRD.md §4). Whatever the user framed is what the card shows.
+    const QImage frame = viewer->grabFramebuffer();
+    if (frame.isNull())
+        return;
+
+    const catalog::TextureRecord rec = catalog.index().byPath(project->filePath);
+    if (!rec.isValid())
+        return;
+
+    catalog.captureThumbnail(rec.id, frame, static_cast<catalog::ThumbSource>(source));
+}
+
+void MainWindow::showLauncher()
+{
+    if (!launcher) {
+        launcher = new LauncherWindow();
+
+        connect(launcher, &LauncherWindow::newTextureRequested, this, [this]() {
+            launcher->hide();
+            newProject();
+            showMaximized();
+            raise();
+            activateWindow();
+        });
+
+        // Routed through openProjectFromPath so the launcher inherits the
+        // dirty-document prompt and the library-version upgrade dialog rather
+        // than reimplementing either.
+        connect(launcher, &LauncherWindow::openPathRequested, this,
+                [this](const QString& path) {
+                    const QString before = project ? project->filePath : QString();
+                    openProjectFromPath(path);
+
+                    // openProjectFromPath bails out silently if the user
+                    // cancels the save prompt or the file won't read; in that
+                    // case leave the launcher up rather than dropping them into
+                    // an editor they didn't ask for.
+                    if (project && project->filePath == path && project->filePath != before) {
+                        launcher->hide();
+                        showMaximized();
+                        raise();
+                        activateWindow();
+                    }
+                });
+
+        connect(launcher, &LauncherWindow::openDialogRequested, this, [this]() {
+            openProject();
+            if (project && !project->filePath.isEmpty()) {
+                launcher->hide();
+                showMaximized();
+                raise();
+                activateWindow();
+            }
+        });
+
+        connect(launcher, &LauncherWindow::closeRequested, this, [this]() {
+            launcher->hide();
+            showMaximized();
+            raise();
+            activateWindow();
+        });
+    }
+
+    launcher->setHasDocument(project && !project->filePath.isEmpty());
+    launcher->setOpenPath(project ? project->filePath : QString());
+    launcher->show();
+    launcher->raise();
+    launcher->activateWindow();
+}
+
 void MainWindow::openProject()
 {
     if (!promptSaveIfDirty())
@@ -777,6 +877,15 @@ void MainWindow::openProjectFromPath(const QString& filePath)
                           "open: " + fileInfo.baseName().toStdString());
     setProject(project);
     addToRecentFiles(filePath);
+
+    // The shared entry point for the Open dialog, the recent-files menu, and
+    // drag-and-drop, so one hook here covers all three (LAUNCHER_PRD.md §6.1).
+    CatalogService::instance().recordOpened(project, filePath);
+
+    // Can't grab yet: opening kicks off an asynchronous render and the viewport
+    // is still showing the previous document (or nothing). Captured when
+    // renderProgress reports every node clean.
+    thumbnailCapturePending = true;
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent* event)
@@ -881,6 +990,8 @@ void MainWindow::saveProject()
     file.close();
     undoStack->setClean();
     addToRecentFiles(project->filePath);
+    CatalogService::instance().recordSaved(project, project->filePath);
+    captureLauncherThumbnail(int(catalog::ThumbSource::Save));
 }
 
 void MainWindow::saveProjectAs()
@@ -908,6 +1019,8 @@ void MainWindow::saveProjectAs()
     undoStack->setClean();
     setWindowTitle(project->name + " - TextureLab");
     addToRecentFiles(project->filePath);
+    CatalogService::instance().recordSaved(project, project->filePath);
+    captureLauncherThumbnail(int(catalog::ThumbSource::Save));
 }
 
 void MainWindow::showExportDialog()
@@ -1091,8 +1204,26 @@ void MainWindow::updateRecentFilesMenu()
 {
     recentFilesMenu->clear();
 
-    QSettings settings;
-    QStringList files = settings.value("recentFiles").toStringList();
+    // Reads through to the catalog index rather than QSettings, so this menu
+    // and the launcher can't disagree about what you opened last. QSettings is
+    // still written by addToRecentFiles() as a fallback for the case where the
+    // index failed to open.
+    QStringList files;
+    CatalogService& catalog = CatalogService::instance();
+
+    if (catalog.isReady()) {
+        catalog::Query query;
+        query.filter = catalog::Filter::Recents;
+        query.sort = catalog::SortKey::Opened;
+        query.ascending = false;
+        query.limit = MaxRecentFiles;
+
+        for (const catalog::TextureRecord& rec : catalog.index().list(query))
+            files << rec.path;
+    }
+    else {
+        files = QSettings().value("recentFiles").toStringList();
+    }
 
     for (const QString& filePath : files) {
         QFileInfo info(filePath);
@@ -1107,8 +1238,16 @@ void MainWindow::updateRecentFilesMenu()
         recentFilesMenu->addAction("No recent files")->setEnabled(false);
 
     recentFilesMenu->addSeparator();
-    recentFilesMenu->addAction("Clear Recent Files",
-                               [this]() { QSettings().remove("recentFiles"); });
+    recentFilesMenu->addAction("Clear Recent Files", [this]() {
+        QSettings().remove("recentFiles");
+
+        // Clearing the menu must not delete the user's stars, tags, or the
+        // textures themselves — only forget when they were last opened. The
+        // launcher keeps showing them under All.
+        CatalogService& catalog = CatalogService::instance();
+        if (catalog.isReady())
+            catalog.index().clearRecents();
+    });
 }
 
 void MainWindow::onCleanChanged(bool clean)

@@ -156,6 +156,18 @@ set(PROJECT_SOURCES
         ./main.cpp
         ./telemetry.h
         ./telemetry.cpp
+        ./catalogservice.h
+        ./catalogservice.cpp
+        ./launcher/launcherwindow.h
+        ./launcher/launcherwindow.cpp
+        ./launcher/texturelistmodel.h
+        ./launcher/texturelistmodel.cpp
+        ./launcher/texturecarddelegate.h
+        ./launcher/texturecarddelegate.cpp
+        ./launcher/texturerowdelegate.h
+        ./launcher/texturerowdelegate.cpp
+        ./launcher/launcherformat.h
+        ./launcher/launcherformat.cpp
         ./mainwindow.cpp
         ./mainwindow.h
         ./clipboard.h
@@ -267,6 +279,7 @@ target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
                                          nodegraph
                                          viewer3d
                                          colorpicker
+                                         catalog
                                          sentry
                                          )
                                          
