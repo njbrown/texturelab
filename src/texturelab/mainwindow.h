@@ -62,6 +62,15 @@ protected:
     void directExport();
     void handleExport(const QString& destination, const QString& pattern);
 
+    // The window a modal should belong to right now.
+    //
+    // Opening a texture from the launcher runs through MainWindow while
+    // MainWindow itself is still hidden, and a dialog parented to a hidden
+    // widget has nothing to center on — Qt drops it on whichever screen that
+    // widget nominally lives on, which on a multi-monitor desk is usually not
+    // the one the user is looking at.
+    QWidget* dialogParent();
+
     // Grabs the 3D viewport and stores it as this texture's launcher thumbnail.
     // No-op when the viewport has never initialized its GL context, or when the
     // texture isn't in the index.

@@ -736,6 +736,16 @@ ads::CDockAreaWidget* MainWindow::addDock(const QString& title,
     return newAreaWidget;
 }
 
+QWidget* MainWindow::dialogParent()
+{
+    // The launcher is a top-level window, not a child of this one, so it has to
+    // be named explicitly as the parent while it's the window on screen.
+    if (launcher && launcher->isVisible())
+        return launcher;
+
+    return this;
+}
+
 void MainWindow::captureLauncherThumbnail(int source)
 {
     CatalogService& catalog = CatalogService::instance();
@@ -823,7 +833,7 @@ void MainWindow::openProject()
     if (!promptSaveIfDirty())
         return;
 
-    auto filePath = QFileDialog::getOpenFileName(this, "Open Texture File", "",
+    auto filePath = QFileDialog::getOpenFileName(dialogParent(), "Open Texture File", "",
                                                  "Texturelab File (*.texture)");
 
     if (filePath.isNull() || filePath.isEmpty())
@@ -839,7 +849,7 @@ void MainWindow::openProjectFromPath(const QString& filePath)
 
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly)) {
-        QMessageBox::warning(this, "Open Texture",
+        QMessageBox::warning(dialogParent(), "Open Texture",
                              "Could not open file:\n" + filePath);
         return;
     }
@@ -854,7 +864,7 @@ void MainWindow::openProjectFromPath(const QString& filePath)
             chain << libVersionToString(v);
 
         auto choice = QMessageBox::question(
-            this, "Upgrade Texture?",
+            dialogParent(), "Upgrade Texture?",
             QString("This texture was created with library version %1.\n\n"
                     "Upgrade it to %2 (%3) to use the latest nodes and "
                     "improvements? A few node behaviors may change slightly.")
@@ -939,7 +949,7 @@ void MainWindow::upgradeCurrentProjectLibrary()
         return;
 
     auto choice = QMessageBox::warning(
-        this, "Upgrade Library Version?",
+        dialogParent(), "Upgrade Library Version?",
         "Upgrading the library version is irreversible and clears the "
         "undo/redo history for this session.\n\n"
         "Save your project (or save a copy) first if you want to keep the "
@@ -1265,7 +1275,7 @@ bool MainWindow::promptSaveIfDirty()
 
     QString name = project ? project->name : "Untitled";
     auto choice = QMessageBox::question(
-        this, "Unsaved Changes",
+        dialogParent(), "Unsaved Changes",
         QString("Save changes to \"%1\" before continuing?").arg(name),
         QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
 
