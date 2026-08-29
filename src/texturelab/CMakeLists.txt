@@ -19,7 +19,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets OpenGL)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets OpenGLWidgets)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets OpenGLWidgets Network)
 find_package(OpenGL REQUIRED)
 
 set(LIBRARYV1
@@ -168,6 +168,10 @@ set(PROJECT_SOURCES
         ./launcher/texturerowdelegate.cpp
         ./launcher/launcherformat.h
         ./launcher/launcherformat.cpp
+        ./update/versioncompare.h
+        ./update/versioncompare.cpp
+        ./update/updatechecker.h
+        ./update/updatechecker.cpp
         ./mainwindow.cpp
         ./mainwindow.h
         ./clipboard.h
@@ -271,6 +275,7 @@ endif()
 
 # note: openglwidgets is qt6 only
 target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
+                                         Qt${QT_VERSION_MAJOR}::Network
                                          Qt${QT_VERSION_MAJOR}::OpenGL
                                          Qt${QT_VERSION_MAJOR}::OpenGLWidgets
                                          OpenGL::GL

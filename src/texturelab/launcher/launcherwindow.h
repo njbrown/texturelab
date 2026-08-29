@@ -15,6 +15,7 @@ class QToolButton;
 class TextureCardDelegate;
 class TextureListModel;
 class TextureRowDelegate;
+class UpdateChecker;
 
 // The launcher: a flat grid of every texture the app has touched.
 //
@@ -46,6 +47,11 @@ signals:
 public slots:
     void refresh();
 
+    // Reveals the "Update to X" affordance in the top bar. Nothing is
+    // downloaded; clicking it opens the release page in the browser.
+    void showUpdateNotice(const QString& version, const QString& title,
+                          const QString& downloadUrl);
+
 protected:
     void keyPressEvent(QKeyEvent* event) override;
     void closeEvent(QCloseEvent* event) override;
@@ -71,6 +77,7 @@ private:
     void toggleStarOnSelection();
     void removeSelectionFromLauncher();
 
+    UpdateChecker* updates = nullptr;
     TextureListModel* model = nullptr;
     TextureCardDelegate* cardDelegate = nullptr;
     TextureRowDelegate* rowDelegate = nullptr;
@@ -81,6 +88,7 @@ private:
     QSlider* sizeSlider = nullptr;
     QLabel* emptyLabel = nullptr;
     QPushButton* openButton = nullptr;
+    QToolButton* updateButton = nullptr;
     QToolButton* gridToggle = nullptr;
     QToolButton* listToggle = nullptr;
     QToolButton* allTab = nullptr;

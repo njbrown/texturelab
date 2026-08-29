@@ -485,3 +485,15 @@ QPushButton[size="small"] {
     font-size: 14px;
 }
 #StatusHomeButton:hover { color: {{text.primary}}; }
+
+/* Update notice — hidden until a newer release exists, so it only ever appears
+   when it has something to say. Accent-tinted rather than shouty. */
+#launcherUpdateButton {
+    background: {{accent}};
+    border: none;
+    border-radius: {{radius.sm}}px;
+    color: {{white}};
+    padding: 4px 10px;
+    font-size: 12px;
+}
+#launcherUpdateButton:hover { background: {{accent.hover}}; }

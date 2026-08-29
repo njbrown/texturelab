@@ -5,6 +5,7 @@
 #include "texturecarddelegate.h"
 #include "texturelistmodel.h"
 #include "texturerowdelegate.h"
+#include "update/updatechecker.h"
 
 #include <QButtonGroup>
 #include <QCloseEvent>
@@ -25,6 +26,7 @@
 #include <QPushButton>
 #include <QSettings>
 #include <QSlider>
+#include <QStringList>
 #include <QToolButton>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -38,6 +40,7 @@ constexpr const char* kActionBarName = "launcherActionBar";
 constexpr const char* kGridName = "launcherGrid";
 constexpr const char* kFilterTabName = "launcherFilterTab";
 constexpr const char* kEmptyLabelName = "launcherEmptyLabel";
+constexpr const char* kUpdateButtonName = "launcherUpdateButton";
 
 bool isTextureFile(const QUrl& url)
 {
@@ -112,6 +115,9 @@ LauncherWindow::LauncherWindow(QWidget* parent) : QWidget(parent)
     // Last, so it can drive widgets the two build* methods created.
     restoreViewState();
     updateEmptyState();
+
+    updates = new UpdateChecker(this);
+    connect(updates, &UpdateChecker::updateAvailable, this, &LauncherWindow::showUpdateNotice);
 }
 
 LauncherWindow::~LauncherWindow() = default;
@@ -179,10 +185,64 @@ QWidget* LauncherWindow::buildTopBar()
     // });
     // layout->addWidget(sortBox);
 
+    // Update notice: absent entirely until a newer release exists, so the bar
+    // stays quiet in the normal case.
+    updateButton = new QToolButton(bar);
+    updateButton->setObjectName(QLatin1String(kUpdateButtonName));
+    updateButton->setCursor(Qt::PointingHandCursor);
+    updateButton->setVisible(false);
+    layout->addWidget(updateButton);
+
     auto* gear = new QToolButton(bar);
     gear->setText(QStringLiteral("⚙"));
     gear->setPopupMode(QToolButton::InstantPopup);
     auto* menu = new QMenu(gear);
+    menu->addAction(QStringLiteral("Check for Updates…"), this, [this]() {
+        if (!UpdateChecker::isEnabled()) {
+            QMessageBox::information(
+                this, tr("Check for Updates"),
+                tr("Update checks are turned off.\n\nTurn them back on from this menu to let "
+                   "TextureLab ask texturelab.io whether a newer build exists."));
+            return;
+        }
+        // A manual check has to say something either way; the automatic one
+        // stays silent unless there's news.
+        connect(
+            updates, &UpdateChecker::checkFinished, this,
+            [this](bool found, const QString& error) {
+                if (found)
+                    return; // the notice in the bar is the answer
+                // Both outcomes name the endpoint that was actually used. It is
+                // set at compile time and overridable by the environment, so
+                // "which server did it ask?" is otherwise unanswerable from
+                // inside the app — and that is exactly the question you have
+                // when a dev server sees no traffic.
+                const QString endpoint =
+                    tr("Checked: %1 (%2 channel)")
+                        .arg(UpdateChecker::apiBase(), UpdateChecker::channel());
+
+                if (error.isEmpty()) {
+                    QMessageBox::information(
+                        this, tr("Check for Updates"),
+                        tr("TextureLab is up to date.\n\n%1").arg(endpoint));
+                }
+                else {
+                    QMessageBox::warning(this, tr("Check for Updates"),
+                                         tr("Could not reach the update server.\n\n%1\n\n%2")
+                                             .arg(error, endpoint));
+                }
+            },
+            Qt::SingleShotConnection);
+
+        updates->check(/*force=*/true);
+    });
+
+    auto* toggleChecks = menu->addAction(QStringLiteral("Check for Updates Automatically"));
+    toggleChecks->setCheckable(true);
+    toggleChecks->setChecked(UpdateChecker::isEnabled());
+    connect(toggleChecks, &QAction::toggled, this, [](bool on) { UpdateChecker::setEnabled(on); });
+
+    menu->addSeparator();
     menu->addAction(QStringLiteral("Clear Missing Textures"), this, [this]() {
         CatalogService& catalog = CatalogService::instance();
         if (!catalog.isReady())
@@ -408,6 +468,34 @@ void LauncherWindow::showEvent(QShowEvent* event)
     QWidget::showEvent(event);
     refresh();
     search->setFocus();
+
+    // Throttled internally, so reopening the launcher from the Home button all
+    // day costs one request every few hours.
+    if (updates)
+        updates->check();
+}
+
+void LauncherWindow::showUpdateNotice(const QString& version, const QString& title,
+                                      const QString& downloadUrl)
+{
+    if (!updateButton)
+        return;
+
+    updateButton->setText(tr("Update to %1").arg(version));
+
+    QStringList tip;
+    if (!title.isEmpty())
+        tip << title;
+    tip << downloadUrl;
+    tip << tr("via %1").arg(UpdateChecker::apiBase());
+    updateButton->setToolTip(tip.join(QLatin1Char('\n')));
+    updateButton->setVisible(true);
+
+    // Opening the browser is the whole action — the launcher never downloads or
+    // installs anything on the user's behalf.
+    disconnect(updateButton, &QToolButton::clicked, nullptr, nullptr);
+    connect(updateButton, &QToolButton::clicked, this,
+            [downloadUrl]() { QDesktopServices::openUrl(QUrl(downloadUrl)); });
 }
 
 void LauncherWindow::openSelected()
