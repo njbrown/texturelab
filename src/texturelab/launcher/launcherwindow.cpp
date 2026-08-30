@@ -24,7 +24,9 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QMimeData>
+#include <QPair>
 #include <QPushButton>
+#include <QScopedValueRollback>
 #include <QScrollBar>
 #include <QSettings>
 #include <QSlider>
@@ -54,6 +56,26 @@ bool isTextureFile(const QUrl& url)
 
 } // namespace
 
+// Exists only to reach setViewportMargins(), which QAbstractScrollArea keeps
+// protected. The grid uses it to park the pixels left over from dividing the
+// row into whole columns, half at each end, instead of letting them all collect
+// past the last card.
+class LauncherGridView : public QListView {
+public:
+    using QListView::QListView;
+
+    void setLeadingMargin(int margin)
+    {
+        if (margin == leading)
+            return;
+        leading = margin;
+        setViewportMargins(margin, 0, 0, 0);
+    }
+
+private:
+    int leading = 0;
+};
+
 LauncherWindow::LauncherWindow(QWidget* parent) : QWidget(parent)
 {
     setWindowTitle(QStringLiteral("TextureLab"));
@@ -80,7 +102,7 @@ LauncherWindow::LauncherWindow(QWidget* parent) : QWidget(parent)
     // follows rather than polling.
     connect(&catalog, &CatalogService::catalogChanged, this, &LauncherWindow::refresh);
 
-    grid = new QListView(this);
+    grid = new LauncherGridView(this);
     grid->setObjectName(QLatin1String(kGridName));
     grid->setModel(model);
     grid->setViewMode(QListView::IconMode);
@@ -135,6 +157,12 @@ LauncherWindow::LauncherWindow(QWidget* parent) : QWidget(parent)
 
     connect(model, &QAbstractItemModel::modelReset, this, &LauncherWindow::updateEmptyState);
     connect(model, &QAbstractItemModel::rowsInserted, this, &LauncherWindow::updateEmptyState);
+
+    // Whether the grid scrolls decides whether it reserves room for a scrollbar,
+    // and that follows the row count, which moves without the window resizing.
+    connect(model, &QAbstractItemModel::modelReset, this, &LauncherWindow::relayoutGrid);
+    connect(model, &QAbstractItemModel::rowsInserted, this, &LauncherWindow::relayoutGrid);
+    connect(model, &QAbstractItemModel::rowsRemoved, this, &LauncherWindow::relayoutGrid);
 
     // Last, so it can drive widgets the two build* methods created.
     restoreViewState();
@@ -367,31 +395,23 @@ void LauncherWindow::applySort(int comboIndex)
 
 void LauncherWindow::relayoutGrid()
 {
-    if (!gridMode || !grid || !cardDelegate)
+    if (!gridMode || !grid || !cardDelegate || relayouting)
         return;
+
+    // Setting the viewport margins below resizes the viewport, and a viewport
+    // resize is what calls this — so the pass has to be allowed to finish
+    // before the one it provokes can start.
+    const QScopedValueRollback<bool> guard(relayouting, true);
 
     const int spacing = grid->spacing();
 
     // grid->width(), not the viewport's: the viewport narrows when the
-    // scrollbar appears, and the scrollbar comes and goes as this function
-    // changes how many rows there are. Measuring the frame keeps the input to
-    // the calculation independent of its own output.
-    //
-    // The bar's width is then subtracted whether or not it is currently up.
-    // Icon mode lays out against the scrolling width regardless, so a row
-    // budgeted for the full viewport overruns by those few pixels and loses a
-    // whole column — and reserving it unconditionally is also what keeps the
-    // result from oscillating as the bar appears and disappears.
-    const int reserved = grid->style()->pixelMetric(QStyle::PM_ScrollBarExtent, nullptr,
-                                                    grid->verticalScrollBar());
-    const int available = grid->width() - grid->frameWidth() * 2 - reserved;
-    if (available <= 0)
+    // scrollbar appears, and whether the scrollbar appears is one of the things
+    // this function decides. Measuring the frame keeps the input to the
+    // calculation independent of its own output.
+    const int total = grid->width() - grid->frameWidth() * 2;
+    if (total <= 0)
         return;
-
-    // A grid cell is the card plus one spacing, and the row is indented by half
-    // of one before the first cell — the card sits centered in its cell, so the
-    // leading half-gutter is real estate the columns can't have.
-    const int usable = available - spacing / 2;
 
     // Columns from the target width, then the pitch widened to consume the
     // remainder, so the leftover lands in the thumbnails instead of collecting
@@ -402,23 +422,86 @@ void LauncherWindow::relayoutGrid()
     // which is a rule this can invert. Its default wrapping folds in the item
     // margins and a fencepost, and being one pixel over there costs a whole
     // column silently.
-    int columns = qMax(1, usable / (targetCardWidth + spacing));
-    int width = usable / columns - spacing;
+    auto fit = [&](int available) {
+        // A grid cell is the card plus one spacing, and the row is indented by
+        // half of one before the first cell — the card sits centered in its
+        // cell, so the leading half-gutter is not real estate the columns can
+        // have.
+        const int usable = available - spacing / 2;
 
-    // A maxed-out slider on a wide window would otherwise stretch past what the
-    // delegate is willing to draw, which puts the gap straight back. An extra
-    // column costs every card a few pixels and the row nothing.
-    while (width > TextureCardDelegate::MaxCardWidth) {
-        ++columns;
-        width = usable / columns - spacing;
+        int columns = qMax(1, usable / (targetCardWidth + spacing));
+        int width = usable / columns - spacing;
+
+        // A maxed-out slider on a wide window would otherwise stretch past what
+        // the delegate is willing to draw, which puts the gap straight back. An
+        // extra column costs every card a few pixels and the row nothing.
+        while (width > TextureCardDelegate::MaxCardWidth) {
+            ++columns;
+            width = usable / columns - spacing;
+        }
+
+        return qMakePair(columns, qMax(width, TextureCardDelegate::MinCardWidth));
+    };
+
+    const int extent = grid->style()->pixelMetric(QStyle::PM_ScrollBarExtent, nullptr,
+                                                  grid->verticalScrollBar());
+
+    // Lay the row out against the full width first, then ask whether that many
+    // rows overflow. Narrowing only ever means fewer columns and so more rows,
+    // so an answer of "it scrolls" can't be undone by the second pass — no
+    // oscillation between the two states.
+    QPair<int, int> fitted = fit(total);
+    const int rows = (model->rowCount() + fitted.first - 1) / fitted.first;
+    const int contentHeight =
+        spacing / 2 + rows * (cardDelegate->heightForWidth(fitted.second) + spacing);
+
+    // One row-gap of headroom before committing to no scrollbar: guessing wrong
+    // in that direction would leave the last row unreachable, where guessing
+    // wrong the other way only costs the strip of margin this is here to
+    // reclaim.
+    const bool scrolls = contentHeight > grid->viewport()->height() - spacing;
+    const int layoutWidth = scrolls ? total - extent : total;
+    if (scrolls)
+        fitted = fit(layoutWidth);
+
+    // Icon mode deducts the scrollbar's width from every row whenever the
+    // policy is ScrollBarAsNeeded, whether or not the bar is actually up — that
+    // phantom reservation was the dead strip down the right-hand side. Ask for
+    // it only when the bar really is coming; when everything fits there is
+    // nothing to scroll and so nothing to reserve.
+    grid->setVerticalScrollBarPolicy(scrolls ? Qt::ScrollBarAsNeeded : Qt::ScrollBarAlwaysOff);
+
+
+    const int columns = fitted.first;
+    int width = fitted.second;
+
+    // Dividing the row into whole columns leaves up to one pixel per column
+    // over, and it all collects past the last card — the asymmetry that reads
+    // as an odd right-hand margin. Split it instead, by indenting the leading
+    // edge. Measured against the frame width rather than the viewport's, so the
+    // margin this sets can't feed back into its own input.
+    int leftover = layoutWidth - spacing / 2 - columns * (width + spacing);
+
+    // The row can't be centered on less slack than the half-gutter the wrap
+    // rule holds back at the far end. When the division came out nearly exact,
+    // giving up a pixel of card width buys that back at a pixel per column.
+    if (leftover < spacing / 2 && width > TextureCardDelegate::MinCardWidth) {
+        --width;
+        leftover += columns;
     }
 
-    width = qMax(width, TextureCardDelegate::MinCardWidth);
+    // Never more than the slack itself: the columns were fitted to a row this
+    // wide, and indenting past what's spare would push the last one off it.
+    // Clamped before the split, because the pre-layout pass runs against a
+    // hundred-pixel window where the one column already overruns and the slack
+    // is negative.
+    const int slack = qMax(0, leftover);
+    grid->setLeadingMargin(qMin((slack + spacing / 2) / 2, slack));
 
-    // The card width alone can't gate this: the first pass runs while the
-    // scrollbar is still up from a narrower state and lays out against that
-    // viewport, then the bar drops and the next pass computes the same width
-    // and would decline to re-fit the row it now has room for.
+    // The card width alone can't gate this: a pass can run while the scrollbar
+    // is still up from a narrower state and lay out against that viewport, then
+    // the bar drops and the next pass computes the same width and would decline
+    // to re-fit the row it now has room for.
     if (width == cardDelegate->cardWidth() && grid->viewport()->width() == laidOutWidth)
         return;
 
@@ -452,6 +535,10 @@ void LauncherWindow::setGridMode(bool useGrid)
         // Rows size themselves; leaving the card pitch in place would stamp
         // every one of them into a square cell.
         grid->setGridSize(QSize());
+
+        // Rows run the full width of the window; the centering margin is a
+        // property of the card row, not of the view.
+        grid->setLeadingMargin(0);
     }
 
     // The card width is a function of the viewport, and in list mode nothing

@@ -7,10 +7,13 @@
 class QComboBox;
 class QLabel;
 class QLineEdit;
-class QListView;
 class QPushButton;
 class QSlider;
 class QToolButton;
+
+// Defined in launcherwindow.cpp: a QListView that will let this window set the
+// viewport margins, which QAbstractScrollArea otherwise keeps protected.
+class LauncherGridView;
 
 class TextureCardDelegate;
 class TextureListModel;
@@ -93,7 +96,7 @@ private:
     TextureCardDelegate* cardDelegate = nullptr;
     TextureRowDelegate* rowDelegate = nullptr;
 
-    QListView* grid = nullptr;
+    LauncherGridView* grid = nullptr;
     QLineEdit* search = nullptr;
     QComboBox* sortBox = nullptr;
     QSlider* sizeSlider = nullptr;
@@ -110,6 +113,11 @@ private:
 
     bool hasDocument = false;
     bool gridMode = true;
+
+    // Guards against the re-entrant relayout that setting the viewport margins
+    // provokes: the margin resizes the viewport, and the viewport's resize is
+    // what calls this in the first place.
+    bool relayouting = false;
 
     // The viewport width the cards were last laid out against. The card width
     // alone can't gate a relayout: the first pass can run while the scrollbar
