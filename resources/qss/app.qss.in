@@ -384,6 +384,16 @@ QPushButton[size="small"] {
 #ExportDestination[empty="true"] { color: {{text.disabled}}; }
 #ExportHelp { color: {{text.disabled}}; }
 
+/* Crash-report consent dialog. Reads as one block of prose, so the only
+   hierarchy is the title's size and the way the secondary text steps back. */
+#ConsentDialog   { background: {{bg.window}}; }
+#ConsentTitle    { color: {{text.primary}};   font-size: 17px; font-weight: bold; }
+#ConsentBody     { color: {{text.secondary}}; font-size: 13px; }
+#ConsentFactLead { color: {{text.primary}};   font-size: 12px; font-weight: bold; }
+#ConsentFact     { color: {{text.secondary}}; font-size: 12px; }
+#ConsentNote     { color: {{text.disabled}};  font-size: 11px; }
+#ConsentSeparator { color: {{border.subtle}}; }
+
 /* About dialog typography */
 #AboutTitle     { color: {{text.primary}};   font-size: 26px; font-weight: bold; }
 #AboutTag       { color: {{text.secondary}}; font-size: 12px; }

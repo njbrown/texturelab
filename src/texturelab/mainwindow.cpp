@@ -568,12 +568,20 @@ void MainWindow::setupMenus()
     auto crashReportingAction =
         optionsMenu->addAction("Send Anonymous Crash Reports");
     crashReportingAction->setCheckable(true);
-    QSettings settings(QSettings::UserScope, "texturelab", "texturelab");
-    crashReportingAction->setChecked(
-        settings.value("crashReporting", true).toBool());
+    crashReportingAction->setChecked(Telemetry::isAllowed());
     connect(crashReportingAction, &QAction::toggled, [](bool checked) {
-        QSettings s(QSettings::UserScope, "texturelab", "texturelab");
-        s.setValue("crashReporting", checked);
+        // Through Telemetry rather than straight to QSettings, so the change
+        // takes effect now instead of on the next launch — and so toggling it
+        // by hand counts as having answered the consent prompt.
+        Telemetry::recordConsent(checked);
+        Telemetry::setEnabled(checked);
+    });
+
+    // The launcher's gear menu writes the same setting, so the check can be
+    // stale by the time this menu is opened.
+    connect(optionsMenu, &QMenu::aboutToShow, this, [crashReportingAction]() {
+        QSignalBlocker block(crashReportingAction);
+        crashReportingAction->setChecked(Telemetry::isAllowed());
     });
 }
 

@@ -5,7 +5,6 @@
 #include "version.h"
 
 #include <QApplication>
-#include <QSettings>
 #include <QSurfaceFormat>
 #include <QThread>
 
@@ -76,11 +75,10 @@ static void applyDarkTheme(QApplication& app)
 
 int main(int argc, char* argv[])
 {
-    // Read opt-out before constructing QApplication so we can use QSettings
-    // with an explicit scope (no org/app name set yet).
-    QSettings settings(QSettings::UserScope, "texturelab", "texturelab");
-    bool crashReportingEnabled =
-        settings.value("crashReporting", true).toBool();
+    // Read the stored answer before constructing QApplication. Off until the
+    // consent prompt has actually been answered — the launcher puts it up on
+    // first run and turns collection on from there if the answer is yes.
+    const bool crashReportingEnabled = Telemetry::isAllowed();
 
     // Init Sentry before QApplication; resolves paths via Qt helpers after
     // QCoreApplication is available (handler_path needs applicationDirPath).

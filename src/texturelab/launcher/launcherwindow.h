@@ -4,6 +4,7 @@
 
 #include <QWidget>
 
+class QAction;
 class QComboBox;
 class QLabel;
 class QLineEdit;
@@ -87,6 +88,10 @@ private:
     // keeping stars, tags, and recency.
     void locate(const catalog::TextureRecord& rec);
 
+    // Puts the crash-report consent prompt up the first time the launcher is
+    // shown on a version that hasn't been asked about yet.
+    void maybeAskCrashConsent();
+
     void showContextMenu(const QPoint& pos);
     void toggleStarOnSelection();
     void removeSelectionFromLauncher();
@@ -105,6 +110,7 @@ private:
     QPushButton* emptyNewButton = nullptr;
     QPushButton* openButton = nullptr;
     QToolButton* updateButton = nullptr;
+    QAction* crashReportsAction = nullptr;
     QToolButton* gridToggle = nullptr;
     QToolButton* listToggle = nullptr;
     QToolButton* allTab = nullptr;
@@ -113,6 +119,10 @@ private:
 
     bool hasDocument = false;
     bool gridMode = true;
+
+    // The prompt is deferred a tick so the launcher paints behind it, which
+    // leaves a window where a second showEvent could queue a second copy.
+    bool consentPrompted = false;
 
     // Guards against the re-entrant relayout that setting the viewport margins
     // provokes: the margin resizes the viewport, and the viewport's resize is

@@ -5,9 +5,26 @@
 
 #include <QCoreApplication>
 #include <QDir>
+#include <QSettings>
 #include <QStandardPaths>
+#include <QString>
 
 static bool g_enabled = false;
+
+namespace {
+
+// Explicit scope: init() runs before the organization and application names are
+// set on QApplication, so the default constructor would read the wrong file.
+QSettings consentSettings()
+{
+    return QSettings(QSettings::UserScope, QStringLiteral("texturelab"),
+                     QStringLiteral("texturelab"));
+}
+
+constexpr const char* kAllowedKey = "crashReporting";
+constexpr const char* kAskedVersionKey = "crashReportingConsentVersion";
+
+} // namespace
 
 void Telemetry::init(bool enabled)
 {
@@ -50,6 +67,47 @@ void Telemetry::close()
 {
     if (g_enabled)
         sentry_close();
+}
+
+void Telemetry::setEnabled(bool enabled)
+{
+    if (enabled == g_enabled)
+        return;
+
+    if (enabled) {
+        init(true);
+    }
+    else {
+        sentry_close();
+        g_enabled = false;
+    }
+}
+
+bool Telemetry::isEnabled()
+{
+    return g_enabled;
+}
+
+bool Telemetry::isAllowed()
+{
+    // Defaults to off: an install that has never answered the prompt has not
+    // agreed to anything, and a crash before the first answer is the one case
+    // where staying quiet costs the least.
+    return consentSettings().value(QLatin1String(kAllowedKey), false).toBool();
+}
+
+bool Telemetry::consentNeeded()
+{
+    const QString asked =
+        consentSettings().value(QLatin1String(kAskedVersionKey)).toString();
+    return asked != QLatin1String(TEXTURELAB_VERSION);
+}
+
+void Telemetry::recordConsent(bool allowed)
+{
+    QSettings settings = consentSettings();
+    settings.setValue(QLatin1String(kAllowedKey), allowed);
+    settings.setValue(QLatin1String(kAskedVersionKey), QLatin1String(TEXTURELAB_VERSION));
 }
 
 void Telemetry::breadcrumb(const char* category, const std::string& message)

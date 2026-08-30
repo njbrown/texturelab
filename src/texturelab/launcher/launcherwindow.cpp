@@ -4,8 +4,10 @@
 #include "libraries/libversion.h"
 #include "texturecarddelegate.h"
 #include "texturelistmodel.h"
+#include "telemetry.h"
 #include "texturerowdelegate.h"
 #include "update/updatechecker.h"
+#include "widgets/crashconsentdialog.h"
 
 #include <QButtonGroup>
 #include <QCloseEvent>
@@ -32,6 +34,7 @@
 #include <QSlider>
 #include <QStringList>
 #include <QStyle>
+#include <QTimer>
 #include <QToolButton>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -47,6 +50,12 @@ constexpr const char* kFilterTabName = "launcherFilterTab";
 constexpr const char* kEmptyPanelName = "launcherEmptyPanel";
 constexpr const char* kEmptyLabelName = "launcherEmptyLabel";
 constexpr const char* kUpdateButtonName = "launcherUpdateButton";
+
+// Long enough for the window manager to have mapped and placed the launcher,
+// which is what the prompt centres itself on. Nothing breaks if it is early —
+// the dialog just opens off-centre — so this buys margin rather than being a
+// timing the code depends on.
+constexpr int kConsentPromptDelayMs = 250;
 
 bool isTextureFile(const QUrl& url)
 {
@@ -298,6 +307,25 @@ QWidget* LauncherWindow::buildTopBar()
     toggleChecks->setCheckable(true);
     toggleChecks->setChecked(UpdateChecker::isEnabled());
     connect(toggleChecks, &QAction::toggled, this, [](bool on) { UpdateChecker::setEnabled(on); });
+
+    menu->addSeparator();
+
+    crashReportsAction = menu->addAction(tr("Send Anonymous Crash Reports"));
+    crashReportsAction->setCheckable(true);
+    crashReportsAction->setChecked(Telemetry::isAllowed());
+    connect(crashReportsAction, &QAction::toggled, this, [](bool on) {
+        // Toggling is an answer too, so it stamps the version and stops the
+        // prompt coming back for a decision the user has just made by hand.
+        Telemetry::recordConsent(on);
+        Telemetry::setEnabled(on);
+    });
+
+    // The editor's Help menu writes the same setting, so the check can be stale
+    // by the time the menu is opened.
+    connect(menu, &QMenu::aboutToShow, this, [this]() {
+        QSignalBlocker block(crashReportsAction);
+        crashReportsAction->setChecked(Telemetry::isAllowed());
+    });
 
     menu->addSeparator();
     menu->addAction(QStringLiteral("Clear Missing Textures"), this, [this]() {
@@ -687,6 +715,27 @@ void LauncherWindow::showEvent(QShowEvent* event)
     // day costs one request every few hours.
     if (updates)
         updates->check();
+
+    maybeAskCrashConsent();
+}
+
+void LauncherWindow::maybeAskCrashConsent()
+{
+    if (consentPrompted || !Telemetry::consentNeeded())
+        return;
+
+    consentPrompted = true;
+
+    // Deferred so the launcher is painted, and placed by the window manager,
+    // before the prompt measures it to centre itself. Asked over a blank
+    // window, the prompt reads like an installer step rather than something the
+    // app is asking for.
+    QTimer::singleShot(kConsentPromptDelayMs, this, [this]() {
+        if (Telemetry::consentNeeded())
+            CrashConsentDialog::ask(this);
+        if (crashReportsAction)
+            crashReportsAction->setChecked(Telemetry::isAllowed());
+    });
 }
 
 void LauncherWindow::showUpdateNotice(const QString& version, const QString& title,

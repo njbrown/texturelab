@@ -243,6 +243,8 @@ set(PROJECT_SOURCES
         ./undo/texturechannelassigncommand.cpp
         ./widgets/aboutdialog.h
         ./widgets/aboutdialog.cpp
+        ./widgets/crashconsentdialog.h
+        ./widgets/crashconsentdialog.cpp
         ./widgets/exportdialog.h
         ./widgets/exportdialog.cpp
         ./graphics/texturerenderer.h
