@@ -4,6 +4,8 @@
 #include "../shadercache.h"
 
 #include <QFile>
+#include <QtMath>
+#include <cmath>
 #include <iostream>
 
 #include <QMatrix4x4>
@@ -68,10 +70,29 @@ void Renderer::init(QOpenGLFunctions* gl)
     iblSampler->gl = gl;
 }
 
-void Renderer::loadEnvironment(const QString& path)
+void Renderer::loadEnvironment(const QString& path, float rotationDegrees)
 {
+    this->envRotation = rotationDegrees;
     iblSampler->init(path);
     iblSampler->filterAll();
+}
+
+void Renderer::setEnvironmentRotation(float degrees)
+{
+    this->envRotation = degrees;
+}
+
+QMatrix3x3 Renderer::envRotationMatrix() const
+{
+    const float rad = qDegreesToRadians(envRotation);
+    const float c = std::cos(rad);
+    const float s = std::sin(rad);
+
+    // Row-major yaw about the up (Y) axis. The shaders apply it to the lookup
+    // direction, which turns the environment itself by the same angle: content
+    // sitting at azimuth a ends up seen at azimuth a + envRotation.
+    const float values[9] = {c, 0.0f, s, 0.0f, 1.0f, 0.0f, -s, 0.0f, c};
+    return QMatrix3x3(values);
 }
 
 void Renderer::renderMesh(Mesh* mesh, Material* material) {}
@@ -395,9 +416,7 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
 
     shader->setUniformValue("u_MipCount", iblSampler->mipmapLevels);
 
-    QMatrix3x3 envRot;
-    envRot.setToIdentity();
-    shader->setUniformValue("u_EnvRotation", envRot);
+    shader->setUniformValue("u_EnvRotation", envRotationMatrix());
     shader->setUniformValue("u_EnvIntensity", 1.0f);
 
     // Setup punctual lights (matches Three.js setupLighting) - conditional
@@ -533,6 +552,7 @@ void Renderer::renderSkybox(Mesh* mesh, const QMatrix4x4& viewMatrix,
     skyboxShader->setUniformValue("u_modelMatrix", modelMatrix);
     skyboxShader->setUniformValue("u_viewMatrix", viewMatrix);
     skyboxShader->setUniformValue("u_projectionMatrix", projMatrix);
+    skyboxShader->setUniformValue("u_envRotation", envRotationMatrix());
 
     // Bind environment cubemap
     gl->glActiveTexture(GL_TEXTURE0);

@@ -104,8 +104,17 @@ public:
     QOpenGLShaderProgram* skyboxShader = nullptr;
     bool usePunctualLights = true; // Toggle punctual lighting (Three.js style)
 
+    // Yaw applied to the environment about the up axis, in degrees. Several
+    // HDRIs face their darkest quarter at the default camera, so each sky
+    // carries a rotation that turns its bright side towards the viewer.
+    float envRotation = 0.0f;
+
     void init(QOpenGLFunctions* gl);
-    void loadEnvironment(const QString& path);
+    void loadEnvironment(const QString& path, float rotationDegrees = 0.0f);
+    void setEnvironmentRotation(float degrees);
+    // Yaw matrix handed to both the skybox and the IBL lookups so the
+    // background and the lighting always agree.
+    QMatrix3x3 envRotationMatrix() const;
 
     void renderMesh(Mesh* mesh, Material* material);
     void updateMaterial(Material* material);

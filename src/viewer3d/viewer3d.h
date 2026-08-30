@@ -42,6 +42,7 @@ class Viewer3D : public QOpenGLWidget {
     Mesh* gltfMesh = nullptr;
     Mesh* skydomeMesh = nullptr;
     QString defaultEnvPath;
+    float defaultEnvRotation = 0.0f;
 
     QOpenGLFunctions* gl = nullptr;
 
@@ -118,9 +119,12 @@ public:
 
     void clearTextures();
     void resetCamera();
-    void loadEnvironment(const QString path);
+    // rotation is a yaw in degrees about the up axis, used to turn the lit
+    // side of the HDRI towards the camera.
+    void loadEnvironment(const QString path, float rotation = 0.0f);
+    void setEnvironmentRotation(float rotation);
     void setModel(const QString& modelType);
 
     // sets env to use on load
-    void setDefaultEnvironment(const QString path);
+    void setDefaultEnvironment(const QString path, float rotation = 0.0f);
 };

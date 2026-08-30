@@ -29,6 +29,11 @@
 #include "geometry/geometry.h"
 #include "renderer/renderer.h"
 
+// Environment used when the host app doesn't pick one. The rotation turns the
+// HDRI's bright side towards the default camera; see View3DWidget's env list.
+static const char* kFallbackEnvPath = ":env/studio_kontrast_03_1k.hdr";
+static const float kFallbackEnvRotation = 160.0f;
+
 QOpenGLShaderProgram* createMainShader();
 QOpenGLBuffer* loadMesh();
 Mesh* loadMeshFromRc(const QString& path);
@@ -111,14 +116,15 @@ void Viewer3D::initializeGL()
     renderer = new Renderer();
     renderer->init(this->gl);
     if (!defaultEnvPath.isEmpty())
-        renderer->loadEnvironment(defaultEnvPath);
+        renderer->loadEnvironment(defaultEnvPath, defaultEnvRotation);
     else
-        renderer->loadEnvironment(":env/studio_kontrast_03_1k.hdr");
+        renderer->loadEnvironment(kFallbackEnvPath, kFallbackEnvRotation);
 }
 
-void Viewer3D::setDefaultEnvironment(const QString path)
+void Viewer3D::setDefaultEnvironment(const QString path, float rotation)
 {
     this->defaultEnvPath = path;
+    this->defaultEnvRotation = rotation;
 }
 
 void Viewer3D::paintGL()
@@ -599,10 +605,18 @@ void Viewer3D::resetCamera()
     this->repaint();
 }
 
-void Viewer3D::loadEnvironment(const QString path)
+void Viewer3D::loadEnvironment(const QString path, float rotation)
 {
     if (renderer) {
-        renderer->loadEnvironment(path);
+        renderer->loadEnvironment(path, rotation);
+        this->repaint();
+    }
+}
+
+void Viewer3D::setEnvironmentRotation(float rotation)
+{
+    if (renderer) {
+        renderer->setEnvironmentRotation(rotation);
         this->repaint();
     }
 }
