@@ -94,7 +94,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
             this->renderer->update();
     });
 
-    this->setupMenus();
     this->setupToolbar();
 
     this->renderer = nullptr;
@@ -176,6 +175,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 
     this->setupDocks();
     applySplitterWidth();
+
+    // After the docks: the Edit menu reuses the graph's clipboard actions.
+    this->setupMenus();
 
     // setup callbacks for the widgets that are created once
     connect(this->graphWidget, &GraphWidget::nodeSelectionChanged,
@@ -502,11 +504,15 @@ void MainWindow::setProject(TextureProjectPtr project)
 void MainWindow::setupMenus()
 {
     auto fileMenu = this->menuBar()->addMenu("File");
-    fileMenu->addAction("Open Project", [=]() { this->openProject(); });
-    fileMenu->addAction("New Project", [=]() { this->newProject(); });
+    fileMenu->addAction("Open Project", QKeySequence::Open,
+                        [=]() { this->openProject(); });
+    fileMenu->addAction("New Project", QKeySequence::New,
+                        [=]() { this->newProject(); });
     fileMenu->addSeparator();
-    fileMenu->addAction("Save", [=]() { this->saveProject(); });
-    fileMenu->addAction("Save As...", [=]() { this->saveProjectAs(); });
+    fileMenu->addAction("Save", QKeySequence::Save,
+                        [=]() { this->saveProject(); });
+    fileMenu->addAction("Save As...", QKeySequence::SaveAs,
+                        [=]() { this->saveProjectAs(); });
     fileMenu->addSeparator();
 
     recentFilesMenu = fileMenu->addMenu("Open Recent");
@@ -523,9 +529,14 @@ void MainWindow::setupMenus()
     auto redoAction = undoStack->createRedoAction(this, tr("Redo"));
     redoAction->setShortcut(QKeySequence::Redo);
     editMenu->addAction(redoAction);
-    editMenu->addAction("Cut", [=]() { graphWidget->executeCut(); });
-    editMenu->addAction("Copy", [=]() { graphWidget->executeCopy(); });
-    editMenu->addAction("Paste", [=]() { graphWidget->executePaste(); });
+    editMenu->addSeparator();
+
+    // The graph owns these — their shortcuts are scoped to it, so Ctrl+C in a
+    // property field still copies text. Reusing the actions here keeps the keys
+    // visible in the menu without registering a second, ambiguous binding.
+    editMenu->addAction(graphWidget->cutAction);
+    editMenu->addAction(graphWidget->copyAction);
+    editMenu->addAction(graphWidget->pasteAction);
 
     auto examplesMenu = this->menuBar()->addMenu("Examples");
 
@@ -650,12 +661,19 @@ void MainWindow::setupToolbar()
     exportBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
     auto directExportAction = new QAction("Export", this);
+    directExportAction->setShortcut(QKeySequence("Ctrl+E"));
     connect(directExportAction, &QAction::triggered, this,
             &MainWindow::directExport);
 
     auto settingsAction = new QAction("Export Settings...", this);
+    settingsAction->setShortcut(QKeySequence("Ctrl+Shift+E"));
     connect(settingsAction, &QAction::triggered, this,
             &MainWindow::showExportDialog);
+
+    // The dropdown is a popup window of its own, so associate both actions
+    // with the main window too or their shortcuts never fire.
+    this->addAction(directExportAction);
+    this->addAction(settingsAction);
 
     auto exportMenu = new QMenu(this);
     exportMenu->addAction(settingsAction);

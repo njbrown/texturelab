@@ -7,6 +7,7 @@
 #include <QSpinBox>
 #include <QUndoStack>
 
+class QAction;
 class QDragEnterEvent;
 class TextureRenderer;
 
@@ -54,6 +55,14 @@ public:
 
     TextureRenderer* renderer;
     QUndoStack* undoStack = nullptr;
+
+    // Clipboard actions. These own the Cut/Copy/Paste shortcuts, scoped to
+    // this widget so line edits elsewhere in the window keep their own, and
+    // are reused by the main window's Edit menu so it shows the same keys
+    // without registering a second, ambiguous binding.
+    QAction* cutAction;
+    QAction* copyAction;
+    QAction* pasteAction;
 
 protected:
     void addNode(const TextureNodePtr& node);

@@ -1,6 +1,7 @@
 #include "graphwidget.h"
 #include "../clipboard.h"
 #include "../undo/undocommands.h"
+#include <QAction>
 #include <QCursor>
 #include <QDragEnterEvent>
 #include <QKeyEvent>
@@ -11,7 +12,6 @@
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QOpenGLContext>
-#include <QShortcut>
 #include <QSignalBlocker>
 #include <QToolBar>
 #include <QUuid>
@@ -209,19 +209,26 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
 
     // library = nullptr;
 
-    auto copyShortcut = new QShortcut(QKeySequence::Copy, this);
-    copyShortcut->setContext(Qt::WidgetWithChildrenShortcut);
-    connect(copyShortcut, &QShortcut::activated, this,
-            &GraphWidget::executeCopy);
+    // Actions rather than plain shortcuts, so the main window's Edit menu can
+    // reuse them and display the keys. The widget context keeps them off text
+    // fields in the other docks.
+    auto makeClipboardAction = [this](const QString& text,
+                                      QKeySequence::StandardKey key,
+                                      void (GraphWidget::*slot)()) {
+        auto action = new QAction(text, this);
+        action->setShortcut(key);
+        action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        connect(action, &QAction::triggered, this, slot);
+        this->addAction(action);
+        return action;
+    };
 
-    auto cutShortcut = new QShortcut(QKeySequence::Cut, this);
-    cutShortcut->setContext(Qt::WidgetWithChildrenShortcut);
-    connect(cutShortcut, &QShortcut::activated, this, &GraphWidget::executeCut);
-
-    auto pasteShortcut = new QShortcut(QKeySequence::Paste, this);
-    pasteShortcut->setContext(Qt::WidgetWithChildrenShortcut);
-    connect(pasteShortcut, &QShortcut::activated, this,
-            &GraphWidget::executePaste);
+    cutAction = makeClipboardAction("Cut", QKeySequence::Cut,
+                                    &GraphWidget::executeCut);
+    copyAction = makeClipboardAction("Copy", QKeySequence::Copy,
+                                     &GraphWidget::executeCopy);
+    pasteAction = makeClipboardAction("Paste", QKeySequence::Paste,
+                                      &GraphWidget::executePaste);
 }
 
 void GraphWidget::setupToolbar()
