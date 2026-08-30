@@ -16,6 +16,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
@@ -190,6 +191,11 @@ QWidget* LauncherWindow::buildTopBar()
     updateButton = new QToolButton(bar);
     updateButton->setObjectName(QLatin1String(kUpdateButtonName));
     updateButton->setCursor(Qt::PointingHandCursor);
+    // The icon's stroke is white, which is what the accent-filled button wants;
+    // it is not recolored by the theme, so it must not be used on a light fill.
+    updateButton->setIcon(QIcon(QStringLiteral(":/icons/download.svg")));
+    updateButton->setIconSize(QSize(14, 14));
+    updateButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     updateButton->setVisible(false);
     layout->addWidget(updateButton);
 
@@ -481,13 +487,16 @@ void LauncherWindow::showUpdateNotice(const QString& version, const QString& tit
     if (!updateButton)
         return;
 
-    updateButton->setText(tr("Update to %1").arg(version));
+    // Fixed label rather than the version number: the button's job is to be
+    // recognisable at a glance, and the specific version is detail that belongs
+    // in the tooltip next to the release title.
+    updateButton->setText(tr("New Version Available"));
 
     QStringList tip;
+    tip << tr("Version %1").arg(version);
     if (!title.isEmpty())
         tip << title;
     tip << downloadUrl;
-    tip << tr("via %1").arg(UpdateChecker::apiBase());
     updateButton->setToolTip(tip.join(QLatin1Char('\n')));
     updateButton->setVisible(true);
 

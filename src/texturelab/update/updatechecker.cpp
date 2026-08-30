@@ -21,7 +21,8 @@ namespace {
 // !!! Currently pointed at the local dev server. Set this back to
 // !!! "https://texturelab.io" before cutting a release: a shipped build pointed
 // !!! at localhost never reaches anything and silently reports no updates.
-constexpr const char* kApiBase = "http://localhost:3333";
+// constexpr const char* kApiBase = "http://localhost:3333";
+constexpr const char* kApiBase = "https://v2.texturelab.io";
 
 constexpr const char* kEnabledKey = "updateCheck";
 
@@ -67,30 +68,23 @@ void UpdateChecker::setEnabled(bool enabled)
 
 QString UpdateChecker::channel()
 {
-    const QString stored = appSettings().value(QStringLiteral("updateChannel")).toString();
+    const QString stored =
+        appSettings().value(QStringLiteral("updateChannel")).toString();
     if (stored == QLatin1String("stable") || stored == QLatin1String("beta"))
         return stored;
 
     // A pre-release tag on our own version means this is a beta build, and its
     // user is better served by beta releases than by being told nothing exists.
-    const QString self = appversion::normalize(QCoreApplication::applicationVersion());
-    return self.contains(QLatin1Char('-')) ? QStringLiteral("beta") : QStringLiteral("stable");
-}
-
-QString UpdateChecker::platformKey()
-{
-#if defined(Q_OS_WIN)
-    return QStringLiteral("windows");
-#elif defined(Q_OS_MACOS)
-    return QStringLiteral("mac");
-#else
-    return QStringLiteral("linux");
-#endif
+    const QString self =
+        appversion::normalize(QCoreApplication::applicationVersion());
+    return self.contains(QLatin1Char('-')) ? QStringLiteral("beta")
+                                           : QStringLiteral("stable");
 }
 
 QString UpdateChecker::knownUpdateVersion()
 {
-    const QString version = appSettings().value(QLatin1String(kKnownVersionKey)).toString();
+    const QString version =
+        appSettings().value(QLatin1String(kKnownVersionKey)).toString();
     if (version.isEmpty())
         return QString();
 
@@ -129,8 +123,9 @@ void UpdateChecker::check(bool force)
     // Say what we already know before deciding whether to ask again.
     const QString known = knownUpdateVersion();
     if (!known.isEmpty()) {
-        emit updateAvailable(known, settings.value(QLatin1String(kKnownTitleKey)).toString(),
-                             settings.value(QLatin1String(kKnownUrlKey)).toString());
+        emit updateAvailable(
+            known, settings.value(QLatin1String(kKnownTitleKey)).toString(),
+            settings.value(QLatin1String(kKnownUrlKey)).toString());
     }
 
     // Once per run unless explicitly forced.
@@ -144,7 +139,8 @@ void UpdateChecker::check(bool force)
 
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::UserAgentHeader,
-                      QStringLiteral("TextureLab/%1").arg(QCoreApplication::applicationVersion()));
+                      QStringLiteral("TextureLab/%1")
+                          .arg(QCoreApplication::applicationVersion()));
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                          QNetworkRequest::NoLessSafeRedirectPolicy);
     request.setTransferTimeout(8000);
@@ -156,7 +152,8 @@ void UpdateChecker::check(bool force)
     checkedThisRun = true;
 
     QNetworkReply* reply = network->get(request);
-    connect(reply, &QNetworkReply::finished, this, [this, reply]() { handleReply(reply); });
+    connect(reply, &QNetworkReply::finished, this,
+            [this, reply]() { handleReply(reply); });
 }
 
 void UpdateChecker::handleReply(QNetworkReply* reply)
@@ -178,7 +175,8 @@ void UpdateChecker::handleReply(QNetworkReply* reply)
     QJsonParseError parseError;
     const QJsonDocument doc = QJsonDocument::fromJson(body, &parseError);
     if (parseError.error != QJsonParseError::NoError || !doc.isObject()) {
-        emit checkFinished(false, QStringLiteral("Malformed response from the update server"));
+        emit checkFinished(
+            false, QStringLiteral("Malformed response from the update server"));
         return;
     }
 
@@ -194,7 +192,8 @@ void UpdateChecker::handleReply(QNetworkReply* reply)
     const QJsonObject data = root.value(QStringLiteral("data")).toObject();
     const QString version = data.value(QStringLiteral("version")).toString();
     if (version.isEmpty()) {
-        emit checkFinished(false, QStringLiteral("Update server returned no version"));
+        emit checkFinished(false,
+                           QStringLiteral("Update server returned no version"));
         return;
     }
 
@@ -207,18 +206,17 @@ void UpdateChecker::handleReply(QNetworkReply* reply)
         return;
     }
 
-    const QJsonObject downloads = data.value(QStringLiteral("downloads")).toObject();
-    QString downloadUrl = downloads.value(platformKey()).toString();
-
-    // No build for this platform yet — still worth telling them, pointed at the
-    // page rather than at nothing.
-    if (downloadUrl.isEmpty())
-        downloadUrl = apiBase() + QStringLiteral("/#download");
+    // Always the site's download page rather than a per-platform binary URL:
+    // it lists every build, so it stays correct when the server has no artifact
+    // for this platform yet, and the user lands somewhere that explains itself.
+    const QString downloadUrl = apiBase() + QStringLiteral("/download");
 
     Telemetry::breadcrumb("update", "found " + version.toStdString());
 
-    rememberUpdate(version, data.value(QStringLiteral("title")).toString(), downloadUrl);
+    rememberUpdate(version, data.value(QStringLiteral("title")).toString(),
+                   downloadUrl);
 
-    emit updateAvailable(version, data.value(QStringLiteral("title")).toString(), downloadUrl);
+    emit updateAvailable(
+        version, data.value(QStringLiteral("title")).toString(), downloadUrl);
     emit checkFinished(true, QString());
 }

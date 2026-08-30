@@ -50,8 +50,7 @@ public:
 
 signals:
     // Emitted only when the published version is strictly newer than this one.
-    // `downloadUrl` is the build for this platform, falling back to the
-    // releases page when the server has no URL for it.
+    // `downloadUrl` is the site's /download page, which lists every build.
     void updateAvailable(const QString& version, const QString& title,
                          const QString& downloadUrl);
 
@@ -63,7 +62,6 @@ private:
     void handleReply(class QNetworkReply* reply);
     static void rememberUpdate(const QString& version, const QString& title, const QString& url);
     static void forgetUpdate();
-    static QString platformKey();
 
     QNetworkAccessManager* network = nullptr;
     bool inFlight = false;
