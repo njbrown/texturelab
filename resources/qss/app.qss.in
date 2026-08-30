@@ -470,6 +470,12 @@ QPushButton[size="small"] {
     background: {{ctrl.hover}};
 }
 
+/* First-run overlay: the message, plus a "New Texture" button on the genuine
+   empty state. It floats over the grid, so it must not paint a panel of its
+   own. */
+#launcherEmptyPanel {
+    background: transparent;
+}
 #launcherEmptyLabel {
     background: transparent;
     color: {{text.secondary}};

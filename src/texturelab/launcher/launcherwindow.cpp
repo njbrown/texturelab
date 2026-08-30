@@ -40,6 +40,7 @@ constexpr const char* kTopBarName = "launcherTopBar";
 constexpr const char* kActionBarName = "launcherActionBar";
 constexpr const char* kGridName = "launcherGrid";
 constexpr const char* kFilterTabName = "launcherFilterTab";
+constexpr const char* kEmptyPanelName = "launcherEmptyPanel";
 constexpr const char* kEmptyLabelName = "launcherEmptyLabel";
 constexpr const char* kUpdateButtonName = "launcherUpdateButton";
 
@@ -97,11 +98,31 @@ LauncherWindow::LauncherWindow(QWidget* parent) : QWidget(parent)
 
     // Sits over the grid rather than replacing it, so switching filters can't
     // leave the window structurally empty.
-    emptyLabel = new QLabel(grid);
+    emptyPanel = new QWidget(grid);
+    emptyPanel->setObjectName(QLatin1String(kEmptyPanelName));
+    emptyPanel->hide();
+
+    auto* emptyLayout = new QVBoxLayout(emptyPanel);
+    emptyLayout->setContentsMargins(24, 24, 24, 24);
+    emptyLayout->setSpacing(16);
+    emptyLayout->addStretch(1);
+
+    emptyLabel = new QLabel(emptyPanel);
     emptyLabel->setObjectName(QLatin1String(kEmptyLabelName));
     emptyLabel->setAlignment(Qt::AlignCenter);
     emptyLabel->setWordWrap(true);
-    emptyLabel->hide();
+    emptyLayout->addWidget(emptyLabel);
+
+    // The way out of a first-run window. Same signal as the action bar's
+    // button, so the caller can't tell which one the user pressed.
+    emptyNewButton = new QPushButton(tr("New Texture"), emptyPanel);
+    emptyNewButton->setProperty("variant", "primary"); // the one thing to do here
+    emptyNewButton->setCursor(Qt::PointingHandCursor);
+    connect(emptyNewButton, &QPushButton::clicked, this, &LauncherWindow::newTextureRequested);
+    emptyLayout->addWidget(emptyNewButton, 0, Qt::AlignHCenter);
+    emptyLayout->addStretch(1);
+
+    grid->viewport()->installEventFilter(this);
 
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -442,13 +463,14 @@ void LauncherWindow::refresh()
 void LauncherWindow::updateEmptyState()
 {
     if (model->totalCount() > 0) {
-        emptyLabel->hide();
+        emptyPanel->hide();
         return;
     }
 
     // Three different nothings, and conflating them is how a first-run window
     // ends up looking broken instead of new.
     QString message;
+    bool offerNew = false;
     if (!model->searchTerm().isEmpty()) {
         message = tr("No textures match “%1”").arg(model->searchTerm());
     }
@@ -460,13 +482,31 @@ void LauncherWindow::updateEmptyState()
     }
     else {
         message = tr("No textures yet.\n\nTextures you create or open will appear here.");
+        offerNew = true;
     }
 
     emptyLabel->setText(message);
-    emptyLabel->resize(grid->viewport()->size());
-    emptyLabel->move(0, 0);
-    emptyLabel->show();
-    emptyLabel->raise();
+    // Only on the genuine first run — offering "New Texture" as the answer to a
+    // search that found nothing would be answering a different question.
+    emptyNewButton->setVisible(offerNew);
+    layoutEmptyPanel();
+    emptyPanel->show();
+    emptyPanel->raise();
+}
+
+void LauncherWindow::layoutEmptyPanel()
+{
+    if (emptyPanel)
+        emptyPanel->setGeometry(grid->viewport()->geometry());
+}
+
+bool LauncherWindow::eventFilter(QObject* watched, QEvent* event)
+{
+    // An overlay has to follow the viewport by hand; without this, resizing the
+    // window while empty leaves the button parked where the grid used to end.
+    if (watched == grid->viewport() && event->type() == QEvent::Resize)
+        layoutEmptyPanel();
+    return QWidget::eventFilter(watched, event);
 }
 
 void LauncherWindow::showEvent(QShowEvent* event)

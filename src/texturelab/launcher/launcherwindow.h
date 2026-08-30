@@ -58,6 +58,7 @@ protected:
     void dragEnterEvent(QDragEnterEvent* event) override;
     void dropEvent(QDropEvent* event) override;
     void showEvent(QShowEvent* event) override;
+    bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
     QWidget* buildTopBar();
@@ -67,6 +68,10 @@ private:
     void restoreViewState();
     void saveViewState() const;
     void updateEmptyState();
+
+    // The empty-state overlay isn't a layout child, so it has to be re-fitted
+    // to the viewport by hand whenever the grid changes size.
+    void layoutEmptyPanel();
     void openSelected();
 
     // Asks the user where a missing texture went and re-points its index row,
@@ -86,7 +91,9 @@ private:
     QLineEdit* search = nullptr;
     QComboBox* sortBox = nullptr;
     QSlider* sizeSlider = nullptr;
+    QWidget* emptyPanel = nullptr;
     QLabel* emptyLabel = nullptr;
+    QPushButton* emptyNewButton = nullptr;
     QPushButton* openButton = nullptr;
     QToolButton* updateButton = nullptr;
     QToolButton* gridToggle = nullptr;
