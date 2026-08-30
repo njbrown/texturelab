@@ -29,12 +29,12 @@ const QVector<EnvInfo>& environments()
         {"Golden Bay", ":env/golden_bay_1k.hdr", -85.0f},
         {"Little Paris Eiffel Tower", ":env/little_paris_eiffel_tower_1k.hdr",
          -95.0f},
-        {"Sepulchral Chapel Basement",
-         ":env/sepulchral_chapel_basement_1k.hdr", 25.0f},
+        {"Sepulchral Chapel Basement", ":env/sepulchral_chapel_basement_1k.hdr",
+         25.0f},
         {"St Peters Square Night", ":env/st_peters_square_night_1k.hdr",
          -95.0f},
         {"Stadium 01", ":env/stadium_01_1k.hdr", -120.0f},
-        {"Studio Kontrast 03", ":env/studio_kontrast_03_1k.hdr", 160.0f},
+        {"Studio Kontrast 03", ":env/studio_kontrast_03_1k.hdr", 100.0f},
         {"University Workshop", ":env/university_workshop_1k.hdr", 140.0f},
         {"Winter River", ":env/winter_river_1k.hdr", -100.0f}};
     return envList;
