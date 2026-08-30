@@ -9,7 +9,7 @@ View3DWidget::View3DWidget()
     this->viewer = new Viewer3D();
     this->setCentralWidget(viewer);
 
-    this->viewer->setDefaultEnvironment(":env/sunny_rose_garden_1k.hdr");
+    this->viewer->setDefaultEnvironment(":env/studio_kontrast_03_1k.hdr");
 
     // Create menu bar
     QMenuBar* menuBar = new QMenuBar(this);
@@ -56,16 +56,17 @@ View3DWidget::View3DWidget()
     };
 
     QVector<EnvInfo> envList = {
-        {"Cave Wall", ":env/cave_wall_1k.hdr"},
-        {"Christmas", ":env/christmas_1k.hdr"},
-        {"Dresden Station Night", ":env/dresden_station_night_1k.hdr"},
-        {"Hansaplatz", ":env/hansaplatz_1k.hdr"},
-        {"Kloppenheim 05", ":env/kloppenheim_05_1k.hdr"},
-        {"Modern Buildings Night", ":env/modern_buildings_night_1k.hdr"},
-        {"Snowy Park 01", ":env/snowy_park_01_1k.hdr"},
-        {"Spruit Sunrise", ":env/spruit_sunrise_1k.hdr"},
-        {"Studio Small 07", ":env/studio_small_07_1k.hdr"},
-        {"Wide Street 01", ":env/wide_street_01_1k.hdr"}};
+        {"Docklands 01", ":env/docklands_01_1k.hdr"},
+        {"Golden Bay", ":env/golden_bay_1k.hdr"},
+        {"Little Paris Eiffel Tower",
+         ":env/little_paris_eiffel_tower_1k.hdr"},
+        {"Sepulchral Chapel Basement",
+         ":env/sepulchral_chapel_basement_1k.hdr"},
+        {"St Peters Square Night", ":env/st_peters_square_night_1k.hdr"},
+        {"Stadium 01", ":env/stadium_01_1k.hdr"},
+        {"Studio Kontrast 03", ":env/studio_kontrast_03_1k.hdr"},
+        {"University Workshop", ":env/university_workshop_1k.hdr"},
+        {"Winter River", ":env/winter_river_1k.hdr"}};
 
     for (const EnvInfo& env : envList) {
         QAction* envAction = envMenu->addAction(env.displayName);
