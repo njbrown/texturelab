@@ -14,10 +14,15 @@ class TextureCardDelegate : public QStyledItemDelegate {
 public:
     explicit TextureCardDelegate(QObject* parent = nullptr);
 
-    // Card width in pixels; the thumbnail is square, so height follows. Driven
-    // by the action bar's size slider.
+    // Card width in pixels; the thumbnail is square, so height follows. Set by
+    // LauncherWindow::relayoutGrid(), which stretches the slider's target width
+    // to whatever divides the viewport evenly — not by the slider directly.
     void setCardWidth(int width);
     int cardWidth() const { return cardW; }
+
+    // The card height a given width implies. The grid needs it to state its
+    // cell size, which it has to do before handing the width over here.
+    int heightForWidth(int width) const { return width + textBlockHeight(); }
 
     static constexpr int MinCardWidth = 96;
     static constexpr int MaxCardWidth = 256;

@@ -65,6 +65,12 @@ private:
     QWidget* buildActionBar();
     void applySort(int comboIndex);
     void setGridMode(bool grid);
+
+    // Re-fits the cards to the viewport: columns come from the slider's target
+    // width, then every cell stretches to consume the remainder. IconMode's own
+    // layout keeps a fixed pitch and dumps the leftover as a ragged right
+    // margin, which is the gap this exists to close.
+    void relayoutGrid();
     void restoreViewState();
     void saveViewState() const;
     void updateEmptyState();
@@ -104,4 +110,14 @@ private:
 
     bool hasDocument = false;
     bool gridMode = true;
+
+    // The viewport width the cards were last laid out against. The card width
+    // alone can't gate a relayout: the first pass can run while the scrollbar
+    // is still up from a narrower state, fit one column fewer than it computed,
+    // and then match on the next pass and decline to fix itself.
+    int laidOutWidth = -1;
+
+    // What the slider asks for. The width the cards are actually drawn at is
+    // this one rounded to fill the row, and lives on the delegate.
+    int targetCardWidth = 160;
 };

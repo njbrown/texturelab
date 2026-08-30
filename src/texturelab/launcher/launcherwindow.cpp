@@ -25,9 +25,11 @@
 #include <QMessageBox>
 #include <QMimeData>
 #include <QPushButton>
+#include <QScrollBar>
 #include <QSettings>
 #include <QSlider>
 #include <QStringList>
+#include <QStyle>
 #include <QToolButton>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -318,15 +320,14 @@ QWidget* LauncherWindow::buildActionBar()
 
     sizeSlider = new QSlider(Qt::Horizontal, bar);
     sizeSlider->setRange(TextureCardDelegate::MinCardWidth, TextureCardDelegate::MaxCardWidth);
-    sizeSlider->setValue(cardDelegate->cardWidth());
+    sizeSlider->setValue(targetCardWidth);
     sizeSlider->setFixedWidth(120);
+    sizeSlider->setToolTip(tr("Card size — cards stretch to fill the row"));
     connect(sizeSlider, &QSlider::valueChanged, this, [this](int value) {
-        // setCardWidth emits sizeHintChanged; reset() forces the icon-mode
-        // layout to actually recompute positions rather than reflow within the
-        // old grid metrics.
-        cardDelegate->setCardWidth(value);
-        if (gridMode)
-            grid->reset();
+        // A target, not the drawn width: relayoutGrid() turns it into a column
+        // count and hands the delegate whatever divides the viewport evenly.
+        targetCardWidth = value;
+        relayoutGrid();
         saveViewState();
     });
     layout->addWidget(sizeSlider);
@@ -364,6 +365,73 @@ void LauncherWindow::applySort(int comboIndex)
     }
 }
 
+void LauncherWindow::relayoutGrid()
+{
+    if (!gridMode || !grid || !cardDelegate)
+        return;
+
+    const int spacing = grid->spacing();
+
+    // grid->width(), not the viewport's: the viewport narrows when the
+    // scrollbar appears, and the scrollbar comes and goes as this function
+    // changes how many rows there are. Measuring the frame keeps the input to
+    // the calculation independent of its own output.
+    //
+    // The bar's width is then subtracted whether or not it is currently up.
+    // Icon mode lays out against the scrolling width regardless, so a row
+    // budgeted for the full viewport overruns by those few pixels and loses a
+    // whole column — and reserving it unconditionally is also what keeps the
+    // result from oscillating as the bar appears and disappears.
+    const int reserved = grid->style()->pixelMetric(QStyle::PM_ScrollBarExtent, nullptr,
+                                                    grid->verticalScrollBar());
+    const int available = grid->width() - grid->frameWidth() * 2 - reserved;
+    if (available <= 0)
+        return;
+
+    // A grid cell is the card plus one spacing, and the row is indented by half
+    // of one before the first cell — the card sits centered in its cell, so the
+    // leading half-gutter is real estate the columns can't have.
+    const int usable = available - spacing / 2;
+
+    // Columns from the target width, then the pitch widened to consume the
+    // remainder, so the leftover lands in the thumbnails instead of collecting
+    // as a ragged right margin.
+    //
+    // Stated as an explicit grid size rather than left to icon mode's own
+    // packing: with a grid size set the view fits exactly usable / pitch cells,
+    // which is a rule this can invert. Its default wrapping folds in the item
+    // margins and a fencepost, and being one pixel over there costs a whole
+    // column silently.
+    int columns = qMax(1, usable / (targetCardWidth + spacing));
+    int width = usable / columns - spacing;
+
+    // A maxed-out slider on a wide window would otherwise stretch past what the
+    // delegate is willing to draw, which puts the gap straight back. An extra
+    // column costs every card a few pixels and the row nothing.
+    while (width > TextureCardDelegate::MaxCardWidth) {
+        ++columns;
+        width = usable / columns - spacing;
+    }
+
+    width = qMax(width, TextureCardDelegate::MinCardWidth);
+
+    // The card width alone can't gate this: the first pass runs while the
+    // scrollbar is still up from a narrower state and lays out against that
+    // viewport, then the bar drops and the next pass computes the same width
+    // and would decline to re-fit the row it now has room for.
+    if (width == cardDelegate->cardWidth() && grid->viewport()->width() == laidOutWidth)
+        return;
+
+    laidOutWidth = grid->viewport()->width();
+    cardDelegate->setCardWidth(width);
+
+    // setGridSize() relayouts on its own, but only when the value changes — the
+    // viewport-width case above arrives with the same grid size and still needs
+    // the row re-fitted.
+    grid->setGridSize(QSize(width + spacing, cardDelegate->heightForWidth(width) + spacing));
+    grid->doItemsLayout();
+}
+
 void LauncherWindow::setGridMode(bool useGrid)
 {
     gridMode = useGrid;
@@ -380,7 +448,16 @@ void LauncherWindow::setGridMode(bool useGrid)
         // Rows are separated by their own hairline, so view spacing would only
         // break the continuous surface a table wants.
         grid->setSpacing(0);
+
+        // Rows size themselves; leaving the card pitch in place would stamp
+        // every one of them into a square cell.
+        grid->setGridSize(QSize());
     }
+
+    // The card width is a function of the viewport, and in list mode nothing
+    // has been maintaining it — recompute before the view asks for sizeHints.
+    laidOutWidth = -1;
+    relayoutGrid();
 
     // Icon mode caches item positions; swapping the delegate changes every
     // sizeHint, and only a reset makes the view ask again.
@@ -402,11 +479,11 @@ void LauncherWindow::restoreViewState()
     settings.beginGroup(QStringLiteral("launcher"));
 
     if (sizeSlider) {
-        const int width = settings.value(QStringLiteral("cardWidth"),
-                                         cardDelegate->cardWidth()).toInt();
-        cardDelegate->setCardWidth(width);
+        const int width = settings.value(QStringLiteral("cardWidth"), targetCardWidth).toInt();
+        targetCardWidth = qBound(TextureCardDelegate::MinCardWidth, width,
+                                 TextureCardDelegate::MaxCardWidth);
         QSignalBlocker block(sizeSlider);
-        sizeSlider->setValue(cardDelegate->cardWidth());
+        sizeSlider->setValue(targetCardWidth);
     }
 
     if (sortBox) {
@@ -439,8 +516,9 @@ void LauncherWindow::saveViewState() const
     QSettings settings;
     settings.beginGroup(QStringLiteral("launcher"));
     settings.setValue(QStringLiteral("gridMode"), gridMode);
-    if (cardDelegate)
-        settings.setValue(QStringLiteral("cardWidth"), cardDelegate->cardWidth());
+    // The target, not the stretched result — restoring the latter would let a
+    // window resized once permanently redefine what the slider means.
+    settings.setValue(QStringLiteral("cardWidth"), targetCardWidth);
     if (sortBox)
         settings.setValue(QStringLiteral("sort"), sortBox->currentIndex());
 
@@ -502,10 +580,13 @@ void LauncherWindow::layoutEmptyPanel()
 
 bool LauncherWindow::eventFilter(QObject* watched, QEvent* event)
 {
-    // An overlay has to follow the viewport by hand; without this, resizing the
-    // window while empty leaves the button parked where the grid used to end.
-    if (watched == grid->viewport() && event->type() == QEvent::Resize)
+    if (watched == grid->viewport() && event->type() == QEvent::Resize) {
+        // An overlay has to follow the viewport by hand; without this, resizing
+        // the window while empty leaves the button parked where the grid used
+        // to end.
         layoutEmptyPanel();
+        relayoutGrid();
+    }
     return QWidget::eventFilter(watched, event);
 }
 
