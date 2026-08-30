@@ -125,6 +125,16 @@ jobs:
           export PATH=${{ github.workspace }}/Qt/Qt/6.7.3/gcc_64/bin:$PATH
           export LD_LIBRARY_PATH=${{ github.workspace }}/Qt/Qt/6.7.3/gcc_64/lib:$LD_LIBRARY_PATH
 
+          # linuxdeploy's qt plugin deploys *every* sqldriver plugin it finds and
+          # hard-fails when one has an unresolvable dependency. Qt ships
+          # libqsqlmimer.so, whose libmimerapi.so is a proprietary Mimer SQL
+          # client that isn't on the runner ("ERROR: Could not find dependency:
+          # libmimerapi.so"). We only ever open QSQLITE (src/catalog/database.cpp),
+          # so keep libqsqlite.so and drop the rest — that also stops us shipping
+          # the GPL libmysqlclient the MySQL driver drags in.
+          QT_SQLDRIVERS=${{ github.workspace }}/Qt/Qt/6.7.3/gcc_64/plugins/sqldrivers
+          find "$QT_SQLDRIVERS" -name 'libqsql*.so' ! -name 'libqsqlite.so' -delete
+
           # Create desktop file
           cat > texturelab.desktop << 'EOF'
           [Desktop Entry]

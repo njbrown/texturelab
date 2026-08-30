@@ -28,7 +28,10 @@ install Qt 6 and required dependencies
 Note: Linux needs libmesa:
 https://doc.qt.io/qt-6/linux.html
 
-sudo apt install build-essential libgl1-mesa-dev libxkbcommon-dev libvulkan-dev
+sudo apt install build-essential libgl1-mesa-dev libxkbcommon-dev libvulkan-dev libcurl4-openssl-dev
+
+Note: libcurl4-openssl-dev is required by sentry-native (crash reporting).
+Without it, CMake fails with "CURL: Required feature AsynchDNS is not found".
 
 ```
 
