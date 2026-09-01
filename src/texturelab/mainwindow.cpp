@@ -288,23 +288,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     auto project = TextureProject::createEmpty();
     this->setProject(project);
 
-    // Print GPU information
-    QOpenGLContext* context = QOpenGLContext::currentContext();
-    if (context) {
-        QOpenGLFunctions* f = context->functions();
-        const GLubyte* vendor = f->glGetString(GL_VENDOR);
-        const GLubyte* renderer = f->glGetString(GL_RENDERER);
-        const GLubyte* version = f->glGetString(GL_VERSION);
-
-        qDebug() << "=== GPU Information ===";
-        qDebug() << "GPU Vendor:" << reinterpret_cast<const char*>(vendor);
-        qDebug() << "GPU Renderer:" << reinterpret_cast<const char*>(renderer);
-        qDebug() << "OpenGL Version:" << reinterpret_cast<const char*>(version);
-        qDebug() << "======================";
-    }
-    else {
-        qDebug() << "Warning: No OpenGL context available yet";
-    }
+    // GPU details go to Sentry from TextureRenderer::setup(), where a
+    // context is guaranteed current (see SystemInfo::reportGpuContext()).
 
     // test texture rendering
     //     auto renderer = new TextureRenderer();
@@ -416,6 +401,15 @@ void MainWindow::setProject(TextureProjectPtr project)
 
     this->project = project;
     this->syncedChannels = project->textureChannels;
+
+    // Tagged rather than only breadcrumbed so a crash event carries the graph
+    // size and resolution it happened at, which is what the GTX 750 / 4K report
+    // was missing.
+    Telemetry::setTag("project.node_count",
+                      std::to_string(project->nodes.size()));
+    Telemetry::setTag("texture.resolution",
+                      std::to_string(project->textureWidth));
+
     this->graphWidget->setTextureProject(project);
     this->syncChannelLabelsToScene();
     this->libraryWidget->setLibrary(project->library);
@@ -909,8 +903,13 @@ void MainWindow::openProjectFromPath(const QString& filePath)
     project->name = fileInfo.baseName();
     project->filePath = filePath;
 
-    Telemetry::breadcrumb("project",
-                          "open: " + fileInfo.baseName().toStdString());
+    // Deliberately no file name or path: the consent prompt promises counts and
+    // settings, not what the user is working on.
+    Telemetry::breadcrumb("project", "opened",
+                          {{"node_count", (int64_t)project->nodes.size()},
+                           {"resolution", (int64_t)project->textureWidth},
+                           {"library_version",
+                            project->libraryVersion.toStdString()}});
     setProject(project);
     addToRecentFiles(filePath);
 
@@ -1019,7 +1018,9 @@ void MainWindow::saveProject()
 
     graphWidget->syncPositionsToModel();
 
-    Telemetry::breadcrumb("project", "save: " + project->name.toStdString());
+    Telemetry::breadcrumb("project", "saved",
+                          {{"node_count", (int64_t)project->nodes.size()},
+                           {"resolution", (int64_t)project->textureWidth}});
     QFile file(project->filePath);
     file.open(QIODevice::WriteOnly);
     file.write(Project::saveTexture(project));
@@ -1110,7 +1111,13 @@ void MainWindow::directExport()
 void MainWindow::handleExport(const QString& destination,
                               const QString& pattern)
 {
-    Telemetry::breadcrumb("project", "export to: " + destination.toStdString());
+    // The destination path is deliberately not recorded — only the shape of
+    // the export.
+    Telemetry::breadcrumb("export", "export started",
+                          {{"resolution", (int64_t)(this->project
+                                                        ? this->project->textureWidth
+                                                        : 0)},
+                           {"pattern", pattern.toStdString()}});
     if (!this->project || !this->renderer) {
         QMessageBox::warning(this, "Export Error",
                              "No project loaded or renderer not initialized.");

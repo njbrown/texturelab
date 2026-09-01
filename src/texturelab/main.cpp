@@ -1,5 +1,6 @@
 #include "catalogservice.h"
 #include "mainwindow.h"
+#include "systeminfo.h"
 #include "telemetry.h"
 #include "thememanager.h"
 #include "version.h"
@@ -134,6 +135,12 @@ int main(int argc, char* argv[])
 
     // Now applicationDirPath() is valid — init Sentry
     Telemetry::init(crashReportingEnabled);
+
+    // Register RAM/CPU/screen/platform context before anything touches OpenGL.
+    // The GPU half needs a current context and is registered later, from
+    // TextureRenderer::setup(); this half has to already be on the scope in
+    // case we die during GL init itself.
+    SystemInfo::reportSystemContext();
 
     // Launcher index + thumbnail cache. Failure is not fatal: the app runs
     // normally without them, it just has nothing to show in the launcher.

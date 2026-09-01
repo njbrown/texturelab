@@ -2,6 +2,7 @@
 
 #include "../graphics/texturerenderer.h"
 #include "../libraries/library.h"
+#include "../telemetry.h"
 #include "graph/scene.h"
 
 #include <QUuid>
@@ -44,6 +45,10 @@ void AddNodeCommand::redo()
     node->pos = _pos;
     _project->addNode(node);
     addNodeToScene(_scene, node);
+    Telemetry::breadcrumb("graph.node", "node added",
+                          {{"node_count", (int64_t)_project->nodes.size()}});
+    Telemetry::setTag("project.node_count",
+                      std::to_string(_project->nodes.size()));
     if (_renderer)
         _renderer->update();
 }
@@ -56,6 +61,10 @@ void AddNodeCommand::undo()
 
     // also drops the node's connections, marking every downstream chain dirty
     _project->removeNode(_nodeId);
+    Telemetry::breadcrumb("graph.node", "node add undone",
+                          {{"node_count", (int64_t)_project->nodes.size()}});
+    Telemetry::setTag("project.node_count",
+                      std::to_string(_project->nodes.size()));
     if (_renderer)
         _renderer->update();
 }

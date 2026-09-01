@@ -2,6 +2,7 @@
 
 #include "../clipboard.h"
 #include "../graphics/texturerenderer.h"
+#include "../telemetry.h"
 #include "graph/comment.h"
 #include "graph/frame.h"
 #include "graph/scene.h"
@@ -86,6 +87,12 @@ void PasteCommand::redo()
         gf->setSelected(true);
     }
 
+    Telemetry::breadcrumb("graph.node", "nodes pasted",
+                          {{"pasted_nodes", (int64_t)_nodes.size()},
+                           {"node_count", (int64_t)_project->nodes.size()}});
+    Telemetry::setTag("project.node_count",
+                      std::to_string(_project->nodes.size()));
+
     if (_renderer)
         _renderer->update();
 }
@@ -116,6 +123,11 @@ void PasteCommand::undo()
             _scene->removeFrame(gf);
         _project->frames.remove(frame->id);
     }
+
+    Telemetry::breadcrumb("graph.node", "paste undone",
+                          {{"node_count", (int64_t)_project->nodes.size()}});
+    Telemetry::setTag("project.node_count",
+                      std::to_string(_project->nodes.size()));
 
     if (_renderer)
         _renderer->update();

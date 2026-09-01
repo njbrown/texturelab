@@ -72,6 +72,15 @@ protected:
 private:
     void setupToolbar();
 
+    // Breadcrumbs the change, and — when the driver tells us how much VRAM is
+    // free — asks first if the new resolution plausibly won't fit. Returns
+    // false if the user backed out.
+    bool confirmResolutionChange(int from, int to);
+
+    // Puts the picker back and explains, after TextureRenderer gave up on a
+    // resolution and rolled the project back.
+    void onResolutionChangeFailed(int requested, int fallback);
+
     NodeSearchPopup* searchPopup;
     QPoint lastMousePos;
 

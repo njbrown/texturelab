@@ -156,6 +156,8 @@ set(PROJECT_SOURCES
         ./main.cpp
         ./telemetry.h
         ./telemetry.cpp
+        ./systeminfo.h
+        ./systeminfo.cpp
         ./catalogservice.h
         ./catalogservice.cpp
         ./launcher/launcherwindow.h

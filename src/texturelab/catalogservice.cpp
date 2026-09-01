@@ -200,7 +200,10 @@ bool CatalogService::init()
     if (!catalogIndex.isReadOnly())
         seedFromRecentFiles();
 
-    Telemetry::breadcrumb("catalog", "opened index at " + indexPath().toStdString());
+    // No path: it sits under the user's home directory, and the consent prompt
+    // says we don't send folder paths.
+    Telemetry::breadcrumb("catalog", "index opened",
+                          {{"read_only", catalogIndex.isReadOnly()}});
     return true;
 }
 

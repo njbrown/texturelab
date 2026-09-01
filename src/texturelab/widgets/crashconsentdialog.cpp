@@ -52,12 +52,13 @@ CrashConsentDialog::CrashConsentDialog(QWidget* parent) : QDialog(parent)
     facts->setSpacing(8);
     facts->addWidget(buildFact(
         tr("Sent"),
-        tr("Where in the code the crash happened, TextureLab's version, and your "
-           "operating system.")));
+        tr("Where in the code the crash happened, TextureLab's version, your "
+           "operating system, your graphics card and driver, and what you were "
+           "doing just before \u2014 for example \u201cchanged resolution to 4096\u201d.")));
     facts->addWidget(buildFact(
         tr("Not sent"),
-        tr("Your textures. No project files are uploaded, and there is no account or "
-           "sign-in involved.")));
+        tr("Your textures. No project files, file names or folder paths are "
+           "uploaded, and there is no account or sign-in involved.")));
     layout->addLayout(facts);
 
     auto* provider = new QLabel(

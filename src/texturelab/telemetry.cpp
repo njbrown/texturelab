@@ -9,6 +9,9 @@
 #include <QStandardPaths>
 #include <QString>
 
+#include <cstdint>
+#include <type_traits>
+
 static bool g_enabled = false;
 
 namespace {
@@ -23,6 +26,34 @@ QSettings consentSettings()
 
 constexpr const char* kAllowedKey = "crashReporting";
 constexpr const char* kAskedVersionKey = "crashReportingConsentVersion";
+
+// Fields -> sentry object. Kept in one place so breadcrumbs, contexts and
+// events all serialize identically.
+sentry_value_t toSentryObject(const Telemetry::Fields& fields)
+{
+    sentry_value_t obj = sentry_value_new_object();
+    for (const auto& [key, value] : fields) {
+        sentry_value_t v = std::visit(
+            [](const auto& held) -> sentry_value_t {
+                using T = std::decay_t<decltype(held)>;
+                if constexpr (std::is_same_v<T, std::string>)
+                    return sentry_value_new_string(held.c_str());
+                else if constexpr (std::is_same_v<T, int64_t>)
+                    // sentry_value_new_int32 would silently truncate byte
+                    // counts, so anything that doesn't fit goes as a double.
+                    return held >= INT32_MIN && held <= INT32_MAX
+                               ? sentry_value_new_int32((int32_t)held)
+                               : sentry_value_new_double((double)held);
+                else if constexpr (std::is_same_v<T, double>)
+                    return sentry_value_new_double(held);
+                else
+                    return sentry_value_new_bool(held);
+            },
+            value);
+        sentry_value_set_by_key(obj, key.c_str(), v);
+    }
+    return obj;
+}
 
 } // namespace
 
@@ -112,15 +143,44 @@ void Telemetry::recordConsent(bool allowed)
 
 void Telemetry::breadcrumb(const char* category, const std::string& message)
 {
+    Telemetry::breadcrumb(category, message, {});
+}
+
+void Telemetry::breadcrumb(const char* category, const std::string& message,
+                           const Fields& data)
+{
     if (!g_enabled)
         return;
 
     sentry_value_t crumb = sentry_value_new_breadcrumb("default", message.c_str());
     sentry_value_set_by_key(crumb, "category", sentry_value_new_string(category));
+    if (!data.empty())
+        sentry_value_set_by_key(crumb, "data", toSentryObject(data));
     sentry_add_breadcrumb(crumb);
 }
 
+void Telemetry::setTag(const char* key, const std::string& value)
+{
+    if (!g_enabled)
+        return;
+
+    sentry_set_tag(key, value.c_str());
+}
+
+void Telemetry::setContext(const char* name, const Fields& fields)
+{
+    if (!g_enabled)
+        return;
+
+    sentry_set_context(name, toSentryObject(fields));
+}
+
 void Telemetry::captureException(const std::string& message)
+{
+    Telemetry::captureException(message, {});
+}
+
+void Telemetry::captureException(const std::string& message, const Fields& data)
 {
     if (!g_enabled)
         return;
@@ -128,5 +188,7 @@ void Telemetry::captureException(const std::string& message)
     sentry_value_t event = sentry_value_new_event();
     sentry_value_t exc = sentry_value_new_exception("Exception", message.c_str());
     sentry_event_add_exception(event, exc);
+    if (!data.empty())
+        sentry_value_set_by_key(event, "extra", toSentryObject(data));
     sentry_capture_event(event);
 }

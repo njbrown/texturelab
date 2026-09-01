@@ -1,5 +1,6 @@
 #include "renderworker.h"
 #include "../models.h"
+#include "../systeminfo.h"
 #include "../telemetry.h"
 #include "../curve.h"
 #include "gradient.h"
@@ -27,6 +28,25 @@
 const int TEXTURE_SIZE = 1024;
 
 RENDERDOC_API_1_1_2* rdoc_api = nullptr;
+
+namespace {
+
+// Attach GL/VRAM state to a Sentry event before a qFatal takes the process
+// down. Continuing past a broken framebuffer on the render thread isn't safe,
+// but these used to arrive as bare aborts with an unreadable driver stack.
+void reportFatalGlState(const char* what, Telemetry::Fields extra)
+{
+    const SystemInfo::GpuMemory mem = SystemInfo::queryGpuMemory();
+    extra.emplace_back("vram_known", mem.known);
+    extra.emplace_back("vram_total_mb",
+                       mem.known ? mem.totalKb / 1024 : (int64_t)-1);
+    extra.emplace_back("vram_available_mb",
+                       mem.known ? mem.availableKb / 1024 : (int64_t)-1);
+    extra.emplace_back("thread", std::string("render worker"));
+    Telemetry::captureException(what, extra);
+}
+
+} // namespace
 
 RenderWorker::RenderWorker()
     : QObject(), surface(nullptr), ctx(nullptr), gl(nullptr), vao(nullptr),
@@ -100,6 +120,7 @@ void RenderWorker::setup()
     ctx->setShareContext(QOpenGLContext::globalShareContext());
     ctx->setFormat(format);
     if (!ctx->create()) {
+        reportFatalGlState("render worker context creation failed", {});
         qFatal("unable to create surface!");
     }
 
@@ -109,6 +130,11 @@ void RenderWorker::setup()
     // https://doc-snapshots.qt.io/qt6-dev/gui-changes-qt6.html
     gl = QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_3_2_Core>(ctx);
     if (!gl) {
+        reportFatalGlState("3.2 core functions unavailable on worker context",
+                           {{"granted_major",
+                             (int64_t)ctx->format().majorVersion()},
+                            {"granted_minor",
+                             (int64_t)ctx->format().minorVersion()}});
         qFatal("Could not obtain required OpenGL context version");
     }
 
@@ -199,6 +225,8 @@ void RenderWorker::setup()
     // https://www.qt.io/blog/2015/09/21/using-modern-opengl-es-features-with-qopenglframebufferobject-in-qt-5-6
     fbo = new QOpenGLFramebufferObject(TEXTURE_SIZE, TEXTURE_SIZE);
     if (!fbo->isValid()) {
+        reportFatalGlState("render worker scratch FBO could not be created",
+                           {{"size", (int64_t)TEXTURE_SIZE}});
         qFatal("FBO could not be created");
     }
 
@@ -210,7 +238,16 @@ void RenderWorker::setup()
     // gl->glReadBuffer(GL_NONE);
     gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    Telemetry::breadcrumb("render.setup", "RenderWorker::setup() complete");
+    {
+        const QSurfaceFormat granted = ctx->format();
+        Telemetry::breadcrumb(
+            "render.setup", "RenderWorker::setup() complete",
+            {{"granted_version",
+              std::to_string(granted.majorVersion()) + "." +
+                  std::to_string(granted.minorVersion())},
+             {"core_profile",
+              granted.profile() == QSurfaceFormat::CoreProfile}});
+    }
 
     // Initialize resource cache for custom node renderers
     resourceCache.init(gl, fboId);
@@ -229,7 +266,9 @@ void RenderWorker::setup()
 
 void RenderWorker::processRenderCommand(const RenderCommand& command)
 {
-    Telemetry::breadcrumb("render", "node: " + command.nodeId.toStdString());
+    // Deliberately no breadcrumb here: with the Crashpad backend every crumb
+    // flushes the scope to disk, and this runs once per node per render pass.
+    // The batch-level crumbs in TextureRenderer cover what we actually need.
 
     if (rdoc_api)
         rdoc_api->StartFrameCapture(NULL, NULL);
@@ -309,6 +348,10 @@ void RenderWorker::renderSinglePass(const RenderCommand& command)
 
     GLenum status = gl->glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {
+        reportFatalGlState("render target framebuffer incomplete",
+                           {{"status", (int64_t)status},
+                            {"width", (int64_t)command.textureWidth},
+                            {"height", (int64_t)command.textureHeight}});
         qFatal("FRAMEBUFFER IS NOT COMPLETE!");
     }
 

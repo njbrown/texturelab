@@ -9,6 +9,7 @@
 #include <QMainWindow>
 #include <QMenu>
 #include <QMenuBar>
+#include <QMessageBox>
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QOpenGLContext>
@@ -22,6 +23,8 @@ public:
     void wheelEvent(QWheelEvent* event) override { event->ignore(); }
 };
 
+#include "../systeminfo.h"
+#include "../telemetry.h"
 #include "./graphics/texturerenderer.h"
 #include "./models.h"
 #include "./utils.h"
@@ -249,7 +252,19 @@ void GraphWidget::setupToolbar()
             [=](int /*index*/) {
                 if (!project)
                     return;
-                int res = resolutionPicker->currentData().toInt();
+                const int previous = project->textureWidth;
+                const int res = resolutionPicker->currentData().toInt();
+                if (res == previous)
+                    return;
+
+                if (!confirmResolutionChange(previous, res)) {
+                    QSignalBlocker block(resolutionPicker);
+                    const int back = resolutionPicker->findData(previous);
+                    if (back >= 0)
+                        resolutionPicker->setCurrentIndex(back);
+                    return;
+                }
+
                 project->textureWidth = res;
                 project->textureHeight = res;
                 for (auto& node : project->nodes)
@@ -272,6 +287,9 @@ void GraphWidget::setupToolbar()
     connect(seedInput, &QSpinBox::valueChanged, this, [=]() {
         if (!project)
             return;
+        Telemetry::breadcrumb("ui.seed", "random seed changed",
+                              {{"seed", (int64_t)seedInput->value()},
+                               {"node_count", (int64_t)project->nodes.size()}});
         project->randomSeed = seedInput->value();
         for (auto& node : project->nodes)
             node->isDirty = true;
@@ -476,9 +494,89 @@ void GraphWidget::dropEvent(QDropEvent* evt)
     }
 }
 
+bool GraphWidget::confirmResolutionChange(int from, int to)
+{
+    const int nodeCount = project ? project->nodes.size() : 0;
+    const int64_t estimated =
+        TextureRenderer::estimatedNodeTextureBytes(to) * nodeCount;
+    const SystemInfo::GpuMemory mem =
+        renderer ? renderer->queryGpuMemory() : SystemInfo::GpuMemory{};
+
+    Telemetry::breadcrumb(
+        "ui.resolution",
+        std::to_string(from) + " -> " + std::to_string(to),
+        {{"from", (int64_t)from},
+         {"to", (int64_t)to},
+         {"node_count", (int64_t)nodeCount},
+         {"estimated_mb", estimated / (1024 * 1024)},
+         {"vram_available_mb",
+          mem.known ? mem.availableKb / 1024 : (int64_t)-1}});
+
+    // Only worth asking when the driver actually reports free VRAM and we're
+    // clearly over it. Where it doesn't (plenty of Mesa configurations), the
+    // rollback in TextureRenderer covers us instead of nagging on a guess.
+    const int64_t availableBytes = mem.availableKb * 1024;
+    if (!mem.known || estimated <= availableBytes * 7 / 10)
+        return true;
+
+    const auto mb = [](int64_t bytes) {
+        return QString::number(bytes / (1024 * 1024));
+    };
+
+    const auto choice = QMessageBox::warning(
+        this, tr("Not enough video memory?"),
+        tr("Rendering %1 nodes at %2 x %2 needs about %3 MB of video memory, "
+           "but your GPU reports only %4 MB free.\n\n"
+           "TextureLab will fall back to %5 x %5 if it runs out. Continue?")
+            .arg(nodeCount)
+            .arg(to)
+            .arg(mb(estimated))
+            .arg(mb(availableBytes))
+            .arg(from),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+
+    if (choice != QMessageBox::Yes) {
+        Telemetry::breadcrumb("ui.resolution", "resolution change declined by user",
+                              {{"to", (int64_t)to}});
+        return false;
+    }
+
+    return true;
+}
+
+void GraphWidget::onResolutionChangeFailed(int requested, int fallback)
+{
+    {
+        QSignalBlocker block(resolutionPicker);
+        const int index = resolutionPicker->findData(fallback);
+        if (index >= 0)
+            resolutionPicker->setCurrentIndex(index);
+    }
+
+    QMessageBox::warning(
+        this, tr("Resolution change failed"),
+        tr("Your GPU ran out of memory allocating textures at %1 x %1.\n\n"
+           "The project has been returned to %2 x %2.")
+            .arg(requested)
+            .arg(fallback));
+}
+
 void GraphWidget::setTextureRenderer(TextureRenderer* renderer)
 {
     this->renderer = renderer;
+
+    // MainWindow clears the renderer with a null before building the next one
+    // (setProject); connecting to it emits "invalid nullptr parameter" for
+    // every signal below.
+    if (!renderer)
+        return;
+
+    // Queued: rollBackResolution() emits this from inside TextureRenderer's
+    // update loop, and onResolutionChangeFailed puts up a modal dialog. Letting
+    // that spin an event loop mid-update would re-enter update() through the
+    // renderer's queued nodeRendered callbacks.
+    connect(renderer, &TextureRenderer::resolutionChangeFailed, this,
+            &GraphWidget::onResolutionChangeFailed, Qt::QueuedConnection);
 
     connect(renderer, &TextureRenderer::thumbnailGenerated,
             [=](const QString& nodeId, GLint texId, const QPixmap& pixmap) {

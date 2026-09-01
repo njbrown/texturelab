@@ -3,6 +3,7 @@
 #include "../graphics/texturerenderer.h"
 #include "../libraries/library.h"
 #include "../props.h"
+#include "../telemetry.h"
 #include "graph/comment.h"
 #include "graph/frame.h"
 #include "graph/scene.h"
@@ -142,6 +143,12 @@ void DeleteItemsCommand::redo()
         _project->textureChannels.remove(it.key());
     }
 
+    Telemetry::breadcrumb("graph.node", "items deleted",
+                          {{"deleted_nodes", (int64_t)_nodes.size()},
+                           {"node_count", (int64_t)_project->nodes.size()}});
+    Telemetry::setTag("project.node_count",
+                      std::to_string(_project->nodes.size()));
+
     if (_renderer)
         _renderer->update();
 }
@@ -214,6 +221,12 @@ void DeleteItemsCommand::undo()
          it != _channelAssignments.constEnd(); ++it) {
         _project->textureChannels.insert(it.key(), it.value());
     }
+
+    Telemetry::breadcrumb("graph.node", "delete undone",
+                          {{"restored_nodes", (int64_t)_nodes.size()},
+                           {"node_count", (int64_t)_project->nodes.size()}});
+    Telemetry::setTag("project.node_count",
+                      std::to_string(_project->nodes.size()));
 
     if (_renderer)
         _renderer->update();

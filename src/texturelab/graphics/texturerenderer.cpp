@@ -22,6 +22,8 @@
 // #include <QtGui/QOpenGLFunctions_3_3_Core>
 
 #include "../props.h"
+#include "../systeminfo.h"
+#include "../telemetry.h"
 #include "models.h"
 
 // #define RENDER_IN_MAIN_THREAD
@@ -39,6 +41,27 @@ enum class VertexUsage : int {
 };
 
 const int TEXTURE_SIZE = 1024;
+
+// Test hook for the out-of-VRAM path. A dev box with a 6 GB card will never
+// actually fail at 4K, so `TEXTURELAB_FBO_FAIL_ABOVE=2048` makes
+// createNodeTexture() report failure above that size and lets the rollback,
+// the dialog and the Sentry payload be exercised deterministically.
+// Dev builds only — it must not be reachable in a release binary.
+static bool shouldFailTextureAllocation(int resolution)
+{
+#ifdef TEXTURELAB_DEV_BUILD
+    static const int threshold = []() {
+        bool ok = false;
+        const int value =
+            qEnvironmentVariableIntValue("TEXTURELAB_FBO_FAIL_ABOVE", &ok);
+        return ok ? value : 0;
+    }();
+    return threshold > 0 && resolution > threshold;
+#else
+    Q_UNUSED(resolution);
+    return false;
+#endif
+}
 
 // https://github.com/cromop/mOffscreenRendering/blob/master/OGLWidget.cpp
 // https://github.com/florianblume/Qt3D-OffscreenRenderer/blob/master/offscreensurfaceframegraph.h
@@ -262,6 +285,10 @@ void TextureRenderer::setup()
         qFatal("FBO could not be created");
     }
 
+    // Our context is current here and this is the GUI thread, so this is the
+    // one place guaranteed to be able to ask the driver what hardware we're on.
+    SystemInfo::reportGpuContext();
+
     this->initRenderWorker();
 }
 
@@ -335,6 +362,9 @@ void TextureRenderer::update()
     if (!project)
         return;
 
+    const int requested = project->textureWidth;
+    bool allocationFailed = false;
+
     // check for nodes that need updating and update
     for (auto& node : project->nodes) {
         // Defensive: a null entry should never reach the map now that lookups
@@ -344,7 +374,10 @@ void TextureRenderer::update()
 
         if (!node->isGraphicsResourcesInitialized()) {
             // create texture
-            initializeNodeGraphicsResources(node);
+            if (!initializeNodeGraphicsResources(node)) {
+                allocationFailed = true;
+                break;
+            }
         }
 
         // if the resolution has changed, resize texture
@@ -356,11 +389,64 @@ void TextureRenderer::update()
         if (!renderInFlight &&
             (project->textureWidth != node->textureWidth ||
              project->textureHeight != node->textureHeight)) {
-            this->createNodeTexture(node);
+            if (!this->createNodeTexture(node)) {
+                allocationFailed = true;
+                break;
+            }
 
             // clear pixmap and emit thumbnail changed?
         }
     }
+
+    if (allocationFailed) {
+        // Out of VRAM part-way through the batch. Retreat to the last size we
+        // know fits rather than leaving half the graph unallocated (and, before
+        // this path existed, aborting the process outright).
+        rollBackResolution(requested);
+        return;
+    }
+
+    if (lastGoodResolution != requested) {
+        lastGoodResolution = requested;
+        Telemetry::setTag("texture.resolution", std::to_string(requested));
+    }
+
+    if (!renderInFlight)
+        this->queueNextNodeToRender();
+}
+
+void TextureRenderer::rollBackResolution(int requested)
+{
+    // Nothing known-good to retreat to — the very first allocation failed, so
+    // there is no smaller size on record. Leave the graph unrendered; the
+    // captureException in createNodeTexture() has already reported why.
+    if (lastGoodResolution <= 0 || lastGoodResolution == requested)
+        return;
+
+    const int fallback = lastGoodResolution;
+    project->textureWidth = fallback;
+    project->textureHeight = fallback;
+
+    Telemetry::breadcrumb(
+        "render", "resolution rolled back after allocation failure",
+        {{"requested", (int64_t)requested},
+         {"fallback", (int64_t)fallback},
+         {"node_count", (int64_t)project->nodes.size()}});
+    Telemetry::setTag("texture.resolution", std::to_string(fallback));
+
+    // Re-allocate everything at the size we know fits. A node whose texture was
+    // freed on the way up gets it back here; one that still fails is skipped by
+    // getNextUpdatableNode() rather than dereferenced.
+    for (auto& node : project->nodes) {
+        if (!node)
+            continue;
+        if (!node->texture || node->textureWidth != fallback ||
+            node->textureHeight != fallback)
+            this->createNodeTexture(node);
+        node->isDirty = true;
+    }
+
+    emit resolutionChangeFailed(requested, fallback);
 
     if (!renderInFlight)
         this->queueNextNodeToRender();
@@ -421,18 +507,38 @@ void TextureRenderer::updateOld()
     ctx->doneCurrent();
 }
 
-void TextureRenderer::initializeNodeGraphicsResources(
+bool TextureRenderer::initializeNodeGraphicsResources(
     const TextureNodePtr& node)
 {
-    this->createNodeTexture(node);
+    if (!this->createNodeTexture(node))
+        return false;
 
     ctx->makeCurrent(surface);
     // build and compile shaders
     node->shader = buildShaderForNode(node);
     ctx->doneCurrent();
+
+    return true;
 }
 
-void TextureRenderer::createNodeTexture(const TextureNodePtr& node)
+SystemInfo::GpuMemory TextureRenderer::queryGpuMemory()
+{
+    // Same save/restore dance as handleExport(): the caller may be inside a
+    // widget's paint or event handling with its own context bound.
+    QOpenGLContext* previous = QOpenGLContext::currentContext();
+    QSurface* previousSurface = previous ? previous->surface() : nullptr;
+
+    ctx->makeCurrent(surface);
+    const SystemInfo::GpuMemory mem = SystemInfo::queryGpuMemory();
+    ctx->doneCurrent();
+
+    if (previous && previousSurface)
+        previous->makeCurrent(previousSurface);
+
+    return mem;
+}
+
+bool TextureRenderer::createNodeTexture(const TextureNodePtr& node)
 {
     ctx->makeCurrent(surface);
 
@@ -444,16 +550,56 @@ void TextureRenderer::createNodeTexture(const TextureNodePtr& node)
         node->texture = nullptr;
     }
 
+    const int width = project->textureWidth;
+    const int height = project->textureHeight;
+
+    // Start from a clean slate so the GL_OUT_OF_MEMORY check below can only be
+    // reporting on this allocation.
+    while (gl->glGetError() != GL_NO_ERROR) {
+    }
+
     // create fbo
     QOpenGLFramebufferObjectFormat fboFormat;
     fboFormat.setInternalTextureFormat(GL_RGBA32F);
-    node->texture = new QOpenGLFramebufferObject(
-        project->textureWidth, project->textureHeight, fboFormat);
-    node->textureWidth = project->textureWidth;
-    node->textureHeight = project->textureHeight;
+    node->texture = new QOpenGLFramebufferObject(width, height, fboFormat);
+    node->textureWidth = width;
+    node->textureHeight = height;
 
-    if (!node->texture->isValid()) {
-        qFatal("FBO could not be created");
+    // Running out of VRAM shows up either as an incomplete FBO or as a
+    // GL_OUT_OF_MEMORY left behind by the texture allocation, depending on the
+    // driver. 4096x4096 RGBA32F is 256 MiB per node, so a graph of any size at
+    // 4K will exhaust a 1-2 GB card — this used to qFatal() and take the whole
+    // app down with an unreadable driver-side stack.
+    const GLenum err = gl->glGetError();
+    const bool failed = !node->texture->isValid() || err == GL_OUT_OF_MEMORY ||
+                        shouldFailTextureAllocation(width);
+
+    if (failed) {
+        delete node->texture;
+        node->texture = nullptr;
+
+        const SystemInfo::GpuMemory mem = SystemInfo::queryGpuMemory();
+
+        ctx->doneCurrent();
+
+        Telemetry::captureException(
+            "node texture allocation failed",
+            {{"width", (int64_t)width},
+             {"height", (int64_t)height},
+             {"bytes_per_node", estimatedNodeTextureBytes(width)},
+             {"node_count", (int64_t)(project ? project->nodes.size() : 0)},
+             {"estimated_total_bytes",
+              estimatedNodeTextureBytes(width) *
+                  (int64_t)(project ? project->nodes.size() : 0)},
+             {"gl_error", (int64_t)err},
+             {"vram_known", mem.known},
+             {"vram_total_mb", mem.known ? mem.totalKb / 1024 : (int64_t)-1},
+             {"vram_available_mb",
+              mem.known ? mem.availableKb / 1024 : (int64_t)-1}});
+
+        qWarning("node texture allocation failed at %dx%d (glGetError 0x%04x)",
+                 width, height, err);
+        return false;
     }
 
     // make texture wrap
@@ -467,6 +613,8 @@ void TextureRenderer::createNodeTexture(const TextureNodePtr& node)
     gl->glFlush();
 
     ctx->doneCurrent();
+
+    return true;
 }
 
 void TextureRenderer::renderNode(const TextureNodePtr& node)
@@ -736,6 +884,12 @@ TextureNodePtr TextureRenderer::getNextUpdatableNode() const
             continue;
 
         if (!node->isDirty)
+            continue;
+
+        // A node whose texture/shader allocation failed has no FBO to render
+        // into; queueNextNodeToRender() would dereference it. Skip rather than
+        // crash — update() has already reported and rolled back.
+        if (!node->isGraphicsResourcesInitialized())
             continue;
 
         auto hasCleanDeps = true;
