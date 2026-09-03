@@ -1,12 +1,13 @@
 #include "scene.h"
 #include "comment.h"
 #include "frame.h"
+#include "nodetheme.h"
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsView>
 #include <QOpenGLContext>
-#include <QOpenGLFunctions>
 #include <QOpenGLExtraFunctions>
+#include <QOpenGLFunctions>
 #include <QPaintEngine>
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
@@ -25,14 +26,16 @@ bool Node::glInitialized = false;
 
 void Node::initializeGL()
 {
-    if (glInitialized) return;
-    
+    if (glInitialized)
+        return;
+
     QOpenGLContext* ctx = QOpenGLContext::currentContext();
-    if (!ctx) return;
-    
+    if (!ctx)
+        return;
+
     // Create shader program
     shaderProgram = new QOpenGLShaderProgram();
-    
+
     const char* vertexShaderSource = R"(
         #version 150
         in vec2 position;
@@ -44,51 +47,60 @@ void Node::initializeGL()
             vTexCoord = texCoord;
         }
     )";
-    
+
     const char* fragmentShaderSource = R"(
         #version 150
         in vec2 vTexCoord;
         out vec4 fragColor;
         uniform sampler2D textureSampler;
         void main() {
-            fragColor = texture(textureSampler, vTexCoord);
+            // 8px checkerboard in screen space
+            vec2 tile = floor(gl_FragCoord.xy / 8.0);
+            float checker = mod(tile.x + tile.y, 2.0);
+            vec3 bg = mix(vec3(0.753), vec3(0.502), checker);
+
+            vec4 texColor = texture(textureSampler, vTexCoord);
+            fragColor = vec4(mix(bg, texColor.rgb, texColor.a), 1.0);
         }
     )";
-    
-    shaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
-    shaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
+
+    shaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex,
+                                           vertexShaderSource);
+    shaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment,
+                                           fragmentShaderSource);
     shaderProgram->link();
-    
+
     // Create VAO and VBO
     vao = new QOpenGLVertexArrayObject();
     vao->create();
-    
+
     vbo = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
     vbo->create();
     vbo->setUsagePattern(QOpenGLBuffer::DynamicDraw);
-    
+
     glInitialized = true;
 }
 
 void Node::cleanupGL()
 {
-    if (!glInitialized) return;
-    
+    if (!glInitialized)
+        return;
+
     delete shaderProgram;
     shaderProgram = nullptr;
-    
+
     if (vbo) {
         vbo->destroy();
         delete vbo;
         vbo = nullptr;
     }
-    
+
     if (vao) {
         vao->destroy();
         delete vao;
         vao = nullptr;
     }
-    
+
     glInitialized = false;
 }
 
@@ -109,8 +121,10 @@ ConnectionPtr Scene::connectNodes(NodePtr leftNode, QString leftOutputName,
                                   NodePtr rightNode, QString rightInputName)
 {
     auto leftPort = leftNode->getOutPortByName(leftOutputName);
-    qDebug() << rightNode->getInPorts();
     auto rightPort = rightNode->getInPortByName(rightInputName);
+
+    if (!leftPort || !rightPort)
+        return ConnectionPtr(nullptr);
 
     // create new connection item from ports
     auto conn = new Connection();
@@ -130,7 +144,9 @@ ConnectionPtr Scene::connectNodes(NodePtr leftNode, QString leftOutputName,
     return connPtr;
 }
 
-NodePtr Scene::getNodeById(QString id) { return nodes[id]; }
+// .value() (not operator[]): a read-only lookup must never default-insert a
+// null entry into the map, which paint/drag/label iteration would dereference.
+NodePtr Scene::getNodeById(QString id) { return nodes.value(id); }
 
 void Scene::addFrame(FramePtr frame)
 {
@@ -138,7 +154,7 @@ void Scene::addFrame(FramePtr frame)
     frames[frame->id()] = frame;
 }
 
-FramePtr Scene::getFrameById(QString id) { return frames[id]; }
+FramePtr Scene::getFrameById(QString id) { return frames.value(id); }
 
 void Scene::removeFrame(FramePtr frame)
 {
@@ -154,7 +170,7 @@ void Scene::addComment(CommentPtr comment)
     comments[comment->id()] = comment;
 }
 
-CommentPtr Scene::getCommentById(QString id) { return comments[id]; }
+CommentPtr Scene::getCommentById(QString id) { return comments.value(id); }
 
 void Scene::removeComment(CommentPtr comment)
 {
@@ -184,6 +200,8 @@ void Scene::removeNode(NodePtr node)
     // remove node
     node->hide(); // fix display cache issue
     this->removeItem(node.data());
+
+    nodes.remove(node->id());
 
     // reshow here in case i forget when re-adding node for
     // undo-redo
@@ -216,11 +234,13 @@ Node::Node()
     width = NODE_WIDTH;
     height = NODE_HEIGHT;
     isHovered = false;
+    showingSocketNames = false;
 
-    defaultBorderColor = QColor(0, 0, 0);
-    highlightBorderColor = QColor(0, 0, 0);
-    // highlightBorderColor = QColor(120, 120, 120);
-    selectedBorderColor = QColor(200, 200, 200);
+    // Border colors are read from tokens at paint time (see Node::paint); these
+    // members are kept only for any external callers.
+    defaultBorderColor = ntColor(Tokens::NodeBorder);
+    highlightBorderColor = ntColor(Tokens::NodeBorderHover);
+    selectedBorderColor = ntColor(Tokens::NodeBorderSelect);
 
     setCacheMode(QGraphicsItem::NoCache);
 
@@ -237,7 +257,7 @@ Node::Node()
 
     text->setPos(0, 0);
     text->setTextWidth(100);
-    text->setDefaultTextColor(QColor(255, 255, 255));
+    text->setDefaultTextColor(ntColor(Tokens::NodeTitle));
     text->setZValue(5);
 
     // center title
@@ -250,11 +270,21 @@ Node::Node()
     font.setPixelSize(12);
     text->setFont(font);
 
+    channelText = new QGraphicsTextItem(this);
+    channelText->setFlag(QGraphicsItem::ItemIsFocusable, false);
+    channelText->setFlag(QGraphicsItem::ItemIsSelectable, false);
+    channelText->setDefaultTextColor(ntColor(Tokens::NodeChannel));
+    channelText->setZValue(5);
+    channelText->hide();
+    QFont chFont = channelText->font();
+    chFont.setPixelSize(12);
+    channelText->setFont(chFont);
+
     QGraphicsDropShadowEffect* effect = new QGraphicsDropShadowEffect;
     effect->setBlurRadius(20);
     effect->setXOffset(0);
     effect->setYOffset(0);
-    effect->setColor(QColor(00, 00, 00, 70));
+    effect->setColor(QColor(00, 00, 00, 70)); // theme-exempt: unused shadow effect (setGraphicsEffect disabled)
     // setGraphicsEffect(effect); // forces node to raster remder
     // maybe render to node behind this to get same effect
 
@@ -264,9 +294,23 @@ Node::Node()
 
 NodePtr Node::create() { return NodePtr(new Node()); }
 
+void Node::setShowSocketNames(bool show)
+{
+    if (showingSocketNames == show)
+        return;
+    showingSocketNames = show;
+    update();
+}
+
 void Node::setCenter(float x, float y)
 {
     setPos(x - NODE_WIDTH / 2.0f, y - NODE_HEIGHT / 2.0f);
+}
+
+QPointF Node::getCenter() const
+{
+    return QPointF(pos().x() + NODE_WIDTH / 2.0f,
+                   pos().y() + NODE_HEIGHT / 2.0f);
 }
 
 void Node::setName(QString name)
@@ -287,6 +331,21 @@ void Node::setThumbnail(const QPixmap& pixmap)
 {
     this->thumbnail = pixmap;
     this->update();
+}
+
+void Node::setChannel(QString ch)
+{
+    this->channel = ch;
+    if (ch.isEmpty()) {
+        channelText->hide();
+    }
+    else {
+        channelText->setPlainText(ch.toUpper());
+        QFontMetrics fm(channelText->font());
+        int textW = fm.horizontalAdvance(ch.toUpper());
+        channelText->setPos((width - textW) / 2.0, -20);
+        channelText->show();
+    }
 }
 
 const QVector<PortPtr> Node::getInPorts() const { return inPorts; }
@@ -351,7 +410,7 @@ PortPtr Node::getPortById(QString id)
             return port;
     }
 
-    Q_ASSERT(false);
+    return PortPtr(nullptr);
 }
 
 PortPtr Node::getInPortByName(QString name)
@@ -361,7 +420,7 @@ PortPtr Node::getInPortByName(QString name)
             return port;
     }
 
-    Q_ASSERT(false);
+    return PortPtr(nullptr);
 }
 
 PortPtr Node::getOutPortByName(QString name)
@@ -371,7 +430,7 @@ PortPtr Node::getOutPortByName(QString name)
             return port;
     }
 
-    Q_ASSERT(false);
+    return PortPtr(nullptr);
 }
 
 QRectF Node::boundingRect() const { return QRectF(0, 0, 100, 100); }
@@ -425,11 +484,11 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
 
     QColor borderColor;
     if (isSelected())
-        borderColor = this->selectedBorderColor;
+        borderColor = ntColor(Tokens::NodeBorderSelect);
     else if (isHovered)
-        borderColor = this->highlightBorderColor;
+        borderColor = ntColor(Tokens::NodeBorderHover);
     else
-        borderColor = this->defaultBorderColor;
+        borderColor = ntColor(Tokens::NodeBorder);
 
     // not really needed
     // painter->setClipRect(option->exposedRect);
@@ -461,9 +520,21 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
     bgPath.setFillRule(Qt::WindingFill);
     bgPath.addRoundedRect(0, 0, nodeWidth, nodeHeight, titleRadius,
                           titleRadius);
-    painter->fillPath(bgPath, QBrush(QColor(10, 10, 10, 255)));
+    painter->fillPath(bgPath, QBrush(ntColor(Tokens::NodeBg)));
 
     if (!thumbnail.isNull()) {
+        // Checkerboard background for alpha-transparent thumbnails.
+        // (Built once and cached, so it reflects the theme at first draw.)
+        static QPixmap checkerTile;
+        if (checkerTile.isNull()) {
+            checkerTile = QPixmap(16, 16);
+            checkerTile.fill(ntColor(Tokens::CheckerA));
+            QPainter cp(&checkerTile);
+            cp.fillRect(0, 0, 8, 8, ntColor(Tokens::CheckerB));
+            cp.fillRect(8, 8, 8, 8, ntColor(Tokens::CheckerB));
+        }
+        painter->fillRect(QRect(0, 0, nodeWidth, nodeHeight),
+                          QBrush(checkerTile));
         painter->drawPixmap(QRect(0, 0, nodeWidth, nodeHeight), thumbnail);
     }
 
@@ -474,74 +545,97 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
 
         // Initialize OpenGL resources if needed
         initializeGL();
-        
+
         if (glInitialized && shaderProgram && vao && vbo) {
             QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
-            
+
             // Get the current viewport and create orthographic projection
             GLint viewport[4];
             f->glGetIntegerv(GL_VIEWPORT, viewport);
-            
+
             // Create orthographic projection matrix
             QTransform transform = painter->combinedTransform();
             QMatrix4x4 projectionMatrix;
             projectionMatrix.ortho(0, viewport[2], viewport[3], 0, -1, 1);
-            
-            // Build vertex data - transform scene coordinates to device coordinates
+
+            // Build vertex data - transform scene coordinates to device
+            // coordinates
             QPointF p0 = transform.map(QPointF(0, 0));
             QPointF p1 = transform.map(QPointF(100, 0));
             QPointF p2 = transform.map(QPointF(100, 100));
             QPointF p3 = transform.map(QPointF(0, 100));
-            
+
             // Two triangles for a quad: position (x,y) + texcoord (u,v)
             GLfloat vertices[] = {
                 // Triangle 1
-                (GLfloat)p0.x(), (GLfloat)p0.y(), 0.0f, 1.0f,
-                (GLfloat)p1.x(), (GLfloat)p1.y(), 1.0f, 1.0f,
-                (GLfloat)p2.x(), (GLfloat)p2.y(), 1.0f, 0.0f,
+                (GLfloat)p0.x(),
+                (GLfloat)p0.y(),
+                0.0f,
+                1.0f,
+                (GLfloat)p1.x(),
+                (GLfloat)p1.y(),
+                1.0f,
+                1.0f,
+                (GLfloat)p2.x(),
+                (GLfloat)p2.y(),
+                1.0f,
+                0.0f,
                 // Triangle 2
-                (GLfloat)p0.x(), (GLfloat)p0.y(), 0.0f, 1.0f,
-                (GLfloat)p2.x(), (GLfloat)p2.y(), 1.0f, 0.0f,
-                (GLfloat)p3.x(), (GLfloat)p3.y(), 0.0f, 0.0f,
+                (GLfloat)p0.x(),
+                (GLfloat)p0.y(),
+                0.0f,
+                1.0f,
+                (GLfloat)p2.x(),
+                (GLfloat)p2.y(),
+                1.0f,
+                0.0f,
+                (GLfloat)p3.x(),
+                (GLfloat)p3.y(),
+                0.0f,
+                0.0f,
             };
-            
+
             // Setup state
             f->glDisable(GL_BLEND);
             f->glDisable(GL_DEPTH_TEST);
-            
+
             // Bind shader
             shaderProgram->bind();
-            shaderProgram->setUniformValue("projectionMatrix", projectionMatrix);
+            shaderProgram->setUniformValue("projectionMatrix",
+                                           projectionMatrix);
             shaderProgram->setUniformValue("textureSampler", 0);
-            
+
             // Bind texture
             f->glActiveTexture(GL_TEXTURE0);
             f->glBindTexture(GL_TEXTURE_2D, texId);
-            
+
             // Setup VAO and VBO
             vao->bind();
             vbo->bind();
             vbo->allocate(vertices, sizeof(vertices));
-            
+
             // Setup vertex attributes
             int positionLoc = shaderProgram->attributeLocation("position");
             int texCoordLoc = shaderProgram->attributeLocation("texCoord");
-            
+
             shaderProgram->enableAttributeArray(positionLoc);
             shaderProgram->enableAttributeArray(texCoordLoc);
-            shaderProgram->setAttributeBuffer(positionLoc, GL_FLOAT, 0, 2, 4 * sizeof(GLfloat));
-            shaderProgram->setAttributeBuffer(texCoordLoc, GL_FLOAT, 2 * sizeof(GLfloat), 2, 4 * sizeof(GLfloat));
-            
+            shaderProgram->setAttributeBuffer(positionLoc, GL_FLOAT, 0, 2,
+                                              4 * sizeof(GLfloat));
+            shaderProgram->setAttributeBuffer(texCoordLoc, GL_FLOAT,
+                                              2 * sizeof(GLfloat), 2,
+                                              4 * sizeof(GLfloat));
+
             // Draw
             f->glDrawArrays(GL_TRIANGLES, 0, 6);
-            
+
             // Cleanup
             shaderProgram->disableAttributeArray(positionLoc);
             shaderProgram->disableAttributeArray(texCoordLoc);
             vbo->release();
             vao->release();
             shaderProgram->release();
-            
+
             f->glEnable(GL_BLEND);
         }
 
@@ -555,7 +649,7 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
         QPainterPath bgPath;
         bgPath.setFillRule(Qt::WindingFill);
         bgPath.addRoundedRect(0, 0, nodeWidth, 18, titleRadius, titleRadius);
-        painter->fillPath(bgPath, QBrush(QColor(0, 0, 0, 255)));
+        painter->fillPath(bgPath, QBrush(ntColor(Tokens::NodeBorder)));
 
         text->paint(painter, option, widget);
     }
@@ -563,6 +657,47 @@ void Node::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
     // draw border
     painter->setPen(QPen(borderColor, 3));
     painter->drawRoundedRect(rect, titleRadius, titleRadius);
+
+    // socket name labels — shown on hover or when cursor is nearby during drag
+    if (isHovered || showingSocketNames) {
+        painter->save();
+        painter->setRenderHint(QPainter::TextAntialiasing);
+
+        QFont labelFont = painter->font();
+        labelFont.setPixelSize(10);
+        painter->setFont(labelFont);
+
+        QFontMetrics fm(labelFont);
+        const int labelH = 14;
+        const int pad = 3;
+        const int portRadius = 7;
+        const int gap = 4;
+
+        auto drawLabel = [&](const QString& labelName, QPointF portPos,
+                             bool isIn) {
+            int textW = fm.horizontalAdvance(labelName);
+            int rectW = textW + pad * 2;
+            qreal x = isIn ? portPos.x() + portRadius + gap
+                           : portPos.x() - portRadius - gap - rectW;
+            qreal y = portPos.y() - labelH / 2.0;
+
+            QRectF bgRect(x, y, rectW, labelH);
+            painter->setPen(Qt::NoPen);
+            painter->setBrush(ntColor(Tokens::NodeBorder, 160));
+            painter->drawRoundedRect(bgRect, 3, 3);
+
+            painter->setPen(ntColor(Tokens::NodeTitle, 220));
+            painter->drawText(bgRect, Qt::AlignCenter, labelName);
+        };
+
+        for (auto& port : inPorts)
+            drawLabel(port->name, port->pos(), true);
+
+        // for (auto& port : outPorts)
+        //     drawLabel(port->name, port->pos(), false);
+
+        painter->restore();
+    }
 }
 
 Node::~Node()
@@ -630,7 +765,7 @@ void Port::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
 {
     auto rect = actualRect();
 
-    QPen pen(QColor(00, 00, 00, 250), 1.0f);
+    QPen pen(ntColor(Tokens::NodeBorder, 250), 1.0f);
     painter->setPen(pen);
 
     // background
@@ -639,10 +774,10 @@ void Port::paint(QPainter* painter, QStyleOptionGraphicsItem const* option,
     // bgPath.addRoundedRect(-_radius, _radius, rect.width(), rect.height(),
     // rect.width() / 2, rect.height() / 2);
     bgPath.addRoundedRect(rect, _radius, _radius);
-    painter->fillPath(bgPath, QBrush(QColor(170, 170, 170, 255)));
+    painter->fillPath(bgPath, QBrush(ntColor(Tokens::SocketFill)));
 
     // draw border
-    painter->setPen(QPen(QColor(0, 0, 0), 3));
+    painter->setPen(QPen(ntColor(Tokens::NodeBorder), 3));
     painter->drawRoundedRect(rect, rect.width() / 2, rect.height() / 2);
 }
 
@@ -661,8 +796,8 @@ Connection::Connection()
 
     connectState = ConnectionState::Complete;
 
-    auto pen = QPen(QColor(200, 200, 200));
-    pen.setBrush(QColor(50, 150, 250));
+    auto pen = QPen(ntColor(Tokens::Wire));
+    pen.setBrush(ntColor(Tokens::WireSelected));
     pen.setCapStyle(Qt::RoundCap);
     pen.setWidth(lineThickness);
     setPen(pen);
@@ -676,8 +811,8 @@ void Connection::updatePosFromPorts()
 
 void Connection::updatePathFromPositions()
 {
-    p = new QPainterPath;
-    p->moveTo(pos1);
+    p = QPainterPath();
+    p.moveTo(pos1);
 
     qreal dx = pos2.x() - pos1.x();
     qreal dy = pos2.y() - pos1.y();
@@ -685,10 +820,10 @@ void Connection::updatePathFromPositions()
     QPointF ctr1(pos1.x() + dx * 0.5, pos1.y());
     QPointF ctr2(pos2.x() - dx * 0.5, pos2.y());
 
-    p->cubicTo(ctr1, ctr2, pos2);
-    p->setFillRule(Qt::OddEvenFill);
+    p.cubicTo(ctr1, ctr2, pos2);
+    p.setFillRule(Qt::OddEvenFill);
 
-    setPath(*p);
+    setPath(p);
 }
 
 void Connection::paint(QPainter* painter,
@@ -698,27 +833,26 @@ void Connection::paint(QPainter* painter,
     painter->save();
 
     if (connectState == ConnectionState::Dragging) {
-        QPen pen(QColor(150, 150, 150), lineThickness);
+        QPen pen(ntColor(Tokens::WireDragging), lineThickness);
         pen.setStyle(Qt::DashLine);
         pen.setDashOffset(4);
         painter->setPen(pen);
-        painter->drawPath(*p);
+        painter->drawPath(p);
 
-        painter->setPen(QPen(QColor(0, 0, 0), 3));
-        painter->setBrush(QBrush(QColor(150, 150, 150)));
+        painter->setPen(QPen(ntColor(Tokens::NodeBorder), 3));
+        painter->setBrush(QBrush(ntColor(Tokens::WireDragging)));
         painter->drawEllipse(pos1, 7, 7);
 
         painter->setPen(Qt::NoPen);
         painter->drawEllipse(pos2, 6, 6);
     }
     if (connectState == ConnectionState::Complete) {
-        // create gradient for line
-        QPen pen(QColor(170, 170, 170), lineThickness);
+        QPen pen(ntColor(Tokens::Wire), lineThickness);
         painter->setPen(pen);
-        painter->drawPath(*p);
+        painter->drawPath(p);
 
-        painter->setPen(QPen(QColor(0, 0, 0), 3));
-        painter->setBrush(QBrush(QColor(170, 170, 170)));
+        painter->setPen(QPen(ntColor(Tokens::NodeBorder), 3));
+        painter->setBrush(QBrush(ntColor(Tokens::Wire)));
         painter->drawEllipse(pos1, 7, 7);
         painter->drawEllipse(pos2, 7, 7);
     }

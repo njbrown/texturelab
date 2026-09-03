@@ -3,13 +3,17 @@
 #include "./libraries/library.h"
 
 #include <QFont>
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QMimeData>
+#include <QPushButton>
 #include <QResizeEvent>
 #include <QScrollBar>
+#include <QStyle>
 #include <QVBoxLayout>
 
 // https://doc.qt.io/qt-6/qmimedata.html
@@ -25,11 +29,33 @@ bool LibraryItemMimeData::hasFormat(const QString& format) const
 
 LibraryWidget::LibraryWidget() : QWidget()
 {
+    this->setObjectName("LibraryPanel"); // QSS scoping (app.qss.in)
     this->setMinimumWidth(100);
     this->setLayout(new QVBoxLayout());
 
+    // library version indicator + upgrade button
+    auto versionRow = new QWidget(this);
+    auto versionLayout = new QHBoxLayout(versionRow);
+    versionLayout->setContentsMargins(0, 0, 0, 0);
+
+    versionLabel = new QLabel(versionRow);
+    versionLabel->setObjectName("LibraryVersionLabel"); // styled in app.qss.in
+    versionLayout->addWidget(versionLabel);
+
+    versionLayout->addStretch();
+
+    upgradeButton = new QPushButton("Upgrade", versionRow);
+    upgradeButton->setProperty("variant", "primary"); // draw attention to the action
+    upgradeButton->setVisible(false);
+    connect(upgradeButton, &QPushButton::clicked,
+            this, &LibraryWidget::upgradeRequested);
+    versionLayout->addWidget(upgradeButton);
+
+    this->layout()->addWidget(versionRow);
+
     // search box
     searchBar = new QLineEdit(this);
+    searchBar->setObjectName("LibrarySearch");
     searchBar->setPlaceholderText("search");
     searchBar->setAlignment(Qt::AlignLeft);
     connect(searchBar, &QLineEdit::textChanged,
@@ -43,6 +69,21 @@ LibraryWidget::LibraryWidget() : QWidget()
     this->layout()->addWidget(listWidget);
 
     this->setLibrary(nullptr);
+}
+
+void LibraryWidget::setLibraryVersion(const QString& version, bool isCurrent)
+{
+    versionLabel->setText(isCurrent
+                              ? QString("Library: %1").arg(version)
+                              : QString("Library: %1 (outdated)").arg(version));
+
+    // Drive the color from a dynamic property so the "outdated" tint lives in
+    // app.qss.in (uses the theme's warn token) rather than a hardcoded hex.
+    versionLabel->setProperty("outdated", !isCurrent);
+    versionLabel->style()->unpolish(versionLabel);
+    versionLabel->style()->polish(versionLabel);
+
+    upgradeButton->setVisible(!isCurrent);
 }
 
 void LibraryWidget::addSpecialItem(const QString& name,
@@ -124,10 +165,7 @@ LibraryListWidget::LibraryListWidget() : QListWidget()
     // setAcceptDrops(true);
     setDropIndicatorShown(true);
 
-    setStyleSheet(
-        "QListView::item{ border-radius: 2px; border: 0px solid rgba(0,0,0,1); "
-        "margin-left: 6px;  }"
-        "QListView::item:hover{border: 1px solid rgba(50,150,250,1); }");
+    setObjectName("LibraryList"); // item styling in app.qss.in
 }
 
 void LibraryListWidget::resizeEvent(QResizeEvent* event)

@@ -27,7 +27,8 @@ Mesh* createPlane(QOpenGLFunctions* gl, float width = 1, float height = 1,
 Mesh* createCylinder(QOpenGLFunctions* gl, float radiusTop = 1,
                      float radiusBottom = 1, float height = 1,
                      int radialSegments = 32, int heightSegments = 1,
-                     bool openEnded = false);
+                     float bevelRadius = 0.1f, int bevelSegments = 4,
+                     float uvScaleU = 3.0f, float uvScaleV = 1.0f);
 
 // Create a subdivided cube mesh with normals, tangents, and UVs
 // https://github.com/mrdoob/three.js/blob/master/src/geometries/BoxGeometry.js

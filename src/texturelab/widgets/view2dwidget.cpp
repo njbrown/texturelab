@@ -1,5 +1,8 @@
 #include "view2dwidget.h"
+#include "thememanager.h"
+#include "tokens.h"
 #include <QLayout>
+#include <QVector3D>
 
 #include <QtCore/QPropertyAnimation>
 #include <QtCore/QTimer>
@@ -40,10 +43,11 @@ const QColor CoarseGridColor(25, 25, 25);
 
 View2DWidget::View2DWidget() : QMainWindow()
 {
-    // Create toolbar
+    // Create toolbar (compact — see #View2DToolbar in app.qss.in)
     toolbar = new QToolBar(this);
+    toolbar->setObjectName("View2DToolbar");
     toolbar->setMovable(false);
-    toolbar->setIconSize(QSize(24, 24));
+    toolbar->setIconSize(QSize(18, 18));
     this->addToolBar(Qt::TopToolBarArea, toolbar);
 
     // Add save button
@@ -81,7 +85,11 @@ void View2DWidget::setSelectedNode(const TextureNodePtr& node)
     this->graph->setSelectedNode(node);
 }
 
-void View2DWidget::clearSelection() {}
+void View2DWidget::clearSelection()
+{
+    this->node.reset();
+    this->graph->clearSelection();
+}
 
 void View2DWidget::reRenderNode()
 {
@@ -199,12 +207,7 @@ void View2DWidget::copyTextureToClipboard()
 void View2DWidget::showToast(const QString& message, int duration)
 {
     QLabel* toast = new QLabel(message, this);
-    toast->setStyleSheet("QLabel {"
-                         "  background-color: rgba(50, 50, 50, 200);"
-                         "  color: white;"
-                         "  padding: 10px 20px;"
-                         "  border-radius: 5px;"
-                         "}");
+    toast->setObjectName("ViewToast"); // styled in app.qss.in
     toast->setAlignment(Qt::AlignCenter);
     toast->adjustSize();
 
@@ -253,7 +256,15 @@ View2DGraph::View2DGraph(QWidget* parent) : QGraphicsView(parent)
     setDragMode(QGraphicsView::ScrollHandDrag);
     setRenderHint(QPainter::Antialiasing);
 
-    setBackgroundBrush(QColor(33, 33, 33));
+    setBackgroundBrush(ThemeManager::instance().theme().color(Tokens::View2dBg));
+    QObject::connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
+                     [this]() {
+                         setBackgroundBrush(
+                             ThemeManager::instance().theme().color(Tokens::View2dBg));
+                         if (scene())
+                             scene()->update();
+                         viewport()->update();
+                     });
 
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -315,20 +326,22 @@ void View2DGraph::scaleDown()
 // void View2DGraph::keyReleaseEvent(QKeyEvent* event){};
 void View2DGraph::mousePressEvent(QMouseEvent* event)
 {
-    if (event->button() == Qt::MiddleButton &&
-        scene()->mouseGrabberItem() == nullptr) {
-        _clickPos = mapToScene(event->pos());
+    if (event->button() == Qt::MiddleButton) {
+        _clickPos = event->pos();
         setDragMode(QGraphicsView::NoDrag);
+        return;
     }
     QGraphicsView::mousePressEvent(event);
 }
 
 void View2DGraph::mouseMoveEvent(QMouseEvent* event)
 {
-
-    if (event->buttons() == Qt::MiddleButton) {
-        QPointF difference = _clickPos - mapToScene(event->pos());
-        setSceneRect(sceneRect().translated(difference.x(), difference.y()));
+    if (event->buttons() & Qt::MiddleButton) {
+        QPointF delta = event->pos() - _clickPos;
+        qreal s = transform().m11();
+        setSceneRect(sceneRect().translated(-delta.x() / s, -delta.y() / s));
+        _clickPos = event->pos();
+        return;
     }
     QGraphicsView::mouseMoveEvent(event);
 }
@@ -336,6 +349,7 @@ void View2DGraph::mouseMoveEvent(QMouseEvent* event)
 void View2DGraph::mouseReleaseEvent(QMouseEvent* event)
 {
     if (event->button() == Qt::MiddleButton) {
+        setDragMode(QGraphicsView::ScrollHandDrag);
     }
     QGraphicsView::mouseReleaseEvent(event);
 }
@@ -349,7 +363,12 @@ void View2DGraph::setSelectedNode(const TextureNodePtr& node)
 
 void View2DGraph::updatePreview() { this->preview->update(); }
 
-void View2DGraph::clearSelection() {};
+void View2DGraph::clearSelection()
+{
+    this->preview->clearNode();
+    this->preview->hide();
+    this->preview->update();
+};
 
 void View2DGraph::drawBackground(QPainter* painter, const QRectF& r)
 {
@@ -437,8 +456,16 @@ void NodePreviewGraphicsItem::initializeGL()
         in vec2 vTexCoord;
         out vec4 fragColor;
         uniform sampler2D textureSampler;
+        uniform vec3 checkerA;
+        uniform vec3 checkerB;
         void main() {
-            fragColor = texture(textureSampler, vTexCoord);
+            // 16px checkerboard in screen space
+            vec2 tile = floor(gl_FragCoord.xy / 16.0);
+            float checker = mod(tile.x + tile.y, 2.0);
+            vec3 bg = mix(checkerA, checkerB, checker);
+
+            vec4 texColor = texture(textureSampler, vTexCoord);
+            fragColor = vec4(mix(bg, texColor.rgb, texColor.a), 1.0);
         }
     )";
     
@@ -586,6 +613,16 @@ void NodePreviewGraphicsItem::paint(QPainter* painter,
     shaderProgram->bind();
     shaderProgram->setUniformValue("projectionMatrix", projectionMatrix);
     shaderProgram->setUniformValue("textureSampler", 0);
+
+    // Themed checkerboard (matches the node-graph checker); read each paint so it
+    // follows theme changes / --dev-theme hot-reload.
+    const Theme& theme = ThemeManager::instance().theme();
+    const QColor ca = theme.color(Tokens::CheckerA);
+    const QColor cb = theme.color(Tokens::CheckerB);
+    shaderProgram->setUniformValue("checkerA",
+                                   QVector3D(ca.redF(), ca.greenF(), ca.blueF()));
+    shaderProgram->setUniformValue("checkerB",
+                                   QVector3D(cb.redF(), cb.greenF(), cb.blueF()));
     
     // Bind texture
     f->glActiveTexture(GL_TEXTURE0);

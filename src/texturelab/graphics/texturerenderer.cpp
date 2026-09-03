@@ -1,4 +1,5 @@
 #include "texturerenderer.h"
+#include "noderenderer.h"
 #include "renderworker.h"
 // #include "../models.h"
 
@@ -21,6 +22,8 @@
 // #include <QtGui/QOpenGLFunctions_3_3_Core>
 
 #include "../props.h"
+#include "../systeminfo.h"
+#include "../telemetry.h"
 #include "models.h"
 
 // #define RENDER_IN_MAIN_THREAD
@@ -38,6 +41,27 @@ enum class VertexUsage : int {
 };
 
 const int TEXTURE_SIZE = 1024;
+
+// Test hook for the out-of-VRAM path. A dev box with a 6 GB card will never
+// actually fail at 4K, so `TEXTURELAB_FBO_FAIL_ABOVE=2048` makes
+// createNodeTexture() report failure above that size and lets the rollback,
+// the dialog and the Sentry payload be exercised deterministically.
+// Dev builds only — it must not be reachable in a release binary.
+static bool shouldFailTextureAllocation(int resolution)
+{
+#ifdef TEXTURELAB_DEV_BUILD
+    static const int threshold = []() {
+        bool ok = false;
+        const int value =
+            qEnvironmentVariableIntValue("TEXTURELAB_FBO_FAIL_ABOVE", &ok);
+        return ok ? value : 0;
+    }();
+    return threshold > 0 && resolution > threshold;
+#else
+    Q_UNUSED(resolution);
+    return false;
+#endif
+}
 
 // https://github.com/cromop/mOffscreenRendering/blob/master/OGLWidget.cpp
 // https://github.com/florianblume/Qt3D-OffscreenRenderer/blob/master/offscreensurfaceframegraph.h
@@ -261,6 +285,10 @@ void TextureRenderer::setup()
         qFatal("FBO could not be created");
     }
 
+    // Our context is current here and this is the GUI thread, so this is the
+    // one place guaranteed to be able to ask the driver what hardware we're on.
+    SystemInfo::reportGpuContext();
+
     this->initRenderWorker();
 }
 
@@ -334,30 +362,94 @@ void TextureRenderer::update()
     if (!project)
         return;
 
+    const int requested = project->textureWidth;
+    bool allocationFailed = false;
+
     // check for nodes that need updating and update
     for (auto& node : project->nodes) {
+        // Defensive: a null entry should never reach the map now that lookups
+        // use .value() (Step 1), but guard the render loop regardless.
+        if (!node)
+            continue;
+
         if (!node->isGraphicsResourcesInitialized()) {
             // create texture
-            initializeNodeGraphicsResources(node);
+            if (!initializeNodeGraphicsResources(node)) {
+                allocationFailed = true;
+                break;
+            }
         }
 
         // if the resolution has changed, resize texture
-        if (project->textureWidth != node->textureWidth ||
-            project->textureHeight != node->textureHeight) {
-            // resize
-            // resizeNodeTexture(node);
-            // node->textureWidth = project->textureWidth;
-            // node->textureHeight = project->textureHeight;
-            // node->texture = new QOpenGLFramebufferObject(node->textureWidth,
-            //                                              node->textureHeight);
-
-            this->createNodeTexture(node);
+        // Deferred while a render is in flight: the texture/FBO being
+        // replaced here may be captured as an input GLuint in the command
+        // currently queued/executing on the worker thread. Once that
+        // command completes, nodeRendered() re-invokes update(), which will
+        // pick this resize back up.
+        if (!renderInFlight &&
+            (project->textureWidth != node->textureWidth ||
+             project->textureHeight != node->textureHeight)) {
+            if (!this->createNodeTexture(node)) {
+                allocationFailed = true;
+                break;
+            }
 
             // clear pixmap and emit thumbnail changed?
         }
     }
 
-    this->queueNextNodeToRender();
+    if (allocationFailed) {
+        // Out of VRAM part-way through the batch. Retreat to the last size we
+        // know fits rather than leaving half the graph unallocated (and, before
+        // this path existed, aborting the process outright).
+        rollBackResolution(requested);
+        return;
+    }
+
+    if (lastGoodResolution != requested) {
+        lastGoodResolution = requested;
+        Telemetry::setTag("texture.resolution", std::to_string(requested));
+    }
+
+    if (!renderInFlight)
+        this->queueNextNodeToRender();
+}
+
+void TextureRenderer::rollBackResolution(int requested)
+{
+    // Nothing known-good to retreat to — the very first allocation failed, so
+    // there is no smaller size on record. Leave the graph unrendered; the
+    // captureException in createNodeTexture() has already reported why.
+    if (lastGoodResolution <= 0 || lastGoodResolution == requested)
+        return;
+
+    const int fallback = lastGoodResolution;
+    project->textureWidth = fallback;
+    project->textureHeight = fallback;
+
+    Telemetry::breadcrumb(
+        "render", "resolution rolled back after allocation failure",
+        {{"requested", (int64_t)requested},
+         {"fallback", (int64_t)fallback},
+         {"node_count", (int64_t)project->nodes.size()}});
+    Telemetry::setTag("texture.resolution", std::to_string(fallback));
+
+    // Re-allocate everything at the size we know fits. A node whose texture was
+    // freed on the way up gets it back here; one that still fails is skipped by
+    // getNextUpdatableNode() rather than dereferenced.
+    for (auto& node : project->nodes) {
+        if (!node)
+            continue;
+        if (!node->texture || node->textureWidth != fallback ||
+            node->textureHeight != fallback)
+            this->createNodeTexture(node);
+        node->isDirty = true;
+    }
+
+    emit resolutionChangeFailed(requested, fallback);
+
+    if (!renderInFlight)
+        this->queueNextNodeToRender();
 }
 
 void TextureRenderer::updateOld()
@@ -415,31 +507,99 @@ void TextureRenderer::updateOld()
     ctx->doneCurrent();
 }
 
-void TextureRenderer::initializeNodeGraphicsResources(
+bool TextureRenderer::initializeNodeGraphicsResources(
     const TextureNodePtr& node)
 {
-    this->createNodeTexture(node);
+    if (!this->createNodeTexture(node))
+        return false;
 
     ctx->makeCurrent(surface);
     // build and compile shaders
     node->shader = buildShaderForNode(node);
     ctx->doneCurrent();
+
+    return true;
 }
 
-void TextureRenderer::createNodeTexture(const TextureNodePtr& node)
+SystemInfo::GpuMemory TextureRenderer::queryGpuMemory()
+{
+    // Same save/restore dance as handleExport(): the caller may be inside a
+    // widget's paint or event handling with its own context bound.
+    QOpenGLContext* previous = QOpenGLContext::currentContext();
+    QSurface* previousSurface = previous ? previous->surface() : nullptr;
+
+    ctx->makeCurrent(surface);
+    const SystemInfo::GpuMemory mem = SystemInfo::queryGpuMemory();
+    ctx->doneCurrent();
+
+    if (previous && previousSurface)
+        previous->makeCurrent(previousSurface);
+
+    return mem;
+}
+
+bool TextureRenderer::createNodeTexture(const TextureNodePtr& node)
 {
     ctx->makeCurrent(surface);
+
+    // Safe to free now: callers only reach here when !renderInFlight, so no
+    // queued/executing RenderCommand can be holding this texture's GLuint
+    // as an input.
+    if (node->texture) {
+        delete node->texture;
+        node->texture = nullptr;
+    }
+
+    const int width = project->textureWidth;
+    const int height = project->textureHeight;
+
+    // Start from a clean slate so the GL_OUT_OF_MEMORY check below can only be
+    // reporting on this allocation.
+    while (gl->glGetError() != GL_NO_ERROR) {
+    }
 
     // create fbo
     QOpenGLFramebufferObjectFormat fboFormat;
     fboFormat.setInternalTextureFormat(GL_RGBA32F);
-    node->texture = new QOpenGLFramebufferObject(
-        project->textureWidth, project->textureWidth, fboFormat);
-    node->textureWidth = project->textureWidth;
-    node->textureHeight = project->textureHeight;
+    node->texture = new QOpenGLFramebufferObject(width, height, fboFormat);
+    node->textureWidth = width;
+    node->textureHeight = height;
 
-    if (!node->texture->isValid()) {
-        qFatal("FBO could not be created");
+    // Running out of VRAM shows up either as an incomplete FBO or as a
+    // GL_OUT_OF_MEMORY left behind by the texture allocation, depending on the
+    // driver. 4096x4096 RGBA32F is 256 MiB per node, so a graph of any size at
+    // 4K will exhaust a 1-2 GB card — this used to qFatal() and take the whole
+    // app down with an unreadable driver-side stack.
+    const GLenum err = gl->glGetError();
+    const bool failed = !node->texture->isValid() || err == GL_OUT_OF_MEMORY ||
+                        shouldFailTextureAllocation(width);
+
+    if (failed) {
+        delete node->texture;
+        node->texture = nullptr;
+
+        const SystemInfo::GpuMemory mem = SystemInfo::queryGpuMemory();
+
+        ctx->doneCurrent();
+
+        Telemetry::captureException(
+            "node texture allocation failed",
+            {{"width", (int64_t)width},
+             {"height", (int64_t)height},
+             {"bytes_per_node", estimatedNodeTextureBytes(width)},
+             {"node_count", (int64_t)(project ? project->nodes.size() : 0)},
+             {"estimated_total_bytes",
+              estimatedNodeTextureBytes(width) *
+                  (int64_t)(project ? project->nodes.size() : 0)},
+             {"gl_error", (int64_t)err},
+             {"vram_known", mem.known},
+             {"vram_total_mb", mem.known ? mem.totalKb / 1024 : (int64_t)-1},
+             {"vram_available_mb",
+              mem.known ? mem.availableKb / 1024 : (int64_t)-1}});
+
+        qWarning("node texture allocation failed at %dx%d (glGetError 0x%04x)",
+                 width, height, err);
+        return false;
     }
 
     // make texture wrap
@@ -448,7 +608,13 @@ void TextureRenderer::createNodeTexture(const TextureNodePtr& node)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     gl->glBindTexture(GL_TEXTURE_2D, 0);
 
+    // This texture ID is shared into the render worker's context on another
+    // thread; flush so its creation is visible there before it's used.
+    gl->glFlush();
+
     ctx->doneCurrent();
+
+    return true;
 }
 
 void TextureRenderer::renderNode(const TextureNodePtr& node)
@@ -596,11 +762,18 @@ void TextureRenderer::initRenderWorker()
 void TextureRenderer::nodeRendered(const QString& nodeId, GLuint texId)
 {
     qDebug() << "TextureRenderer: Node rendered:" << nodeId;
-    // queue up next node to render
+    renderInFlight = false;
     emit thumbnailGenerated(nodeId, texId, QPixmap());
-
-    this->queueNextNodeToRender();
-    // QTimer::singleShot(0, this, &TextureRenderer::queueNextNodeToRender);
+    // update() re-checks pending resizes deferred while a render was in
+    // flight, then queues the next node.
+    this->update();
+    if (project) {
+        int total = project->nodes.size();
+        int clean = 0;
+        for (const auto& n : project->nodes)
+            if (!n->isDirty) clean++;
+        emit renderProgress(clean, total);
+    }
 }
 
 void TextureRenderer::queueNextNodeToRender()
@@ -617,11 +790,20 @@ void TextureRenderer::queueNextNodeToRender()
         cmd.shaderLinked = nextNode->shader->isLinked();
         cmd.randomSeed = project->randomSeed + nextNode->randomSeed;
 
+        // Custom renderer support
+        cmd.renderer = nextNode->createRenderer();
+        if (cmd.renderer) {
+            cmd.renderData = nextNode->createRenderData();
+        }
+
         // CPU processing support
         cmd.usesCpuProcessing = nextNode->usesCpuProcessing;
-        cmd.nodePtr = nextNode.data(); // Store raw pointer for CPU processing
+        // Keep the node alive for the lifetime of the command (it may still
+        // be queued or mid-render on the worker thread if the node is
+        // removed from the project in the meantime).
+        cmd.nodePtr = nextNode;
 
-        cmd.totalInputs = nextNode->inputs.size();
+        cmd.inputNames = nextNode->inputs;
 
         // inputs
         auto nodeInputs = getNodeInputs(nextNode);
@@ -650,6 +832,10 @@ void TextureRenderer::queueNextNodeToRender()
 
                     rnp.textureId = imageProp->getTextureId();
 
+                    // Shared into the render worker's context on another
+                    // thread; flush so the upload is visible there.
+                    gl->glFlush();
+
                     ctx->doneCurrent();
                 }
             }
@@ -665,6 +851,7 @@ void TextureRenderer::queueNextNodeToRender()
 
         // pass to render worker to process
         renderWorker->setRenderQueue(queue);
+        renderInFlight = true;
 
         // mark node as clean before rendering to avoid double-queuing
         nextNode->isDirty = false;
@@ -693,7 +880,16 @@ TextureNodePtr TextureRenderer::getNextUpdatableNode() const
     // non-dirty the this is a valid node
 
     for (auto node : project->nodes) {
+        if (!node)
+            continue;
+
         if (!node->isDirty)
+            continue;
+
+        // A node whose texture/shader allocation failed has no FBO to render
+        // into; queueNextNodeToRender() would dereference it. Skip rather than
+        // crash — update() has already reported and rolled back.
+        if (!node->isGraphicsResourcesInitialized())
             continue;
 
         auto hasCleanDeps = true;
@@ -701,7 +897,10 @@ TextureNodePtr TextureRenderer::getNextUpdatableNode() const
         // we have a dirty node, check if all deps are clean
         auto deps = project->getNodeDependencies(node->id);
         for (auto dep : deps) {
-            if (dep->isDirty) {
+            // A null dep means an input connection references a node that no
+            // longer exists; treat it as not-yet-renderable rather than
+            // dereferencing it.
+            if (!dep || dep->isDirty) {
                 hasCleanDeps = false;
                 break;
             }
@@ -724,50 +923,23 @@ TextureRenderer::buildShaderForNode(const TextureNodePtr& node)
     QOpenGLShader* fshader = new QOpenGLShader(QOpenGLShader::Fragment);
     auto program = new QOpenGLShaderProgram;
 
-    QString vSource = R""""(
-        #version 150 core
+    // Build input/prop declaration lists for RenderResourceCache helpers
+    QStringList inputNames = node->inputs;
 
-        //precision highp float;
+    QList<QPair<QString, int>> propTypes;
+    for (auto prop : node->props)
+        propTypes.append({prop->name, (int)prop->type});
 
-        in vec3 a_pos;
-        in vec2 a_texCoord;
+    QString fSource = RenderResourceCache::fragmentPreamble()
+                    + RenderResourceCache::randomLib()
+                    + RenderResourceCache::gradientLib()
+                    + RenderResourceCache::curveLib()
+                    + RenderResourceCache::generateInputDeclarations(inputNames)
+                    + RenderResourceCache::generatePropDeclarations(propTypes)
+                    + "#line 0\n"
+                    + node->shaderSource;
 
-        out vec2 v_texCoord;
-
-        void main()
-        {
-                v_texCoord = a_texCoord;
-                gl_Position = vec4(a_pos,1);
-        }
-    )"""";
-
-    QString fSource = R""""(
-        #version 150 core
-        //precision highp float;
-        in vec2 v_texCoord;
-
-        #define GRADIENT_MAX_POINTS 32        
-
-        vec4 process(vec2 uv);
-        void initRandom();
-
-        uniform vec2 _textureSize;
-
-        out vec4 fragColor;
-            
-        void main() {
-            initRandom();
-			vec4 result = process(v_texCoord);
-			fragColor = clamp(result, 0.0, 1.0);
-        }
-        
-    )"""";
-
-    fSource = fSource + this->createRandomLib() + this->createGradientLib() +
-              this->createCodeForInputs(node) + this->createCodeForProps(node) +
-              "#line 0\n" + node->shaderSource;
-
-    if (!vshader->compileSourceCode(vSource)) {
+    if (!vshader->compileSourceCode(RenderResourceCache::standardVertexSource())) {
         qDebug() << "VERTEX SHADER ERROR";
         qDebug() << vshader->log();
     }
@@ -777,10 +949,7 @@ TextureRenderer::buildShaderForNode(const TextureNodePtr& node)
         qDebug() << fshader->log();
     }
 
-    // qDebug() << fSource;
-
     program->removeAllShaders();
-
     program->addShader(vshader);
     program->addShader(fshader);
 
@@ -793,199 +962,11 @@ TextureRenderer::buildShaderForNode(const TextureNodePtr& node)
         qDebug() << program->log();
     }
 
+    // Shared into the render worker's context on another thread; flush so
+    // the link is visible there before glUseProgram() is called on it.
+    gl->glFlush();
+
     ctx->doneCurrent();
 
     return program;
-}
-
-QString TextureRenderer::createRandomLib()
-{
-    return R""""(
-        // this offsets the random start (should be a uniform)
-        uniform float _seed;
-        // this is the starting number for the rng
-        // (should be set from the uv coordinates so it's unique per pixel)
-        vec2 _randomStart;
-
-        // gives a much better distribution at 1
-        #define RANDOM_ITERATIONS 1
-
-        #define HASHSCALE1 443.8975
-        #define HASHSCALE3 vec3(443.897, 441.423, 437.195)
-        #define HASHSCALE4 vec4(443.897, 441.423, 437.195, 444.129)
-
-        //  1 out, 2 in...
-        float hash12(vec2 p)
-        {
-            vec3 p3  = fract(vec3(p.xyx) * HASHSCALE1);
-            p3 += dot(p3, p3.yzx + 19.19);
-            return fract((p3.x + p3.y) * p3.z);
-        }
-
-        ///  2 out, 2 in...
-        vec2 hash22(vec2 p)
-        {
-            vec3 p3 = fract(vec3(p.xyx) * HASHSCALE3);
-            p3 += dot(p3, p3.yzx+19.19);
-            return fract((p3.xx+p3.yz)*p3.zy);
-
-        }
-
-
-        float _rand(vec2 uv)
-        {
-            float a = 0.0;
-            for (int t = 0; t < RANDOM_ITERATIONS; t++)
-            {
-                float v = float(t+1)*.152;
-                // 0.005 is a good value
-                vec2 pos = (uv * v);
-                a += hash12(pos);
-            }
-
-            return a/float(RANDOM_ITERATIONS);
-        }
-
-        vec2 _rand2(vec2 uv)
-        {
-            vec2 a = vec2(0.0);
-            for (int t = 0; t < RANDOM_ITERATIONS; t++)
-            {
-                float v = float(t+1)*.152;
-                // 0.005 is a good value
-                vec2 pos = (uv * v);
-                a += hash22(pos);
-            }
-
-            return a/float(RANDOM_ITERATIONS);
-        }
-
-        float randomFloat(int index) 
-        {
-            return _rand(_randomStart + vec2(_seed) + vec2(index));
-        }
-
-        float randomVec2(int index) 
-        {
-            return _rand(_randomStart + vec2(_seed) + vec2(index));
-        }
-
-        float randomFloat(int index, float start, float end)
-        {
-            float r = _rand(_randomStart + vec2(_seed) + vec2(index));
-            return start + r*(end-start);
-        }
-
-        int randomInt(int index, int start, int end)
-        {
-            float r = _rand(_randomStart + vec2(_seed) + vec2(index));
-            return start + int(r*float(end-start));
-        }
-
-        bool randomBool(int index)
-        {
-            return _rand(_randomStart + vec2(_seed) + vec2(index)) > 0.5;
-        }
-
-        void initRandom()
-        {
-            _randomStart = v_texCoord;
-        }
-        )"""";
-}
-
-QString TextureRenderer::createGradientLib()
-{
-    return R""""(
-        struct Gradient {
-				vec3 colors[GRADIENT_MAX_POINTS];
-				float positions[GRADIENT_MAX_POINTS];
-				int numPoints;
-    };
-        
-    // assumes points are sorted
-    vec3 sampleGradient(vec3 colors[GRADIENT_MAX_POINTS], float positions[GRADIENT_MAX_POINTS], int numPoints, float t)
-    {
-        if (numPoints == 0)
-            return vec3(1,0,0);
-        
-        if (numPoints == 1)
-            return colors[0];
-        
-        // here at least two points are available
-        if (t <= positions[0])
-            return colors[0];
-        
-        int last = numPoints - 1;
-        if (t >= positions[last])
-            return colors[last];
-        
-        // find two points in-between and lerp
-        
-        for(int i = 0; i < numPoints-1;i++) {
-            if (positions[i+1] > t) {
-                vec3 colorA = colors[i];
-                vec3 colorB = colors[i+1];
-                
-                float t1 = positions[i];
-                float t2 = positions[i+1];
-                
-                float lerpPos = (t - t1)/(t2 - t1);
-                return mix(colorA, colorB, lerpPos);
-                
-            }
-            
-        }
-        
-        return vec3(0,0,0);
-    }
-
-    vec3 sampleGradient(Gradient gradient, float t)
-    {
-      return sampleGradient(gradient.colors, gradient.positions, gradient.numPoints, t);
-    }
-        )"""";
-}
-QString TextureRenderer::createCodeForInputs(const TextureNodePtr& node)
-{
-    QString code = "";
-    for (auto input : node->inputs) {
-        code += "uniform sampler2D " + input + ";\n";
-        code += "uniform bool " + input + "_connected;\n";
-    }
-
-    return code;
-}
-
-QString TextureRenderer::createCodeForProps(const TextureNodePtr& node)
-{
-    QString code = "";
-
-    for (auto prop : node->props) {
-        switch (prop->type) {
-        case PropType::Int:
-            code += "uniform int prop_" + prop->name + ";\n";
-            break;
-        case PropType::Float:
-            code += "uniform float prop_" + prop->name + ";\n";
-            break;
-        case PropType::Bool:
-            code += "uniform bool prop_" + prop->name + ";\n";
-            break;
-        case PropType::Enum:
-            code += "uniform int prop_" + prop->name + ";\n";
-            break;
-        case PropType::Color:
-            code += "uniform vec4 prop_" + prop->name + ";\n";
-            break;
-        case PropType::Gradient:
-            code += "uniform Gradient prop_" + prop->name + ";\n";
-            break;
-        case PropType::Image:
-            code += "uniform sampler2D prop_" + prop->name + ";\n";
-            break;
-        }
-    }
-
-    return code + "\n";
 }

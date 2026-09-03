@@ -2,6 +2,13 @@ cmake_minimum_required(VERSION 3.10)
 
 project(texturelab VERSION 0.4.0 LANGUAGES CXX)
 
+# Optional pre-release suffix appended to the numeric project() version above to
+# form the full app version (e.g. "0.4.0" + "-beta" = "0.4.0-beta"); leave empty
+# for a final release. The full string is the in-app version / Sentry release
+# (TEXTURELAB_VERSION compile def below) and is reconstructed from these same two
+# lines by the build workflow (.github/workflows/build.yml) for artifact names.
+set(TEXTURELAB_VERSION_SUFFIX "-beta")
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_AUTOUIC ON)
@@ -12,7 +19,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets OpenGL)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets OpenGLWidgets)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets OpenGLWidgets Network)
 find_package(OpenGL REQUIRED)
 
 set(LIBRARYV1
@@ -98,13 +105,85 @@ set(LIBRARYV2
     ./libraries/v2/warpv2.cpp
 )
 
+set(LIBRARYV3
+    ./libraries/v3/ambientocclusion.cpp
+    ./libraries/v3/bevelv2.cpp
+    ./libraries/v3/curvenode.cpp
+    ./libraries/v3/curvature.cpp
+    ./libraries/v3/maskedblur.cpp
+    ./libraries/v3/rays.cpp
+    ./libraries/v3/swirl.cpp
+    ./libraries/v3/floodfillv2.cpp
+    ./libraries/v3/floodfillv2tocolor.cpp
+    ./libraries/v3/floodfillv2torandomcolor.cpp
+    ./libraries/v3/floodfillv2torandomintensity.cpp
+    ./libraries/v3/floodfillv2tobbox.cpp
+    ./libraries/v3/floodfillv2togradient.cpp
+    ./libraries/v3/floodfillv2sampler.cpp
+    # Phase 1 — Filters / Color
+    ./libraries/v3/blendv3.cpp
+    ./libraries/v3/edgedetect.cpp
+    ./libraries/v3/highpass.cpp
+    ./libraries/v3/emboss.cpp
+    ./libraries/v3/vibrance.cpp
+    ./libraries/v3/colortomask.cpp
+    ./libraries/v3/setalpha.cpp
+    ./libraries/v3/toongradient.cpp
+    ./libraries/v3/autolevels.cpp
+    # Phase 2 — Generators
+    ./libraries/v3/bricks2.cpp
+    ./libraries/v3/directionalscratches.cpp
+    ./libraries/v3/roughgrain.cpp
+    ./libraries/v3/voronoifractal.cpp
+    ./libraries/v3/truchet.cpp
+    ./libraries/v3/fbmdomainwarp.cpp
+    ./libraries/v3/perlinnoise.cpp
+    ./libraries/v3/perlinnoise3d.cpp
+    ./libraries/v3/cellv3.cpp
+    ./libraries/v3/linecellv3.cpp
+    ./libraries/v3/solidcellv3.cpp
+    # Phase 3 — Multi-pass
+    ./libraries/v3/blurhq.cpp
+    ./libraries/v3/distancetransform.cpp
+    ./libraries/v3/spread.cpp
+    ./libraries/v3/fastao.cpp
+    ./libraries/v3/heightblend.cpp
+    ./libraries/v3/makeittile.cpp
+    ./libraries/v3/normalmapv3.cpp
+)
+
 set(PROJECT_SOURCES
         ./main.cpp
+        ./telemetry.h
+        ./telemetry.cpp
+        ./systeminfo.h
+        ./systeminfo.cpp
+        ./catalogservice.h
+        ./catalogservice.cpp
+        ./launcher/launcherwindow.h
+        ./launcher/launcherwindow.cpp
+        ./launcher/texturelistmodel.h
+        ./launcher/texturelistmodel.cpp
+        ./launcher/texturecarddelegate.h
+        ./launcher/texturecarddelegate.cpp
+        ./launcher/texturerowdelegate.h
+        ./launcher/texturerowdelegate.cpp
+        ./launcher/launcherformat.h
+        ./launcher/launcherformat.cpp
+        ./update/versioncompare.h
+        ./update/versioncompare.cpp
+        ./update/updatechecker.h
+        ./update/updatechecker.cpp
         ./mainwindow.cpp
         ./mainwindow.h
+        ./clipboard.h
+        ./clipboard.cpp
         ./exporter.h
         ./exporter.cpp
         ./utils.h
+        ./jsonutils.h
+        ./curve.h
+        ./curve.cpp
         ./models.h
         ./models.cpp
         ./project.h
@@ -112,9 +191,13 @@ set(PROJECT_SOURCES
         ./props.h
         ./props.cpp
         ./libraries/libv2.h
-        ./libraries/libv2.h
+        ./libraries/libv3.h
         ./libraries/library.h
         ./libraries/library.cpp
+        ./libraries/libversion.h
+        ./libraries/libversion.cpp
+        ./libraries/libraryversionmigrator.h
+        ./libraries/libraryversionmigrator.cpp
         ./widgets/graphwidget.h
         ./widgets/graphwidget.cpp
         ./widgets/librarywidget.h
@@ -125,22 +208,62 @@ set(PROJECT_SOURCES
         ./widgets/properties/propertieswidget.cpp
         ./widgets/properties/propwidgets.h
         ./widgets/properties/propwidgets.cpp
+        ./widgets/properties/curvepropwidget.h
+        ./widgets/properties/curvepropwidget.cpp
+        ./widgets/properties/accordionwidget.h
+        ./widgets/properties/accordionwidget.cpp
         ./widgets/view2dwidget.h
         ./widgets/view2dwidget.cpp
         ./widgets/view3dwidget.h
         ./widgets/view3dwidget.cpp
+        ./undo/undocommands.h
+        ./undo/undocommandids.h
+        ./undo/addnodecommand.h
+        ./undo/addnodecommand.cpp
+        ./undo/deleteitemscommand.h
+        ./undo/deleteitemscommand.cpp
+        ./undo/addconnectioncommand.h
+        ./undo/addconnectioncommand.cpp
+        ./undo/removeconnectioncommand.h
+        ./undo/removeconnectioncommand.cpp
+        ./undo/moveitemscommand.h
+        ./undo/moveitemscommand.cpp
+        ./undo/propertychangecommand.h
+        ./undo/propertychangecommand.cpp
+        ./undo/randomseedchangecommand.h
+        ./undo/randomseedchangecommand.cpp
+        ./undo/addframecommand.h
+        ./undo/addframecommand.cpp
+        ./undo/addcommentcommand.h
+        ./undo/addcommentcommand.cpp
+        ./undo/editframecommand.h
+        ./undo/editframecommand.cpp
+        ./undo/editcommentcommand.h
+        ./undo/editcommentcommand.cpp
+        ./undo/pastecommand.h
+        ./undo/pastecommand.cpp
+        ./undo/texturechannelassigncommand.h
+        ./undo/texturechannelassigncommand.cpp
+        ./widgets/aboutdialog.h
+        ./widgets/aboutdialog.cpp
+        ./widgets/crashconsentdialog.h
+        ./widgets/crashconsentdialog.cpp
         ./widgets/exportdialog.h
         ./widgets/exportdialog.cpp
         ./graphics/texturerenderer.h
         ./graphics/texturerenderer.cpp
+        ./graphics/noderenderer.h
+        ./graphics/noderenderer.cpp
         ./graphics/renderworker.h
         ./graphics/renderworker.cpp
         ${LIBRARYV1}
         ${LIBRARYV2}
+        ${LIBRARYV3}
 )
 
 set(PROJECT_RESOURCES
-    ./assets.qrc)
+    ./assets.qrc
+    ${CMAKE_SOURCE_DIR}/resources/theme.qrc)
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(texturelab
@@ -156,22 +279,74 @@ else()
 endif()
 
 # note: openglwidgets is qt6 only
-target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets 
-                                         Qt${QT_VERSION_MAJOR}::OpenGL 
-                                         Qt${QT_VERSION_MAJOR}::OpenGLWidgets 
+target_link_libraries(texturelab PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
+                                         Qt${QT_VERSION_MAJOR}::Network
+                                         Qt${QT_VERSION_MAJOR}::OpenGL
+                                         Qt${QT_VERSION_MAJOR}::OpenGLWidgets
                                          OpenGL::GL
-                                         qtadvanceddocking-qt6 
+                                         qtadvanceddocking-qt6
+                                         theme
                                          nodegraph
                                          viewer3d
                                          colorpicker
+                                         catalog
+                                         sentry
                                          )
                                          
 target_include_directories(texturelab PUBLIC
                             ../ads/src
+                            ../theme
                             ../nodegraph
                             ../viewer3d
                             ../colorpicker
                             )
+# DSN is empty by default for local builds (Sentry init becomes a no-op)
+if(NOT DEFINED TEXTURELAB_SENTRY_DSN)
+    set(TEXTURELAB_SENTRY_DSN "")
+endif()
+
+target_compile_definitions(texturelab PRIVATE
+    TEXTURELAB_VERSION="${PROJECT_VERSION}${TEXTURELAB_VERSION_SUFFIX}"
+    TEXTURELAB_SENTRY_DSN="${TEXTURELAB_SENTRY_DSN}"
+    # Absolute path to the theme source files, so `--dev-theme` can live-reload
+    # colors/QSS from disk without a rebuild. Dev convenience only.
+    TEXTURELAB_SOURCE_RESOURCES="${CMAKE_SOURCE_DIR}/resources"
+    # Debug builds auto-enable theme hot-reload (no --dev-theme flag needed);
+    # override at runtime with --no-dev-theme.
+    $<$<CONFIG:Debug>:TEXTURELAB_DEV_BUILD>
+)
+
+# Generate version.h (with git hash) at every build, not just configure time
+add_custom_target(texturelab_version
+    COMMAND ${CMAKE_COMMAND}
+        -DSOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+        -DBINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/GetGitHash.cmake"
+    BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/version.h"
+    COMMENT "Generating version.h"
+)
+add_dependencies(texturelab texturelab_version)
+target_include_directories(texturelab PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+
+# MSVC: deterministically emit a PDB and embed a CodeView record in the exe, in
+# every config (incl. Release). Without the CodeView record the shipped exe has
+# no debug_id, so Sentry cannot match any PDB to a crash minidump ("Unknown
+# function" frames). Attaching to the target is reliable; injecting /Zi + /DEBUG
+# via CMAKE_*_FLAGS_RELEASE on the command line was not (VS generator + Qt).
+if(MSVC)
+    target_compile_options(texturelab PRIVATE /Zi)
+    target_link_options(texturelab PRIVATE /DEBUG /OPT:REF /OPT:ICF /INCREMENTAL:NO)
+endif()
+
+# Copy crashpad_handler next to the executable so handler_path resolves at runtime
+if(TARGET crashpad_handler)
+    add_custom_command(TARGET texturelab POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:crashpad_handler>
+            $<TARGET_FILE_DIR:texturelab>
+        COMMENT "Copying crashpad_handler next to texturelab"
+    )
+endif()
 
 set_target_properties(texturelab PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER io.texturelab.app

@@ -1,0 +1,22 @@
+<RCC>
+    <qresource prefix="/themes">
+        <file alias="dark.json">themes/dark.json</file>
+    </qresource>
+    <qresource prefix="/qss">
+        <file alias="app.qss">qss/app.qss.in</file>
+        <file alias="ads.qss">qss/ads.qss.in</file>
+    </qresource>
+    <qresource prefix="/adsicons">
+        <file alias="close-button.svg">icons/ads/close-button.svg</file>
+        <file alias="close-button-disabled.svg">icons/ads/close-button-disabled.svg</file>
+        <file alias="tabs-menu-button.svg">icons/ads/tabs-menu-button.svg</file>
+        <file alias="detach-button.svg">icons/ads/detach-button.svg</file>
+        <file alias="detach-button-disabled.svg">icons/ads/detach-button-disabled.svg</file>
+        <file alias="minimize-button-focused.svg">icons/ads/minimize-button-focused.svg</file>
+        <file alias="maximize-button.svg">icons/ads/maximize-button.svg</file>
+        <file alias="restore-button.svg">icons/ads/restore-button.svg</file>
+        <file alias="vs-pin-button.svg">icons/ads/vs-pin-button.svg</file>
+        <file alias="vs-pin-button-disabled.svg">icons/ads/vs-pin-button-disabled.svg</file>
+        <file alias="vs-pin-button-pinned-focused.svg">icons/ads/vs-pin-button-pinned-focused.svg</file>
+    </qresource>
+</RCC>

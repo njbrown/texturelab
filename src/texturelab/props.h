@@ -1,6 +1,8 @@
 #pragma once
 
 #include "../colorpicker/gradient.h"
+#include "curve.h"
+#include "jsonutils.h"
 #include <QBuffer>
 #include <QColor>
 #include <QIODevice>
@@ -30,7 +32,8 @@ public:
         Enum,
         String,
         Gradient,
-        Image
+        Image,
+        Curve
     };
 
     static QString toString(Value propType);
@@ -44,7 +47,7 @@ public:
     QString name;
     QString displayName;
     PropType::Value type;
-    int order = 0;// for tracking order in UI
+    int order = 0; // for tracking order in UI
 
     PropertyGroup* group = nullptr;
 
@@ -117,22 +120,17 @@ public:
     void fromJson(const QJsonObject& obj) override
     {
         Prop::fromJson(obj);
-        value = obj["value"].toDouble();
-        minValue = obj["minValue"].toDouble();
-        maxValue = obj["maxValue"].toDouble();
-        step = obj["step"].toDouble();
+        value = jsonutils::getDouble(obj["value"], value);
+        minValue = jsonutils::getDouble(obj["minValue"], minValue);
+        maxValue = jsonutils::getDouble(obj["maxValue"], maxValue);
+        step = jsonutils::getDouble(obj["step"], step);
     }
 
     QJsonValue toJsonValue() override { return value; }
 
     void fromJsonValue(const QJsonValue& val) override
     {
-        if (val.isString()) {
-            value = val.toString().toDouble();
-        }
-        else {
-            value = val.toDouble();
-        }
+        value = jsonutils::getDouble(val, value);
     }
 };
 
@@ -176,22 +174,17 @@ public:
     void fromJson(const QJsonObject& obj) override
     {
         Prop::fromJson(obj);
-        value = obj["value"].toDouble();
-        minValue = obj["minValue"].toDouble();
-        maxValue = obj["maxValue"].toDouble();
-        step = obj["step"].toDouble();
+        value = jsonutils::getLong(obj["value"], value);
+        minValue = jsonutils::getLong(obj["minValue"], minValue);
+        maxValue = jsonutils::getLong(obj["maxValue"], maxValue);
+        step = jsonutils::getLong(obj["step"], step);
     }
 
     QJsonValue toJsonValue() override { return (qlonglong)value; }
 
     void fromJsonValue(const QJsonValue& val) override
     {
-        if (val.isString()) {
-            value = (long)val.toString().toDouble();
-        }
-        else {
-            value = (long)val.toDouble();
-        }
+        value = jsonutils::getLong(val, value);
     }
 };
 
@@ -226,20 +219,14 @@ public:
     void fromJson(const QJsonObject& obj) override
     {
         Prop::fromJson(obj);
-        value = obj["value"].toBool();
+        value = jsonutils::getBool(obj["value"], value);
     }
 
     QJsonValue toJsonValue() override { return value; }
 
     void fromJsonValue(const QJsonValue& val) override
     {
-        if (val.isString()) {
-            QString str = val.toString().toLower();
-            value = (str == "true" || str == "1");
-        }
-        else {
-            value = val.toBool();
-        }
+        value = jsonutils::getBool(val, value);
     }
 };
 
@@ -283,10 +270,10 @@ public:
     void fromJson(const QJsonObject& obj) override
     {
         Prop::fromJson(obj);
-        index = obj["index"].toInt();
+        index = jsonutils::getInt(obj["index"], index);
 
         auto list = obj["values"].toArray();
-        values.empty();
+        values.clear();
         for (auto item : list) {
             values.append(item.toString());
         }
@@ -296,12 +283,7 @@ public:
 
     void fromJsonValue(const QJsonValue& val) override
     {
-        if (val.isString()) {
-            index = (long)val.toString().toDouble();
-        }
-        else {
-            index = (long)val.toDouble();
-        }
+        index = jsonutils::getInt(val, index);
     }
 };
 
@@ -338,10 +320,10 @@ struct ColorProp : public Prop {
     {
         Prop::fromJson(obj);
         auto colorObj = obj["value"].toObject();
-        value.setRedF(colorObj["r"].toDouble());
-        value.setGreenF(colorObj["g"].toDouble());
-        value.setBlueF(colorObj["b"].toDouble());
-        value.setAlphaF(colorObj["a"].toDouble());
+        value.setRedF(jsonutils::getFloat(colorObj["r"]));
+        value.setGreenF(jsonutils::getFloat(colorObj["g"]));
+        value.setBlueF(jsonutils::getFloat(colorObj["b"]));
+        value.setAlphaF(jsonutils::getFloat(colorObj["a"], 1.0f));
     }
 
     QJsonValue toJsonValue() override
@@ -357,10 +339,10 @@ struct ColorProp : public Prop {
     void fromJsonValue(const QJsonValue& val) override
     {
         auto colorObj = val.toObject();
-        value.setRedF(colorObj["r"].toDouble());
-        value.setGreenF(colorObj["g"].toDouble());
-        value.setBlueF(colorObj["b"].toDouble());
-        value.setAlphaF(colorObj["a"].toDouble());
+        value.setRedF(jsonutils::getFloat(colorObj["r"]));
+        value.setGreenF(jsonutils::getFloat(colorObj["g"]));
+        value.setBlueF(jsonutils::getFloat(colorObj["b"]));
+        value.setAlphaF(jsonutils::getFloat(colorObj["a"], 1.0f));
     }
 };
 
@@ -454,13 +436,13 @@ public:
 
         for (const auto& pointValue : pointsArray) {
             auto pointObj = pointValue.toObject();
-            float position = pointObj["t"].toDouble();
+            float position = jsonutils::getFloat(pointObj["t"]);
             auto colorObj = pointObj["color"].toObject();
             QColor color;
-            color.setRedF(colorObj["r"].toDouble());
-            color.setGreenF(colorObj["g"].toDouble());
-            color.setBlueF(colorObj["b"].toDouble());
-            color.setAlphaF(colorObj["a"].toDouble());
+            color.setRedF(jsonutils::getFloat(colorObj["r"]));
+            color.setGreenF(jsonutils::getFloat(colorObj["g"]));
+            color.setBlueF(jsonutils::getFloat(colorObj["b"]));
+            color.setAlphaF(jsonutils::getFloat(colorObj["a"], 1.0f));
 
             value.addPoint(GradientPoint(position, color));
         }
@@ -493,16 +475,60 @@ public:
 
         for (const auto& pointValue : pointsArray) {
             auto pointObj = pointValue.toObject();
-            float position = pointObj["t"].toDouble();
+            float position = jsonutils::getFloat(pointObj["t"]);
             auto colorObj = pointObj["color"].toObject();
             QColor color;
-            color.setRedF(colorObj["r"].toDouble());
-            color.setGreenF(colorObj["g"].toDouble());
-            color.setBlueF(colorObj["b"].toDouble());
-            color.setAlphaF(colorObj["a"].toDouble());
+            color.setRedF(jsonutils::getFloat(colorObj["r"]));
+            color.setGreenF(jsonutils::getFloat(colorObj["g"]));
+            color.setBlueF(jsonutils::getFloat(colorObj["b"]));
+            color.setAlphaF(jsonutils::getFloat(colorObj["a"], 1.0f));
 
             value.addPoint(GradientPoint(position, color));
         }
+    }
+};
+
+class CurveProp : public Prop {
+public:
+    Curve value; // default: linear identity
+
+    CurveProp() : Prop() { type = PropType::Curve; }
+
+    Prop* clone() const override
+    {
+        auto* copy = new CurveProp(*this);
+        copy->group = nullptr;
+        return copy;
+    }
+
+    QVariant getValue() override { return QVariant::fromValue(value); }
+
+    void setValue(QVariant val) override { value = val.value<Curve>(); }
+
+    QJsonObject toJson() override
+    {
+        auto obj = Prop::toJson();
+        obj["value"] = value.toJson();
+        return obj;
+    }
+
+    void fromJson(const QJsonObject& obj) override
+    {
+        Prop::fromJson(obj);
+        if (obj.contains("value") && obj["value"].isObject())
+            value = Curve::fromJson(obj["value"].toObject());
+        else
+            value = Curve(); // fallback to linear identity
+    }
+
+    QJsonValue toJsonValue() override { return value.toJson(); }
+
+    void fromJsonValue(const QJsonValue& val) override
+    {
+        if (val.isObject())
+            value = Curve::fromJson(val.toObject());
+        else
+            value = Curve();
     }
 };
 
@@ -570,14 +596,15 @@ public:
             return;
 
         auto parts = stringData.split(";base64,");
-        if (parts.length() == 0 || parts.length() == 1)
+        if (parts.length() < 2)
             return;
 
-        auto bytes = QByteArray::fromBase64(parts[0].toUtf8());
+        auto bytes = QByteArray::fromBase64(parts[1].toUtf8());
 
         QImage image;
-        image.loadFromData(QByteArray::fromBase64(stringData.toUtf8()));
-        this->value = value;
+        image.loadFromData(bytes);
+        this->value = image;
+        _textureDirty = true;
     }
 
     QJsonValue toJsonValue() override
@@ -601,13 +628,14 @@ public:
             return;
 
         auto parts = stringData.split(";base64,");
-        if (parts.length() == 0 || parts.length() == 1)
+        if (parts.length() < 2)
             return;
 
-        auto bytes = QByteArray::fromBase64(parts[0].toUtf8());
+        auto bytes = QByteArray::fromBase64(parts[1].toUtf8());
 
         QImage image;
-        image.loadFromData(QByteArray::fromBase64(stringData.toUtf8()));
-        this->value = value;
+        image.loadFromData(bytes);
+        this->value = image;
+        _textureDirty = true;
     }
 };

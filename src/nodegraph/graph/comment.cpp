@@ -1,4 +1,5 @@
 #include "comment.h"
+#include "nodetheme.h"
 #include "scene.h"
 #include <QCursor>
 #include <QFont>
@@ -63,21 +64,21 @@ void Comment::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
 
     const QRectF rect = calcTextRect();
 
-    // Semi-transparent white background
-    painter->setBrush(QColor(255, 255, 255, 30));
+    // Semi-transparent fill
+    painter->setBrush(ntColor(Tokens::CommentFill, 30));
     painter->setPen(Qt::NoPen);
     painter->drawRoundedRect(rect, 4, 4);
 
-    // White border
-    QPen borderPen(QColor(255, 255, 255, isSelected() ? 220 : 140), 1.0);
+    // Border
+    QPen borderPen(ntColor(Tokens::CommentFill, isSelected() ? 220 : 140), 1.0);
     painter->setPen(borderPen);
     painter->setBrush(Qt::NoBrush);
     painter->drawRoundedRect(rect, 4, 4);
 
-    // White text
+    // Text
     QFont font("Arial", FONT_SIZE);
     painter->setFont(font);
-    painter->setPen(QColor(240, 240, 240));
+    painter->setPen(ntColor(Tokens::CommentText));
 
     QFontMetrics fm(font);
     const QStringList lines = _text.split('\n');

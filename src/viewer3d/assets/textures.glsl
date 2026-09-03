@@ -91,6 +91,10 @@ uniform sampler2D u_RoughnessSampler;
 uniform int u_RoughnessUVSet;
 uniform mat3 u_RoughnessUVTransform;
 
+uniform sampler2D u_AlphaSampler;
+uniform int u_AlphaUVSet;
+uniform mat3 u_AlphaUVTransform;
+
 vec2 getBaseColorUV()
 {
     vec3 uv = vec3(u_BaseColorUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);
@@ -130,6 +134,17 @@ vec2 getRoughnessUV()
 
 #ifdef HAS_ROUGHNESS_UV_TRANSFORM
     uv = u_RoughnessUVTransform * uv;
+#endif
+
+    return uv.xy;
+}
+
+vec2 getAlphaUV()
+{
+    vec3 uv = vec3(u_AlphaUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);
+
+#ifdef HAS_ALPHA_UV_TRANSFORM
+    uv = u_AlphaUVTransform * uv;
 #endif
 
     return uv.xy;

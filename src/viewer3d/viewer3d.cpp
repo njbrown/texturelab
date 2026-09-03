@@ -1,4 +1,6 @@
 #include "viewer3d.h"
+#include "thememanager.h"
+#include "tokens.h"
 #include <QMatrix4x4>
 #include <QOpenGLWindow>
 #include <QQuaternion>
@@ -26,6 +28,11 @@
 
 #include "geometry/geometry.h"
 #include "renderer/renderer.h"
+
+// Environment used when the host app doesn't pick one. The rotation turns the
+// HDRI's bright side towards the default camera; see View3DWidget's env list.
+static const char* kFallbackEnvPath = ":env/studio_kontrast_03_1k.hdr";
+static const float kFallbackEnvRotation = 160.0f;
 
 QOpenGLShaderProgram* createMainShader();
 QOpenGLBuffer* loadMesh();
@@ -85,7 +92,7 @@ void Viewer3D::initializeGL()
     mat->roughness = 0.5; // Three.js default
     mat->metalness = 0.0; // Three.js default
     // gltfMesh = loadMeshFromRc(":assets/cube.gltf");
-    gltfMesh = createSphere(this->gl, 2, 64, 64);
+    gltfMesh = createSphere(this->gl, 2, 1000, 1000);
     this->material = mat;
 
     // Create skydome for rendering environment
@@ -109,14 +116,15 @@ void Viewer3D::initializeGL()
     renderer = new Renderer();
     renderer->init(this->gl);
     if (!defaultEnvPath.isEmpty())
-        renderer->loadEnvironment(defaultEnvPath);
+        renderer->loadEnvironment(defaultEnvPath, defaultEnvRotation);
     else
-        renderer->loadEnvironment(":assets/panorama.hdr");
+        renderer->loadEnvironment(kFallbackEnvPath, kFallbackEnvRotation);
 }
 
-void Viewer3D::setDefaultEnvironment(const QString path)
+void Viewer3D::setDefaultEnvironment(const QString path, float rotation)
 {
     this->defaultEnvPath = path;
+    this->defaultEnvRotation = rotation;
 }
 
 void Viewer3D::paintGL()
@@ -127,26 +135,41 @@ void Viewer3D::paintGL()
     // also, the supplied width and height are incorrect
     // gl->glViewport(0, 0, this->width(), this->height());
     gl->glClearDepthf(1.0);
-    gl->glClearColor(0.1, 0.1, 0.1, 1);
+    // Themed clear color; read each frame so it follows --dev-theme hot-reload.
+    const QColor clear = ThemeManager::instance().theme().color(Tokens::View3dClear);
+    gl->glClearColor(clear.redF(), clear.greenF(), clear.blueF(), 1);
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     gl->glEnable(GL_DEPTH_TEST);
-    // gl->glDisable(GL_CULL_FACE);
+    gl->glDisable(GL_CULL_FACE);
 
     vao->bind();
 
     // Render skydome first (as background)
     if (skydomeMesh) {
-        gl->glDepthFunc(GL_LEQUAL);  // Change depth function for skybox
-        gl->glDisable(GL_CULL_FACE); // Render from inside
+        gl->glDepthFunc(GL_LEQUAL);
         renderer->renderSkybox(skydomeMesh, viewMatrix, projMatrix);
-        gl->glEnable(GL_CULL_FACE);
-        gl->glDepthFunc(GL_LESS); // Reset depth function
+        gl->glDepthFunc(GL_LESS);
     }
 
-    // render gltf mesh
-    renderer->renderGltfMesh(gltfMesh, material, camPos, worldMatrix,
-                             viewMatrix, projMatrix);
+    // render gltf mesh, double-sided: draw the back faces first and the
+    // front faces second so alpha-blended fragments composite back-to-front
+    gl->glEnable(GL_BLEND);
+    gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    gl->glEnable(GL_CULL_FACE);
+
+    if (gltfMesh) {
+        gl->glCullFace(GL_FRONT);
+        renderer->renderGltfMesh(gltfMesh, material, camPos, worldMatrix,
+                                 viewMatrix, projMatrix);
+
+        gl->glCullFace(GL_BACK);
+        renderer->renderGltfMesh(gltfMesh, material, camPos, worldMatrix,
+                                 viewMatrix, projMatrix);
+    }
+
+    gl->glDisable(GL_CULL_FACE);
+    gl->glDisable(GL_BLEND);
 
     // test several in a row
     // int totalSpheres = 6;
@@ -466,6 +489,8 @@ void Viewer3D::setAlbedoTexture(GLuint texId)
 
 void Viewer3D::clearAlbedoTexture()
 {
+    if (!this->material)
+        return;
     this->material->albedoMapId = 0;
     this->material->needsUpdate = true;
 }
@@ -478,6 +503,8 @@ void Viewer3D::setNormalTexture(GLuint texId)
 
 void Viewer3D::clearNormalTexture()
 {
+    if (!this->material)
+        return;
     this->material->normalMapId = 0;
     this->material->needsUpdate = true;
 }
@@ -490,6 +517,8 @@ void Viewer3D::setMetalnessTexture(GLuint texId)
 
 void Viewer3D::clearMetalnessTexture()
 {
+    if (!this->material)
+        return;
     this->material->metalnessMapId = 0;
     this->material->needsUpdate = true;
 }
@@ -502,6 +531,8 @@ void Viewer3D::setRoughnessTexture(GLuint texId)
 
 void Viewer3D::clearRoughnessTexture()
 {
+    if (!this->material)
+        return;
     this->material->roughnessMapId = 0;
     this->material->needsUpdate = true;
 }
@@ -514,6 +545,8 @@ void Viewer3D::setHeightTexture(GLuint texId)
 
 void Viewer3D::clearHeightTexture()
 {
+    if (!this->material)
+        return;
     this->material->heightMapId = 0;
     this->material->needsUpdate = true;
 }
@@ -524,6 +557,34 @@ void Viewer3D::setHeightScale(float scale)
     this->material->needsUpdate = true;
 }
 
+void Viewer3D::setAoTexture(GLuint texId)
+{
+    this->material->aoMapId = texId;
+    this->material->needsUpdate = true;
+}
+
+void Viewer3D::clearAoTexture()
+{
+    if (!this->material)
+        return;
+    this->material->aoMapId = 0;
+    this->material->needsUpdate = true;
+}
+
+void Viewer3D::setAlphaTexture(GLuint texId)
+{
+    this->material->alphaMapId = texId;
+    this->material->needsUpdate = true;
+}
+
+void Viewer3D::clearAlphaTexture()
+{
+    if (!this->material)
+        return;
+    this->material->alphaMapId = 0;
+    this->material->needsUpdate = true;
+}
+
 void Viewer3D::clearTextures()
 {
     this->clearAlbedoTexture();
@@ -531,6 +592,8 @@ void Viewer3D::clearTextures()
     this->clearMetalnessTexture();
     this->clearRoughnessTexture();
     this->clearHeightTexture();
+    this->clearAoTexture();
+    this->clearAlphaTexture();
 }
 
 void Viewer3D::resetCamera()
@@ -542,10 +605,18 @@ void Viewer3D::resetCamera()
     this->repaint();
 }
 
-void Viewer3D::loadEnvironment(const QString path)
+void Viewer3D::loadEnvironment(const QString path, float rotation)
 {
     if (renderer) {
-        renderer->loadEnvironment(path);
+        renderer->loadEnvironment(path, rotation);
+        this->repaint();
+    }
+}
+
+void Viewer3D::setEnvironmentRotation(float rotation)
+{
+    if (renderer) {
+        renderer->setEnvironmentRotation(rotation);
         this->repaint();
     }
 }
@@ -555,43 +626,45 @@ void Viewer3D::setModel(const QString& modelType)
     // Bind OpenGL context
     makeCurrent();
 
-    // Clean up old mesh
-    if (gltfMesh) {
-        delete gltfMesh;
-        gltfMesh = nullptr;
-    }
-
-    // Create new mesh based on type
+    // Build the new mesh into a local first; only swap in (and free the old
+    // one) once creation succeeds, so a failed allocation can't leave gltfMesh
+    // null or delete the current mesh prematurely.
+    Mesh* newMesh = nullptr;
     if (modelType == "sphere") {
-        gltfMesh = createSphere(this->gl, 2, 64, 64);
+        newMesh = createSphere(this->gl, 2, 1000, 1000);
     }
     else if (modelType == "plane_xy") {
         // Create a subdivided plane in XY orientation
-        gltfMesh = createPlane(this->gl, 4, 4, 32, 32, PlaneOrientation::XY);
+        newMesh = createPlane(this->gl, 4, 4, 1000, 1000, PlaneOrientation::XY);
     }
     else if (modelType == "plane_yz") {
         // Create a subdivided plane in YZ orientation
-        gltfMesh = createPlane(this->gl, 4, 4, 32, 32, PlaneOrientation::YZ);
+        newMesh = createPlane(this->gl, 4, 4, 1000, 1000, PlaneOrientation::YZ);
     }
     else if (modelType == "plane_xz") {
         // Create a subdivided plane in XZ orientation
-        gltfMesh = createPlane(this->gl, 4, 4, 32, 32, PlaneOrientation::XZ);
+        newMesh = createPlane(this->gl, 4, 4, 1000, 1000, PlaneOrientation::XZ);
     }
     else if (modelType == "cylinder") {
         // Create a cylinder with height subdivisions for displacement mapping
-        gltfMesh = createCylinder(this->gl, 1, 1, 2, 32, 32, false);
+        newMesh = createCylinder(this->gl, 1, 1, 2, 1000, 1000, 0.1f, 16);
     }
     else if (modelType == "cube") {
         // Create a subdivided cube
-        gltfMesh = createCube(this->gl, 2, 2, 2, 32, 32, 32);
+        newMesh = createCube(this->gl, 2, 2, 2, 1000, 1000, 1000);
     }
     else if (modelType == "cubesphere") {
         // CubeSphere - a sphere with low segments for a more cubic look
-        gltfMesh = createSphere(this->gl, 2, 8, 8);
+        newMesh = createSphere(this->gl, 2, 8, 8);
     }
     else {
         // Default to sphere
-        gltfMesh = createSphere(this->gl, 2, 64, 64);
+        newMesh = createSphere(this->gl, 2, 1000, 1000);
+    }
+
+    if (newMesh) {
+        delete gltfMesh;
+        gltfMesh = newMesh;
     }
 
     // Release OpenGL context

@@ -4,7 +4,7 @@
 #include <QOpenGLFunctions>
 #include <QOpenGLVertexArrayObject>
 #include <algorithm>
-#include <math.h>
+#include <vector>
 
 #define BUFFER_OFFSET(i) ((char*)NULL + (i))
 
@@ -12,175 +12,146 @@ Mesh* createPlane(QOpenGLFunctions* gl, float width, float height,
                   int widthSegments, int heightSegments,
                   PlaneOrientation orientation)
 {
-    widthSegments = std::max(1, widthSegments);
+    widthSegments  = std::max(1, widthSegments);
     heightSegments = std::max(1, heightSegments);
 
-    float width_half = width / 2.0f;
-    float height_half = height / 2.0f;
+    const float width_half  = width  / 2.0f;
+    const float height_half = height / 2.0f;
 
-    int gridX = widthSegments;
-    int gridY = heightSegments;
+    const int gridX1 = widthSegments  + 1;
+    const int gridY1 = heightSegments + 1;
 
-    int gridX1 = gridX + 1;
-    int gridY1 = gridY + 1;
+    const float segment_width  = width  / widthSegments;
+    const float segment_height = height / heightSegments;
 
-    float segment_width = width / gridX;
-    float segment_height = height / gridY;
+    const int vertexCount = gridX1 * gridY1;
 
-    // buffers
-    QVector<unsigned int> indices;
-    QVector<float> vertices;
-    QVector<float> normals;
-    QVector<float> tangents;
-    QVector<float> uvs;
+    // Interleaved layout per vertex: pos(3) normal(3) uv(2) tangent(4) = 12 floats
+    static constexpr int kFloatsPerVertex = 12;
+    static constexpr int kStride          = kFloatsPerVertex * sizeof(float);
 
-    // Generate vertices, normals, uvs
+    std::vector<float> interleaved;
+    interleaved.reserve(vertexCount * kFloatsPerVertex);
+
+    std::vector<unsigned int> indices;
+    indices.reserve(widthSegments * heightSegments * 6);
+
+    // Precompute orientation-dependent constants to keep the inner loop branch-free.
+    float nx, ny, nz;
+    float tx, ty, tz;
+    const bool flipV = (orientation != PlaneOrientation::XZ);
+
+    if (orientation == PlaneOrientation::XY) {
+        nx = 0.0f; ny = 0.0f; nz = -1.0f;
+        tx = 1.0f; ty = 0.0f; tz =  0.0f;
+    } else if (orientation == PlaneOrientation::YZ) {
+        nx = -1.0f; ny = 0.0f; nz = 0.0f;
+        tx =  0.0f; ty = 0.0f; tz = 1.0f;
+    } else { // XZ
+        nx = 0.0f; ny = 1.0f; nz = 0.0f;
+        tx = 1.0f; ty = 0.0f; tz = 0.0f;
+    }
+
     for (int iy = 0; iy < gridY1; iy++) {
-        float v = iy * segment_height - height_half;
+        const float v = iy * segment_height - height_half;
 
         for (int ix = 0; ix < gridX1; ix++) {
-            float u = ix * segment_width - width_half;
+            const float u = ix * segment_width - width_half;
 
+            // position
             if (orientation == PlaneOrientation::XY) {
-                // XY plane, normal facing -Z
-                vertices.append(u);
-                vertices.append(-v);
-                vertices.append(0.0f);
-
-                normals.append(0.0f);
-                normals.append(0.0f);
-                normals.append(-1.0f);
-
-                tangents.append(1.0f);
-                tangents.append(0.0f);
-                tangents.append(0.0f);
-                tangents.append(1.0f);
-            }
-            else if (orientation == PlaneOrientation::YZ) {
-                // YZ plane, normal facing -X
-                vertices.append(0.0f);
-                vertices.append(-v);
-                vertices.append(u);
-
-                normals.append(-1.0f);
-                normals.append(0.0f);
-                normals.append(0.0f);
-
-                tangents.append(0.0f);
-                tangents.append(0.0f);
-                tangents.append(1.0f);
-                tangents.append(1.0f);
-            }
-            else { // PlaneOrientation::XZ
-                // XZ plane, normal facing +Y
-                vertices.append(u);
-                vertices.append(0.0f);
-                vertices.append(v);
-
-                normals.append(0.0f);
-                normals.append(1.0f);
-                normals.append(0.0f);
-
-                tangents.append(1.0f);
-                tangents.append(0.0f);
-                tangents.append(0.0f);
-                tangents.append(1.0f);
+                interleaved.push_back(u);
+                interleaved.push_back(-v);
+                interleaved.push_back(0.0f);
+            } else if (orientation == PlaneOrientation::YZ) {
+                interleaved.push_back(0.0f);
+                interleaved.push_back(-v);
+                interleaved.push_back(u);
+            } else {
+                interleaved.push_back(u);
+                interleaved.push_back(0.0f);
+                interleaved.push_back(v);
             }
 
-            // UV coordinates
-            uvs.append(ix / (float)gridX);
-            if (orientation == PlaneOrientation::XZ) {
-                uvs.append(iy / (float)gridY);
-            }
-            else {
-                uvs.append(1.0f - (iy / (float)gridY));
-            }
+            // normal
+            interleaved.push_back(nx);
+            interleaved.push_back(ny);
+            interleaved.push_back(nz);
+
+            // uv
+            const float uvx = ix / (float)widthSegments;
+            const float uvy = flipV ? 1.0f - (iy / (float)heightSegments)
+                                    : iy / (float)heightSegments;
+            interleaved.push_back(uvx);
+            interleaved.push_back(uvy);
+
+            // tangent
+            interleaved.push_back(tx);
+            interleaved.push_back(ty);
+            interleaved.push_back(tz);
+            interleaved.push_back(1.0f);
         }
     }
 
-    // Generate indices
-    for (int iy = 0; iy < gridY; iy++) {
-        for (int ix = 0; ix < gridX; ix++) {
-            unsigned int a = ix + gridX1 * iy;
-            unsigned int b = ix + gridX1 * (iy + 1);
-            unsigned int c = (ix + 1) + gridX1 * (iy + 1);
-            unsigned int d = (ix + 1) + gridX1 * iy;
+    for (int iy = 0; iy < heightSegments; iy++) {
+        for (int ix = 0; ix < widthSegments; ix++) {
+            const unsigned int a = ix       + gridX1 * iy;
+            const unsigned int b = ix       + gridX1 * (iy + 1);
+            const unsigned int c = (ix + 1) + gridX1 * (iy + 1);
+            const unsigned int d = (ix + 1) + gridX1 * iy;
 
-            // Two triangles per quad
-            indices.append(a);
-            indices.append(b);
-            indices.append(d);
+            indices.push_back(a);
+            indices.push_back(b);
+            indices.push_back(d);
 
-            indices.append(b);
-            indices.append(c);
-            indices.append(d);
+            indices.push_back(b);
+            indices.push_back(c);
+            indices.push_back(d);
         }
     }
 
-    // Build OpenGL buffers
     QOpenGLVertexArrayObject* vao = new QOpenGLVertexArrayObject();
     vao->create();
     vao->bind();
 
-    QOpenGLBuffer* vbo;
-
-    // Position buffer
-    vbo = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+    auto vbo = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
     vbo->create();
     vbo->bind();
     vbo->setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vbo->allocate(vertices.data(), vertices.length() * sizeof(float));
+    vbo->allocate(interleaved.data(), (int)(interleaved.size() * sizeof(float)));
+
     gl->glEnableVertexAttribArray((int)VertexUsage::Position);
     gl->glVertexAttribPointer((int)VertexUsage::Position, 3, GL_FLOAT, GL_FALSE,
-                              3 * sizeof(float), BUFFER_OFFSET(0));
+                              kStride, BUFFER_OFFSET(0));
 
-    // Normal buffer
-    vbo = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-    vbo->create();
-    vbo->bind();
-    vbo->setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vbo->allocate(normals.data(), normals.length() * sizeof(float));
     gl->glEnableVertexAttribArray((int)VertexUsage::Normal);
     gl->glVertexAttribPointer((int)VertexUsage::Normal, 3, GL_FLOAT, GL_FALSE,
-                              3 * sizeof(float), BUFFER_OFFSET(0));
+                              kStride, BUFFER_OFFSET(3 * sizeof(float)));
 
-    // UV buffer
-    vbo = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-    vbo->create();
-    vbo->bind();
-    vbo->setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vbo->allocate(uvs.data(), uvs.length() * sizeof(float));
     gl->glEnableVertexAttribArray((int)VertexUsage::TexCoord0);
-    gl->glVertexAttribPointer((int)VertexUsage::TexCoord0, 2, GL_FLOAT,
-                              GL_FALSE, 2 * sizeof(float), BUFFER_OFFSET(0));
+    gl->glVertexAttribPointer((int)VertexUsage::TexCoord0, 2, GL_FLOAT, GL_FALSE,
+                              kStride, BUFFER_OFFSET(6 * sizeof(float)));
 
-    // Tangent buffer
-    vbo = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-    vbo->create();
-    vbo->bind();
-    vbo->setUsagePattern(QOpenGLBuffer::StaticDraw);
-    vbo->allocate(tangents.data(), tangents.length() * sizeof(float));
     gl->glEnableVertexAttribArray((int)VertexUsage::Tangent);
     gl->glVertexAttribPointer((int)VertexUsage::Tangent, 4, GL_FLOAT, GL_FALSE,
-                              4 * sizeof(float), BUFFER_OFFSET(0));
+                              kStride, BUFFER_OFFSET(8 * sizeof(float)));
 
     vao->release();
 
-    // Index buffer
     auto ibo = new QOpenGLBuffer(QOpenGLBuffer::IndexBuffer);
     ibo->create();
     ibo->bind();
     ibo->setUsagePattern(QOpenGLBuffer::StaticDraw);
-    ibo->allocate(indices.data(), indices.length() * sizeof(unsigned int));
+    ibo->allocate(indices.data(), (int)(indices.size() * sizeof(unsigned int)));
 
     auto mesh = new Mesh();
-    mesh->vao = vao;
-    mesh->meshType = MeshType::Generated;
-    mesh->indexBuffer = ibo;
-    mesh->numElements = indices.count();
+    mesh->vao             = vao;
+    mesh->meshType        = MeshType::Generated;
+    mesh->indexBuffer     = ibo;
+    mesh->numElements     = (int)indices.size();
     mesh->indexByteOffset = 0;
-    mesh->indexType = GL_UNSIGNED_INT;
-    mesh->primitiveMode = GL_TRIANGLES;
+    mesh->indexType       = GL_UNSIGNED_INT;
+    mesh->primitiveMode   = GL_TRIANGLES;
 
     return mesh;
 }

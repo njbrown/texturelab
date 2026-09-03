@@ -23,12 +23,18 @@ ExportResult Exporter::exportTexture(QOpenGLFramebufferObject* texture,
     int width = texture->width();
     int height = texture->height();
 
+    if (width <= 0 || height <= 0) {
+        result.errorMessage = "Invalid texture dimensions for export";
+        return result;
+    }
+
     // Bind the FBO and read pixels
     texture->bind();
     QOpenGLFunctions* gl = QOpenGLContext::currentContext()->functions();
 
-    // Read as float data (since texture is GL_RGBA32F)
-    std::vector<float> floatData(width * height * 4);
+    // Read as float data (since texture is GL_RGBA32F).
+    // (size_t) so width*height*4 can't overflow int for large exports.
+    std::vector<float> floatData((size_t)width * height * 4);
     gl->glReadPixels(0, 0, width, height, GL_RGBA, GL_FLOAT, floatData.data());
     texture->release();
 

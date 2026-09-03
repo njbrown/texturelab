@@ -2,6 +2,7 @@
 #include "../models.h"
 #include "libv1.h"
 #include "libv2.h"
+#include "libv3.h"
 
 #include <QMap>
 
@@ -11,6 +12,7 @@ TextureNodePtr Library::createNode(QString name)
         auto& item = items[name];
         if (item.name == name) {
             auto node = item.factoryFunction();
+            node->typeName = name;
 
             // todo: put this in the appropriate place
             node->init();
@@ -180,6 +182,113 @@ Library* createLibraryV2()
                                            "Value Noise Fractal Sum",
                                            ":nodes/valuenoisefractalsum.png");
     lib->addNode<WarpNodeV2>("warp", "Warp", ":nodes/warp.png");
+
+    return lib;
+}
+
+Library* createLibraryV3()
+{
+    auto lib = createLibraryV2();
+
+    // Remove V1/V2 nodes that are superseded by V3 equivalents
+    lib->items.remove("floodfill");
+    lib->items.remove("floodfillsampler");
+    lib->items.remove("floodfilltobbox");
+    lib->items.remove("floodfilltocolor");
+    lib->items.remove("floodfilltogradient");
+    lib->items.remove("floodfilltorandomcolor");
+    lib->items.remove("floodfilltorandomintensity");
+    lib->items.remove("bevel");
+    lib->items.remove("perlin3d");
+    lib->items.remove("blend");
+    lib->items.remove("cell");
+    lib->items.remove("linecell");
+    lib->items.remove("solidcell");
+
+    // V3 NODES
+    lib->addNode<BevelV2Node>("bevelv2", "Bevel V2", ":nodes/bevel.png");
+    lib->addNode<AmbientOcclusionNode>("ambientocclusion", "Ambient Occlusion",
+                                       ":nodes/bevel.png");
+    lib->addNode<CurvatureNode>("curvature", "Curvature", ":nodes/bevel.png");
+    lib->addNode<MaskedBlurNode>("maskedblur", "Masked Blur",
+                                 ":nodes/blurv2.png");
+    lib->addNode<RaysNode>("rays", "Rays", ":nodes/bevel.png");
+    lib->addNode<SwirlNode>("swirl", "Swirl", ":nodes/bevel.png");
+    lib->addNode<FloodFillV2Node>("floodfillv2", "Flood Fill V2",
+                                  ":nodes/floodfill.png");
+    lib->addNode<FloodFillV2ToColorNode>("floodfillv2tocolor", "FF To Color V2",
+                                         ":nodes/floodfilltocolor.png");
+    lib->addNode<FloodFillV2ToRandomColorNode>(
+        "floodfillv2torandomcolor", "FF To Random Color V2",
+        ":nodes/floodfilltorandomcolor.png");
+    lib->addNode<FloodFillV2ToRandomIntensityNode>(
+        "floodfillv2torandomintensity", "FF To Random Intensity V2",
+        ":nodes/floodfilltorandomintensity.png");
+    lib->addNode<FloodFillV2ToBBoxNode>("floodfillv2tobbox", "FF To BBox V2",
+                                        ":nodes/floodfilltobbox.png");
+    lib->addNode<FloodFillV2ToGradientNode>("floodfillv2togradient",
+                                            "FF To Gradient V2",
+                                            ":nodes/floodfilltogradient.png");
+    lib->addNode<FloodFillV2SamplerNode>("floodfillv2sampler", "FF Sampler V2",
+                                         ":nodes/floodfillsampler.png");
+
+    lib->addNode<CurveNode>("curve", "Curve", ":nodes/curve.png");
+
+    // -----------------------------------------------------------------------
+    // Phase 1 — Filters / Color
+    // -----------------------------------------------------------------------
+    lib->addNode<BlendV3Node>("blend", "Blend", ":nodes/blend.png");
+    lib->addNode<EdgeDetectNode>("edgedetect", "Edge Detect",
+                                 ":nodes/bevel.png");
+    lib->addNode<HighpassNode>("highpass", "Highpass", ":nodes/blurv2.png");
+    lib->addNode<EmbossNode>("emboss", "Emboss", ":nodes/normalmap.png");
+    lib->addNode<VibranceNode>("vibrance", "Vibrance", ":nodes/hsl.png");
+    lib->addNode<ColorToMaskNode>("colortomask", "Color To Mask",
+                                  ":nodes/extractchannel.png");
+    lib->addNode<SetAlphaNode>("setalpha", "Set Alpha", ":nodes/rgbamerge.png");
+    lib->addNode<ToonGradientNode>("toongradient", "Toon Gradient",
+                                   ":nodes/gradientmap.png");
+    lib->addNode<AutoLevelsNode>("autolevels", "Auto Levels",
+                                 ":nodes/histogramscan.png");
+
+    // -----------------------------------------------------------------------
+    // Phase 2 — Generators
+    // -----------------------------------------------------------------------
+    lib->addNode<Bricks2Node>("bricks2", "Bricks 2",
+                              ":nodes/brickgenerator.png");
+    lib->addNode<DirectionalScratchesNode>(
+        "directionalscratches", "Directional Scratches", ":nodes/cell.png");
+    lib->addNode<RoughGrainNode>("roughgrain", "Rough Grain",
+                                 ":nodes/cell.png");
+    lib->addNode<VoronoiFractalNode>("voronoifractal", "Voronoi Fractal",
+                                     ":nodes/cell.png");
+    lib->addNode<TruchetNode>("truchet", "Truchet", ":nodes/hexagon.png");
+    lib->addNode<FBMDomainWarpNode>("fbmdomainwarp", "FBM Domain Warp",
+                                    ":nodes/fractalnoise.png");
+    lib->addNode<PerlinNoiseNode>("perlinnoise", "Perlin Noise",
+                                  ":nodes/fractalnoise.png");
+    lib->addNode<PerlinNoise3DNode>("perlinnoise3d", "Perlin Noise 3D",
+                                    ":nodes/fractalnoise.png");
+    lib->addNode<CellV3Node>("cell", "Cell V3", ":nodes/cell.png");
+    lib->addNode<LineCellV3Node>("linecell", "Line Cell V3",
+                                 ":nodes/linecell.png");
+    lib->addNode<SolidCellV3Node>("solidcell", "Solid Cell V3",
+                                  ":nodes/solidcell.png");
+
+    // -----------------------------------------------------------------------
+    // Phase 3 — Multi-pass
+    // -----------------------------------------------------------------------
+    lib->addNode<BlurHQNode>("blurhq", "Blur HQ", ":nodes/blurv2.png");
+    lib->addNode<DistanceTransformNode>(
+        "distancetransform", "Distance Transform", ":nodes/bevel.png");
+    lib->addNode<ColorSpreadNode>("spread", "Spread", ":nodes/bevel.png");
+    lib->addNode<FastAONode>("fastao", "Fast AO", ":nodes/bevel.png");
+    lib->addNode<HeightBlendNode>("heightblend", "Height Blend",
+                                  ":nodes/blend.png");
+    // lib->addNode<MakeItTileNode>("makeittile", "Make It Tile",
+    //                              ":nodes/tile.png");
+    // lib->addNode<NormalMapV3Node>("normalmapv3", "Normal Map V3",
+    //                               ":nodes/normalmap.png");
 
     return lib;
 }

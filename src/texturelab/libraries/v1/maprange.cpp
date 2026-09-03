@@ -18,10 +18,8 @@ void MapRangeNode::init()
         {
             vec4 col = texture(color,uv);
 
-            // color range coming in
             float inDiff = prop_in_max - prop_in_min;
-            col = (col-prop_in_min) / inDiff;
-
+            col.rgb = (col.rgb - prop_in_min) / inDiff;
 
             float outDiff = prop_out_max - prop_out_min;
             col.rgb = prop_out_min + col.rgb * vec3(outDiff);

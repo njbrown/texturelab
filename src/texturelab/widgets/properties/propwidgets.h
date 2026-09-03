@@ -9,6 +9,7 @@ class QSpinBox;
 class QComboBox;
 class QPushButton;
 class QLineEdit;
+class QPlainTextEdit;
 
 struct FloatProp;
 struct IntProp;
@@ -29,6 +30,7 @@ class FloatPropWidget : public QWidget {
     QDoubleSpinBox* spinbox;
 
     FloatProp* prop;
+    bool updating;
 
 public:
     FloatPropWidget();
@@ -45,6 +47,7 @@ class IntPropWidget : public QWidget {
     QSpinBox* spinbox;
 
     IntProp* prop;
+    bool updating;
 
 public:
     IntPropWidget();
@@ -73,12 +76,14 @@ class StringPropWidget : public QWidget {
 
     QLabel* label;
     QLineEdit* lineEdit;
+    QPlainTextEdit* textEdit;
 
     StringProp* prop;
 
 public:
     StringPropWidget();
     void setProp(StringProp* prop);
+    void setMultiline(bool multiline);
 signals:
     void valueChanged(QString);
 };

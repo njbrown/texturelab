@@ -6,9 +6,45 @@ on:
   pull_request:
     branches: [main, master]
   workflow_dispatch:
+    inputs:
+      sentry_crash_test:
+        description: "After building, run --sentry-crash-test to send a real crash to Sentry (verifies symbolication)"
+        type: boolean
+        default: false
 
 jobs:
+  # Single source of truth for the build tag used in artifact names.
+  # tag = v<cmake project version>-<short git hash>, where the short hash is the
+  # SAME `git rev-parse --short HEAD` the app embeds (TEXTURELAB_BUILD_HASH), so
+  # a build file name matches the version shown in-app / in screenshots.
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.v.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compute build tag
+        id: v
+        run: |
+          # tag = v<app version>-<short hash>, where <app version> is the numeric
+          # project() version + optional suffix — the same string the app embeds
+          # as TEXTURELAB_VERSION, so file names match the in-app version.
+          NUM=$(grep -oP 'project\(texturelab VERSION \K[0-9.]+' src/texturelab/CMakeLists.txt)
+          SUFFIX=$(grep -oP 'set\(TEXTURELAB_VERSION_SUFFIX "\K[^"]*' src/texturelab/CMakeLists.txt)
+          echo "tag=v${NUM}${SUFFIX}-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+  # Fails the build if inline widget stylesheets or hardcoded QColor literals
+  # creep into the UI/rendering code (they'd bypass the theme system and break
+  # --dev-theme hot-reload). See scripts/check-theme-hygiene.sh + UI_DESIGN_SYSTEM_PRD.md.
+  theme-hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check theme hygiene
+        run: bash scripts/check-theme-hygiene.sh
+
   build-linux:
+    needs: version
     # runs-on: ubuntu-20.04
     runs-on: ubuntu-22.04
 
@@ -23,7 +59,7 @@ jobs:
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4
         with:
-          version: "6.7.0"
+          version: "6.7.3"
           modules: "qtshadertools"
           dir: "${{ github.workspace }}/Qt"
           cache: true
@@ -38,13 +74,42 @@ jobs:
             libxkbcommon-dev \
             libvulkan-dev \
             libxcb-cursor0 \
-            libxcb-shape0-dev
+            libxcb-shape0-dev \
+            libcurl4-openssl-dev
 
       - name: Configure CMake
-        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
 
       - name: Build
         run: cmake --build build --target texturelab --parallel $(nproc)
+
+      - name: Upload debug symbols to Sentry
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          curl -sL https://sentry.io/get-cli/ | bash
+          # Upload the FULL, unstripped binary. It contains debug info AND the
+          # .eh_frame unwind info (CFI) that Sentry needs to walk a minidump's
+          # stack. objcopy --only-keep-debug drops the unwind info, which left
+          # crashes unsymbolicated ("debug information files are missing").
+          sentry-cli debug-files upload --include-sources \
+            build/src/texturelab/texturelab
+          # Strip the shipped copy to shrink the AppImage. The GNU build-id
+          # (== Sentry Debug ID) survives stripping, so the DIF we just
+          # uploaded still matches the binary that ships and crashes.
+          strip build/src/texturelab/texturelab
+
+      - name: Sentry crash test (manual)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.sentry_crash_test == 'true' }}
+        run: |
+          export QT_QPA_PLATFORM=offscreen
+          # Crashes before the main window opens; crashpad_handler (copied next to
+          # the binary at build time) uploads the minidump via the built-in DSN.
+          build/src/texturelab/texturelab --sentry-crash-test || true
+          echo "waiting for crashpad to upload the minidump..."
+          sleep 25
 
       - name: Install LinuxDeploy
         uses: miurahr/install-linuxdeploy-action@v1
@@ -56,9 +121,19 @@ jobs:
           APPIMAGE_EXTRACT_AND_RUN: 1
           DEPLOY_STDCXX: 1
         run: |
-          export QMAKE=${{ github.workspace }}/Qt/Qt/6.7.0/gcc_64/bin/qmake
-          export PATH=${{ github.workspace }}/Qt/Qt/6.7.0/gcc_64/bin:$PATH
-          export LD_LIBRARY_PATH=${{ github.workspace }}/Qt/Qt/6.7.0/gcc_64/lib:$LD_LIBRARY_PATH
+          export QMAKE=${{ github.workspace }}/Qt/Qt/6.7.3/gcc_64/bin/qmake
+          export PATH=${{ github.workspace }}/Qt/Qt/6.7.3/gcc_64/bin:$PATH
+          export LD_LIBRARY_PATH=${{ github.workspace }}/Qt/Qt/6.7.3/gcc_64/lib:$LD_LIBRARY_PATH
+
+          # linuxdeploy's qt plugin deploys *every* sqldriver plugin it finds and
+          # hard-fails when one has an unresolvable dependency. Qt ships
+          # libqsqlmimer.so, whose libmimerapi.so is a proprietary Mimer SQL
+          # client that isn't on the runner ("ERROR: Could not find dependency:
+          # libmimerapi.so"). We only ever open QSQLITE (src/catalog/database.cpp),
+          # so keep libqsqlite.so and drop the rest — that also stops us shipping
+          # the GPL libmysqlclient the MySQL driver drags in.
+          QT_SQLDRIVERS=${{ github.workspace }}/Qt/Qt/6.7.3/gcc_64/plugins/sqldrivers
+          find "$QT_SQLDRIVERS" -name 'libqsql*.so' ! -name 'libqsqlite.so' -delete
 
           # Create desktop file
           cat > texturelab.desktop << 'EOF'
@@ -73,6 +148,11 @@ jobs:
           # Create a placeholder icon (256x256 PNG with "TL" text)
           cp src/icons/logo.png texturelab.png
 
+          # Bundle crashpad_handler alongside the main binary
+          mkdir -p AppDir/usr/bin
+          cp build/src/texturelab/crashpad_handler AppDir/usr/bin/ || \
+          cp build/_deps/sentry-build/crashpad_build/handler/crashpad_handler AppDir/usr/bin/
+
           linuxdeploy-x86_64.AppImage \
             --appdir AppDir \
             --executable build/src/texturelab/texturelab \
@@ -81,14 +161,20 @@ jobs:
             --plugin qt \
             --output appimage
 
+      - name: Rename Linux artifact
+        run: |
+          APP=$(ls *.AppImage | head -1)
+          mv "$APP" "texturelab-linux-${{ needs.version.outputs.tag }}.AppImage"
+
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
-          name: texturelab-linux
-          path: "*.AppImage"
+          name: texturelab-linux-${{ needs.version.outputs.tag }}
+          path: "texturelab-linux-${{ needs.version.outputs.tag }}.AppImage"
 
   build-windows:
-    runs-on: windows-latest
+    needs: version
+    runs-on: windows-2022
 
     steps:
       - name: Checkout repository
@@ -101,32 +187,81 @@ jobs:
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4
         with:
-          version: "6.7.0"
+          version: "6.7.3"
           arch: "win64_msvc2019_64"
           modules: "qtshadertools"
           dir: "${{ github.workspace }}/Qt"
           cache: true
 
       - name: Configure CMake
-        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
 
       - name: Build
         run: cmake --build build --target texturelab --config Release --parallel
 
-      - name: Deploy Qt dependencies
+      - name: Upload debug symbols to Sentry
+        shell: pwsh
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         run: |
-          mkdir deploy
-          copy build\src\texturelab\Release\texturelab.exe deploy\
-          ${{ github.workspace }}\Qt\Qt\6.7.0\msvc2019_64\bin\windeployqt.exe deploy\texturelab.exe --release --no-translations
+          Invoke-WebRequest -Uri "https://github.com/getsentry/sentry-cli/releases/latest/download/sentry-cli-Windows-x86_64.exe" -OutFile "sentry-cli.exe"
+          $exe = "build\src\texturelab\Release\texturelab.exe"
+          $pdb = "build\src\texturelab\Release\texturelab.pdb"
+          if (-not (Test-Path $pdb)) { Write-Error "texturelab.pdb not found — build produced no debug info; Sentry cannot symbolicate."; exit 1 }
+          # Log the Debug IDs. The exe's Debug ID (from its CodeView record) MUST
+          # be non-null and match the pdb, or crash minidumps stay unsymbolicated.
+          Write-Host "== exe Debug ID =="; .\sentry-cli.exe debug-files check $exe
+          Write-Host "== pdb Debug ID =="; .\sentry-cli.exe debug-files check $pdb
+          .\sentry-cli.exe debug-files upload --include-sources "build\src\texturelab\Release\"
+
+      - name: Deploy Qt dependencies
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path deploy
+          Copy-Item "build\src\texturelab\Release\texturelab.exe" deploy\
+          & "${{ github.workspace }}\Qt\Qt\6.7.3\msvc2019_64\bin\windeployqt.exe" "deploy\texturelab.exe" --release --no-translations
+          $handler = @(
+            "build\src\texturelab\Release\crashpad_handler.exe",
+            "build\src\texturelab\crashpad_handler.exe",
+            "build\_deps\sentry-build\crashpad_build\handler\Release\crashpad_handler.exe"
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if ($handler) { Copy-Item $handler deploy\ } else { Write-Warning "crashpad_handler.exe not found, skipping" }
+
+      - name: Sentry crash test (manual)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.sentry_crash_test == 'true' }}
+        shell: pwsh
+        run: |
+          $env:QT_QPA_PLATFORM = "offscreen"
+          # Run the deployed bundle (Qt DLLs + crashpad_handler.exe alongside the
+          # exe). Crashes before the main window; crashpad uploads the minidump
+          # via the built-in DSN. Debug IDs match the PDB uploaded above.
+          $p = Start-Process -FilePath "deploy\texturelab.exe" -ArgumentList "--sentry-crash-test" -PassThru
+          if (-not $p.WaitForExit(60000)) { $p.Kill(); Write-Warning "timed out waiting for crash" }
+          else { Write-Host "app exited with code $($p.ExitCode) (crash expected)" }
+          Write-Host "waiting for crashpad to upload the minidump..."
+          Start-Sleep -Seconds 25
+
+      # Rename after the crash-test step above (which runs deploy\texturelab.exe)
+      # so the exe ships as texturelab-win-v<version>-<hash>.exe alongside its DLLs.
+      - name: Rename Windows executable
+        shell: pwsh
+        run: |
+          Rename-Item "deploy\texturelab.exe" "texturelab-win-${{ needs.version.outputs.tag }}.exe"
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: texturelab-windows
+          name: texturelab-win-${{ needs.version.outputs.tag }}
           path: deploy/
 
   build-macos:
-    runs-on: macos-latest
+    needs: version
+    # Qt 6.7.x still references AGL.framework, which modern macOS SDKs (Xcode 16+)
+    # removed — so we pin Xcode 15 (macOS 14 SDK, AGL present) on macos-14. Build
+    # universal x86_64+arm64 so it runs on both Intel and Apple Silicon Macs.
+    runs-on: macos-14
 
     steps:
       - name: Checkout repository
@@ -136,22 +271,159 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Select Xcode 15 (macOS 14 SDK still ships AGL.framework)
+        run: |
+          XC=$(ls -d /Applications/Xcode_15*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XC" ]; then echo "No Xcode 15.x found on runner"; ls -d /Applications/Xcode_*.app; exit 1; fi
+          echo "Using $XC"
+          sudo xcode-select -s "$XC/Contents/Developer"
+          xcodebuild -version
+
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4
         with:
-          version: "6.7.0"
+          version: "6.7.3"
           modules: "qtshadertools"
           dir: "${{ github.workspace }}/Qt"
           cache: true
 
       - name: Configure CMake
-        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+        run: |
+          # Crashpad's CMake locates the Mach mig defs at
+          # ${CMAKE_OSX_SYSROOT}/usr/include/mach/exc.defs. If CMAKE_OSX_SYSROOT
+          # is empty it resolves to /usr/include/mach (absent on modern macOS)
+          # and configure fails. Point it explicitly at the SDK, which ships them.
+          SDKROOT=$(xcrun --show-sdk-path)
+          echo "Using SDK: $SDKROOT"
+          cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_OSX_SYSROOT="$SDKROOT" -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
 
       - name: Build
         run: cmake --build build --target texturelab --parallel $(sysctl -n hw.ncpu)
 
+      - name: Generate dSYM and upload to Sentry
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          dsymutil build/src/texturelab/texturelab.app/Contents/MacOS/texturelab \
+            -o texturelab.dSYM
+          strip build/src/texturelab/texturelab.app/Contents/MacOS/texturelab
+          curl -sL https://sentry.io/get-cli/ | bash
+          sentry-cli debug-files upload --include-sources texturelab.dSYM
+
+      - name: Sentry crash test (manual)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.sentry_crash_test == 'true' }}
+        run: |
+          export QT_QPA_PLATFORM=offscreen
+          # Crashpad (crashpad_handler bundled next to the binary) uploads the
+          # minidump out-of-process, symbolicated by the dSYM uploaded above.
+          build/src/texturelab/texturelab.app/Contents/MacOS/texturelab --sentry-crash-test || true
+          echo "waiting for crashpad to upload the minidump..."
+          sleep 25
+
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
-          name: texturelab-macos
+          name: texturelab-mac-${{ needs.version.outputs.tag }}
           path: build/src/texturelab/texturelab.app
+
+  deploy:
+    needs: [version, build-linux, build-windows, build-macos]
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ needs.version.outputs.tag }}
+    steps:
+      - name: Download artifacts
+        if: ${{ needs.build-linux.result == 'success' || needs.build-windows.result == 'success' || needs.build-macos.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Zip and upload to S3
+        if: ${{ needs.build-linux.result == 'success' || needs.build-windows.result == 'success' || needs.build-macos.result == 'success' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-2
+        run: |
+          # Artifacts already arrive as texturelab-<platform>-<TAG>/ with the
+          # primary file (exe/AppImage) renamed. Here we just zip each bundle
+          # under the same texturelab-<platform>-<TAG>.zip name.
+          cd artifacts
+
+          # Linux — single AppImage.
+          if [ -d "texturelab-linux-${TAG}" ]; then
+            zip -j "../texturelab-linux-${TAG}.zip" "texturelab-linux-${TAG}"/*.AppImage
+          fi
+
+          # Windows — exe + sibling Qt DLLs + crashpad_handler.
+          if [ -d "texturelab-win-${TAG}" ]; then
+            (cd "texturelab-win-${TAG}" && zip -r "../../texturelab-win-${TAG}.zip" .)
+          fi
+
+          # macOS — re-wrap the uploaded bundle contents as a proper .app, zip it.
+          if [ -d "texturelab-mac-${TAG}" ]; then
+            mkdir -p "wrap/texturelab.app"
+            cp -R "texturelab-mac-${TAG}/." "wrap/texturelab.app/"
+            (cd wrap && zip -r "../../texturelab-mac-${TAG}.zip" texturelab.app)
+            rm -rf wrap
+          fi
+
+          cd ..
+          for f in texturelab-linux-${TAG}.zip texturelab-win-${TAG}.zip texturelab-mac-${TAG}.zip; do
+            if [ -f "$f" ]; then aws s3 cp "$f" s3://texturelab-nightlies/; fi
+          done
+
+      - name: Post to Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          BRANCH: ${{ github.ref_name }}
+          RUN_ID: ${{ github.run_id }}
+          REPO: ${{ github.repository }}
+          LINUX_RESULT: ${{ needs.build-linux.result }}
+          WINDOWS_RESULT: ${{ needs.build-windows.result }}
+          MACOS_RESULT: ${{ needs.build-macos.result }}
+        run: |
+          RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
+          S3_BASE="https://texturelab-nightlies.s3.us-east-2.amazonaws.com"
+
+          status_emoji() {
+            case "$1" in
+              success) echo "✅" ;;
+              failure) echo "❌" ;;
+              cancelled) echo "⏹️" ;;
+              *) echo "⚠️" ;;
+            esac
+          }
+
+          download_line() {
+            local result="$1" label="$2" url="$3"
+            if [[ "$result" == "success" ]]; then
+              echo "$(status_emoji "$result") **$label** — [Download]($url)"
+            else
+              echo "$(status_emoji "$result") **$label** — build $result"
+            fi
+          }
+
+          if [[ "$LINUX_RESULT" == "success" && "$WINDOWS_RESULT" == "success" && "$MACOS_RESULT" == "success" ]]; then
+            TITLE="Build succeeded — $BRANCH @ $TAG"
+            COLOR=3066993
+          else
+            TITLE="Build failed — $BRANCH @ $TAG"
+            COLOR=15158332
+          fi
+
+          DESCRIPTION="$(download_line "$LINUX_RESULT" "Linux" "$S3_BASE/texturelab-linux-$TAG.zip")\n$(download_line "$WINDOWS_RESULT" "Windows" "$S3_BASE/texturelab-win-$TAG.zip")\n$(download_line "$MACOS_RESULT" "macOS" "$S3_BASE/texturelab-mac-$TAG.zip")\n\n[View run]($RUN_URL)"
+
+          curl -s -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"embeds\": [{
+                \"title\": \"$TITLE\",
+                \"description\": \"$DESCRIPTION\",
+                \"color\": $COLOR,
+                \"url\": \"$RUN_URL\"
+              }]
+            }"

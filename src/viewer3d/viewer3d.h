@@ -33,11 +33,16 @@ class Viewer3D : public QOpenGLWidget {
     QOpenGLBuffer* mesh = nullptr;
     QOpenGLVertexArrayObject* vao = nullptr;
 
-    Renderer* renderer;
-    Material* material;
-    Mesh* gltfMesh;
-    Mesh* skydomeMesh;
+    // Initialized to nullptr: these are only assigned in initializeGL() (first
+    // paint), but setProject()/clearTextures() can run earlier (from the
+    // MainWindow constructor). Without this, the null-guards in clear*Texture()
+    // dereference uninitialized garbage and crash. See viewer3d.cpp clear*.
+    Renderer* renderer = nullptr;
+    Material* material = nullptr;
+    Mesh* gltfMesh = nullptr;
+    Mesh* skydomeMesh = nullptr;
     QString defaultEnvPath;
+    float defaultEnvRotation = 0.0f;
 
     QOpenGLFunctions* gl = nullptr;
 
@@ -106,18 +111,20 @@ public:
     void setHeightTexture(GLuint texId);
     void clearHeightTexture();
     void setHeightScale(float scale);
+    void setAoTexture(GLuint texId);
+    void clearAoTexture();
+    void setAlphaTexture(GLuint texId);
+    void clearAlphaTexture();
     void resetMaterial();
-
-    // void setAlphaTexture(GLuint texId);
-    // void setAoTexture(GLuint texId);
-    // void setEmissiveTexture(GLuint texId);
-    // void setHeightTexture(GLuint texId);
 
     void clearTextures();
     void resetCamera();
-    void loadEnvironment(const QString path);
+    // rotation is a yaw in degrees about the up axis, used to turn the lit
+    // side of the HDRI towards the camera.
+    void loadEnvironment(const QString path, float rotation = 0.0f);
+    void setEnvironmentRotation(float rotation);
     void setModel(const QString& modelType);
 
     // sets env to use on load
-    void setDefaultEnvironment(const QString path);
+    void setDefaultEnvironment(const QString path, float rotation = 0.0f);
 };

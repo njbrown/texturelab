@@ -41,6 +41,7 @@ public:
 };
 
 Library *createLibraryV2();
+Library *createLibraryV3();
 
 class LibraryV1 : public Library
 {

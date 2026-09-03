@@ -8,6 +8,8 @@
 class Library;
 class LibraryListWidget;
 class QLineEdit;
+class QLabel;
+class QPushButton;
 
 // https://stackoverflow.com/questions/37331270/how-to-create-grid-style-qlistwidget
 class LibraryWidget : public QWidget {
@@ -16,8 +18,16 @@ public:
     LibraryWidget();
     void setLibrary(Library* lib);
 
+    // Shows which library version the open project is on. When
+    // `isCurrent` is false, an "Upgrade" button is shown that emits
+    // upgradeRequested().
+    void setLibraryVersion(const QString& version, bool isCurrent);
+
     LibraryListWidget* listWidget;
     QLineEdit* searchBar;
+
+signals:
+    void upgradeRequested();
 
 private slots:
     void filterList(const QString& text);
@@ -25,6 +35,9 @@ private slots:
 private:
     void addSpecialItem(const QString& name, const QString& iconPath,
                         PopupItemType type);
+
+    QLabel* versionLabel;
+    QPushButton* upgradeButton;
 };
 
 class LibraryItemMimeData : public QMimeData {

@@ -14,15 +14,15 @@ void TileSamplerNode::init()
 
     this->addEnumProp("blendType", "Blend Type", {"Max", "Add"});
 
-    this->addIntProp("rows", "Row Count", 8, 0, 15, 1);
-    this->addIntProp("columns", "Column Count", 8, 0, 15, 1);
+    this->addIntProp("rows", "Row Count", 8, 0, 30, 1);
+    this->addIntProp("columns", "Column Count", 8, 0, 30, 1);
 
     auto posProps = this->createGroup("Position");
-    posProps->add(this->addFloatProp("offset", "Offset", 0.5, 0, 1, 0.1));
+    posProps->add(this->addFloatProp("offset", "Offset", 0.0, 0, 1, 0.1));
     posProps->add(
         this->addEnumProp("offset_axis", "Offset Axis", {"X Axis", "Y Axis"}));
     posProps->add(
-        this->addIntProp("offset_interval", "Offset Interval", 1, 1, 5, 1));
+        this->addIntProp("offset_interval", "Offset Interval", 2, 1, 5, 1));
 
     auto rotProps = this->createGroup("Rotation");
     rotProps->add(this->addFloatProp("rot", "Rotation", 0, 0, 360, 0.1));

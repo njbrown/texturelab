@@ -28,11 +28,13 @@ set(NODEGRAPH_HEADERS
 
 # library
 add_library(nodegraph STATIC ${NODEGRAPH_SRCS} ${NODEGRAPH_HEADERS})
-target_link_libraries(nodegraph PRIVATE Qt${QT_VERSION_MAJOR}::Core 
-                                        Qt${QT_VERSION_MAJOR}::Gui 
-                                        Qt${QT_VERSION_MAJOR}::OpenGLWidgets 
+target_link_libraries(nodegraph PRIVATE Qt${QT_VERSION_MAJOR}::Core
+                                        Qt${QT_VERSION_MAJOR}::Gui
+                                        Qt${QT_VERSION_MAJOR}::OpenGLWidgets
                                         Qt${QT_VERSION_MAJOR}::Widgets
-                                        OpenGL::GL)
+                                        OpenGL::GL
+                                        theme)
+target_include_directories(nodegraph PRIVATE ${CMAKE_SOURCE_DIR}/src/theme)
 
 
 set_target_properties(nodegraph PROPERTIES
@@ -63,8 +65,10 @@ add_executable(nodegraph_app
         )
 target_link_libraries(nodegraph_app PRIVATE Qt${QT_VERSION_MAJOR}::Core
                                             Qt${QT_VERSION_MAJOR}::Gui
-                                            Qt${QT_VERSION_MAJOR}::OpenGLWidgets 
-                                            Qt${QT_VERSION_MAJOR}::Widgets)
+                                            Qt${QT_VERSION_MAJOR}::OpenGLWidgets
+                                            Qt${QT_VERSION_MAJOR}::Widgets
+                                            theme)
+target_include_directories(nodegraph_app PRIVATE ${CMAKE_SOURCE_DIR}/src/theme)
 
 
 set_target_properties(nodegraph_app PROPERTIES
