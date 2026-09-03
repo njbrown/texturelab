@@ -1,4 +1,5 @@
 #include "clipboard.h"
+#include "jsonutils.h"
 #include "libraries/library.h"
 #include "props.h"
 #include <QApplication>
@@ -132,17 +133,17 @@ bool Clipboard::pasteItems(TextureProjectPtr project,
 
     for (auto item : root["nodes"].toArray()) {
         auto o = item.toObject();
-        expandBBox(o["x"].toDouble(), o["y"].toDouble());
+        expandBBox(jsonutils::getDouble(o["x"]), jsonutils::getDouble(o["y"]));
     }
     for (auto item : root["comments"].toArray()) {
         auto o = item.toObject();
-        expandBBox(o["x"].toDouble(), o["y"].toDouble());
+        expandBBox(jsonutils::getDouble(o["x"]), jsonutils::getDouble(o["y"]));
     }
     for (auto item : root["frames"].toArray()) {
         auto o = item.toObject();
-        expandBBox(o["x"].toDouble(), o["y"].toDouble());
-        expandBBox(o["x"].toDouble() + o["width"].toDouble(),
-                   o["y"].toDouble() + o["height"].toDouble());
+        expandBBox(jsonutils::getDouble(o["x"]), jsonutils::getDouble(o["y"]));
+        expandBBox(jsonutils::getDouble(o["x"]) + jsonutils::getDouble(o["width"]),
+                   jsonutils::getDouble(o["y"]) + jsonutils::getDouble(o["height"]));
     }
 
     // If nothing in the bbox (empty clipboard somehow), fall back to no shift
@@ -170,9 +171,9 @@ bool Clipboard::pasteItems(TextureProjectPtr project,
 
         node->id = nodeIdMap[obj["id"].toString()];
         node->exportName = obj["exportName"].toString();
-        node->randomSeed = (long)obj["randomSeed"].toDouble(0);
-        node->pos = QVector2D((float)(obj["x"].toDouble() + offsetX),
-                              (float)(obj["y"].toDouble() + offsetY));
+        node->randomSeed = jsonutils::getLong(obj["randomSeed"]);
+        node->pos = QVector2D((float)(jsonutils::getDouble(obj["x"]) + offsetX),
+                              (float)(jsonutils::getDouble(obj["y"]) + offsetY));
 
         auto propObj = obj["properties"].toObject();
         for (auto key : propObj.keys()) {
@@ -217,8 +218,8 @@ bool Clipboard::pasteItems(TextureProjectPtr project,
         auto comment = CommentPtr(new Comment());
         comment->id = QUuid::createUuid().toString(QUuid::WithoutBraces);
         comment->text = obj["text"].toString();
-        comment->pos = QVector2D((float)(obj["x"].toDouble() + offsetX),
-                                 (float)(obj["y"].toDouble() + offsetY));
+        comment->pos = QVector2D((float)(jsonutils::getDouble(obj["x"]) + offsetX),
+                                 (float)(jsonutils::getDouble(obj["y"]) + offsetY));
         outComments.append(comment);
     }
 
@@ -229,10 +230,10 @@ bool Clipboard::pasteItems(TextureProjectPtr project,
         frame->id = QUuid::createUuid().toString(QUuid::WithoutBraces);
         frame->text = obj["title"].toString();
         frame->color = QColor(obj["color"].toString());
-        frame->pos = QVector2D((float)(obj["x"].toDouble() + offsetX),
-                               (float)(obj["y"].toDouble() + offsetY));
-        frame->size = QVector2D((float)obj["width"].toDouble(),
-                                (float)obj["height"].toDouble());
+        frame->pos = QVector2D((float)(jsonutils::getDouble(obj["x"]) + offsetX),
+                               (float)(jsonutils::getDouble(obj["y"]) + offsetY));
+        frame->size = QVector2D(jsonutils::getFloat(obj["width"], 300),
+                                jsonutils::getFloat(obj["height"], 200));
         outFrames.append(frame);
     }
 

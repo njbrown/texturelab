@@ -181,6 +181,7 @@ set(PROJECT_SOURCES
         ./exporter.h
         ./exporter.cpp
         ./utils.h
+        ./jsonutils.h
         ./curve.h
         ./curve.cpp
         ./models.h

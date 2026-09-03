@@ -55,3 +55,9 @@ target_sources(tst_texturelistmodel PRIVATE
 target_include_directories(tst_texturelistmodel PRIVATE
     ${CMAKE_SOURCE_DIR}/src/texturelab/launcher)
 target_link_libraries(tst_texturelistmodel PRIVATE Qt${QT_VERSION_MAJOR}::Gui)
+
+# Loose types in old project files: numbers as strings, ints as floats.
+# Header-only, so the test just includes it.
+texturelab_add_test(tst_jsonutils)
+target_include_directories(tst_jsonutils PRIVATE
+    ${CMAKE_SOURCE_DIR}/src/texturelab)

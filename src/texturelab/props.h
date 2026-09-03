@@ -2,6 +2,7 @@
 
 #include "../colorpicker/gradient.h"
 #include "curve.h"
+#include "jsonutils.h"
 #include <QBuffer>
 #include <QColor>
 #include <QIODevice>
@@ -119,22 +120,17 @@ public:
     void fromJson(const QJsonObject& obj) override
     {
         Prop::fromJson(obj);
-        value = obj["value"].toDouble();
-        minValue = obj["minValue"].toDouble();
-        maxValue = obj["maxValue"].toDouble();
-        step = obj["step"].toDouble();
+        value = jsonutils::getDouble(obj["value"], value);
+        minValue = jsonutils::getDouble(obj["minValue"], minValue);
+        maxValue = jsonutils::getDouble(obj["maxValue"], maxValue);
+        step = jsonutils::getDouble(obj["step"], step);
     }
 
     QJsonValue toJsonValue() override { return value; }
 
     void fromJsonValue(const QJsonValue& val) override
     {
-        if (val.isString()) {
-            value = val.toString().toDouble();
-        }
-        else {
-            value = val.toDouble();
-        }
+        value = jsonutils::getDouble(val, value);
     }
 };
 
@@ -178,22 +174,17 @@ public:
     void fromJson(const QJsonObject& obj) override
     {
         Prop::fromJson(obj);
-        value = obj["value"].toDouble();
-        minValue = obj["minValue"].toDouble();
-        maxValue = obj["maxValue"].toDouble();
-        step = obj["step"].toDouble();
+        value = jsonutils::getLong(obj["value"], value);
+        minValue = jsonutils::getLong(obj["minValue"], minValue);
+        maxValue = jsonutils::getLong(obj["maxValue"], maxValue);
+        step = jsonutils::getLong(obj["step"], step);
     }
 
     QJsonValue toJsonValue() override { return (qlonglong)value; }
 
     void fromJsonValue(const QJsonValue& val) override
     {
-        if (val.isString()) {
-            value = (long)val.toString().toDouble();
-        }
-        else {
-            value = (long)val.toDouble();
-        }
+        value = jsonutils::getLong(val, value);
     }
 };
 
@@ -228,20 +219,14 @@ public:
     void fromJson(const QJsonObject& obj) override
     {
         Prop::fromJson(obj);
-        value = obj["value"].toBool();
+        value = jsonutils::getBool(obj["value"], value);
     }
 
     QJsonValue toJsonValue() override { return value; }
 
     void fromJsonValue(const QJsonValue& val) override
     {
-        if (val.isString()) {
-            QString str = val.toString().toLower();
-            value = (str == "true" || str == "1");
-        }
-        else {
-            value = val.toBool();
-        }
+        value = jsonutils::getBool(val, value);
     }
 };
 
@@ -285,7 +270,7 @@ public:
     void fromJson(const QJsonObject& obj) override
     {
         Prop::fromJson(obj);
-        index = obj["index"].toInt();
+        index = jsonutils::getInt(obj["index"], index);
 
         auto list = obj["values"].toArray();
         values.clear();
@@ -298,12 +283,7 @@ public:
 
     void fromJsonValue(const QJsonValue& val) override
     {
-        if (val.isString()) {
-            index = (long)val.toString().toDouble();
-        }
-        else {
-            index = (long)val.toDouble();
-        }
+        index = jsonutils::getInt(val, index);
     }
 };
 
@@ -340,10 +320,10 @@ struct ColorProp : public Prop {
     {
         Prop::fromJson(obj);
         auto colorObj = obj["value"].toObject();
-        value.setRedF(colorObj["r"].toDouble());
-        value.setGreenF(colorObj["g"].toDouble());
-        value.setBlueF(colorObj["b"].toDouble());
-        value.setAlphaF(colorObj["a"].toDouble());
+        value.setRedF(jsonutils::getFloat(colorObj["r"]));
+        value.setGreenF(jsonutils::getFloat(colorObj["g"]));
+        value.setBlueF(jsonutils::getFloat(colorObj["b"]));
+        value.setAlphaF(jsonutils::getFloat(colorObj["a"], 1.0f));
     }
 
     QJsonValue toJsonValue() override
@@ -359,10 +339,10 @@ struct ColorProp : public Prop {
     void fromJsonValue(const QJsonValue& val) override
     {
         auto colorObj = val.toObject();
-        value.setRedF(colorObj["r"].toDouble());
-        value.setGreenF(colorObj["g"].toDouble());
-        value.setBlueF(colorObj["b"].toDouble());
-        value.setAlphaF(colorObj["a"].toDouble());
+        value.setRedF(jsonutils::getFloat(colorObj["r"]));
+        value.setGreenF(jsonutils::getFloat(colorObj["g"]));
+        value.setBlueF(jsonutils::getFloat(colorObj["b"]));
+        value.setAlphaF(jsonutils::getFloat(colorObj["a"], 1.0f));
     }
 };
 
@@ -456,13 +436,13 @@ public:
 
         for (const auto& pointValue : pointsArray) {
             auto pointObj = pointValue.toObject();
-            float position = pointObj["t"].toDouble();
+            float position = jsonutils::getFloat(pointObj["t"]);
             auto colorObj = pointObj["color"].toObject();
             QColor color;
-            color.setRedF(colorObj["r"].toDouble());
-            color.setGreenF(colorObj["g"].toDouble());
-            color.setBlueF(colorObj["b"].toDouble());
-            color.setAlphaF(colorObj["a"].toDouble());
+            color.setRedF(jsonutils::getFloat(colorObj["r"]));
+            color.setGreenF(jsonutils::getFloat(colorObj["g"]));
+            color.setBlueF(jsonutils::getFloat(colorObj["b"]));
+            color.setAlphaF(jsonutils::getFloat(colorObj["a"], 1.0f));
 
             value.addPoint(GradientPoint(position, color));
         }
@@ -495,13 +475,13 @@ public:
 
         for (const auto& pointValue : pointsArray) {
             auto pointObj = pointValue.toObject();
-            float position = pointObj["t"].toDouble();
+            float position = jsonutils::getFloat(pointObj["t"]);
             auto colorObj = pointObj["color"].toObject();
             QColor color;
-            color.setRedF(colorObj["r"].toDouble());
-            color.setGreenF(colorObj["g"].toDouble());
-            color.setBlueF(colorObj["b"].toDouble());
-            color.setAlphaF(colorObj["a"].toDouble());
+            color.setRedF(jsonutils::getFloat(colorObj["r"]));
+            color.setGreenF(jsonutils::getFloat(colorObj["g"]));
+            color.setBlueF(jsonutils::getFloat(colorObj["b"]));
+            color.setAlphaF(jsonutils::getFloat(colorObj["a"], 1.0f));
 
             value.addPoint(GradientPoint(position, color));
         }

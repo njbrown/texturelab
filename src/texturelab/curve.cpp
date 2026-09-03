@@ -1,5 +1,6 @@
 #include "curve.h"
 
+#include "jsonutils.h"
 #include <QtMath>
 #include <algorithm>
 
@@ -241,13 +242,13 @@ Curve Curve::fromJson(const QJsonObject& obj)
     for (const auto& val : arr) {
         auto o = val.toObject();
         CurvePoint pt;
-        pt.x  = clamp01((float)o["x"].toDouble());
-        pt.y  = clamp01((float)o["y"].toDouble());
-        pt.lx = qMin((float)o["lx"].toDouble(), 0.0f);
-        pt.ly = (float)o["ly"].toDouble();
-        pt.rx = qMax((float)o["rx"].toDouble(), 0.0f);
-        pt.ry = (float)o["ry"].toDouble();
-        pt.smooth = o["smooth"].toBool(true);
+        pt.x  = clamp01(jsonutils::getFloat(o["x"]));
+        pt.y  = clamp01(jsonutils::getFloat(o["y"]));
+        pt.lx = qMin(jsonutils::getFloat(o["lx"]), 0.0f);
+        pt.ly = jsonutils::getFloat(o["ly"]);
+        pt.rx = qMax(jsonutils::getFloat(o["rx"]), 0.0f);
+        pt.ry = jsonutils::getFloat(o["ry"]);
+        pt.smooth = jsonutils::getBool(o["smooth"], true);
         curve.points.append(pt);
     }
 

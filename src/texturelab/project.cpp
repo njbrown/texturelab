@@ -1,6 +1,7 @@
 #include "project.h"
 #include "libraries/library.h"
 #include "libraries/libraryversionmigrator.h"
+#include "jsonutils.h"
 #include "libraries/libversion.h"
 #include "props.h"
 #include <QFile>
@@ -54,13 +55,13 @@ TextureProjectPtr Project::loadTextureFromJson(QJsonObject json)
             continue;
         node->exportName = nodeDef["exportName"].toString("");
         node->id = nodeDef["id"].toString();
-        node->randomSeed = (long)nodeDef["randomSeed"].toDouble(0);
+        node->randomSeed = jsonutils::getLong(nodeDef["randomSeed"]);
 
         // get position from scene
         // we're converging the scene and designer props into one
         auto sceneObj = sceneNodesObj[node->id].toObject();
-        auto x = sceneObj["x"].toDouble();
-        auto y = sceneObj["y"].toDouble();
+        auto x = jsonutils::getFloat(sceneObj["x"]);
+        auto y = jsonutils::getFloat(sceneObj["y"]);
         node->pos = QVector2D(x, y);
 
         // add props
@@ -113,7 +114,8 @@ TextureProjectPtr Project::loadTextureFromJson(QJsonObject json)
                           ? QUuid::createUuid().toString(QUuid::WithoutBraces)
                           : commentId;
         comment->text = obj["text"].toString();
-        comment->pos = QVector2D(obj["x"].toDouble(), obj["y"].toDouble());
+        comment->pos = QVector2D(jsonutils::getFloat(obj["x"]),
+                                 jsonutils::getFloat(obj["y"]));
         texture->comments[comment->id] = comment;
     }
 
@@ -127,9 +129,10 @@ TextureProjectPtr Project::loadTextureFromJson(QJsonObject json)
                         ? QUuid::createUuid().toString(QUuid::WithoutBraces)
                         : frameId;
         frame->text = obj["title"].toString();
-        frame->pos = QVector2D(obj["x"].toDouble(), obj["y"].toDouble());
-        frame->size =
-            QVector2D(obj["width"].toDouble(300), obj["height"].toDouble(200));
+        frame->pos = QVector2D(jsonutils::getFloat(obj["x"]),
+                               jsonutils::getFloat(obj["y"]));
+        frame->size = QVector2D(jsonutils::getFloat(obj["width"], 300),
+                                jsonutils::getFloat(obj["height"], 200));
         auto colorStr = obj["color"].toString();
         if (!colorStr.isEmpty())
             frame->color = QColor(colorStr);
