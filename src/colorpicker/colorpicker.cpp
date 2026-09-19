@@ -23,29 +23,33 @@ ColorPicker::ColorPicker()
 
     svBox = new SVBox();
     hueSlider = new HueSlider();
-    // alphaSlider = new AlphaSlider();
+    alphaSlider = new AlphaSlider();
 
     svBox->setColor(QColor(255, 150, 0, 255));
     originalColor = QColor(255, 150, 0, 255);
+    alphaSlider->setColor(originalColor);
 
     // connect widget signals to emit color changes
     connect(svBox, &SVBox::onSVChanged, this, [this](float s, float v) {
-        QColor currentColor = svBox->getColor();
-        emit onColorChanged(currentColor);
+        QColor color = currentColor();
+        alphaSlider->setColor(color);
+        emit onColorChanged(color);
     });
     connect(hueSlider, &HueSlider::onHueChanged, this, [this](float h) {
-        QColor currentColor = svBox->getColor();
-        currentColor.setHsvF(h, currentColor.saturationF(),
-                             currentColor.valueF());
-        svBox->setColor(currentColor);
-        emit onColorChanged(currentColor);
+        QColor color = currentColor();
+        color.setHsvF(h, color.saturationF(), color.valueF(), color.alphaF());
+        svBox->setColor(color);
+        alphaSlider->setColor(color);
+        emit onColorChanged(color);
     });
+    connect(alphaSlider, &AlphaSlider::onAlphaChanged, this,
+            [this](float a) { emit onColorChanged(currentColor()); });
 
     // add layout
     auto vlayout = new QVBoxLayout(this);
     vlayout->addWidget(svBox);
     vlayout->addWidget(hueSlider);
-    // vlayout->addWidget(alphaSlider);
+    vlayout->addWidget(alphaSlider);
 
     this->setLayout(vlayout);
 
@@ -58,7 +62,15 @@ void ColorPicker::setColor(const QColor& color)
     originalColor = color;
     svBox->setColor(color);
     hueSlider->setColor(color);
-    // alphaSlider->setColor(color);
+    alphaSlider->setColor(color);
+}
+
+QColor ColorPicker::currentColor() const
+{
+    // SVBox tracks hue/sat/value only; alpha lives on the alpha slider
+    QColor color = svBox->getColor();
+    color.setAlphaF(alphaSlider->getAlpha());
+    return color;
 }
 
 void ColorPicker::cancel()
@@ -66,6 +78,7 @@ void ColorPicker::cancel()
     // revert to the color the dialog was opened with
     svBox->setColor(originalColor);
     hueSlider->setColor(originalColor);
+    alphaSlider->setColor(originalColor);
     emit onColorChanged(originalColor);
     reject();
 }

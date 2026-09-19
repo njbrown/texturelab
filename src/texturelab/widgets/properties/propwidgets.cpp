@@ -3,6 +3,7 @@
 #include "../../props.h"
 #include "colorpicker.h"
 #include "gradientpicker.h"
+#include "thememanager.h"
 
 #include <QComboBox>
 #include <QDir>
@@ -14,6 +15,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPainter>
+#include <QPainterPath>
 #include <QPixmap>
 #include <QPlainTextEdit>
 #include <QPushButton>
@@ -333,6 +335,50 @@ void BoolPropWidget::setValue(bool value)
     }
 }
 
+namespace {
+// Color swatch that shows a checkerboard behind translucent colors. Shaped
+// like the app's spinboxes (radius.sm corners, border.input outline).
+class ColorSwatch : public QWidget {
+public:
+    QColor color;
+
+    explicit ColorSwatch(QWidget* parent = nullptr) : QWidget(parent) {}
+
+protected:
+    void paintEvent(QPaintEvent*) override
+    {
+        const Theme& t = ThemeManager::instance().theme();
+        const qreal radius = t.radius("sm");
+
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        QRectF r = QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5);
+        QPainterPath path;
+        path.addRoundedRect(r, radius, radius);
+
+        painter.save();
+        painter.setClipPath(path);
+        if (color.alpha() < 255)
+            drawCheckerboard(painter, rect());
+        painter.fillRect(rect(), color);
+        painter.restore();
+
+        painter.setPen(QPen(t.color("border.input"), 1));
+        painter.setBrush(Qt::NoBrush);
+        painter.drawPath(path);
+    }
+};
+
+// Height of a themed spinbox, so the swatch lines up with float/int props
+int spinboxHeight()
+{
+    QDoubleSpinBox probe;
+    probe.ensurePolished();
+    return probe.sizeHint().height();
+}
+} // namespace
+
 ColorPropWidget::ColorPropWidget()
 {
     prop = nullptr;
@@ -346,8 +392,8 @@ ColorPropWidget::ColorPropWidget()
     vlayout->addWidget(label);
 
     // color preview
-    colorPreview = new QWidget(this);
-    colorPreview->setFixedHeight(20);
+    colorPreview = new ColorSwatch(this);
+    colorPreview->setFixedHeight(spinboxHeight());
     colorPreview->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     colorPreview->setCursor(Qt::PointingHandCursor);
     colorPreview->installEventFilter(this);
@@ -366,13 +412,8 @@ void ColorPropWidget::setProp(ColorProp* prop)
 void ColorPropWidget::updateColorPreview()
 {
     if (prop) {
-        QString styleSheet = QString("background-color: rgba(%1, %2, %3, %4); "
-                                     "border: 1px solid #888;")
-                                 .arg(prop->value.red())
-                                 .arg(prop->value.green())
-                                 .arg(prop->value.blue())
-                                 .arg(prop->value.alpha());
-        colorPreview->setStyleSheet(styleSheet); // theme-exempt: dynamic color-data swatch
+        static_cast<ColorSwatch*>(colorPreview)->color = prop->value;
+        colorPreview->update();
     }
 }
 

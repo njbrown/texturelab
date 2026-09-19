@@ -7,6 +7,12 @@ class AlphaSlider;
 class QKeyEvent;
 class QHideEvent;
 class QShowEvent;
+class QPainter;
+class QRect;
+
+// Fills rect with a light gray/white checkerboard, used behind colors that
+// have transparency.
+void drawCheckerboard(QPainter& painter, const QRect& rect, int cellSize = 6);
 
 class ColorPicker : public QDialog {
     Q_OBJECT
@@ -30,6 +36,7 @@ private:
     void colorChangedByEditor(QColor color);
     void colorChangedByUI(QColor color);
     void cancel();
+    QColor currentColor() const;
 
     SVBox* svBox;
     HueSlider* hueSlider;
