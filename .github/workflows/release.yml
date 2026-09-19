@@ -139,37 +139,8 @@ jobs:
 
       - name: Create AppImage
         env:
-          APPIMAGE_EXTRACT_AND_RUN: 1
-          DEPLOY_STDCXX: 1
-        run: |
-          QTDIR=${{ github.workspace }}/Qt/Qt/${QT_VERSION}/gcc_64
-          export QMAKE=$QTDIR/bin/qmake
-          export PATH=$QTDIR/bin:$PATH
-          export LD_LIBRARY_PATH=$QTDIR/lib:$LD_LIBRARY_PATH
-
-          # Ship only the SQLite driver; see build.yml for why the rest must go.
-          find "$QTDIR/plugins/sqldrivers" -name 'libqsql*.so' ! -name 'libqsqlite.so' -delete
-
-          cp packaging/linux/texturelab.desktop texturelab.desktop
-          cp src/icons/logo.png texturelab.png
-
-          mkdir -p AppDir/usr/bin AppDir/usr/share/doc/texturelab
-          cp build/src/texturelab/crashpad_handler AppDir/usr/bin/ || \
-            cp build/_deps/sentry-build/crashpad_build/handler/crashpad_handler AppDir/usr/bin/
-          cp LICENSE AppDir/usr/share/doc/texturelab/
-
-          mkdir -p dist
-          # linuxdeploy's appimage plugin writes to $OUTPUT.
-          OUTPUT="dist/texturelab-linux-${TAG}-x86_64.AppImage" \
-          linuxdeploy-x86_64.AppImage \
-            --appdir AppDir \
-            --executable build/src/texturelab/texturelab \
-            --desktop-file texturelab.desktop \
-            --icon-file texturelab.png \
-            --plugin qt \
-            --output appimage
-
-          chmod +x dist/*.AppImage
+          QTDIR: ${{ github.workspace }}/Qt/Qt/${{ env.QT_VERSION }}/gcc_64
+        run: scripts/package-linux.sh "$TAG"
 
       - name: Smoke test AppImage
         env:
@@ -238,23 +209,9 @@ jobs:
 
       - name: Deploy Qt dependencies
         shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          $dir = "dist\texturelab-win-$env:TAG"
-          New-Item -ItemType Directory -Force $dir | Out-Null
-          Copy-Item "build\src\texturelab\Release\texturelab.exe" $dir
-          & "${{ github.workspace }}\Qt\Qt\$env:QT_VERSION\msvc2019_64\bin\windeployqt.exe" "$dir\texturelab.exe" --release --no-translations
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          # Ship only the SQLite driver (matches the Linux build).
-          Get-ChildItem "$dir\sqldrivers" -Filter *.dll | Where-Object { $_.Name -ne "qsqlite.dll" } | Remove-Item
-          $handler = @(
-            "build\src\texturelab\Release\crashpad_handler.exe",
-            "build\src\texturelab\crashpad_handler.exe",
-            "build\_deps\sentry-build\crashpad_build\handler\Release\crashpad_handler.exe"
-          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
-          if (-not $handler) { Write-Error "crashpad_handler.exe not found; crash reporting would not work." }
-          Copy-Item $handler $dir
-          Copy-Item LICENSE "$dir\LICENSE.txt"
+        env:
+          QTDIR: ${{ github.workspace }}\Qt\Qt\${{ env.QT_VERSION }}\msvc2019_64
+        run: scripts/package-windows.ps1 -Tag $env:TAG -Stage Deploy
 
       # Authenticode signing doesn't touch the CodeView record, so the Debug IDs
       # uploaded to Sentry above still match the signed binaries.
@@ -287,16 +244,12 @@ jobs:
 
       - name: Zip
         shell: pwsh
-        run: |
-          # Zip the folder itself so it extracts into texturelab-win-<tag>\.
-          Compress-Archive -Path "dist\texturelab-win-$env:TAG" -DestinationPath "texturelab-win-$env:TAG-x64.zip"
-          New-Item -ItemType Directory -Force out | Out-Null
-          Move-Item "texturelab-win-$env:TAG-x64.zip" out\
+        run: scripts/package-windows.ps1 -Tag $env:TAG -Stage Zip
 
       - uses: actions/upload-artifact@v4
         with:
           name: release-windows
-          path: out/
+          path: dist/*.zip
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
@@ -360,13 +313,6 @@ jobs:
           curl -sL https://sentry.io/get-cli/ | bash
           sentry-cli debug-files upload --include-sources symbols/texturelab.dSYM
 
-      - name: Bundle Qt frameworks
-        run: |
-          "${{ github.workspace }}/Qt/Qt/${QT_VERSION}/macos/bin/macdeployqt" "$APP"
-          # Ship only the SQLite driver (matches the Linux build).
-          find "$APP/Contents/PlugIns/sqldrivers" -name 'libqsql*.dylib' ! -name 'libqsqlite.dylib' -delete
-          cp LICENSE "$APP/Contents/Resources/"
-
       - name: Import signing certificate
         if: env.HAS_MAC_SIGNING == 'true'
         env:
@@ -387,30 +333,16 @@ jobs:
           [ -n "$ID" ] || { echo "::error::No 'Developer ID Application' identity in APPLE_CERT_P12"; exit 1; }
           echo "MAC_SIGN_ID=$ID" >> "$GITHUB_ENV"
 
-      - name: Sign app
-        if: env.HAS_MAC_SIGNING == 'true'
-        run: |
-          # Hardened runtime + secure timestamp are required for notarization.
-          # --deep also signs the bundled Qt frameworks, plugins and crashpad_handler.
-          codesign --force --deep --options runtime --timestamp --sign "$MAC_SIGN_ID" "$APP"
-          codesign --verify --deep --strict --verbose=2 "$APP"
+      - name: Bundle Qt, sign and create DMG
+        env:
+          QTDIR: ${{ github.workspace }}/Qt/Qt/${{ env.QT_VERSION }}/macos
+        run: scripts/package-macos.sh "$TAG"
 
       - name: Smoke test
         run: |
           OUT=$("$APP/Contents/MacOS/texturelab" --version)
           echo "$OUT"
           echo "$OUT" | grep -q "texturelab ${TAG#v}+" || { echo "::error::unexpected --version output"; exit 1; }
-
-      - name: Create DMG
-        run: |
-          mkdir -p dmg out
-          cp -R "$APP" dmg/
-          ln -s /Applications dmg/Applications
-          DMG="out/texturelab-mac-${TAG}-universal.dmg"
-          hdiutil create -volname "TextureLab" -srcfolder dmg -format UDZO -ov "$DMG"
-          if [ "$HAS_MAC_SIGNING" = "true" ]; then
-            codesign --force --timestamp --sign "$MAC_SIGN_ID" "$DMG"
-          fi
 
       - name: Notarize and staple
         if: env.HAS_MAC_NOTARIZE == 'true'
@@ -419,7 +351,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
         run: |
-          DMG="out/texturelab-mac-${TAG}-universal.dmg"
+          DMG="dist/texturelab-mac-${TAG}-universal.dmg"
           xcrun notarytool submit "$DMG" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" \
             --password "$APPLE_APP_PASSWORD" --wait --timeout 30m
           xcrun stapler staple "$DMG"
@@ -428,7 +360,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: release-macos
-          path: out/
+          path: dist/*.dmg
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
