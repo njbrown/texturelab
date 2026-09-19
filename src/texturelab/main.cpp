@@ -10,6 +10,7 @@
 #include <QSurfaceFormat>
 #include <QThread>
 
+#include <cstdio>
 #include <cstring>
 
 // Hints that a dedicated GPU should be used whenever possible
@@ -111,6 +112,17 @@ int main(int argc, char* argv[])
 
     // Consistent dark UI on every platform, regardless of the host system theme.
     applyDarkTheme(a);
+
+    // Print the version and exit. Runs after QApplication and the theme are up,
+    // so the release workflow uses it as a smoke test of a packaged build: it
+    // proves the Qt libraries, platform plugin and resources all load.
+    for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--version") == 0) {
+            std::printf("texturelab %s\n", qPrintable(a.applicationVersion()));
+            std::fflush(stdout);
+            return 0;
+        }
+    }
 
     // Theme hot-reload: live-reloads the theme from the on-disk source files
     // (resources/…) on save, so colors and QSS can be tuned without rebuilding.
