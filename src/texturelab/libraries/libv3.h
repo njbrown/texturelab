@@ -129,6 +129,11 @@ public:
     void init() override;
 };
 
+class Atlas2x2Node : public TextureNode {
+public:
+    void init() override;
+};
+
 class MakeItTileNode : public TextureNode {
 public:
     void init() override;

@@ -285,6 +285,7 @@ Library* createLibraryV3()
     lib->addNode<FastAONode>("fastao", "Fast AO", ":nodes/bevel.png");
     lib->addNode<HeightBlendNode>("heightblend", "Height Blend",
                                   ":nodes/blend.png");
+    lib->addNode<Atlas2x2Node>("atlas2x2", "Atlas 2x2", ":nodes/tile.png");
     // lib->addNode<MakeItTileNode>("makeittile", "Make It Tile",
     //                              ":nodes/tile.png");
     // lib->addNode<NormalMapV3Node>("normalmapv3", "Normal Map V3",

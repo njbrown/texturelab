@@ -148,6 +148,7 @@ set(LIBRARYV3
     ./libraries/v3/spread.cpp
     ./libraries/v3/fastao.cpp
     ./libraries/v3/heightblend.cpp
+    ./libraries/v3/atlas2x2.cpp
     ./libraries/v3/makeittile.cpp
     ./libraries/v3/normalmapv3.cpp
 )
