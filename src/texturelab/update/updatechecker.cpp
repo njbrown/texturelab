@@ -22,7 +22,7 @@ namespace {
 // !!! "https://texturelab.io" before cutting a release: a shipped build pointed
 // !!! at localhost never reaches anything and silently reports no updates.
 // constexpr const char* kApiBase = "http://localhost:3333";
-constexpr const char* kApiBase = "https://v2.texturelab.io";
+constexpr const char* kApiBase = "https://texturelab.io";
 
 constexpr const char* kEnabledKey = "updateCheck";
 
