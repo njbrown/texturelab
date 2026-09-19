@@ -266,6 +266,21 @@ set(PROJECT_RESOURCES
     ./assets.qrc
     ${CMAKE_SOURCE_DIR}/resources/theme.qrc)
 
+# Platform application icons. The runtime window icon is set separately in
+# main.cpp (QApplication::setWindowIcon); these give the built artifact its icon.
+set(APP_ICON_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../icons)
+if(WIN32)
+    # Embedded into the .exe via a resource script.
+    list(APPEND PROJECT_RESOURCES ./texturelab.rc)
+elseif(APPLE)
+    # Copied into TextureLab.app/Contents/Resources and named in Info.plist
+    # through MACOSX_BUNDLE_ICON_FILE below.
+    set(APP_ICON_MACOS ${APP_ICON_DIR}/logo.icns)
+    set_source_files_properties(${APP_ICON_MACOS} PROPERTIES
+        MACOSX_PACKAGE_LOCATION Resources)
+    list(APPEND PROJECT_RESOURCES ${APP_ICON_MACOS})
+endif()
+
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(texturelab
         MANUAL_FINALIZATION
@@ -351,6 +366,7 @@ endif()
 
 set_target_properties(texturelab PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER io.texturelab.app
+    MACOSX_BUNDLE_ICON_FILE logo.icns
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE TRUE
@@ -361,6 +377,20 @@ set_target_properties(texturelab PROPERTIES
 install(TARGETS texturelab
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+# Linux executables carry no icon; desktops look it up through the .desktop
+# entry's Icon= name in the hicolor theme.
+if(UNIX AND NOT APPLE)
+    include(GNUInstallDirs)
+    install(FILES ${CMAKE_SOURCE_DIR}/packaging/linux/texturelab.desktop
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+    install(FILES ${APP_ICON_DIR}/logo.svg
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps
+        RENAME texturelab.svg)
+    install(FILES ${APP_ICON_DIR}/logo.png
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/512x512/apps
+        RENAME texturelab.png)
+endif()
 
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(texturelab)

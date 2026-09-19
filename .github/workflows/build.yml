@@ -135,17 +135,8 @@ jobs:
           QT_SQLDRIVERS=${{ github.workspace }}/Qt/Qt/6.7.3/gcc_64/plugins/sqldrivers
           find "$QT_SQLDRIVERS" -name 'libqsql*.so' ! -name 'libqsqlite.so' -delete
 
-          # Create desktop file
-          cat > texturelab.desktop << 'EOF'
-          [Desktop Entry]
-          Type=Application
-          Name=TextureLab
-          Exec=texturelab
-          Icon=texturelab
-          Categories=Graphics;
-          EOF
-
-          # Create a placeholder icon (256x256 PNG with "TL" text)
+          # Desktop entry + icon (name must match the entry's Icon= key)
+          cp packaging/linux/texturelab.desktop texturelab.desktop
           cp src/icons/logo.png texturelab.png
 
           # Bundle crashpad_handler alongside the main binary

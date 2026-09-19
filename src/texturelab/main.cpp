@@ -105,6 +105,9 @@ int main(int argc, char* argv[])
     a.setApplicationName("texturelab");
     a.setApplicationVersion(QString(TEXTURELAB_VERSION) + "+" + TEXTURELAB_BUILD_HASH);
     a.setWindowIcon(QIcon(":/icons/logo.png"));
+    // Wayland ignores setWindowIcon; compositors resolve the icon from the
+    // installed desktop entry (packaging/linux/texturelab.desktop) instead.
+    a.setDesktopFileName("texturelab");
 
     // Consistent dark UI on every platform, regardless of the host system theme.
     applyDarkTheme(a);
