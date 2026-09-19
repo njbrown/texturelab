@@ -6,6 +6,7 @@
 #include "version.h"
 
 #include <QApplication>
+#include <QIcon>
 #include <QSurfaceFormat>
 #include <QThread>
 
@@ -103,6 +104,7 @@ int main(int argc, char* argv[])
     a.setOrganizationName("texturelab");
     a.setApplicationName("texturelab");
     a.setApplicationVersion(QString(TEXTURELAB_VERSION) + "+" + TEXTURELAB_BUILD_HASH);
+    a.setWindowIcon(QIcon(":/icons/logo.png"));
 
     // Consistent dark UI on every platform, regardless of the host system theme.
     applyDarkTheme(a);
