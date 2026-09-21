@@ -770,8 +770,13 @@ void TextureRenderer::nodeRendered(const QString& nodeId, GLuint texId)
     if (project) {
         int total = project->nodes.size();
         int clean = 0;
+        // update() may have just queued the next node, which is already
+        // flagged clean. Counting it would report the graph finished while
+        // its last node is still rendering, and the launcher thumbnail taken
+        // on that signal would miss whatever channels that node feeds.
         for (const auto& n : project->nodes)
-            if (!n->isDirty) clean++;
+            if (!n->isDirty && !(renderInFlight && n->id == inFlightNodeId))
+                clean++;
         emit renderProgress(clean, total);
     }
 }
@@ -852,6 +857,7 @@ void TextureRenderer::queueNextNodeToRender()
         // pass to render worker to process
         renderWorker->setRenderQueue(queue);
         renderInFlight = true;
+        inFlightNodeId = nextNode->id;
 
         // mark node as clean before rendering to avoid double-queuing
         nextNode->isDirty = false;

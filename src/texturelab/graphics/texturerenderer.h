@@ -49,6 +49,10 @@ class TextureRenderer : public QObject {
     // captured as inputs in the in-flight command.
     bool renderInFlight = false;
 
+    // The node that in-flight command renders. It's marked clean when queued
+    // (to avoid double-queuing), so progress must not count it as done yet.
+    QString inFlightNodeId;
+
     // The last resolution every node was successfully allocated at. A failed
     // resize (4K on a small-VRAM GPU is the case that prompted this) rolls the
     // project back to it instead of aborting the process.
