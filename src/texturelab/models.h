@@ -1,0 +1,238 @@
+#ifndef MODELS_H
+#define MODELS_H
+
+#include "gradient.h"
+#include <QEnableSharedFromThis>
+#include <QList>
+#include <QMap>
+#include <QSharedPointer>
+#include <QString>
+#include <QVector2D>
+#include <QtOpenGL>
+#include <memory>
+
+class QOpenGLFramebufferObject;
+class QOpenGLShaderProgram;
+
+struct RenderCommand;
+
+class TextureProject;
+class TextureNode;
+class Comment;
+class Frame;
+class Connection;
+typedef QSharedPointer<TextureProject> TextureProjectPtr;
+typedef QSharedPointer<TextureNode> TextureNodePtr;
+typedef QSharedPointer<Comment> CommentPtr;
+typedef QSharedPointer<Frame> FramePtr;
+typedef QSharedPointer<Connection> ConnectionPtr;
+
+class Prop;
+class PropertyGroup;
+class Library;
+class NodeTextureRenderer;
+struct NodeRenderData;
+
+class IntProp;
+class FloatProp;
+class BoolProp;
+class EnumProp;
+class ColorProp;
+class StringProp;
+class GradientProp;
+class ImageProp;
+class CurveProp;
+
+enum class PackageFileType { Texture, Image };
+
+enum class TextureChannel : int {
+    None = 0,
+    Albedo = 1,
+    Normal = 2,
+    Metalness = 3,
+    Roughness = 4,
+    Height = 5,
+    Alpha = 6,
+    AO = 7
+};
+
+class ProjectFile {
+public:
+    QByteArray contents();
+};
+
+class TextureProject : public QEnableSharedFromThis<TextureProject> {
+public:
+    QString name = "untitled";
+    int randomSeed = 0;
+    int textureWidth = 1024;
+    int textureHeight = 1024;
+
+    // texturechannel:nodeid
+    QMap<TextureChannel, QString> textureChannels;
+
+    Library* library = nullptr;
+    QString libraryVersion = "v3";
+
+    QMap<QString, TextureNodePtr> nodes;
+    QMap<QString, ConnectionPtr> connections;
+    QMap<QString, CommentPtr> comments;
+    QMap<QString, FramePtr> frames;
+
+    TextureNodePtr getNodeById(const QString& id);
+    ConnectionPtr getConnectionById(const QString& id);
+    QVector<TextureNodePtr> getNodeDependencies(const QString& id);
+    QVector<TextureNodePtr> getNodeRightOfNode(const QString& id);
+
+    QString exportFilePattern = "${project}_${name}";
+    QString exportDestination = "";
+    QString filePath = nullptr;
+
+    void addNode(const TextureNodePtr& node);
+
+    // Removes the node along with every connection touching it and any
+    // texture-channel assignment pointing at it. Downstream nodes are marked
+    // dirty so they re-render without this node's output.
+    void removeNode(const QString& id);
+
+    // todo: make two port variant
+    // Adding or removing a connection marks the right node and everything
+    // downstream of it dirty — callers don't need to do it themselves.
+    void addConnection(TextureNodePtr leftNode, TextureNodePtr rightNode,
+                       QString rightNodeInput);
+
+    ConnectionPtr removeConnection(const QString& leftNode,
+                                   const QString& rightNode,
+                                   const QString& rightNodeInput);
+    void removeConnection(ConnectionPtr con);
+    void removeConnection(const QString& id);
+
+    // Marks the node and every node downstream of it as needing a re-render.
+    void markNodeAsDirty(const TextureNodePtr& node);
+
+    static TextureProjectPtr createEmpty(Library* library = nullptr);
+};
+
+class TextureNode : public QEnableSharedFromThis<TextureNode> {
+public:
+    QString id;
+    QString typeName;
+    QString title;
+
+    QVector2D pos;
+
+    QList<QString> inputs;
+
+    long randomSeed = 0;
+    QString exportName;
+
+    QMap<QString, Prop*> props;
+    QList<PropertyGroup*> propertyGroups;
+
+    // texture needs updating
+    bool isDirty = true;
+
+    // flag to indicate this node processes on CPU instead of GPU shader
+    bool usesCpuProcessing = false;
+
+    int textureWidth = 0;
+    int textureHeight = 0;
+    QOpenGLFramebufferObject* texture = nullptr;
+    QOpenGLShaderProgram* shader = nullptr;
+    QString shaderSource;
+
+    TextureNode();
+
+    virtual void init() {};
+
+    // Virtual method for CPU processing
+    virtual void cpuProcess(void* gl, const struct RenderCommand& command) {};
+
+    void addInput(const QString& inputName);
+
+    void setProp(QString propName, QVariant value);
+
+    Prop* getProp(QString propName);
+
+    bool hasProp(QString propName);
+
+    void setShaderSource(const QString& source) { shaderSource = source; }
+
+    // Override to provide a custom renderer for multi-pass or non-standard
+    // rendering. Called on the main thread during queueNextNodeToRender().
+    // Return nullptr for standard single-pass rendering.
+    virtual std::shared_ptr<NodeTextureRenderer> createRenderer()
+    {
+        return nullptr;
+    }
+
+    // Override to provide render-time data for the custom renderer.
+    // Called on the main thread. Must not reference GPU resources.
+    virtual std::shared_ptr<NodeRenderData> createRenderData()
+    {
+        return nullptr;
+    }
+
+    bool isGraphicsResourcesInitialized()
+    {
+        return texture != nullptr && shader != nullptr;
+    }
+
+    unsigned int textureId();
+
+    PropertyGroup* createGroup(const QString& name);
+
+    // add prop functions
+    IntProp* addIntProp(const QString& name, const QString& displayName,
+                        int defaultVal = 1, int minVal = 1, int maxVal = 100,
+                        int increment = 1);
+    FloatProp* addFloatProp(const QString& name, const QString& displayName,
+                            double defaultVal = 1, double minVal = 1,
+                            double maxVal = 100, double increment = 1);
+    BoolProp* addBoolProp(const QString& name, const QString& displayName,
+                          bool defaultVal = false);
+    EnumProp* addEnumProp(const QString& name, const QString& displayName,
+                          QList<QString> defaultVal);
+    ColorProp* addColorProp(const QString& name, const QString& displayName,
+                            const QColor& defaultVal);
+    StringProp* addStringProp(const QString& name, const QString& displayName,
+                              const QString& defaultVal = "");
+
+    GradientProp* addGradientProp(const QString& name,
+                                  const QString& displayName,
+                                  const Gradient& defaultVal);
+
+    ImageProp* addImageProp(const QString& name, const QString& displayName);
+
+    CurveProp* addCurveProp(const QString& name, const QString& displayName);
+};
+
+class Comment : public QEnableSharedFromThis<Comment> {
+public:
+    QString id;
+    QString text;
+    QVector2D pos;
+};
+
+class Frame : public QEnableSharedFromThis<Frame> {
+public:
+    QString id;
+    QString text;
+    QColor color = QColor(25, 0, 51);
+
+    QVector2D pos;
+    QVector2D size;
+};
+
+class Connection : public QEnableSharedFromThis<Connection> {
+public:
+    QString id;
+
+    TextureNodePtr leftNode;
+    TextureNodePtr rightNode;
+
+    QString leftNodeOutputName;
+    QString rightNodeInputName;
+};
+
+#endif

@@ -1,0 +1,515 @@
+/*
+ * TextureLab application stylesheet (template).
+ *
+ * Double-brace placeholders are substituted from the active theme JSON by
+ * QssBuilder at load time -- a placeholder naming the color token bg.panel
+ * becomes #353535, radius.sm becomes 3, font.ui.family becomes the UI font
+ * family, and so on. (This comment avoids writing a literal placeholder so the
+ * substituter has nothing to flag.)
+ *
+ * PHASE 1 -- app chrome: menus, toolbars, status bar, and the common controls
+ * that appear across every panel (buttons, inputs, combos, checks, sliders,
+ * scrollbars, tooltips, splitters). Panel-specific styling lands in later
+ * phases (see UI_DESIGN_SYSTEM_PRD.md section 6).
+ *
+ * Edit + save this file to see changes live (no rebuild): hot-reload is ON by
+ * default in Debug builds (also `--dev-theme` in any build; `--no-dev-theme` to
+ * disable). See the hot-reload section in UI_DESIGN_SYSTEM_PRD.md.
+ */
+
+/* ============================================================= base ======= */
+
+QWidget {
+    font-family: {{font.ui.family}};
+    font-size: {{font.ui.size}}px;
+    color: {{text.primary}};
+}
+
+QToolTip {
+    background: {{bg.elevated}};
+    color: {{text.primary}};
+    border: 1px solid {{border.subtle}};
+    padding: 3px 6px;
+}
+
+/* ======================================================= menu bar ========= */
+
+QMenuBar {
+    background: {{bg.panel}};
+    border: none;
+    padding: 2px 4px;
+}
+QMenuBar::item {
+    background: transparent;
+    padding: 4px 10px;
+    border-radius: {{radius.sm}}px;
+}
+QMenuBar::item:selected { background: {{ctrl.hover}}; }
+QMenuBar::item:pressed  { background: {{selection}}; color: {{text.primary}}; }
+
+QMenu {
+    background: {{bg.elevated}};
+    border: 1px solid {{border.subtle}};
+    padding: 4px;
+}
+QMenu::item {
+    padding: 5px 24px 5px 22px;
+    border-radius: {{radius.sm}}px;
+}
+QMenu::item:selected  { background: {{selection}}; color: {{text.primary}}; }
+QMenu::item:disabled  { color: {{text.disabled}}; }
+QMenu::separator {
+    height: 1px;
+    background: {{border.subtle}};
+    margin: 4px 8px;
+}
+QMenu::icon { padding-left: 6px; }
+
+/* ======================================================= tool bar ========= */
+
+QToolBar {
+    background: {{bg.panel}};
+    border: none;
+    border-bottom: 1px solid {{border.subtle}};
+    padding: 3px;
+    spacing: {{space.sm}}px;
+}
+QToolBar::separator {
+    width: 1px;
+    background: {{border.subtle}};
+    margin: 4px 4px;
+}
+/* Main window toolbar: strong (black) top border matching the ADS dock gutters.
+   Extra right padding so the Export button isn't flush against the window edge. */
+#MainToolbar {
+    border-top: 1px solid {{border.strong}};
+    padding-right: 10px;
+}
+/* Hover/pressed on the main toolbar buttons (undo/redo/export): a lighter fill,
+   no colored outline. */
+#MainToolbar QToolButton:hover   { background: {{ctrl.hover}}; }
+#MainToolbar QToolButton:pressed { background: {{ctrl.pressed}}; }
+QToolButton {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: {{radius.sm}}px;
+    padding: 4px 6px;
+}
+QToolButton:hover   { background: {{ctrl.hover}}; }
+QToolButton:pressed { background: {{ctrl.pressed}}; }
+QToolButton:checked { background: {{selection}}; border-color: {{accent.press}}; }
+/* Disabled: the global QWidget color rule forces text.primary even when
+   disabled (QSS color doesn't auto-dim), so dim it back explicitly. */
+QToolButton:disabled { color: {{text.disabled}}; }
+QToolButton::menu-indicator { image: none; }
+
+/* ====================================================== status bar ======== */
+
+QStatusBar {
+    background: {{bg.panel}};
+    border-top: 1px solid {{border.subtle}};
+}
+QStatusBar::item { border: none; }
+QStatusBar QLabel { background: transparent; }
+
+#StatusVersionLabel {
+    color: {{text.disabled}};
+    padding: 0 6px;
+}
+
+/* ========================================================= buttons ======== */
+
+QPushButton {
+    background: {{ctrl.bg}};
+    border: 1px solid {{border.input}};
+    border-radius: {{radius.sm}}px;
+    padding: 4px 12px;
+    min-height: 18px;
+}
+QPushButton:hover    { background: {{ctrl.hover}}; }
+QPushButton:pressed  { background: {{ctrl.pressed}}; }
+QPushButton:disabled { color: {{text.disabled}}; border-color: {{border.subtle}}; }
+QPushButton:default  { border-color: {{accent}}; }
+
+QPushButton[variant="primary"] {
+    background: {{accent}};
+    border: 1px solid {{accent.press}};
+    color: {{text.primary}};
+}
+QPushButton[variant="primary"]:hover   { background: {{accent.hover}}; }
+QPushButton[variant="primary"]:pressed { background: {{accent.press}}; }
+
+/* ==================================================== text inputs ========= */
+
+QLineEdit, QPlainTextEdit, QTextEdit, QSpinBox, QDoubleSpinBox {
+    background: {{bg.input}};
+    border: 1px solid {{border.input}};
+    border-radius: {{radius.sm}}px;
+    padding: 3px 6px;
+    selection-background-color: {{selection}};
+    selection-color: {{text.primary}};
+}
+QLineEdit:focus, QPlainTextEdit:focus, QTextEdit:focus,
+QSpinBox:focus, QDoubleSpinBox:focus {
+    border-color: {{accent}};
+}
+QLineEdit:disabled, QSpinBox:disabled, QDoubleSpinBox:disabled {
+    color: {{text.disabled}};
+}
+
+QSpinBox::up-button, QDoubleSpinBox::up-button,
+QSpinBox::down-button, QDoubleSpinBox::down-button {
+    width: 14px;
+    background: transparent;
+    border: none;
+}
+QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover,
+QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {
+    background: {{ctrl.hover}};
+}
+/* Styling the up/down buttons drops the native arrows, so supply them. */
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
+    image: url(:/icons/chevron-up.svg);
+    width: 9px;
+    height: 9px;
+}
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {
+    image: url(:/icons/chevron-down.svg);
+    width: 9px;
+    height: 9px;
+}
+
+/* ==================================================== combo boxes ========= */
+
+QComboBox {
+    background: {{ctrl.bg}};
+    border: 1px solid {{border.input}};
+    border-radius: {{radius.sm}}px;
+    padding: 3px 6px;
+    min-height: 18px;
+}
+QComboBox:hover  { background: {{ctrl.hover}}; }
+QComboBox:focus  { border-color: {{accent}}; }
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    width: 18px;
+    border: none;
+}
+/* Styling ::drop-down drops the native arrow, so supply our own chevron. */
+QComboBox::down-arrow {
+    image: url(:/icons/chevron-down.svg);
+    width: 12px;
+    height: 12px;
+}
+QComboBox QAbstractItemView {
+    background: {{bg.elevated}};
+    border: 1px solid {{border.subtle}};
+    selection-background-color: {{selection}};
+    selection-color: {{text.primary}};
+    outline: none;
+}
+
+/* ============================================= checks & radios ============ */
+
+QCheckBox, QRadioButton { spacing: 6px; background: transparent; }
+QCheckBox::indicator, QRadioButton::indicator {
+    width: 15px;
+    height: 15px;
+    background: {{bg.input}};
+    border: 1px solid {{border.input}};
+}
+QCheckBox::indicator { border-radius: {{radius.sm}}px; }
+QRadioButton::indicator { border-radius: 8px; }
+QCheckBox::indicator:hover, QRadioButton::indicator:hover { border-color: {{accent}}; }
+QCheckBox::indicator:checked, QRadioButton::indicator:checked {
+    background: {{ctrl.checked}};
+    border-color: {{accent.press}};
+}
+
+/* ========================================================= sliders ======== */
+
+QSlider::groove:horizontal {
+    height: 4px;
+    background: {{bg.input}};
+    border-radius: 2px;
+}
+QSlider::sub-page:horizontal { background: {{accent}}; border-radius: 2px; }
+QSlider::handle:horizontal {
+    background: {{text.secondary}};
+    width: 12px;
+    height: 12px;
+    margin: -5px 0;
+    border-radius: 6px;
+}
+QSlider::handle:horizontal:hover { background: {{text.primary}}; }
+
+/* ======================================================= scrollbars ======= */
+
+QScrollBar:vertical {
+    background: transparent;
+    width: 12px;
+    margin: 0;
+}
+QScrollBar:horizontal {
+    background: transparent;
+    height: 12px;
+    margin: 0;
+}
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background: {{gray.600}};
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: padding;
+}
+QScrollBar::handle:vertical { min-height: 28px; }
+QScrollBar::handle:horizontal { min-width: 28px; }
+QScrollBar::handle:hover { background: {{gray.550}}; }
+QScrollBar::add-line, QScrollBar::sub-line { height: 0; width: 0; background: none; }
+QScrollBar::add-page, QScrollBar::sub-page { background: none; }
+
+/* ========================================================= tab bar ======== */
+
+QTabBar::tab {
+    background: {{bg.window}};
+    color: {{text.secondary}};
+    padding: 5px 12px;
+    border: none;
+}
+QTabBar::tab:selected {
+    background: {{bg.panel}};
+    color: {{text.primary}};
+    border-bottom: 2px solid {{accent}};
+}
+QTabBar::tab:hover:!selected { color: {{text.primary}}; }
+
+/* ========================================================= splitter ======= */
+
+QSplitter::handle { background: {{border.subtle}}; }
+QSplitter::handle:horizontal { width: 1px; }
+QSplitter::handle:vertical { height: 1px; }
+QSplitter::handle:hover { background: {{accent}}; }
+
+/* ======================================================= progress ========= */
+
+QProgressBar {
+    background: {{bg.input}};
+    border: none;
+    border-radius: {{radius.sm}}px;
+    text-align: center;
+    color: {{text.primary}};
+    max-height: 14px;
+}
+QProgressBar::chunk { background: {{accent}}; border-radius: {{radius.sm}}px; }
+
+/* ============================================= properties / inspector ===== */
+
+/* Collapsible section header (AccordionWidget).
+   NOTE: min-height MUST be positive. With min-height:0 the flat header button
+   collapses to ~0px inside PropertiesWidget's dense QVBoxLayout, clipping the
+   title to invisibility (it survives in a looser layout, which masked it). The
+   original inline style set no min-height; keep an explicit one here since the
+   global QPushButton rule's 18px is what we're overriding. */
+#AccordionHeader {
+    background: {{gray.800}};
+    color: {{text.secondary}};
+    font-weight: bold;
+    text-align: left;
+    padding: 5px 8px;
+    border: none;
+    border-top: 1px solid {{border.subtle}};
+    border-bottom: 1px solid {{border.subtle}};
+    min-height: 20px;
+}
+#AccordionHeader:hover { background: {{gray.700}}; }
+
+/* "Frame" / "Comment" section titles in the properties panel */
+#PropSectionTitle {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Curve editor readout (In/Out values while dragging) */
+#CurveReadout {
+    color: {{text.disabled}};
+    font-size: 10px;
+}
+
+/* Image property placeholder / preview */
+#ImagePreview {
+    background: {{bg.input}};
+    border: 1px solid {{border.input}};
+    border-radius: {{radius.sm}}px;
+    color: {{text.disabled}};
+}
+
+/* Compact buttons (e.g. curve "Reset") */
+QPushButton[size="small"] {
+    font-size: 10px;
+    padding: 2px 6px;
+    min-height: 0;
+}
+
+/* ================================================== viewport overlays ===== */
+
+/* Compact 2D-view toolbar (save/copy/tile/recenter) */
+#View2DToolbar { padding: 1px; spacing: 1px; }
+#View2DToolbar QToolButton { padding: 2px; }
+
+/* 2D view "Texture copied" toast (bottom-center, fades in/out) */
+#ViewToast {
+    background: {{bg.elevated}};
+    color: {{text.primary}};
+    border: 1px solid {{border.subtle}};
+    padding: 10px 20px;
+    border-radius: {{radius.md}}px;
+}
+
+/* ================================================= popups & dialogs ======= */
+
+/* Floating node-search popup (Blender-style quick add). Frameless top-level, so
+   a crisp border reads as elevation; no radius (avoids frameless-corner artifacts). */
+#NodeSearchPopup {
+    background: {{bg.elevated}};
+    border: 1px solid {{border.strong}};
+}
+
+/* Export dialog destination field + help text */
+#ExportDestination {
+    background: {{bg.input}};
+    border: 1px solid {{border.input}};
+    border-radius: {{radius.sm}}px;
+    padding: 5px;
+}
+#ExportDestination[empty="true"] { color: {{text.disabled}}; }
+#ExportHelp { color: {{text.disabled}}; }
+
+/* Crash-report consent dialog. Reads as one block of prose, so the only
+   hierarchy is the title's size and the way the secondary text steps back. */
+#ConsentDialog   { background: {{bg.window}}; }
+#ConsentTitle    { color: {{text.primary}};   font-size: 17px; font-weight: bold; }
+#ConsentBody     { color: {{text.secondary}}; font-size: 13px; }
+#ConsentFactLead { color: {{text.primary}};   font-size: 12px; font-weight: bold; }
+#ConsentFact     { color: {{text.secondary}}; font-size: 12px; }
+#ConsentNote     { color: {{text.disabled}};  font-size: 11px; }
+#ConsentSeparator { color: {{border.subtle}}; }
+
+/* About dialog typography */
+#AboutTitle     { color: {{text.primary}};   font-size: 26px; font-weight: bold; }
+#AboutTag       { color: {{text.secondary}}; font-size: 12px; }
+#AboutVersion   { color: {{text.secondary}}; font-size: 13px; }
+#AboutDesc      { color: {{text.secondary}}; font-size: 13px; }
+#AboutLink      { font-size: 12px; }
+#AboutCopyright { color: {{text.disabled}};  font-size: 11px; }
+#AboutSeparator { color: {{border.subtle}}; }
+
+/* ==================================================== library panel ======= */
+
+/* Library version indicator; turns warn-colored when the library is outdated */
+#LibraryVersionLabel { color: {{text.secondary}}; }
+#LibraryVersionLabel[outdated="true"] { color: {{warn}}; }
+
+/* Library search: a bit larger/taller than the default input */
+#LibrarySearch {
+    font-size: 13px;
+    padding: 4px 6px;
+    min-height: 24px;
+}
+
+/* Node-thumbnail grid: transparent card that gets an accent ring on hover/select */
+#LibraryList {
+    background: {{bg.base}};
+    border: none;
+}
+#LibraryList::item {
+    border: 1px solid transparent;
+    border-radius: {{radius.sm}}px;
+    margin-left: 6px;
+    padding: 2px;
+}
+#LibraryList::item:hover    { border: 1px solid {{accent}}; }
+#LibraryList::item:selected {
+    border: 1px solid {{accent}};
+    background: {{ctrl.hover}};
+    color: {{text.primary}};
+}
+
+/* ==================================================== launcher =========== */
+
+/* Project-manager window. Two thin bars with the card grid between them; the
+   cards themselves are painted by TextureCardDelegate, not styled here. */
+
+#launcherTopBar,
+#launcherActionBar {
+    background: {{bg.panel}};
+}
+#launcherTopBar    { border-bottom: 1px solid {{border.subtle}}; }
+#launcherActionBar { border-top: 1px solid {{border.subtle}}; }
+
+#launcherGrid {
+    background: {{bg.elevated}};
+    border: none;
+}
+/* The delegate owns the whole card, so the view must not draw its own
+   selection fill underneath it. */
+#launcherGrid::item,
+#launcherGrid::item:hover,
+#launcherGrid::item:selected {
+    background: transparent;
+    border: none;
+}
+
+/* All / Recents / Starred, and the grid/list toggle — segmented controls that
+   fill when active rather than carrying an underline. Grey rather than accent
+   on purpose: the material thumbnails are meant to be the only saturated thing
+   in the window (see LAUNCHER_PRD.md §3.5). */
+#launcherFilterTab {
+    background: transparent;
+    border: none;
+    border-radius: {{radius.sm}}px;
+    color: {{text.secondary}};
+    padding: 4px 10px;
+    font-size: 13px;
+}
+#launcherFilterTab:hover {
+    color: {{text.primary}};
+    background: {{ctrl.bg}};
+}
+#launcherFilterTab:checked {
+    color: {{text.primary}};
+    background: {{ctrl.hover}};
+}
+
+/* First-run overlay: the message, plus a "New Texture" button on the genuine
+   empty state. It floats over the grid, so it must not paint a panel of its
+   own. */
+#launcherEmptyPanel {
+    background: transparent;
+}
+#launcherEmptyLabel {
+    background: transparent;
+    color: {{text.secondary}};
+    font-size: 14px;
+}
+
+/* Home button in the status bar — reopens the launcher */
+#StatusHomeButton {
+    background: transparent;
+    border: none;
+    color: {{text.secondary}};
+    padding: 0px 6px;
+    font-size: 14px;
+}
+#StatusHomeButton:hover { color: {{text.primary}}; }
+
+/* Update notice — hidden until a newer release exists, so it only ever appears
+   when it has something to say. Accent-tinted rather than shouty. */
+#launcherUpdateButton {
+    background: {{accent}};
+    border: none;
+    border-radius: {{radius.sm}}px;
+    color: {{white}};
+    padding: 4px 10px;
+    font-size: 12px;
+}
+#launcherUpdateButton:hover { background: {{accent.hover}}; }

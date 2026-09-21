@@ -1,0 +1,14 @@
+#include "gradientpicker.h"
+#include <QApplication>
+
+int main(int argc, char* argv[])
+{
+    QApplication a(argc, argv);
+    GradientPickerDialog dialog;
+
+    // dialog.resize(800, 600);
+    // dialog.setColor(QColor(50, 125, 125));
+    dialog.show();
+
+    return a.exec();
+}

@@ -1,0 +1,3 @@
+// Windows resource script: embeds the application icon in texturelab.exe
+// (Explorer, taskbar, Alt-Tab). The first ICON resource is the one Windows uses.
+IDI_ICON1 ICON "../icons/logo.ico"

@@ -1,0 +1,107 @@
+/*
+ * Dock-system (Qt Advanced Docking System) color overrides.
+ *
+ * IMPORTANT: this is APPENDED to ADS's own default stylesheet by MainWindow
+ * (see mainwindow.cpp), not used on its own. ADS's default carries button icons,
+ * layout metrics, and auto-hide geometry -- we keep all of that and only override
+ * colors/borders here. Rules must match or exceed the default's selector
+ * specificity to win; since we're appended, equal specificity is enough.
+ *
+ * ADS's default is palette()-driven, so much already follows our theme (e.g.
+ * highlight == accent). These overrides replace the muddy derived-palette bits
+ * (inactive tab text = palette(dark), active-tab gradient) with crisp tokens.
+ *
+ * Hot-reloads with --dev-theme (edit + save; MainWindow re-applies on themeChanged).
+ */
+
+/* ---- containers & areas ---- */
+/* Container is black so the only thing between panels is a single strong line
+   (the splitter), not a grey gutter -> no "double line" around panels. */
+ads--CDockContainerWidget { background: {{border.strong}}; }
+/* Kill the default 1px splitter padding that otherwise shows a grey gap. */
+ads--CDockContainerWidget > QSplitter { padding: 0; }
+ads--CDockAreaWidget      { background: {{bg.panel}}; border: none; }
+ads--CDockWidget          { background: {{bg.panel}}; border: none; }
+
+/* Title bar = the strip holding the tabs + area buttons. Darker than the panel
+   so the active tab (panel-colored) reads as raised out of a near-black header. */
+ads--CDockAreaTitleBar { background: {{bg.elevated}}; border: none; }
+
+/* ---- dock widget tabs ---- */
+/* Inactive tabs sit in the dark header but stay a step lighter than it so they
+   don't blend in (header = bg.elevated, inactive tab = gray.800, active = bg.panel). */
+ads--CDockWidgetTab {
+    background: {{gray.800}};
+    border: none;
+    border-right: 1px solid {{border.subtle}};
+    padding: 5px 14px;
+}
+/* Active tab is distinguished by its panel-colored background (no top indicator). */
+ads--CDockWidgetTab[activeTab="true"] {
+    background: {{bg.panel}};
+}
+ads--CDockWidgetTab QLabel { color: {{text.disabled}}; }
+ads--CDockWidgetTab[activeTab="true"] QLabel { color: {{text.primary}}; }
+ads--CDockWidgetTab:hover QLabel { color: {{text.secondary}}; }
+
+/* ---- splitters / resize handles ---- */
+/* Strong (black) gutters between panels. NOTE: the gutter THICKNESS is the
+   splitter handleWidth, which QSplitter ignores from QSS (both ::handle width
+   and qproperty-handleWidth) — so it's set in C++ (MainWindow, via setHandleWidth
+   on dockAreaCreated). This rule only colors the gutter. */
+/* Match ADS's own selector specificity (it uses the CDockContainerWidget
+   descendant form), else its palette(dark) grey wins over our black. */
+ads--CDockContainerWidget ads--CDockSplitter::handle { background: {{border.strong}}; }
+ads--CDockContainerWidget ads--CDockSplitter::handle:hover { background: {{accent}}; }
+ads--CResizeHandle { background: {{border.strong}}; }
+
+/* ---- title-bar & tab buttons ---- */
+ads--CTitleBarButton {
+    background: transparent;
+    border: none;
+    border-radius: {{radius.sm}}px;
+    padding: 2px;
+}
+ads--CTitleBarButton:hover   { background: {{ctrl.hover}}; }
+ads--CTitleBarButton:pressed { background: {{ctrl.pressed}}; }
+
+#tabCloseButton:hover   { background: {{ctrl.hover}}; border: 1px solid {{border.subtle}}; }
+#tabCloseButton:pressed { background: {{ctrl.pressed}}; }
+
+/* ---- floating docks ---- */
+ads--CFloatingWidgetTitleBar { background: {{bg.window}}; }
+#floatingTitleCloseButton:hover, #floatingTitleMaximizeButton:hover { background: {{ctrl.hover}}; }
+
+/* ---- auto-hide side panels ---- */
+ads--CAutoHideSideBar       { background: {{bg.elevated}}; }
+ads--CAutoHideDockContainer { background: {{bg.panel}}; }
+#autoHideTitleLabel         { color: {{text.secondary}}; }
+
+/* ---- white icons ---- (override ADS's black default SVGs; see resources/icons/ads/,
+   generated white/gray copies. Static URLs, no token substitution.) */
+#tabCloseButton {
+    qproperty-icon: url(:/adsicons/close-button.svg),
+                    url(:/adsicons/close-button-disabled.svg) disabled;
+}
+#dockAreaCloseButton {
+    qproperty-icon: url(:/adsicons/close-button.svg),
+                    url(:/adsicons/close-button-disabled.svg) disabled;
+}
+#tabsMenuButton { qproperty-icon: url(:/adsicons/tabs-menu-button.svg); }
+#detachGroupButton {
+    qproperty-icon: url(:/adsicons/detach-button.svg),
+                    url(:/adsicons/detach-button-disabled.svg) disabled;
+}
+#floatingTitleCloseButton { qproperty-icon: url(:/adsicons/close-button.svg); }
+#dockAreaMinimizeButton { qproperty-icon: url(:/adsicons/minimize-button-focused.svg); }
+#dockAreaAutoHideButton {
+    qproperty-icon: url(:/adsicons/vs-pin-button.svg),
+                    url(:/adsicons/vs-pin-button-disabled.svg) disabled;
+}
+ads--CAutoHideDockContainer #dockAreaAutoHideButton {
+    qproperty-icon: url(:/adsicons/vs-pin-button-pinned-focused.svg);
+}
+ads--CFloatingWidgetTitleBar {
+    qproperty-maximizeIcon: url(:/adsicons/maximize-button.svg);
+    qproperty-normalIcon: url(:/adsicons/restore-button.svg);
+}
