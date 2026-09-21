@@ -1,4 +1,5 @@
 #include "widgets.h"
+#include "colorpicker.h"
 #include <QEvent>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -222,4 +223,73 @@ void HueSlider::mouseMoveEvent(QMouseEvent* event)
     hue = std::clamp(hue, 0.0f, 1.0f);
     update();
     emit onHueChanged(hue);
+}
+
+void drawCheckerboard(QPainter& painter, const QRect& rect, int cellSize)
+{
+    painter.save();
+    painter.setClipRect(rect, Qt::IntersectClip);
+    painter.fillRect(rect, QColor(204, 204, 204));
+    for (int y = rect.top(); y < rect.bottom() + 1; y += cellSize) {
+        for (int x = rect.left(); x < rect.right() + 1; x += cellSize) {
+            int col = (x - rect.left()) / cellSize;
+            int row = (y - rect.top()) / cellSize;
+            if ((col + row) % 2)
+                painter.fillRect(x, y, cellSize, cellSize,
+                                 QColor(255, 255, 255));
+        }
+    }
+    painter.restore();
+}
+
+AlphaSlider::AlphaSlider()
+{
+    alpha = 1.0f;
+    color = QColor(255, 0, 0);
+    setFixedHeight(20);
+}
+
+void AlphaSlider::setColor(const QColor& color)
+{
+    this->color = color;
+    this->alpha = color.alphaF();
+    update();
+}
+
+void AlphaSlider::paintEvent(QPaintEvent* event)
+{
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    drawCheckerboard(painter, rect(), 5);
+
+    QColor transparent = color;
+    transparent.setAlphaF(0.0f);
+    QColor opaque = color;
+    opaque.setAlphaF(1.0f);
+
+    QLinearGradient grad(QPointF(0, 0), QPointF(width(), 0));
+    grad.setColorAt(0.0, transparent);
+    grad.setColorAt(1.0, opaque);
+    painter.fillRect(rect(), QBrush(grad));
+
+    // draw selector
+    painter.setPen(QPen(Qt::black, 2));
+    painter.setBrush(Qt::white);
+    const QPointF point(alpha * width(), height() / 2);
+    painter.drawEllipse(point, 5, 5);
+}
+
+void AlphaSlider::mousePressEvent(QMouseEvent* event)
+{
+    alpha = std::clamp(event->pos().x() / (float)width(), 0.0f, 1.0f);
+    update();
+    emit onAlphaChanged(alpha);
+}
+
+void AlphaSlider::mouseMoveEvent(QMouseEvent* event)
+{
+    alpha = std::clamp(event->pos().x() / (float)width(), 0.0f, 1.0f);
+    update();
+    emit onAlphaChanged(alpha);
 }

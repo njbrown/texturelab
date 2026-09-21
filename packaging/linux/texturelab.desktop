@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=TextureLab
+GenericName=Procedural Texture Editor
+Comment=Procedural texture authoring
+Exec=texturelab
+Icon=texturelab
+Terminal=false
+Categories=Graphics;
+StartupWMClass=texturelab

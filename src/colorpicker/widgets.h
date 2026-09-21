@@ -55,3 +55,24 @@ protected:
 signals:
     void onHueChanged(float hue);
 };
+
+// Horizontal slider over a checkerboard, fading from transparent to the
+// current color at full opacity.
+class AlphaSlider : public QWidget {
+    Q_OBJECT
+
+    float alpha;
+    QColor color;
+
+public:
+    AlphaSlider();
+    void setColor(const QColor& color);
+    float getAlpha() const { return alpha; }
+
+protected:
+    void paintEvent(QPaintEvent* event) override;
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+signals:
+    void onAlphaChanged(float alpha);
+};

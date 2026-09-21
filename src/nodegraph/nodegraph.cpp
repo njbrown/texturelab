@@ -16,12 +16,9 @@
 #include <cmath>
 #include <iostream>
 
-const QColor BackgroundColor(53, 53, 53);
-const QColor FineGridColor(60, 60, 60);
-const QColor CoarseGridColor(25, 25, 25);
-
 #include "graph/comment.h"
 #include "graph/frame.h"
+#include "graph/nodetheme.h"
 #include "graph/scene.h"
 #include "nodegraph.h"
 
@@ -48,8 +45,18 @@ NodeGraph::NodeGraph(QWidget* parent) : QGraphicsView(parent)
     setDragMode(QGraphicsView::RubberBandDrag);
     setRenderHint(QPainter::Antialiasing);
 
-    // setBackgroundBrush(BackgroundColor);
-    setBackgroundBrush(QColor(53, 53, 53));
+    setBackgroundBrush(ntColor(Tokens::GridBg));
+
+    // Repaint (and refresh the themed background brush) whenever the theme
+    // changes, so the node graph follows --dev-theme hot-reloads like the rest
+    // of the app. drawBackground() reads grid colors from tokens at paint time.
+    QObject::connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
+                     [this]() {
+                         setBackgroundBrush(ntColor(Tokens::GridBg));
+                         if (scene())
+                             scene()->update();
+                         viewport()->update();
+                     });
 
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -80,6 +87,7 @@ void NodeGraph::setNodeGraphScene(const ScenePtr& scene)
     }
 
     this->_scene = scene;
+    scene->setSceneRect(-100000, -100000, 200000, 200000);
     this->setScene(scene.data());
 
     // handle scene's events from within the view
@@ -131,25 +139,24 @@ void NodeGraph::scaleDown()
 void NodeGraph::keyPressEvent(QKeyEvent* event)
 {
     if (event->key() == Qt::Key_Delete) {
-        auto items = this->_scene->selectedItems();
-        for (auto item : items) {
-            if (item->type() == (int)SceneItemType::Node) {
-                auto node = qgraphicsitem_cast<Node*>(item);
-                this->_scene->removeNode(node->sharedFromThis());
-            }
-            else if (item->type() == (int)SceneItemType::Frame) {
-                auto frame = qgraphicsitem_cast<Frame*>(item);
-                this->_scene->removeFrame(frame->sharedFromThis());
-            }
-            else if (item->type() == (int)SceneItemType::Comment) {
-                auto comment = qgraphicsitem_cast<Comment*>(item);
-                this->_scene->removeComment(comment->sharedFromThis());
-            }
+        QList<NodePtr> selectedNodes;
+        QList<FramePtr> selectedFrames;
+        QList<CommentPtr> selectedComments;
+
+        for (auto item : this->_scene->selectedItems()) {
+            if (item->type() == (int)SceneItemType::Node)
+                selectedNodes.append(qgraphicsitem_cast<Node*>(item)->sharedFromThis());
+            else if (item->type() == (int)SceneItemType::Frame)
+                selectedFrames.append(qgraphicsitem_cast<Frame*>(item)->sharedFromThis());
+            else if (item->type() == (int)SceneItemType::Comment)
+                selectedComments.append(qgraphicsitem_cast<Comment*>(item)->sharedFromThis());
         }
+
+        if (!selectedNodes.isEmpty() || !selectedFrames.isEmpty() || !selectedComments.isEmpty())
+            emit deleteRequested(selectedNodes, selectedFrames, selectedComments);
     }
 
     QGraphicsView::keyPressEvent(event);
-
     this->invalidateScene(QRect(-1000, -1000, 1000, 1000));
 }
 
@@ -168,21 +175,22 @@ void NodeGraph::keyReleaseEvent(QKeyEvent* event)
 
 void NodeGraph::mousePressEvent(QMouseEvent* event)
 {
-    if (event->button() == Qt::MiddleButton &&
-        scene()->mouseGrabberItem() == nullptr) {
-        _clickPos = mapToScene(event->pos());
+    if (event->button() == Qt::MiddleButton) {
+        _clickPos = event->pos();
         setDragMode(QGraphicsView::NoDrag);
+        return;
     }
     QGraphicsView::mousePressEvent(event);
 }
 
 void NodeGraph::mouseMoveEvent(QMouseEvent* event)
 {
-
-    if (event->buttons() == Qt::MiddleButton) {
-        QPointF difference = _clickPos - mapToScene(event->pos());
-        setSceneRect(sceneRect().translated(difference.x(), difference.y()));
-        _clickPos = mapToScene(event->pos()); // Update reference point to maintain coordinate consistency
+    if (event->buttons() & Qt::MiddleButton) {
+        QPointF delta = event->pos() - _clickPos;
+        horizontalScrollBar()->setValue(horizontalScrollBar()->value() - delta.x());
+        verticalScrollBar()->setValue(verticalScrollBar()->value() - delta.y());
+        _clickPos = event->pos();
+        return;
     }
     QGraphicsView::mouseMoveEvent(event);
 }
@@ -250,14 +258,12 @@ void NodeGraph::drawBackground(QPainter* painter, const QRectF& r)
         }
     };
 
-    QBrush bBrush = backgroundBrush();
-
-    QPen pfine(FineGridColor, 1.0);
+    QPen pfine(ntColor(Tokens::GridFine), 1.0);
 
     painter->setPen(pfine);
     drawGrid(15);
 
-    QPen p(CoarseGridColor, 1.0);
+    QPen p(ntColor(Tokens::GridCoarse), 1.0);
 
     painter->setPen(p);
     drawGrid(150);
@@ -311,6 +317,13 @@ bool NodeGraph::sceneMousePressEvent(QGraphicsSceneMouseEvent* event)
     if (mbStates.left) {
         auto scenePos = event->scenePos();
         auto rawPort = this->getPortAtScenePos(scenePos.x(), scenePos.y());
+        if (!rawPort) {
+            // Record node positions for move-tracking (no port drag starting)
+            _preDragPositions.clear();
+            for (auto& node : _scene->nodes)
+                _preDragPositions[node->id()] = node->getCenter();
+            _trackingMove = true;
+        }
         if (rawPort) {
             // auto port = rawPort->node->getPortById(rawPort->id());
             // gotta cast to get the non-const version
@@ -387,6 +400,22 @@ bool NodeGraph::sceneMouseMoveEvent(QGraphicsSceneMouseEvent* event)
             activeCon->pos2 = scenePos;
         }
         activeCon->updatePathFromPositions();
+
+        // show socket names on nodes within proximity
+        for (auto node : _nodesWithSocketNamesShown)
+            node->setShowSocketNames(false);
+        _nodesWithSocketNamesShown.clear();
+
+        for (auto& nodePtr : _scene->nodes) {
+            auto node = nodePtr.data();
+            QPointF center = node->getCenter();
+            qreal dx = center.x() - scenePos.x();
+            qreal dy = center.y() - scenePos.y();
+            if (dx * dx + dy * dy < SOCKET_LABEL_RADIUS * SOCKET_LABEL_RADIUS) {
+                node->setShowSocketNames(true);
+                _nodesWithSocketNamesShown.append(node);
+            }
+        }
     }
 
     return false;
@@ -460,10 +489,33 @@ bool NodeGraph::sceneMouseReleaseEvent(QGraphicsSceneMouseEvent* event)
             }
         }
 
+        // clear proximity socket labels
+        for (auto node : _nodesWithSocketNamesShown)
+            node->setShowSocketNames(false);
+        _nodesWithSocketNamesShown.clear();
+
         // remove from scene
         _scene->removeItem(activeCon.data());
         activeCon.clear();
     }
+
+    // Emit move command if nodes changed position
+    if (_trackingMove && !activeCon) {
+        QMap<QString, QPointF> newPositions;
+        bool moved = false;
+        for (auto it = _preDragPositions.begin(); it != _preDragPositions.end(); ++it) {
+            auto node = _scene->nodes.value(it.key());
+            if (!node)
+                continue;
+            QPointF newPos = node->getCenter();
+            newPositions[it.key()] = newPos;
+            if (newPos != it.value())
+                moved = true;
+        }
+        if (moved)
+            emit itemsMoveFinished(_preDragPositions, newPositions);
+    }
+    _trackingMove = false;
 
     // important to reset drag!
     this->setDragMode(QGraphicsView::RubberBandDrag);
@@ -506,12 +558,29 @@ void NodeGraph::handleSelectionChange()
     auto selected = this->_scene->selectedItems();
     for (auto item : selected) {
         if (item->type() == (int)SceneItemType::Node) {
+            // emit nulls first so downstream handlers clear before setting new selection
+            emit frameSelectionChanged(FramePtr(nullptr));
+            emit commentSelectionChanged(CommentPtr(nullptr));
             emit nodeSelectionChanged(((Node*)item)->sharedFromThis());
+            return;
+        }
+        if (item->type() == (int)SceneItemType::Frame) {
+            emit nodeSelectionChanged(NodePtr(nullptr));
+            emit commentSelectionChanged(CommentPtr(nullptr));
+            emit frameSelectionChanged(((Frame*)item)->sharedFromThis());
+            return;
+        }
+        if (item->type() == (int)SceneItemType::Comment) {
+            emit nodeSelectionChanged(NodePtr(nullptr));
+            emit frameSelectionChanged(FramePtr(nullptr));
+            emit commentSelectionChanged(((Comment*)item)->sharedFromThis());
             return;
         }
     }
 
     emit nodeSelectionChanged(NodePtr(nullptr));
+    emit frameSelectionChanged(FramePtr(nullptr));
+    emit commentSelectionChanged(CommentPtr(nullptr));
 }
 
 NodeGraph::~NodeGraph() {}

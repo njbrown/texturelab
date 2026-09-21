@@ -9,6 +9,7 @@
 #include <QString>
 #include <QVector2D>
 #include <QtOpenGL>
+#include <memory>
 
 class QOpenGLFramebufferObject;
 class QOpenGLShaderProgram;
@@ -29,6 +30,8 @@ typedef QSharedPointer<Connection> ConnectionPtr;
 class Prop;
 class PropertyGroup;
 class Library;
+class NodeTextureRenderer;
+struct NodeRenderData;
 
 class IntProp;
 class FloatProp;
@@ -38,6 +41,7 @@ class ColorProp;
 class StringProp;
 class GradientProp;
 class ImageProp;
+class CurveProp;
 
 enum class PackageFileType { Texture, Image };
 
@@ -48,7 +52,8 @@ enum class TextureChannel : int {
     Metalness = 3,
     Roughness = 4,
     Height = 5,
-    Alpha = 6
+    Alpha = 6,
+    AO = 7
 };
 
 class ProjectFile {
@@ -59,7 +64,7 @@ public:
 class TextureProject : public QEnableSharedFromThis<TextureProject> {
 public:
     QString name = "untitled";
-    int randomSeed;
+    int randomSeed = 0;
     int textureWidth = 1024;
     int textureHeight = 1024;
 
@@ -67,6 +72,7 @@ public:
     QMap<TextureChannel, QString> textureChannels;
 
     Library* library = nullptr;
+    QString libraryVersion = "v3";
 
     QMap<QString, TextureNodePtr> nodes;
     QMap<QString, ConnectionPtr> connections;
@@ -80,10 +86,18 @@ public:
 
     QString exportFilePattern = "${project}_${name}";
     QString exportDestination = "";
+    QString filePath = nullptr;
 
     void addNode(const TextureNodePtr& node);
 
+    // Removes the node along with every connection touching it and any
+    // texture-channel assignment pointing at it. Downstream nodes are marked
+    // dirty so they re-render without this node's output.
+    void removeNode(const QString& id);
+
     // todo: make two port variant
+    // Adding or removing a connection marks the right node and everything
+    // downstream of it dirty — callers don't need to do it themselves.
     void addConnection(TextureNodePtr leftNode, TextureNodePtr rightNode,
                        QString rightNodeInput);
 
@@ -93,6 +107,7 @@ public:
     void removeConnection(ConnectionPtr con);
     void removeConnection(const QString& id);
 
+    // Marks the node and every node downstream of it as needing a re-render.
     void markNodeAsDirty(const TextureNodePtr& node);
 
     static TextureProjectPtr createEmpty(Library* library = nullptr);
@@ -101,6 +116,7 @@ public:
 class TextureNode : public QEnableSharedFromThis<TextureNode> {
 public:
     QString id;
+    QString typeName;
     QString title;
 
     QVector2D pos;
@@ -119,8 +135,8 @@ public:
     // flag to indicate this node processes on CPU instead of GPU shader
     bool usesCpuProcessing = false;
 
-    int textureWidth;
-    int textureHeight;
+    int textureWidth = 0;
+    int textureHeight = 0;
     QOpenGLFramebufferObject* texture = nullptr;
     QOpenGLShaderProgram* shader = nullptr;
     QString shaderSource;
@@ -141,6 +157,21 @@ public:
     bool hasProp(QString propName);
 
     void setShaderSource(const QString& source) { shaderSource = source; }
+
+    // Override to provide a custom renderer for multi-pass or non-standard
+    // rendering. Called on the main thread during queueNextNodeToRender().
+    // Return nullptr for standard single-pass rendering.
+    virtual std::shared_ptr<NodeTextureRenderer> createRenderer()
+    {
+        return nullptr;
+    }
+
+    // Override to provide render-time data for the custom renderer.
+    // Called on the main thread. Must not reference GPU resources.
+    virtual std::shared_ptr<NodeRenderData> createRenderData()
+    {
+        return nullptr;
+    }
 
     bool isGraphicsResourcesInitialized()
     {
@@ -172,6 +203,8 @@ public:
                                   const Gradient& defaultVal);
 
     ImageProp* addImageProp(const QString& name, const QString& displayName);
+
+    CurveProp* addCurveProp(const QString& name, const QString& displayName);
 };
 
 class Comment : public QEnableSharedFromThis<Comment> {
@@ -185,6 +218,7 @@ class Frame : public QEnableSharedFromThis<Frame> {
 public:
     QString id;
     QString text;
+    QColor color = QColor(25, 0, 51);
 
     QVector2D pos;
     QVector2D size;

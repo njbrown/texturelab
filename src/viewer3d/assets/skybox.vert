@@ -7,10 +7,13 @@ out vec3 v_texCoord;
 uniform mat4 u_modelMatrix;
 uniform mat4 u_viewMatrix;
 uniform mat4 u_projectionMatrix;
+// Yaw about the up axis, matching u_EnvRotation in the pbr shader so the
+// background and the image based lighting stay in sync.
+uniform mat3 u_envRotation;
 
 void main()
 {
-    v_texCoord = a_position;
+    v_texCoord = u_envRotation * a_position;
     
     // Remove translation from view matrix
     mat4 rotView = mat4(mat3(u_viewMatrix));

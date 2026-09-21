@@ -219,6 +219,11 @@ vec4 getBaseColor()
     //baseColor *= baseColorMap;
 #endif
 
+#ifdef HAS_ALPHA_MAP
+    // Separate grayscale alpha/opacity map, independent of the base color map's own alpha.
+    baseColor.a *= texture(u_AlphaSampler, getAlphaUV()).r;
+#endif
+
     return baseColor * getVertexColor();
 }
 

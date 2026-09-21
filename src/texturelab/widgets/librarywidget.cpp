@@ -3,14 +3,29 @@
 #include "./libraries/library.h"
 
 #include <QFont>
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QMimeData>
+#include <QPushButton>
 #include <QResizeEvent>
 #include <QScrollBar>
+#include <QStyle>
 #include <QVBoxLayout>
+
+// Grid geometry for the library thumbnails. The cell is tall enough for the
+// icon plus two lines of text, so titles like "Gradient Noise Fractal Sum" wrap
+// instead of being elided to one line.
+static constexpr int kIconSize = 64;
+static constexpr int kTextLines = 2;
+static constexpr int kTextLineHeight = 14;
+static constexpr int kItemWidth = 90;
+static constexpr int kItemPadding = 6;
+static constexpr int kItemHeight =
+    kIconSize + kTextLines * kTextLineHeight + kItemPadding;
 
 // https://doc.qt.io/qt-6/qmimedata.html
 // subclassing QMimeData is cleaner
@@ -25,15 +40,38 @@ bool LibraryItemMimeData::hasFormat(const QString& format) const
 
 LibraryWidget::LibraryWidget() : QWidget()
 {
+    this->setObjectName("LibraryPanel"); // QSS scoping (app.qss.in)
     this->setMinimumWidth(100);
     this->setLayout(new QVBoxLayout());
 
+    // library version indicator + upgrade button
+    auto versionRow = new QWidget(this);
+    auto versionLayout = new QHBoxLayout(versionRow);
+    versionLayout->setContentsMargins(0, 0, 0, 0);
+
+    versionLabel = new QLabel(versionRow);
+    versionLabel->setObjectName("LibraryVersionLabel"); // styled in app.qss.in
+    versionLayout->addWidget(versionLabel);
+
+    versionLayout->addStretch();
+
+    upgradeButton = new QPushButton("Upgrade", versionRow);
+    upgradeButton->setProperty("variant",
+                               "primary"); // draw attention to the action
+    upgradeButton->setVisible(false);
+    connect(upgradeButton, &QPushButton::clicked, this,
+            &LibraryWidget::upgradeRequested);
+    versionLayout->addWidget(upgradeButton);
+
+    this->layout()->addWidget(versionRow);
+
     // search box
     searchBar = new QLineEdit(this);
+    searchBar->setObjectName("LibrarySearch");
     searchBar->setPlaceholderText("search");
     searchBar->setAlignment(Qt::AlignLeft);
-    connect(searchBar, &QLineEdit::textChanged,
-            this, &LibraryWidget::filterList);
+    connect(searchBar, &QLineEdit::textChanged, this,
+            &LibraryWidget::filterList);
 
     this->layout()->addWidget(searchBar);
 
@@ -45,15 +83,30 @@ LibraryWidget::LibraryWidget() : QWidget()
     this->setLibrary(nullptr);
 }
 
-void LibraryWidget::addSpecialItem(const QString& name,
-                                    const QString& iconPath, PopupItemType type)
+void LibraryWidget::setLibraryVersion(const QString& version, bool isCurrent)
+{
+    versionLabel->setText(isCurrent
+                              ? QString("Library: %1").arg(version)
+                              : QString("Library: %1 (outdated)").arg(version));
+
+    // Drive the color from a dynamic property so the "outdated" tint lives in
+    // app.qss.in (uses the theme's warn token) rather than a hardcoded hex.
+    versionLabel->setProperty("outdated", !isCurrent);
+    versionLabel->style()->unpolish(versionLabel);
+    versionLabel->style()->polish(versionLabel);
+
+    upgradeButton->setVisible(!isCurrent);
+}
+
+void LibraryWidget::addSpecialItem(const QString& name, const QString& iconPath,
+                                   PopupItemType type)
 {
     QListWidgetItem* item = new QListWidgetItem;
     item->setData(Qt::DisplayRole, name);
     item->setData((int)Roles::ItemType, "LibraryItem");
     item->setData((int)Roles::LibraryItemName, name);
     item->setData(Qt::UserRole, (int)type);
-    item->setSizeHint(QSize(90, 90));
+    item->setSizeHint(QSize(kItemWidth, kItemHeight));
     item->setTextAlignment(Qt::AlignCenter);
     item->setFlags(item->flags() | Qt::ItemIsEditable);
     item->setIcon(QIcon(iconPath));
@@ -72,11 +125,13 @@ void LibraryWidget::setLibrary(Library* lib)
 
     for (auto& libraryItem : lib->items) {
         QListWidgetItem* item = new QListWidgetItem;
-        item->setData(Qt::DisplayRole, libraryItem.name);
+        // Show the official title ("Gradient Noise"), not the internal type
+        // name ("gradientnoise"); the type name travels in LibraryItemName.
+        item->setData(Qt::DisplayRole, libraryItem.displayName);
         item->setData((int)Roles::ItemType, "LibraryItem");
         item->setData((int)Roles::LibraryItemName, libraryItem.name);
         item->setData(Qt::UserRole, (int)PopupItemType::Node);
-        item->setSizeHint(QSize(90, 90));
+        item->setSizeHint(QSize(kItemWidth, kItemHeight));
         item->setTextAlignment(Qt::AlignCenter);
         item->setFlags(item->flags() | Qt::ItemIsEditable);
         item->setIcon(libraryItem.icon);
@@ -90,10 +145,14 @@ void LibraryWidget::filterList(const QString& text)
 
     for (int i = 0; i < listWidget->count(); i++) {
         QListWidgetItem* item = listWidget->item(i);
-        QString itemName = item->data(Qt::DisplayRole).toString().toLower();
+        // Match the visible title as well as the type name, so searching
+        // "gradientnoise" still finds "Gradient Noise".
+        QString title = item->data(Qt::DisplayRole).toString().toLower();
+        QString typeName =
+            item->data((int)Roles::LibraryItemName).toString().toLower();
 
-        // Show item if search text is empty or item name contains search text
-        bool matches = searchText.isEmpty() || itemName.contains(searchText);
+        bool matches = searchText.isEmpty() || title.contains(searchText) ||
+                       typeName.contains(searchText);
         item->setHidden(!matches);
     }
 }
@@ -103,7 +162,7 @@ LibraryListWidget::LibraryListWidget() : QListWidget()
     setAlternatingRowColors(false);
     setSpacing(0);
     setViewMode(QListWidget::IconMode);
-    setIconSize(QSize(70, 70));
+    setIconSize(QSize(kIconSize, kIconSize));
     setMouseTracking(true);
     setEditTriggers(QAbstractItemView::NoEditTriggers);
 
@@ -115,7 +174,7 @@ LibraryListWidget::LibraryListWidget() : QListWidget()
     setSelectionMode(QAbstractItemView::SingleSelection);
 
     setWordWrap(true);
-    setGridSize(QSize(90, 90));
+    setGridSize(QSize(kItemWidth, kItemHeight));
 
     setContentsMargins(0, 0, 0, 0);
 
@@ -124,10 +183,7 @@ LibraryListWidget::LibraryListWidget() : QListWidget()
     // setAcceptDrops(true);
     setDropIndicatorShown(true);
 
-    setStyleSheet(
-        "QListView::item{ border-radius: 2px; border: 0px solid rgba(0,0,0,1); "
-        "margin-left: 6px;  }"
-        "QListView::item:hover{border: 1px solid rgba(50,150,250,1); }");
+    setObjectName("LibraryList"); // item styling in app.qss.in
 }
 
 void LibraryListWidget::resizeEvent(QResizeEvent* event)
@@ -138,12 +194,11 @@ void LibraryListWidget::resizeEvent(QResizeEvent* event)
 
 void LibraryListWidget::updateGridSize()
 {
-    int itemSize = 90;
     int availableWidth = viewport()->width() - verticalScrollBar()->width();
-    int itemsPerRow = qMax(1, availableWidth / itemSize);
+    int itemsPerRow = qMax(1, availableWidth / kItemWidth);
     int adjustedItemWidth = availableWidth / itemsPerRow;
 
-    setGridSize(QSize(adjustedItemWidth, itemSize));
+    setGridSize(QSize(adjustedItemWidth, kItemHeight));
 }
 
 QMimeData*

@@ -1,0 +1,406 @@
+name: Release
+
+# Official release builds. Pushing a tag like v0.4.0 (or v0.4.0-beta) builds all
+# three platforms, verifies and packages them, and creates a DRAFT GitHub
+# Release with the files attached. Review the draft, then publish it and upload
+# the same files to itch.io etc. Nightly/CI builds stay in build.yml.
+#
+# Optional signing: each platform signs only when its secrets exist, otherwise
+# it ships unsigned (Gatekeeper / SmartScreen warnings).
+#   macOS:   APPLE_CERT_P12 (base64 Developer ID Application .p12),
+#            APPLE_CERT_PASSWORD, and for notarization APPLE_ID, APPLE_TEAM_ID,
+#            APPLE_APP_PASSWORD (app-specific password)
+#   Windows: Azure Artifact Signing (formerly Trusted Signing) — AZURE_TENANT_ID, AZURE_CLIENT_ID,
+#            AZURE_CLIENT_SECRET, AZURE_SIGNING_ENDPOINT,
+#            AZURE_SIGNING_ACCOUNT, AZURE_SIGNING_PROFILE
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re)build, e.g. v0.4.0"
+        required: true
+
+permissions:
+  contents: read
+
+# Never run two releases of the same tag at once.
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  QT_VERSION: "6.7.3"
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  # Refuses to build unless the tag, the CMake version and the release config
+  # all agree, so a mistagged or misconfigured build never gets packaged.
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.v.outputs.tag }}
+      prerelease: ${{ steps.v.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Check tag matches the app version
+        id: v
+        run: |
+          NUM=$(grep -oP 'project\(texturelab VERSION \K[0-9.]+' src/texturelab/CMakeLists.txt)
+          SUFFIX=$(grep -oP 'set\(TEXTURELAB_VERSION_SUFFIX "\K[^"]*' src/texturelab/CMakeLists.txt)
+          EXPECTED="v${NUM}${SUFFIX}"
+          if [ "$TAG" != "$EXPECTED" ]; then
+            echo "::error::Tag '$TAG' does not match the app version '$EXPECTED' (project() VERSION + TEXTURELAB_VERSION_SUFFIX in src/texturelab/CMakeLists.txt)."
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          # Any suffix (-beta, -rc1, ...) marks the GitHub Release as a prerelease.
+          if [ -n "$SUFFIX" ]; then echo "prerelease=true"; else echo "prerelease=false"; fi >> "$GITHUB_OUTPUT"
+
+      - name: Check update checker points at production
+        run: |
+          if ! grep -qE '^constexpr const char\* kApiBase = "https://texturelab.io";' src/texturelab/update/updatechecker.cpp; then
+            echo "::error::kApiBase in src/texturelab/update/updatechecker.cpp is not https://texturelab.io"
+            exit 1
+          fi
+
+      - name: Check release secrets are set
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: |
+          # A release without crash reporting or uploaded symbols is worse than
+          # no release, so these are required (unlike in nightly builds).
+          [ -n "$SENTRY_DSN" ] || { echo "::error::SENTRY_DSN secret is not set"; exit 1; }
+          [ -n "$SENTRY_AUTH_TOKEN" ] || { echo "::error::SENTRY_AUTH_TOKEN secret is not set"; exit 1; }
+
+      - name: Check theme hygiene
+        run: bash scripts/check-theme-hygiene.sh
+
+  build-linux:
+    needs: preflight
+    # Oldest supported runner: the AppImage only runs on distros with a glibc at
+    # least as new as the one it was built against.
+    runs-on: ubuntu-22.04
+    env:
+      TAG: ${{ needs.preflight.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          modules: "qtshadertools"
+          dir: "${{ github.workspace }}/Qt"
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libgl1-mesa-dev \
+            libxkbcommon-dev libvulkan-dev libxcb-cursor0 libxcb-shape0-dev \
+            libcurl4-openssl-dev xvfb
+
+      - name: Configure
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
+
+      - name: Build
+        run: cmake --build build --target texturelab --parallel $(nproc)
+
+      - name: Upload debug symbols to Sentry and strip
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          set -e
+          curl -sL https://sentry.io/get-cli/ | bash
+          # Upload the full unstripped binary (debug info + .eh_frame CFI); see build.yml.
+          sentry-cli debug-files upload --include-sources build/src/texturelab/texturelab
+          # Keep an unstripped copy for offline symbolication.
+          mkdir -p symbols && cp build/src/texturelab/texturelab symbols/
+          # The GNU build-id survives stripping, so the uploaded symbols still match.
+          strip build/src/texturelab/texturelab
+
+      - name: Install LinuxDeploy
+        uses: miurahr/install-linuxdeploy-action@v1
+        with:
+          plugins: qt appimage
+
+      - name: Create AppImage
+        env:
+          QTDIR: ${{ github.workspace }}/Qt/Qt/${{ env.QT_VERSION }}/gcc_64
+        run: scripts/package-linux.sh "$TAG"
+
+      - name: Smoke test AppImage
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: 1
+        run: |
+          OUT=$(xvfb-run -a "dist/texturelab-linux-${TAG}-x86_64.AppImage" --version)
+          echo "$OUT"
+          echo "$OUT" | grep -q "texturelab ${TAG#v}+" || { echo "::error::unexpected --version output"; exit 1; }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-linux
+          path: dist/
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: symbols-linux-${{ env.TAG }}
+          path: symbols/
+          retention-days: 90
+
+  build-windows:
+    needs: preflight
+    runs-on: windows-2022
+    env:
+      TAG: ${{ needs.preflight.outputs.tag }}
+      HAS_WIN_SIGNING: ${{ secrets.AZURE_CLIENT_ID != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: "win64_msvc2019_64"
+          modules: "qtshadertools"
+          dir: "${{ github.workspace }}/Qt"
+          cache: true
+
+      - name: Configure
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
+
+      - name: Build
+        run: cmake --build build --target texturelab --config Release --parallel
+
+      - name: Upload debug symbols to Sentry
+        shell: pwsh
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          Invoke-WebRequest -Uri "https://github.com/getsentry/sentry-cli/releases/latest/download/sentry-cli-Windows-x86_64.exe" -OutFile "sentry-cli.exe"
+          $out = "build\src\texturelab\Release"
+          if (-not (Test-Path "$out\texturelab.pdb")) { Write-Error "texturelab.pdb not found; Sentry cannot symbolicate." }
+          .\sentry-cli.exe debug-files check "$out\texturelab.exe"
+          .\sentry-cli.exe debug-files upload --include-sources "$out\"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory -Force symbols | Out-Null
+          Copy-Item "$out\texturelab.exe", "$out\texturelab.pdb" symbols\
+
+      - name: Deploy Qt dependencies
+        shell: pwsh
+        env:
+          QTDIR: ${{ github.workspace }}\Qt\Qt\${{ env.QT_VERSION }}\msvc2019_64
+        run: scripts/package-windows.ps1 -Tag $env:TAG -Stage Deploy
+
+      # Authenticode signing doesn't touch the CodeView record, so the Debug IDs
+      # uploaded to Sentry above still match the signed binaries.
+      - name: Sign executables
+        if: env.HAS_WIN_SIGNING == 'true'
+        uses: azure/artifact-signing-action@v2
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        with:
+          endpoint: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
+          signing-account-name: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ secrets.AZURE_SIGNING_PROFILE }}
+          files: |
+            ${{ github.workspace }}\dist\texturelab-win-${{ env.TAG }}\texturelab.exe
+            ${{ github.workspace }}\dist\texturelab-win-${{ env.TAG }}\crashpad_handler.exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+
+      - name: Smoke test
+        shell: pwsh
+        run: |
+          # GUI-subsystem exe: redirect stdout to a file to read the --version line.
+          $p = Start-Process "dist\texturelab-win-$env:TAG\texturelab.exe" -ArgumentList "--version" `
+                 -RedirectStandardOutput version.txt -PassThru -Wait
+          Get-Content version.txt
+          if ($p.ExitCode -ne 0) { Write-Error "texturelab.exe --version exited with $($p.ExitCode)" }
+
+      - name: Zip
+        shell: pwsh
+        run: scripts/package-windows.ps1 -Tag $env:TAG -Stage Zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: dist/*.zip
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: symbols-windows-${{ env.TAG }}
+          path: symbols/
+          retention-days: 90
+
+  build-macos:
+    needs: preflight
+    # Xcode 15 on macos-14: Qt 6.7 still needs AGL.framework, gone from newer SDKs.
+    runs-on: macos-14
+    env:
+      TAG: ${{ needs.preflight.outputs.tag }}
+      HAS_MAC_SIGNING: ${{ secrets.APPLE_CERT_P12 != '' }}
+      HAS_MAC_NOTARIZE: ${{ secrets.APPLE_CERT_P12 != '' && secrets.APPLE_ID != '' }}
+      APP: build/src/texturelab/texturelab.app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Select Xcode 15
+        run: |
+          XC=$(ls -d /Applications/Xcode_15*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$XC" ] || { echo "No Xcode 15.x on runner"; ls -d /Applications/Xcode_*.app; exit 1; }
+          sudo xcode-select -s "$XC/Contents/Developer"
+          xcodebuild -version
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          modules: "qtshadertools"
+          dir: "${{ github.workspace }}/Qt"
+          cache: true
+
+      - name: Configure
+        run: |
+          # Crashpad needs CMAKE_OSX_SYSROOT set to find the Mach .defs; see build.yml.
+          cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
+            -DCMAKE_OSX_SYSROOT="$(xcrun --show-sdk-path)" \
+            -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
+
+      - name: Build
+        run: cmake --build build --target texturelab --parallel $(sysctl -n hw.ncpu)
+
+      - name: Generate dSYM, upload to Sentry, strip
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          set -e
+          mkdir -p symbols
+          dsymutil "$APP/Contents/MacOS/texturelab" -o symbols/texturelab.dSYM
+          strip "$APP/Contents/MacOS/texturelab"
+          curl -sL https://sentry.io/get-cli/ | bash
+          sentry-cli debug-files upload --include-sources symbols/texturelab.dSYM
+
+      - name: Import signing certificate
+        if: env.HAS_MAC_SIGNING == 'true'
+        env:
+          APPLE_CERT_P12: ${{ secrets.APPLE_CERT_P12 }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+        run: |
+          KC="$RUNNER_TEMP/signing.keychain-db"
+          KC_PW=$(uuidgen)
+          security create-keychain -p "$KC_PW" "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p "$KC_PW" "$KC"
+          echo "$APPLE_CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -P "$APPLE_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KC"
+          rm "$RUNNER_TEMP/cert.p12"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KC_PW" "$KC"
+          security list-keychains -d user -s "$KC" $(security list-keychains -d user | tr -d '"')
+          ID=$(security find-identity -v -p codesigning "$KC" | grep -o '"Developer ID Application:[^"]*"' | head -1 | tr -d '"')
+          [ -n "$ID" ] || { echo "::error::No 'Developer ID Application' identity in APPLE_CERT_P12"; exit 1; }
+          echo "MAC_SIGN_ID=$ID" >> "$GITHUB_ENV"
+
+      - name: Bundle Qt, sign and create DMG
+        env:
+          QTDIR: ${{ github.workspace }}/Qt/Qt/${{ env.QT_VERSION }}/macos
+        run: scripts/package-macos.sh "$TAG"
+
+      - name: Smoke test
+        run: |
+          OUT=$("$APP/Contents/MacOS/texturelab" --version)
+          echo "$OUT"
+          echo "$OUT" | grep -q "texturelab ${TAG#v}+" || { echo "::error::unexpected --version output"; exit 1; }
+
+      - name: Notarize and staple
+        if: env.HAS_MAC_NOTARIZE == 'true'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          DMG="dist/texturelab-mac-${TAG}-universal.dmg"
+          xcrun notarytool submit "$DMG" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD" --wait --timeout 30m
+          xcrun stapler staple "$DMG"
+          xcrun stapler validate "$DMG"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos
+          path: dist/*.dmg
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: symbols-macos-${{ env.TAG }}
+          path: symbols/
+          retention-days: 90
+
+  # Runs only when all three platforms succeeded: no partial releases.
+  draft-release:
+    needs: [preflight, build-linux, build-windows, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ needs.preflight.outputs.tag }}
+      PRERELEASE: ${{ needs.preflight.outputs.prerelease }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: dist
+
+      - name: Checksums
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Create or update draft release
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            # Re-run: refresh the assets on the existing release, keep its notes.
+            gh release upload "$TAG" dist/* --clobber
+          else
+            FLAGS=(--draft --verify-tag --generate-notes --title "TextureLab ${TAG}")
+            [ "$PRERELEASE" = "true" ] && FLAGS+=(--prerelease)
+            gh release create "$TAG" dist/* "${FLAGS[@]}"
+          fi
+          gh release view "$TAG" --json url,isDraft,assets --jq '{url, isDraft, assets: [.assets[].name]}'

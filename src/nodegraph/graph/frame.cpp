@@ -1,4 +1,5 @@
 #include "frame.h"
+#include "nodetheme.h"
 #include "scene.h"
 #include <QApplication>
 #include <QCursor>
@@ -204,15 +205,22 @@ void Frame::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
 
     // Draw title if enabled
     if (_showTitle && !_title.isEmpty()) {
-        painter->setPen(QColor(255, 255, 255));
-        painter->setFont(QFont("Arial", 10, QFont::Bold));
+        QFont font("Arial", 10, QFont::Bold);
+        painter->setFont(font);
+
+        // shadow pass
+        painter->setPen(ntColor(Tokens::NodeBorder, 160));
+        painter->drawText(handleRect.translated(1, 1), Qt::AlignCenter, _title);
+
+        // text pass
+        painter->setPen(ntColor(Tokens::NodeTitle));
         painter->drawText(handleRect, Qt::AlignCenter, _title);
     }
 
     // Draw frame border
     QPen borderPen;
     if (isSelected()) {
-        borderPen.setColor(QColor(255, 165, 0)); // Orange for selected
+        borderPen.setColor(ntColor(Tokens::FrameSelect)); // themed "selected" accent
         borderPen.setWidth(2);
     }
     else {
@@ -229,7 +237,7 @@ void Frame::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
 
     // Draw resize handles when selected
     if (isSelected()) {
-        painter->setBrush(QColor(100, 100, 100, 100));
+        painter->setBrush(QColor(100, 100, 100, 100)); // theme-exempt: neutral resize-handle overlay
         painter->setPen(Qt::NoPen);
 
         qreal h = RESIZE_HANDLE_SIZE;

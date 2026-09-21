@@ -2,24 +2,45 @@
 
 #include <vector>
 
+#include <QCoreApplication>
 #include <QDebug>
+#include <QFile>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QHBoxLayout>
+#include <QIcon>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QLabel>
+#include <QPainter>
+#include <QPixmap>
 #include <QLayout>
 #include <QList>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QMimeData>
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
+#include <QProgressBar>
 #include <QPushButton>
+#include <QSettings>
+#include <QStatusBar>
+#include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
 
 #include "DockAreaWidget.h"
 #include "DockSplitter.h"
 
+#include "catalogservice.h"
 #include "exporter.h"
+#include "launcher/launcherwindow.h"
+#include "telemetry.h"
+#include "thememanager.h"
+#include "tokens.h"
+#include "undo/undocommands.h"
+#include "widgets/aboutdialog.h"
 #include "widgets/exportdialog.h"
 #include "widgets/graphwidget.h"
 #include "widgets/librarywidget.h"
@@ -29,25 +50,134 @@
 
 #include "viewer3d.h"
 
+#include "libraries/libraryversionmigrator.h"
+#include "libraries/libversion.h"
 #include "models.h"
 #include "project.h"
 #include "props.h"
 
+#include "graph/scene.h"
 #include "graphics/texturerenderer.h"
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 {
     resize(1280, 720);
+    setAcceptDrops(true);
 
-    this->setupMenus();
+    undoStack = new QUndoStack(this);
+    connect(undoStack, &QUndoStack::cleanChanged, this,
+            &MainWindow::onCleanChanged);
+
+    // Any command (or its undo) can add, remove or re-point the node a
+    // texture channel maps to — deleting an assigned node being the obvious
+    // one. Re-sync the viewer and the graph's channel labels from the model
+    // after every stack move so they can't drift, and kick the render loop in
+    // case the command marked nodes dirty without rendering them.
+    connect(undoStack, &QUndoStack::indexChanged, this, [this](int) {
+        if (!this->project)
+            return;
+
+        // undo/redo changes prop values behind the properties panel's back
+        this->propWidget->syncPropBaselines();
+
+        // this fires on every push too (including merged ones, i.e. every
+        // step of a slider scrub), so only touch the viewer when the channel
+        // mapping actually changed
+        if (this->syncedChannels != this->project->textureChannels) {
+            this->syncedChannels = this->project->textureChannels;
+            this->passTextureChannelsToViewer3D();
+            this->syncChannelLabelsToScene();
+            this->view3DWidget->reRender();
+        }
+
+        if (this->renderer)
+            this->renderer->update();
+    });
+
     this->setupToolbar();
 
     this->renderer = nullptr;
     this->exportDialog = nullptr;
 
+    statusLabel = new QLabel("Ready");
+    progressBar = new QProgressBar();
+    progressBar->setRange(0, 1);
+    progressBar->setValue(1);
+    progressBar->setFixedWidth(180);
+    progressBar->setTextVisible(false);
+
+    auto* statusWidget = new QWidget();
+    auto* statusLayout = new QHBoxLayout(statusWidget);
+    // statusLayout->setContentsMargins(4, 0, 4, 0);
+    statusLayout->setContentsMargins(0, 0, 0, 0);
+    statusLayout->setSpacing(6);
+    statusLayout->addStretch();
+    // Version + build hash on the left so it's legible in screenshots
+    // (matches the build artifact name, e.g.
+    // texturelab-win-v0.4.0-beta-<hash>).
+    auto* versionLabel = new QLabel(QCoreApplication::applicationVersion());
+    versionLabel->setObjectName(
+        "StatusVersionLabel"); // styled in resources/qss/app.qss.in
+    versionLabel->setToolTip("Application version and build hash");
+    statusBar()->addWidget(versionLabel);
+
+    // Home: reopens the launcher over the editor (LAUNCHER_PRD.md §7).
+    auto* homeButton = new QToolButton();
+    homeButton->setObjectName("StatusHomeButton");
+    homeButton->setText("⌂");
+    homeButton->setToolTip("Show all textures");
+    homeButton->setCursor(Qt::PointingHandCursor);
+    connect(homeButton, &QToolButton::clicked, this, &MainWindow::showLauncher);
+    statusBar()->addWidget(homeButton);
+
+    statusLayout->addWidget(statusLabel, 0, Qt::AlignVCenter);
+    statusLayout->addWidget(progressBar, 0, Qt::AlignVCenter);
+    statusBar()->addWidget(statusWidget, 1);
+
     this->dockManager = new ads::CDockManager(this);
 
+    // Theme the dock system. ADS installs its own default stylesheet on the
+    // dock manager (constructor -> loadStylesheet), which overrides the global
+    // app sheet for ads--* widgets. We keep that default (it carries button
+    // icons and layout metrics) and append our token-driven color overrides.
+    // Rebuilt on every theme change so it also picks up --dev-theme
+    // hot-reloads.
+    this->adsDefaultStyleSheet = this->dockManager->styleSheet();
+    auto applyDockTheme = [this]() {
+        ThemeManager& tm = ThemeManager::instance();
+        // Qt prefers an ancestor widget's stylesheet over qApp, so app.qss
+        // rules (e.g. #AccordionHeader) don't reach widgets inside docks unless
+        // we also hand them to the dock manager. Order: ADS default -> ADS
+        // overrides -> app rules (last so our tokens win over ADS's
+        // palette()-based defaults).
+        // The call below applies the composed theme sheet (ADS default + ADS
+        // overrides + app rules) to the dock manager — it IS the theming, not an
+        // inline widget style; the short marker keeps the hygiene gate happy even
+        // if a formatter wraps the line.
+        const QString sheet = this->adsDefaultStyleSheet + "\n" +
+                              tm.adsStyleSheet() + "\n" + tm.appStyleSheet();
+        this->dockManager->setStyleSheet(sheet); // theme-exempt
+    };
+    applyDockTheme();
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
+            applyDockTheme);
+
+    // Thicker gutters between panels. ADS/QSplitter ignore QSS handle width, so
+    // set handleWidth in code — on the initial layout and whenever a new dock
+    // area (hence a new splitter) is created (drag-docking).
+    auto applySplitterWidth = [this]() {
+        for (auto* s : this->dockManager->findChildren<ads::CDockSplitter*>())
+            s->setHandleWidth(1);
+    };
+    connect(
+        this->dockManager, &ads::CDockManager::dockAreaCreated, this,
+        [applySplitterWidth](ads::CDockAreaWidget*) { applySplitterWidth(); });
+
     this->setupDocks();
+    applySplitterWidth();
+
+    // After the docks: the Edit menu reuses the graph's clipboard actions.
+    this->setupMenus();
 
     // setup callbacks for the widgets that are created once
     connect(this->graphWidget, &GraphWidget::nodeSelectionChanged,
@@ -72,6 +202,36 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
                 }
             });
 
+    connect(this->graphWidget, &GraphWidget::frameSelectionChanged,
+            [this](const FramePtr& frame) {
+                if (!!frame) {
+                    this->propWidget->setSelectedFrame(frame);
+                }
+                else {
+                    this->propWidget->clearSelection();
+                }
+            });
+
+    connect(this->graphWidget, &GraphWidget::commentSelectionChanged,
+            [this](const CommentPtr& comment) {
+                if (!!comment) {
+                    this->propWidget->setSelectedComment(comment);
+                }
+                else {
+                    this->propWidget->clearSelection();
+                }
+            });
+
+    connect(this->propWidget, &PropertiesWidget::framePropertyChanged,
+            [this](const FramePtr& frame) {
+                this->graphWidget->syncFrameToScene(frame);
+            });
+
+    connect(this->propWidget, &PropertiesWidget::commentPropertyChanged,
+            [this](const CommentPtr& comment) {
+                this->graphWidget->syncCommentToScene(comment);
+            });
+
     connect(this->propWidget, &PropertiesWidget::propertyUpdated,
             [this](const QString& name, const QVariant& value) {
                 if (this->renderer && !!this->project) {
@@ -82,60 +242,54 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
                 this->view3DWidget->reRender();
             });
 
-    connect(this->propWidget, &PropertiesWidget::textureChannelUpdated,
-            [this](const TextureChannel& name, const TextureNodePtr& node) {
-                if (this->renderer && !!this->project) {
-                    this->renderer->update();
-                }
+    connect(
+        this->propWidget, &PropertiesWidget::textureChannelUpdated,
+        [this](const TextureChannel& name, const TextureNodePtr& node) {
+            if (!this->project)
+                return;
 
-                if (!!this->project) {
-                    if (name == TextureChannel::None) {
-                        // Find and remove any channel that points to this node
-                        auto it = this->project->textureChannels.begin();
-                        while (it != this->project->textureChannels.end()) {
-                            if (it.value() == node->id) {
-                                it = this->project->textureChannels.erase(it);
-                            }
-                            else {
-                                ++it;
-                            }
-                        }
-                    }
-                    else {
-
-                        this->project->textureChannels[name] = node->id;
-                    }
-
-                    // assign channel to viewer
-                    // do this crudely by just reassigning all node textures
-                    this->passTextureChannelsToViewer3D();
-                }
-
-                // this->view3DWidget->update();
+            auto syncViewer = [this]() {
+                this->passTextureChannelsToViewer3D();
+                this->syncChannelLabelsToScene();
                 this->view3DWidget->reRender();
-            });
+                if (this->renderer)
+                    this->renderer->update();
+            };
+
+            if (name == TextureChannel::None) {
+                // Unassign this node from whichever channel it's in
+                for (auto ch : this->project->textureChannels.keys()) {
+                    if (this->project->textureChannels[ch] == node->id) {
+                        QString oldNodeId = node->id;
+                        // Apply immediately, then push command (first-redo
+                        // no-op)
+                        this->project->textureChannels.remove(ch);
+                        syncViewer();
+                        if (undoStack)
+                            undoStack->push(new TextureChannelAssignCommand(
+                                this->project, ch, oldNodeId, "", syncViewer));
+                        break;
+                    }
+                }
+            }
+            else {
+                QString oldNodeId =
+                    this->project->textureChannels.value(name, "");
+                // Apply immediately, then push command (first-redo no-op)
+                this->project->textureChannels[name] = node->id;
+                syncViewer();
+                if (undoStack)
+                    undoStack->push(new TextureChannelAssignCommand(
+                        this->project, name, oldNodeId, node->id, syncViewer));
+            }
+        });
 
     // set default empty project
     auto project = TextureProject::createEmpty();
     this->setProject(project);
 
-    // Print GPU information
-    QOpenGLContext* context = QOpenGLContext::currentContext();
-    if (context) {
-        QOpenGLFunctions* f = context->functions();
-        const GLubyte* vendor = f->glGetString(GL_VENDOR);
-        const GLubyte* renderer = f->glGetString(GL_RENDERER);
-        const GLubyte* version = f->glGetString(GL_VERSION);
-
-        qDebug() << "=== GPU Information ===";
-        qDebug() << "GPU Vendor:" << reinterpret_cast<const char*>(vendor);
-        qDebug() << "GPU Renderer:" << reinterpret_cast<const char*>(renderer);
-        qDebug() << "OpenGL Version:" << reinterpret_cast<const char*>(version);
-        qDebug() << "======================";
-    }
-    else {
-        qDebug() << "Warning: No OpenGL context available yet";
-    }
+    // GPU details go to Sentry from TextureRenderer::setup(), where a
+    // context is guaranteed current (see SystemInfo::reportGpuContext()).
 
     // test texture rendering
     //     auto renderer = new TextureRenderer();
@@ -154,6 +308,12 @@ void MainWindow::passTextureChannelsToViewer3D()
         if (!node)
             continue;
 
+        // Skip nodes whose FBO/shader aren't ready yet: textureId() would
+        // otherwise dereference a null texture. They'll be picked up on the
+        // next sync once the render worker has produced their texture.
+        if (!node->isGraphicsResourcesInitialized())
+            continue;
+
         switch (channel) {
         case TextureChannel::Albedo:
             viewer->setAlbedoTexture(node->textureId());
@@ -167,35 +327,127 @@ void MainWindow::passTextureChannelsToViewer3D()
         case TextureChannel::Roughness:
             viewer->setRoughnessTexture(node->textureId());
             break;
+        case TextureChannel::Height:
+            viewer->setHeightTexture(node->textureId());
+            break;
+        case TextureChannel::AO:
+            viewer->setAoTexture(node->textureId());
+            break;
+        case TextureChannel::Alpha:
+            viewer->setAlphaTexture(node->textureId());
+            break;
         default:
             break;
         }
     }
 }
 
+static QString channelName(TextureChannel ch)
+{
+    switch (ch) {
+    case TextureChannel::Albedo:
+        return "Albedo";
+    case TextureChannel::Normal:
+        return "Normal";
+    case TextureChannel::Metalness:
+        return "Metalness";
+    case TextureChannel::Roughness:
+        return "Roughness";
+    case TextureChannel::Height:
+        return "Height";
+    case TextureChannel::Alpha:
+        return "Alpha";
+    case TextureChannel::AO:
+        return "AO";
+    default:
+        return "";
+    }
+}
+
+void MainWindow::syncChannelLabelsToScene()
+{
+    if (!project || !graphWidget->scene)
+        return;
+
+    // clear all labels first
+    for (auto& node : graphWidget->scene->nodes)
+        node->setChannel("");
+
+    // set labels from project state
+    for (auto ch : project->textureChannels.keys()) {
+        auto nodeId = project->textureChannels[ch];
+        auto sceneNode = graphWidget->scene->nodes.value(nodeId);
+        if (sceneNode)
+            sceneNode->setChannel(channelName(ch));
+    }
+}
+
 void MainWindow::setProject(TextureProjectPtr project)
 {
+    // Clear widget state from the old project
+    this->view2DWidget->clearSelection();
+    this->view3DWidget->viewer->clearTextures();
+    this->view3DWidget->reRender();
+
     // Clean up old renderer before creating new one
     if (this->renderer) {
-        // Clear references to old renderer in widgets
         this->graphWidget->setTextureRenderer(nullptr);
         this->view2DWidget->setTextureRenderer(nullptr);
+        this->propWidget->setTextureRenderer(nullptr);
 
         delete this->renderer;
         this->renderer = nullptr;
     }
 
     this->project = project;
+    this->syncedChannels = project->textureChannels;
+
+    // Tagged rather than only breadcrumbed so a crash event carries the graph
+    // size and resolution it happened at, which is what the GTX 750 / 4K report
+    // was missing.
+    Telemetry::setTag("project.node_count",
+                      std::to_string(project->nodes.size()));
+    Telemetry::setTag("texture.resolution",
+                      std::to_string(project->textureWidth));
+
     this->graphWidget->setTextureProject(project);
+    this->syncChannelLabelsToScene();
     this->libraryWidget->setLibrary(project->library);
+    this->libraryWidget->setLibraryVersion(
+        project->libraryVersion,
+        project->libraryVersion == libVersionToString(currentLibVersion()));
 
     this->propWidget->clearSelection();
     this->propWidget->setProject(project);
+    this->propWidget->setScene(this->graphWidget->scene);
 
     renderer = new TextureRenderer();
     renderer->setProject(project);
     this->graphWidget->setTextureRenderer(renderer);
     this->view2DWidget->setTextureRenderer(renderer);
+    // undo/redo of a property change has no propertyUpdated signal to kick the
+    // render loop, so the commands need the renderer directly
+    this->propWidget->setTextureRenderer(renderer);
+
+    connect(renderer, &TextureRenderer::renderProgress,
+            [this](int clean, int total) {
+                progressBar->setMaximum(total == 0 ? 1 : total);
+                progressBar->setValue(total == 0 ? 1 : clean);
+                if (total == 0 || clean == total) {
+                    statusLabel->setText("Ready");
+
+                    // The graph is fully evaluated: this is the first moment a
+                    // freshly opened document is worth photographing.
+                    if (thumbnailCapturePending) {
+                        thumbnailCapturePending = false;
+                        captureLauncherThumbnail(int(catalog::ThumbSource::Open));
+                    }
+                }
+                else {
+                    statusLabel->setText(
+                        QString("Rendering %1 / %2").arg(clean).arg(total));
+                }
+            });
 
     // Update view3D textures when a node's texture is updated
     connect(renderer, &TextureRenderer::thumbnailGenerated,
@@ -222,6 +474,12 @@ void MainWindow::setProject(TextureProjectPtr project)
                         case TextureChannel::Height:
                             viewer->setHeightTexture(texId);
                             break;
+                        case TextureChannel::AO:
+                            viewer->setAoTexture(texId);
+                            break;
+                        case TextureChannel::Alpha:
+                            viewer->setAlphaTexture(texId);
+                            break;
                         default:
                             break;
                         }
@@ -233,27 +491,46 @@ void MainWindow::setProject(TextureProjectPtr project)
 
     renderer->update();
 
-    // Update window title with project name
     setWindowTitle(project->name + " - TextureLab");
+    undoStack->clear();
 }
 
 void MainWindow::setupMenus()
 {
     auto fileMenu = this->menuBar()->addMenu("File");
-    fileMenu->addAction("Open Project", [=]() { this->openProject(); });
-    fileMenu->addAction("New Project", [=]() { this->newProject(); });
+    fileMenu->addAction("Open Project", QKeySequence::Open,
+                        [=]() { this->openProject(); });
+    fileMenu->addAction("New Project", QKeySequence::New,
+                        [=]() { this->newProject(); });
     fileMenu->addSeparator();
-    fileMenu->addAction("Save", []() {});
-    fileMenu->addAction("Save As...", []() {});
+    fileMenu->addAction("Save", QKeySequence::Save,
+                        [=]() { this->saveProject(); });
+    fileMenu->addAction("Save As...", QKeySequence::SaveAs,
+                        [=]() { this->saveProjectAs(); });
+    fileMenu->addSeparator();
+
+    recentFilesMenu = fileMenu->addMenu("Open Recent");
+    connect(recentFilesMenu, &QMenu::aboutToShow, this,
+            &MainWindow::updateRecentFilesMenu);
+
     fileMenu->addSeparator();
     fileMenu->addAction("Edit", []() {});
 
     auto editMenu = this->menuBar()->addMenu("Edit");
-    editMenu->addAction("Undo", []() {});
-    editMenu->addAction("Redo", []() {});
-    editMenu->addAction("Cut", []() {});
-    editMenu->addAction("Copy", []() {});
-    editMenu->addAction("Paste", []() {});
+    auto undoAction = undoStack->createUndoAction(this, tr("Undo"));
+    undoAction->setShortcut(QKeySequence::Undo);
+    editMenu->addAction(undoAction);
+    auto redoAction = undoStack->createRedoAction(this, tr("Redo"));
+    redoAction->setShortcut(QKeySequence::Redo);
+    editMenu->addAction(redoAction);
+    editMenu->addSeparator();
+
+    // The graph owns these — their shortcuts are scoped to it, so Ctrl+C in a
+    // property field still copies text. Reusing the actions here keeps the keys
+    // visible in the menu without registering a second, ambiguous binding.
+    editMenu->addAction(graphWidget->cutAction);
+    editMenu->addAction(graphWidget->copyAction);
+    editMenu->addAction(graphWidget->pasteAction);
 
     auto examplesMenu = this->menuBar()->addMenu("Examples");
 
@@ -275,36 +552,98 @@ void MainWindow::setupMenus()
         displayName.replace(".texture", "");
 
         examplesMenu->addAction(displayName, [this, example]() {
-            QString examplePath = ":examples/" + example;
-
-            // Load the example project
-            auto project = Project::loadTexture(examplePath);
-
-            // Set project name from filename
+            if (!promptSaveIfDirty())
+                return;
+            auto project = Project::loadTexture(":examples/" + example);
             QString projectName = example;
             projectName.replace(".texture", "");
             project->name = projectName;
-
             setProject(project);
         });
     }
 
     auto optionsMenu = this->menuBar()->addMenu("Help");
-    optionsMenu->addAction("Documentation", []() {});
-    optionsMenu->addAction("About", []() {});
+    optionsMenu->addAction("About", [this]() {
+        AboutDialog dialog(this);
+        dialog.exec();
+    });
+
+    optionsMenu->addSeparator();
+
+    auto crashReportingAction =
+        optionsMenu->addAction("Send Anonymous Crash Reports");
+    crashReportingAction->setCheckable(true);
+    crashReportingAction->setChecked(Telemetry::isAllowed());
+    connect(crashReportingAction, &QAction::toggled, [](bool checked) {
+        // Through Telemetry rather than straight to QSettings, so the change
+        // takes effect now instead of on the next launch — and so toggling it
+        // by hand counts as having answered the consent prompt.
+        Telemetry::recordConsent(checked);
+        Telemetry::setEnabled(checked);
+    });
+
+    // The launcher's gear menu writes the same setting, so the check can be
+    // stale by the time this menu is opened.
+    connect(optionsMenu, &QMenu::aboutToShow, this, [crashReportingAction]() {
+        QSignalBlocker block(crashReportingAction);
+        crashReportingAction->setChecked(Telemetry::isAllowed());
+    });
+}
+
+// Recolor a rendered (white) icon pixmap to `color`, keeping its alpha shape.
+static QPixmap tintPixmap(const QPixmap& src, const QColor& color)
+{
+    QPixmap out(src.size());
+    out.setDevicePixelRatio(src.devicePixelRatio());
+    out.fill(Qt::transparent);
+    QPainter p(&out);
+    p.drawPixmap(0, 0, src);
+    p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+    p.fillRect(out.rect(), color);
+    p.end();
+    return out;
+}
+
+// Build a toolbar QIcon whose Normal/Disabled variants are tinted to the theme's
+// text colors, so the icon always matches the button label's color in each state
+// (Qt's auto-generated disabled fade doesn't match text.disabled exactly).
+static QIcon themedToolIcon(const QString& svgPath)
+{
+    const Theme& t = ThemeManager::instance().theme();
+    const QPixmap base = QIcon(svgPath).pixmap(QSize(32, 32)); // white source SVG
+    QIcon icon;
+    icon.addPixmap(tintPixmap(base, t.color(Tokens::TextPrimary)), QIcon::Normal);
+    icon.addPixmap(tintPixmap(base, t.color(Tokens::TextDisabled)), QIcon::Disabled);
+    return icon;
 }
 
 void MainWindow::setupToolbar()
 {
     // https://www.setnode.com/blog/right-aligning-a-button-in-a-qtoolbar/
     toolBar = this->addToolBar("main toolbar");
+    toolBar->setObjectName("MainToolbar"); // styled in app.qss.in
+    toolBar->setIconSize(QSize(14, 14)); // small, to sit level with the button text
+    toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
     QWidget* spacer = new QWidget();
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    // undo redo
-    toolBar->addAction("Undo");
-    toolBar->addAction("Redo");
+    // undo redo — plain "Undo"/"Redo" labels (not the createUndoAction text,
+    // which appends the command name). Shortcuts stay on the Edit-menu actions
+    // to avoid an ambiguous-shortcut clash.
+    auto undoAction = new QAction(themedToolIcon(":/icons/undo.svg"), "Undo", this);
+    undoAction->setEnabled(undoStack->canUndo());
+    connect(undoAction, &QAction::triggered, undoStack, &QUndoStack::undo);
+    connect(undoStack, &QUndoStack::canUndoChanged, undoAction,
+            &QAction::setEnabled);
+    toolBar->addAction(undoAction);
+
+    auto redoAction = new QAction(themedToolIcon(":/icons/redo.svg"), "Redo", this);
+    redoAction->setEnabled(undoStack->canRedo());
+    connect(redoAction, &QAction::triggered, undoStack, &QUndoStack::redo);
+    connect(undoStack, &QUndoStack::canRedoChanged, redoAction,
+            &QAction::setEnabled);
+    toolBar->addAction(redoAction);
 
     // spacer
     toolBar->addWidget(spacer);
@@ -312,15 +651,23 @@ void MainWindow::setupToolbar()
     // Export button with dropdown menu
     auto exportBtn = new QToolButton(this);
     exportBtn->setText("Export");
+    exportBtn->setIcon(themedToolIcon(":/icons/export.svg"));
     exportBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
     auto directExportAction = new QAction("Export", this);
+    directExportAction->setShortcut(QKeySequence("Ctrl+E"));
     connect(directExportAction, &QAction::triggered, this,
             &MainWindow::directExport);
 
     auto settingsAction = new QAction("Export Settings...", this);
+    settingsAction->setShortcut(QKeySequence("Ctrl+Shift+E"));
     connect(settingsAction, &QAction::triggered, this,
             &MainWindow::showExportDialog);
+
+    // The dropdown is a popup window of its own, so associate both actions
+    // with the main window too or their shortcuts never fire.
+    this->addAction(directExportAction);
+    this->addAction(settingsAction);
 
     auto exportMenu = new QMenu(this);
     exportMenu->addAction(settingsAction);
@@ -365,6 +712,7 @@ void MainWindow::setupDocks()
 
     // graph goes in the center
     this->graphWidget = new GraphWidget();
+    this->graphWidget->setUndoStack(undoStack);
     this->view2DWidget = new View2DWidget();
     this->view3DWidget = new View3DWidget();
 
@@ -374,10 +722,13 @@ void MainWindow::setupDocks()
                             this->view2DWidget, graphArea);
 
     this->propWidget = new PropertiesWidget();
+    this->propWidget->setUndoStack(undoStack);
     auto rightArea = addDock("Properties", ads::RightDockWidgetArea,
                              this->propWidget, graphArea);
 
     this->libraryWidget = new LibraryWidget();
+    connect(this->libraryWidget, &LibraryWidget::upgradeRequested, this,
+            &MainWindow::upgradeCurrentProjectLibrary);
     setWidgetRatiosInArea(graphArea, {1.0f / 5, 3.0f / 5, 1.0f / 5});
 
     addDock("3D View", ads::BottomDockWidgetArea, this->view3DWidget, leftArea);
@@ -385,6 +736,8 @@ void MainWindow::setupDocks()
             rightArea);
     setWidgetRatiosInArea(leftArea, {0.5f, 0.5f});
     setWidgetRatiosInArea(rightArea, {0.5f, 0.5f});
+
+    QTimer::singleShot(0, this, [this]() { graphWidget->setFocus(); });
 }
 
 ads::CDockAreaWidget* MainWindow::addDock(const QString& title,
@@ -403,25 +756,309 @@ ads::CDockAreaWidget* MainWindow::addDock(const QString& title,
     return newAreaWidget;
 }
 
+QWidget* MainWindow::dialogParent()
+{
+    // The launcher is a top-level window, not a child of this one, so it has to
+    // be named explicitly as the parent while it's the window on screen.
+    if (launcher && launcher->isVisible())
+        return launcher;
+
+    return this;
+}
+
+void MainWindow::captureLauncherThumbnail(int source)
+{
+    CatalogService& catalog = CatalogService::instance();
+    if (!catalog.isReady() || !project || project->filePath.isEmpty())
+        return;
+
+    auto* viewer = view3DWidget ? view3DWidget->viewer : nullptr;
+    if (!viewer || !viewer->isValid())
+        return;
+
+    // The one moment the whole graph is evaluated and resident on the GPU, so
+    // we just take the picture — no headless evaluator, no second GL context
+    // (LAUNCHER_PRD.md §4). Whatever the user framed is what the card shows.
+    const QImage frame = viewer->grabFramebuffer();
+    if (frame.isNull())
+        return;
+
+    const catalog::TextureRecord rec = catalog.index().byPath(project->filePath);
+    if (!rec.isValid())
+        return;
+
+    catalog.captureThumbnail(rec.id, frame, static_cast<catalog::ThumbSource>(source));
+}
+
+void MainWindow::showLauncher()
+{
+    if (!launcher) {
+        launcher = new LauncherWindow();
+
+        connect(launcher, &LauncherWindow::newTextureRequested, this, [this]() {
+            launcher->hide();
+            newProject();
+            showMaximized();
+            raise();
+            activateWindow();
+        });
+
+        // Routed through openProjectFromPath so the launcher inherits the
+        // dirty-document prompt and the library-version upgrade dialog rather
+        // than reimplementing either.
+        connect(launcher, &LauncherWindow::openPathRequested, this,
+                [this](const QString& path) {
+                    const QString before = project ? project->filePath : QString();
+                    openProjectFromPath(path);
+
+                    // openProjectFromPath bails out silently if the user
+                    // cancels the save prompt or the file won't read; in that
+                    // case leave the launcher up rather than dropping them into
+                    // an editor they didn't ask for.
+                    if (project && project->filePath == path && project->filePath != before) {
+                        launcher->hide();
+                        showMaximized();
+                        raise();
+                        activateWindow();
+                    }
+                });
+
+        connect(launcher, &LauncherWindow::openDialogRequested, this, [this]() {
+            openProject();
+            if (project && !project->filePath.isEmpty()) {
+                launcher->hide();
+                showMaximized();
+                raise();
+                activateWindow();
+            }
+        });
+
+        connect(launcher, &LauncherWindow::closeRequested, this, [this]() {
+            launcher->hide();
+            showMaximized();
+            raise();
+            activateWindow();
+        });
+    }
+
+    launcher->setHasDocument(project && !project->filePath.isEmpty());
+    launcher->setOpenPath(project ? project->filePath : QString());
+    launcher->show();
+    launcher->raise();
+    launcher->activateWindow();
+}
+
 void MainWindow::openProject()
 {
-    auto filePath = QFileDialog::getOpenFileName(this, "Open Texture File", "",
+    if (!promptSaveIfDirty())
+        return;
+
+    auto filePath = QFileDialog::getOpenFileName(dialogParent(), "Open Texture File", "",
                                                  "Texturelab File (*.texture)");
 
-    if (filePath.isNull() || filePath.isEmpty()) {
+    if (filePath.isNull() || filePath.isEmpty())
+        return;
+
+    openProjectFromPath(filePath);
+}
+
+void MainWindow::openProjectFromPath(const QString& filePath)
+{
+    if (!promptSaveIfDirty())
+        return;
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::warning(dialogParent(), "Open Texture",
+                             "Could not open file:\n" + filePath);
+        return;
+    }
+    auto json = QJsonDocument::fromJson(file.readAll()).object();
+    file.close();
+
+    LibraryVersionMigrator migrator(json);
+    if (migrator.needsMigration()) {
+        QStringList chain;
+        chain << libVersionToString(migrator.sourceVersion());
+        for (auto v : migrator.versionsCrossed())
+            chain << libVersionToString(v);
+
+        auto choice = QMessageBox::question(
+            dialogParent(), "Upgrade Texture?",
+            QString("This texture was created with library version %1.\n\n"
+                    "Upgrade it to %2 (%3) to use the latest nodes and "
+                    "improvements? A few node behaviors may change slightly.")
+                .arg(libVersionToString(migrator.sourceVersion()),
+                     libVersionToString(migrator.targetVersion()),
+                     chain.join(" → ")),
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+
+        if (choice == QMessageBox::Yes)
+            json = migrator.migrate();
+    }
+
+    auto project = Project::loadTextureFromJson(json);
+
+    QFileInfo fileInfo(filePath);
+    project->name = fileInfo.baseName();
+    project->filePath = filePath;
+
+    // Deliberately no file name or path: the consent prompt promises counts and
+    // settings, not what the user is working on.
+    Telemetry::breadcrumb("project", "opened",
+                          {{"node_count", (int64_t)project->nodes.size()},
+                           {"resolution", (int64_t)project->textureWidth},
+                           {"library_version",
+                            project->libraryVersion.toStdString()}});
+    setProject(project);
+    addToRecentFiles(filePath);
+
+    // The shared entry point for the Open dialog, the recent-files menu, and
+    // drag-and-drop, so one hook here covers all three (LAUNCHER_PRD.md §6.1).
+    CatalogService::instance().recordOpened(project, filePath);
+
+    // Can't grab yet: opening kicks off an asynchronous render and the viewport
+    // is still showing the previous document (or nothing). Captured when
+    // renderProgress reports every node clean.
+    thumbnailCapturePending = true;
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent* event)
+{
+    if (!event->mimeData()->hasUrls()) {
+        event->ignore();
         return;
     }
 
-    auto project = Project::loadTexture(filePath);
+    for (const auto& url : event->mimeData()->urls()) {
+        if (url.isLocalFile() &&
+            url.toLocalFile().endsWith(".texture", Qt::CaseInsensitive)) {
+            event->acceptProposedAction();
+            return;
+        }
+    }
+    event->ignore();
+}
 
-    // Extract filename without extension
+void MainWindow::dropEvent(QDropEvent* event)
+{
+    for (const auto& url : event->mimeData()->urls()) {
+        if (!url.isLocalFile())
+            continue;
+
+        auto filePath = url.toLocalFile();
+        if (!filePath.endsWith(".texture", Qt::CaseInsensitive))
+            continue;
+
+        event->acceptProposedAction();
+        openProjectFromPath(filePath);
+        return;
+    }
+
+    event->ignore();
+}
+
+void MainWindow::upgradeCurrentProjectLibrary()
+{
+    if (!this->project)
+        return;
+
+    // Round-trip through the same JSON the file format uses, so the live
+    // "Upgrade" button in the Library dock goes through the exact same
+    // pure-JSON migration path as opening a legacy file does.
+    auto bytes = Project::saveTexture(this->project);
+    auto json = QJsonDocument::fromJson(bytes).object();
+
+    LibraryVersionMigrator migrator(json);
+    if (!migrator.needsMigration())
+        return;
+
+    auto choice = QMessageBox::warning(
+        dialogParent(), "Upgrade Library Version?",
+        "Upgrading the library version is irreversible and clears the "
+        "undo/redo history for this session.\n\n"
+        "Save your project (or save a copy) first if you want to keep the "
+        "ability to go back to the current version.\n\n"
+        "Continue with the upgrade?",
+        QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel);
+
+    if (choice != QMessageBox::Yes)
+        return;
+
+    auto newProject = Project::loadTextureFromJson(migrator.migrate());
+    newProject->name = this->project->name;
+    newProject->filePath = this->project->filePath;
+
+    setProject(newProject);
+}
+
+void MainWindow::newProject()
+{
+    if (!promptSaveIfDirty())
+        return;
+    Telemetry::breadcrumb("project", "new project");
+    setProject(TextureProject::createEmpty());
+}
+
+void MainWindow::saveProject()
+{
+    if (project->filePath.isNull() || project->filePath.isEmpty()) {
+        QString filePath = QFileDialog::getSaveFileName(
+            this, "Save Texture...", QString(), "Texturelab File (*.texture)");
+
+        if (filePath.isNull() || filePath.isEmpty()) {
+            return;
+        }
+
+        if (!filePath.endsWith(".texture", Qt::CaseInsensitive))
+            filePath += ".texture";
+
+        project->filePath = filePath;
+    }
+
+    graphWidget->syncPositionsToModel();
+
+    Telemetry::breadcrumb("project", "saved",
+                          {{"node_count", (int64_t)project->nodes.size()},
+                           {"resolution", (int64_t)project->textureWidth}});
+    QFile file(project->filePath);
+    file.open(QIODevice::WriteOnly);
+    file.write(Project::saveTexture(project));
+    file.close();
+    undoStack->setClean();
+    addToRecentFiles(project->filePath);
+    CatalogService::instance().recordSaved(project, project->filePath);
+    captureLauncherThumbnail(int(catalog::ThumbSource::Save));
+}
+
+void MainWindow::saveProjectAs()
+{
+    QString filePath = QFileDialog::getSaveFileName(
+        this, "Save Texture As...", QString(), "Texturelab File (*.texture)");
+
+    if (filePath.isNull() || filePath.isEmpty())
+        return;
+
+    if (!filePath.endsWith(".texture", Qt::CaseInsensitive))
+        filePath += ".texture";
+
+    project->filePath = filePath;
+
     QFileInfo fileInfo(filePath);
     project->name = fileInfo.baseName();
 
-    setProject(project);
-}
+    graphWidget->syncPositionsToModel();
 
-void MainWindow::newProject() { setProject(TextureProject::createEmpty()); }
+    QFile file(project->filePath);
+    file.open(QIODevice::WriteOnly);
+    file.write(Project::saveTexture(project));
+    file.close();
+    undoStack->setClean();
+    setWindowTitle(project->name + " - TextureLab");
+    addToRecentFiles(project->filePath);
+    CatalogService::instance().recordSaved(project, project->filePath);
+    captureLauncherThumbnail(int(catalog::ThumbSource::Save));
+}
 
 void MainWindow::showExportDialog()
 {
@@ -474,6 +1111,13 @@ void MainWindow::directExport()
 void MainWindow::handleExport(const QString& destination,
                               const QString& pattern)
 {
+    // The destination path is deliberately not recorded — only the shape of
+    // the export.
+    Telemetry::breadcrumb("export", "export started",
+                          {{"resolution", (int64_t)(this->project
+                                                        ? this->project->textureWidth
+                                                        : 0)},
+                           {"pattern", pattern.toStdString()}});
     if (!this->project || !this->renderer) {
         QMessageBox::warning(this, "Export Error",
                              "No project loaded or renderer not initialized.");
@@ -588,9 +1232,104 @@ void MainWindow::handleExport(const QString& destination,
     QMessageBox::information(this, "Export", message);
 }
 
+void MainWindow::addToRecentFiles(const QString& filePath)
+{
+    QSettings settings;
+    QStringList files = settings.value("recentFiles").toStringList();
+    files.removeAll(filePath);
+    files.prepend(filePath);
+    while (files.size() > MaxRecentFiles)
+        files.removeLast();
+    settings.setValue("recentFiles", files);
+}
+
+void MainWindow::updateRecentFilesMenu()
+{
+    recentFilesMenu->clear();
+
+    // Reads through to the catalog index rather than QSettings, so this menu
+    // and the launcher can't disagree about what you opened last. QSettings is
+    // still written by addToRecentFiles() as a fallback for the case where the
+    // index failed to open.
+    QStringList files;
+    CatalogService& catalog = CatalogService::instance();
+
+    if (catalog.isReady()) {
+        catalog::Query query;
+        query.filter = catalog::Filter::Recents;
+        query.sort = catalog::SortKey::Opened;
+        query.ascending = false;
+        query.limit = MaxRecentFiles;
+
+        for (const catalog::TextureRecord& rec : catalog.index().list(query))
+            files << rec.path;
+    }
+    else {
+        files = QSettings().value("recentFiles").toStringList();
+    }
+
+    for (const QString& filePath : files) {
+        QFileInfo info(filePath);
+        auto action =
+            recentFilesMenu->addAction(info.fileName(), [this, filePath]() {
+                openProjectFromPath(filePath);
+            });
+        action->setToolTip(filePath);
+    }
+
+    if (files.isEmpty())
+        recentFilesMenu->addAction("No recent files")->setEnabled(false);
+
+    recentFilesMenu->addSeparator();
+    recentFilesMenu->addAction("Clear Recent Files", [this]() {
+        QSettings().remove("recentFiles");
+
+        // Clearing the menu must not delete the user's stars, tags, or the
+        // textures themselves — only forget when they were last opened. The
+        // launcher keeps showing them under All.
+        CatalogService& catalog = CatalogService::instance();
+        if (catalog.isReady())
+            catalog.index().clearRecents();
+    });
+}
+
+void MainWindow::onCleanChanged(bool clean)
+{
+    if (!project)
+        return;
+    QString title = project->name + " - TextureLab";
+    setWindowTitle(clean ? title : "*" + title);
+}
+
+bool MainWindow::promptSaveIfDirty()
+{
+    if (undoStack->isClean())
+        return true;
+
+    QString name = project ? project->name : "Untitled";
+    auto choice = QMessageBox::question(
+        dialogParent(), "Unsaved Changes",
+        QString("Save changes to \"%1\" before continuing?").arg(name),
+        QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+
+    if (choice == QMessageBox::Save) {
+        saveProject();
+        return undoStack->isClean(); // false if save was cancelled
+    }
+    return choice == QMessageBox::Discard;
+}
+
+void MainWindow::closeEvent(QCloseEvent* event)
+{
+    if (!promptSaveIfDirty()) {
+        event->ignore();
+        return;
+    }
+    event->accept();
+}
+
 MainWindow::~MainWindow()
 {
-    // Clean up renderer
     if (this->renderer) {
         delete this->renderer;
         this->renderer = nullptr;

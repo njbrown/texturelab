@@ -3,6 +3,7 @@
 #include "../../props.h"
 #include "colorpicker.h"
 #include "gradientpicker.h"
+#include "thememanager.h"
 
 #include <QComboBox>
 #include <QDir>
@@ -14,35 +15,52 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPainter>
+#include <QPainterPath>
 #include <QPixmap>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSlider>
 #include <QSpinBox>
 #include <QVBoxLayout>
+#include <climits>
+#include <limits>
 
 const int SLIDER_MAX = 1000;
+
+class NoWheelSlider : public QSlider {
+public:
+    using QSlider::QSlider;
+    void wheelEvent(QWheelEvent* event) override { event->ignore(); }
+};
+
+class NoWheelComboBox : public QComboBox {
+public:
+    using QComboBox::QComboBox;
+    void wheelEvent(QWheelEvent* event) override { event->ignore(); }
+};
 
 // FLOAT PROP WIDGET
 // https://stackoverflow.com/a/19007951
 FloatPropWidget::FloatPropWidget()
 {
     prop = nullptr;
+    updating = false;
 
     auto vlayout = new QVBoxLayout(this);
     this->setLayout(vlayout);
 
-    // label
     label = new QLabel(this);
     label->setText("");
     vlayout->addWidget(label);
 
-    // slider
-    slider = new QSlider(Qt::Horizontal, this);
+    slider = new NoWheelSlider(Qt::Horizontal, this);
     slider->setMinimum(0);
     slider->setMaximum(SLIDER_MAX);
     slider->setSingleStep(1);
 
     spinbox = new QDoubleSpinBox(this);
+    spinbox->setMaximum(std::numeric_limits<double>::max());
+    spinbox->setFixedWidth(60);
 
     auto hbox = new QHBoxLayout();
     hbox->addWidget(slider);
@@ -53,43 +71,54 @@ FloatPropWidget::FloatPropWidget()
     this->setFixedHeight(80);
 
     connect(slider, &QSlider::valueChanged, [=](int val) {
-        auto percent = val / (float)SLIDER_MAX;
-        if (prop) {
-            auto range = prop->maxValue - prop->minValue;
-            auto finalValue = prop->minValue + range * percent;
-            spinbox->setValue(finalValue);
-
-            emit valueChanged(finalValue);
-        }
+        if (updating || !prop)
+            return;
+        updating = true;
+        auto range = prop->maxValue - prop->minValue;
+        auto finalValue = prop->minValue + range * (val / (double)SLIDER_MAX);
+        spinbox->setValue(finalValue);
+        updating = false;
+        emit valueChanged(finalValue);
     });
 
     connect(spinbox, &QDoubleSpinBox::valueChanged, [=](double val) {
-        if (prop) {
-            auto range = prop->maxValue - prop->minValue;
-            auto finalValue = ((val - prop->minValue) / range) * SLIDER_MAX;
-
-            slider->setValue(finalValue);
-
-            emit valueChanged(val);
-        }
+        if (updating || !prop)
+            return;
+        updating = true;
+        auto range = prop->maxValue - prop->minValue;
+        int sliderVal =
+            (range > 0)
+                ? qBound(0, (int)((val - prop->minValue) / range * SLIDER_MAX),
+                         SLIDER_MAX)
+                : 0;
+        slider->setValue(sliderVal);
+        updating = false;
+        emit valueChanged(val);
     });
 }
 
 void FloatPropWidget::setProp(FloatProp* prop)
 {
+    this->prop = prop;
+    updating = true;
+
     label->setText(prop->displayName);
 
     spinbox->setMinimum(prop->minValue);
-    spinbox->setMaximum(prop->maxValue);
+    spinbox->setMaximum(std::numeric_limits<double>::max());
     spinbox->setSingleStep(prop->step);
     spinbox->setValue(prop->value);
 
     auto range = prop->maxValue - prop->minValue;
-    auto finalValue = ((prop->value - prop->minValue) / range) * SLIDER_MAX;
+    int sliderVal =
+        (range > 0)
+            ? qBound(0,
+                     (int)((prop->value - prop->minValue) / range * SLIDER_MAX),
+                     SLIDER_MAX)
+            : 0;
+    slider->setValue(sliderVal);
 
-    slider->setValue(finalValue);
-
-    this->prop = prop;
+    updating = false;
 }
 
 // INT PROP WIDGET
@@ -97,22 +126,23 @@ void FloatPropWidget::setProp(FloatProp* prop)
 IntPropWidget::IntPropWidget()
 {
     prop = nullptr;
+    updating = false;
 
     auto vlayout = new QVBoxLayout(this);
     this->setLayout(vlayout);
 
-    // label
     label = new QLabel(this);
     label->setText("");
     vlayout->addWidget(label);
 
-    // slider
-    slider = new QSlider(Qt::Horizontal, this);
+    slider = new NoWheelSlider(Qt::Horizontal, this);
     slider->setMinimum(0);
     slider->setMaximum(SLIDER_MAX);
     slider->setSingleStep(1);
 
     spinbox = new QSpinBox(this);
+    spinbox->setMaximum(INT_MAX);
+    spinbox->setFixedWidth(60);
 
     auto hbox = new QHBoxLayout();
     hbox->addWidget(slider);
@@ -123,38 +153,54 @@ IntPropWidget::IntPropWidget()
     this->setFixedHeight(80);
 
     connect(slider, &QSlider::valueChanged, [=](int val) {
-        auto percent = val / (float)SLIDER_MAX;
-        if (prop) {
-            spinbox->setValue(val);
-
-            emit valueChanged(val);
-        }
+        if (updating || !prop)
+            return;
+        updating = true;
+        auto range = prop->maxValue - prop->minValue;
+        long finalValue =
+            prop->minValue + (long)qRound(range * (val / (double)SLIDER_MAX));
+        spinbox->setValue((int)finalValue);
+        updating = false;
+        emit valueChanged(finalValue);
     });
 
     connect(spinbox, &QSpinBox::valueChanged, [=](int val) {
-        if (prop) {
-            slider->setValue(val);
-
-            emit valueChanged(val);
-        }
+        if (updating || !prop)
+            return;
+        updating = true;
+        auto range = prop->maxValue - prop->minValue;
+        int sliderVal = (range > 0) ? qBound(0,
+                                             (int)((val - prop->minValue) /
+                                                   (double)range * SLIDER_MAX),
+                                             SLIDER_MAX)
+                                    : 0;
+        slider->setValue(sliderVal);
+        updating = false;
+        emit valueChanged((long)val);
     });
 }
 
 void IntPropWidget::setProp(IntProp* prop)
 {
+    this->prop = prop;
+    updating = true;
+
     label->setText(prop->displayName);
 
-    spinbox->setMinimum(prop->minValue);
-    spinbox->setMaximum(prop->maxValue);
-    spinbox->setSingleStep(prop->step);
-    spinbox->setValue(prop->value);
+    spinbox->setMinimum((int)prop->minValue);
+    spinbox->setMaximum(INT_MAX);
+    spinbox->setSingleStep((int)prop->step);
+    spinbox->setValue((int)prop->value);
 
-    slider->setValue(prop->value);
-    slider->setMinimum(prop->minValue);
-    slider->setMaximum(prop->maxValue);
-    slider->setSingleStep(prop->step);
+    auto range = prop->maxValue - prop->minValue;
+    int sliderVal = (range > 0) ? qBound(0,
+                                         (int)((prop->value - prop->minValue) /
+                                               (double)range * SLIDER_MAX),
+                                         SLIDER_MAX)
+                                : 0;
+    slider->setValue(sliderVal);
 
-    this->prop = prop;
+    updating = false;
 }
 
 // ENUM PROP WIDGET
@@ -172,7 +218,7 @@ EnumPropWidget::EnumPropWidget()
     vlayout->addWidget(label);
 
     // slider
-    comboBox = new QComboBox(this);
+    comboBox = new NoWheelComboBox(this);
     vlayout->addWidget(comboBox);
 
     this->setFixedHeight(80);
@@ -202,27 +248,47 @@ StringPropWidget::StringPropWidget()
     auto vlayout = new QVBoxLayout(this);
     this->setLayout(vlayout);
 
-    // label
     label = new QLabel(this);
     label->setText("");
     vlayout->addWidget(label);
 
-    // line edit
     lineEdit = new QLineEdit(this);
     vlayout->addWidget(lineEdit);
+
+    textEdit = new QPlainTextEdit(this);
+    textEdit->hide();
+    vlayout->addWidget(textEdit);
 
     this->setFixedHeight(80);
 
     connect(lineEdit, &QLineEdit::textChanged,
             [=](const QString& text) { emit valueChanged(text); });
+
+    connect(textEdit, &QPlainTextEdit::textChanged,
+            [=]() { emit valueChanged(textEdit->toPlainText()); });
 }
 
 void StringPropWidget::setProp(StringProp* prop)
 {
     label->setText(prop->displayName);
     lineEdit->setText(prop->value);
+    textEdit->setPlainText(prop->value);
 
     this->prop = prop;
+}
+
+void StringPropWidget::setMultiline(bool multiline)
+{
+    if (multiline) {
+        lineEdit->hide();
+        textEdit->show();
+        setFixedHeight(120);
+    }
+    else {
+        textEdit->hide();
+        lineEdit->show();
+        setFixedHeight(80);
+    }
 }
 
 // BOOL PROP WIDGET
@@ -269,6 +335,50 @@ void BoolPropWidget::setValue(bool value)
     }
 }
 
+namespace {
+// Color swatch that shows a checkerboard behind translucent colors. Shaped
+// like the app's spinboxes (radius.sm corners, border.input outline).
+class ColorSwatch : public QWidget {
+public:
+    QColor color;
+
+    explicit ColorSwatch(QWidget* parent = nullptr) : QWidget(parent) {}
+
+protected:
+    void paintEvent(QPaintEvent*) override
+    {
+        const Theme& t = ThemeManager::instance().theme();
+        const qreal radius = t.radius("sm");
+
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        QRectF r = QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5);
+        QPainterPath path;
+        path.addRoundedRect(r, radius, radius);
+
+        painter.save();
+        painter.setClipPath(path);
+        if (color.alpha() < 255)
+            drawCheckerboard(painter, rect());
+        painter.fillRect(rect(), color);
+        painter.restore();
+
+        painter.setPen(QPen(t.color("border.input"), 1));
+        painter.setBrush(Qt::NoBrush);
+        painter.drawPath(path);
+    }
+};
+
+// Height of a themed spinbox, so the swatch lines up with float/int props
+int spinboxHeight()
+{
+    QDoubleSpinBox probe;
+    probe.ensurePolished();
+    return probe.sizeHint().height();
+}
+} // namespace
+
 ColorPropWidget::ColorPropWidget()
 {
     prop = nullptr;
@@ -282,8 +392,8 @@ ColorPropWidget::ColorPropWidget()
     vlayout->addWidget(label);
 
     // color preview
-    colorPreview = new QWidget(this);
-    colorPreview->setFixedHeight(20);
+    colorPreview = new ColorSwatch(this);
+    colorPreview->setFixedHeight(spinboxHeight());
     colorPreview->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     colorPreview->setCursor(Qt::PointingHandCursor);
     colorPreview->installEventFilter(this);
@@ -302,13 +412,8 @@ void ColorPropWidget::setProp(ColorProp* prop)
 void ColorPropWidget::updateColorPreview()
 {
     if (prop) {
-        QString styleSheet = QString("background-color: rgba(%1, %2, %3, %4); "
-                                     "border: 1px solid #888;")
-                                 .arg(prop->value.red())
-                                 .arg(prop->value.green())
-                                 .arg(prop->value.blue())
-                                 .arg(prop->value.alpha());
-        colorPreview->setStyleSheet(styleSheet);
+        static_cast<ColorSwatch*>(colorPreview)->color = prop->value;
+        colorPreview->update();
     }
 }
 
@@ -330,9 +435,10 @@ bool ColorPropWidget::eventFilter(QObject* obj, QEvent* event)
                         emit valueChanged(color); // signal value changed
                     }
                 });
+        connect(picker, &ColorPicker::onClosed, picker,
+                &ColorPicker::deleteLater);
 
-        picker->exec();
-        delete picker;
+        picker->show();
 
         return true;
     }
@@ -387,7 +493,7 @@ void GradientPropWidget::updateGradientPreview()
         painter.end();
 
         QString styleSheet = QString("border: 1px solid #888;");
-        gradientPreview->setStyleSheet(styleSheet);
+        gradientPreview->setStyleSheet(styleSheet); // theme-exempt: dynamic gradient-data swatch
 
         // Set as background using palette
         palette.setBrush(gradientPreview->backgroundRole(), QBrush(pixmap));
@@ -465,8 +571,7 @@ ImagePropWidget::ImagePropWidget()
     imagePreview->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     imagePreview->setAlignment(Qt::AlignCenter);
     imagePreview->setCursor(Qt::PointingHandCursor);
-    imagePreview->setStyleSheet(
-        "QLabel { background-color: #333; border: 1px solid #888; }");
+    imagePreview->setObjectName("ImagePreview"); // styled in app.qss.in
     imagePreview->setText("Click to select image");
     imagePreview->setScaledContents(false);
     imagePreview->installEventFilter(this);
@@ -523,6 +628,8 @@ bool ImagePropWidget::eventFilter(QObject* obj, QEvent* event)
             filePath = fileName;
             QImage image(fileName);
             if (!image.isNull()) {
+                if (image.format() != QImage::Format_RGBA8888)
+                    image = image.convertToFormat(QImage::Format_RGBA8888);
                 if (prop) {
                     prop->value = image;
                     updateImagePreview();

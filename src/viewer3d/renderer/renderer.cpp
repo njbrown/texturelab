@@ -4,6 +4,8 @@
 #include "../shadercache.h"
 
 #include <QFile>
+#include <QtMath>
+#include <cmath>
 #include <iostream>
 
 #include <QMatrix4x4>
@@ -27,6 +29,22 @@ public:
     tinygltf::Primitive primitive;
     tinygltf::Accessor indexAccessor;
 };
+
+Mesh::~Mesh()
+{
+    // For glTF meshes, indexBuffer aliases one of the vbos entries (see
+    // loadMeshFromRc), so delete it only if it isn't already owned by vbos.
+    bool indexAliased = false;
+    for (auto& kv : vbos) {
+        if (kv.second == indexBuffer)
+            indexAliased = true;
+        delete kv.second;
+    }
+    if (indexBuffer && !indexAliased)
+        delete indexBuffer;
+    delete vao;
+    // material is not owned by the mesh (shared, owned by Viewer3D) — not freed.
+}
 
 void Renderer::init(QOpenGLFunctions* gl)
 {
@@ -52,10 +70,29 @@ void Renderer::init(QOpenGLFunctions* gl)
     iblSampler->gl = gl;
 }
 
-void Renderer::loadEnvironment(const QString& path)
+void Renderer::loadEnvironment(const QString& path, float rotationDegrees)
 {
+    this->envRotation = rotationDegrees;
     iblSampler->init(path);
     iblSampler->filterAll();
+}
+
+void Renderer::setEnvironmentRotation(float degrees)
+{
+    this->envRotation = degrees;
+}
+
+QMatrix3x3 Renderer::envRotationMatrix() const
+{
+    const float rad = qDegreesToRadians(envRotation);
+    const float c = std::cos(rad);
+    const float s = std::sin(rad);
+
+    // Row-major yaw about the up (Y) axis. The shaders apply it to the lookup
+    // direction, which turns the environment itself by the same angle: content
+    // sitting at azimuth a ends up seen at azimuth a + envRotation.
+    const float values[9] = {c, 0.0f, s, 0.0f, 1.0f, 0.0f, -s, 0.0f, c};
+    return QMatrix3x3(values);
 }
 
 void Renderer::renderMesh(Mesh* mesh, Material* material) {}
@@ -91,6 +128,10 @@ void Renderer::updateMaterial(Material* material)
         flags << "HAS_ROUGHNESS_MAP 1";
     if (material->heightMapId != 0)
         flags << "HAS_HEIGHT_MAP 1";
+    if (material->aoMapId != 0)
+        flags << "HAS_OCCLUSION_MAP 1";
+    if (material->alphaMapId != 0)
+        flags << "HAS_ALPHA_MAP 1";
     // flags << "HAS_NORMAL_MAP 1";
     // flags << "HAS_ROUGHNESS_MAP 1";
     // flags << "HAS_METALNESS_MAP 1";
@@ -108,7 +149,7 @@ void Renderer::updateMaterial(Material* material)
     flags << "ALPHAMODE_OPAQUE 0";
     flags << "ALPHAMODE_MASK 1";
     flags << "ALPHAMODE_BLEND 2";
-    flags << "ALPHAMODE ALPHAMODE_OPAQUE";
+    flags << "ALPHAMODE ALPHAMODE_BLEND";
 
     // tone mapping (match 3js as much as we can)
     flags << "TONEMAP_ACES_HILL 1";
@@ -256,6 +297,9 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
                               const QMatrix4x4& viewMatrix,
                               const QMatrix4x4& projMatrix)
 {
+    if (!mesh || !material)
+        return;
+
     // setup material
     auto mat = material;
     if (mat->needsUpdate) {
@@ -297,27 +341,44 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
     shader->setUniformValue("u_EmissiveUVSet", 0);
     shader->setUniformValue("u_MetallicRoughnessUVSet", 0);
 
+    auto bindLinear = [&](GLuint texId) {
+        gl->glBindTexture(GL_TEXTURE_2D, texId);
+        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    };
+
     shader->setUniformValue("u_BaseColorSampler", 0);
     gl->glActiveTexture(GL_TEXTURE0);
-    gl->glBindTexture(GL_TEXTURE_2D, mat->albedoMapId);
+    bindLinear(mat->albedoMapId);
 
     shader->setUniformValue("u_NormalSampler", 1);
     gl->glActiveTexture(GL_TEXTURE1);
-    gl->glBindTexture(GL_TEXTURE_2D, mat->normalMapId);
+    bindLinear(mat->normalMapId);
 
     shader->setUniformValue("u_MetalnessSampler", 2);
     gl->glActiveTexture(GL_TEXTURE2);
-    gl->glBindTexture(GL_TEXTURE_2D, mat->metalnessMapId);
+    bindLinear(mat->metalnessMapId);
 
     shader->setUniformValue("u_RoughnessSampler", 3);
     gl->glActiveTexture(GL_TEXTURE3);
-    gl->glBindTexture(GL_TEXTURE_2D, mat->roughnessMapId);
+    bindLinear(mat->roughnessMapId);
 
     shader->setUniformValue("u_HeightSampler", 4);
     gl->glActiveTexture(GL_TEXTURE4);
-    gl->glBindTexture(GL_TEXTURE_2D, mat->heightMapId);
+    bindLinear(mat->heightMapId);
 
     shader->setUniformValue("u_HeightScale", material->heightScale);
+
+    shader->setUniformValue("u_OcclusionSampler", 5);
+    gl->glActiveTexture(GL_TEXTURE5);
+    bindLinear(mat->aoMapId);
+    shader->setUniformValue("u_OcclusionUVSet", 0);
+    shader->setUniformValue("u_OcclusionStrength", 1.0f);
+
+    shader->setUniformValue("u_AlphaSampler", 6);
+    gl->glActiveTexture(GL_TEXTURE6);
+    bindLinear(mat->alphaMapId);
+    shader->setUniformValue("u_AlphaUVSet", 0);
 
     // albedo
     // mainProgram->setUniformValue("u_BaseColorFactor", mat->albedo);
@@ -355,9 +416,7 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
 
     shader->setUniformValue("u_MipCount", iblSampler->mipmapLevels);
 
-    QMatrix3x3 envRot;
-    envRot.setToIdentity();
-    shader->setUniformValue("u_EnvRotation", envRot);
+    shader->setUniformValue("u_EnvRotation", envRotationMatrix());
     shader->setUniformValue("u_EnvIntensity", 1.0f);
 
     // Setup punctual lights (matches Three.js setupLighting) - conditional
@@ -493,6 +552,7 @@ void Renderer::renderSkybox(Mesh* mesh, const QMatrix4x4& viewMatrix,
     skyboxShader->setUniformValue("u_modelMatrix", modelMatrix);
     skyboxShader->setUniformValue("u_viewMatrix", viewMatrix);
     skyboxShader->setUniformValue("u_projectionMatrix", projMatrix);
+    skyboxShader->setUniformValue("u_envRotation", envRotationMatrix());
 
     // Bind environment cubemap
     gl->glActiveTexture(GL_TEXTURE0);

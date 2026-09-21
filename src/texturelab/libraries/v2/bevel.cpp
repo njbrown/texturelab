@@ -15,11 +15,11 @@ static const float VALUE_MAX = 1.0f;
 
 // Forward declarations for EDT functions
 static void edt(std::vector<double>& data, int width, int height,
-                std::vector<double>& f, std::vector<uint16_t>& v,
+                std::vector<double>& f, std::vector<int>& v,
                 std::vector<double>& z);
 
 static void edt1d(std::vector<double>& grid, int offset, int stride, int length,
-                  std::vector<double>& f, std::vector<uint16_t>& v,
+                  std::vector<double>& f, std::vector<int>& v,
                   std::vector<double>& z);
 
 void BevelNode::init()
@@ -60,10 +60,14 @@ void BevelNode::cpuProcess(void* glPtr, const RenderCommand& command)
     int width = command.textureWidth;
     int height = command.textureHeight;
 
-    // Allocate buffers
+    // Guard against zero/negative dimensions before any allocation or indexing.
+    if (width <= 0 || height <= 0)
+        return;
+
+    // Allocate buffers ((size_t) casts so the *4 can't overflow int).
     int gridSize = width * height;
-    std::vector<float> readPixels(gridSize * 4);
-    std::vector<float> resultPixels(gridSize * 4);
+    std::vector<float> readPixels((size_t)gridSize * 4);
+    std::vector<float> resultPixels((size_t)gridSize * 4);
 
     // Read pixels from input texture
     GLuint fbo;
@@ -85,7 +89,7 @@ void BevelNode::cpuProcess(void* glPtr, const RenderCommand& command)
     int maxSize = std::max(width, height);
     std::vector<double> f(maxSize * 3);
     std::vector<double> z(maxSize * 3 + 1);
-    std::vector<uint16_t> v(maxSize * 3);
+    std::vector<int> v(maxSize * 3);
 
     std::vector<double> gridOuter(gridSize);
     std::vector<double> gridInner(gridSize);
@@ -158,7 +162,7 @@ void BevelNode::cpuProcess(void* glPtr, const RenderCommand& command)
 // 2D Euclidean squared distance transform by Felzenszwalb & Huttenlocher
 // https://cs.brown.edu/~pff/papers/dt-final.pdf
 static void edt(std::vector<double>& data, int width, int height,
-                std::vector<double>& f, std::vector<uint16_t>& v,
+                std::vector<double>& f, std::vector<int>& v,
                 std::vector<double>& z)
 {
     for (int x = 0; x < width; x++)
@@ -169,7 +173,7 @@ static void edt(std::vector<double>& data, int width, int height,
 
 // 1D squared distance transform
 static void edt1d(std::vector<double>& grid, int offset, int stride, int length,
-                  std::vector<double>& f, std::vector<uint16_t>& v,
+                  std::vector<double>& f, std::vector<int>& v,
                   std::vector<double>& z)
 {
     v[0] = 0;

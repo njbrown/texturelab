@@ -9,6 +9,7 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QStyle>
 #include <QVBoxLayout>
 
 ExportDialog::ExportDialog(QWidget* parent) : QDialog(parent)
@@ -50,8 +51,7 @@ void ExportDialog::setupUI()
 
     auto destLayout = new QHBoxLayout();
     destinationLabel = new QLabel("No destination selected");
-    destinationLabel->setStyleSheet("QLabel { padding: 5px; border-radius: "
-                                    "3px; }");
+    destinationLabel->setObjectName("ExportDestination"); // styled in app.qss.in
     destinationLabel->setWordWrap(true);
     destLayout->addWidget(destinationLabel, 1);
 
@@ -81,7 +81,7 @@ void ExportDialog::setupUI()
     auto helpLabel = new QLabel(
         "<small><i>${project} - Project Name<br>${name} - Output Node "
         "Name</i></small>");
-    helpLabel->setStyleSheet("QLabel { color: #999; }");
+    helpLabel->setObjectName("ExportHelp"); // styled in app.qss.in
     mainLayout->addWidget(helpLabel);
 
     // Spacer
@@ -105,18 +105,13 @@ void ExportDialog::setupUI()
 
 void ExportDialog::updateDestinationDisplay()
 {
-    if (exportDestination.isEmpty()) {
-        destinationLabel->setText("No destination selected");
-        destinationLabel->setStyleSheet("QLabel { padding: 5px; border-radius: "
-                                        "3px; color: #999; }");
-        chooseDestinationBtn->setText("Choose Folder");
-    }
-    else {
-        destinationLabel->setText(exportDestination);
-        destinationLabel->setStyleSheet("QLabel { padding: 5px; border-radius: "
-                                        "3px; }");
-        chooseDestinationBtn->setText("...");
-    }
+    const bool empty = exportDestination.isEmpty();
+    destinationLabel->setText(empty ? "No destination selected" : exportDestination);
+    // "empty" drives the muted color via app.qss.in (#ExportDestination[empty="true"])
+    destinationLabel->setProperty("empty", empty);
+    destinationLabel->style()->unpolish(destinationLabel);
+    destinationLabel->style()->polish(destinationLabel);
+    chooseDestinationBtn->setText(empty ? "Choose Folder" : "...");
 }
 
 void ExportDialog::onChooseDestination()

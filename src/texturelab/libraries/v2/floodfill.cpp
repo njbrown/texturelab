@@ -111,7 +111,13 @@ void FloodFillNode::cpuProcess(void* glPtr, const RenderCommand& command)
 
     int width = command.textureWidth;
     int height = command.textureHeight;
-    int gridSize = width * height;
+    // Guard against zero/negative dimensions: wrapAround() below does value %
+    // width/height (division by zero), and a negative product would wrap to a
+    // huge size_t at allocation.
+    if (width <= 0 || height <= 0)
+        return;
+    // size_t so width*height*4 can't overflow int for large textures.
+    size_t gridSize = (size_t)width * height;
 
     // Read pixels from input texture
     std::vector<float> readPixels(gridSize * 4);

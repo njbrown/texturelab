@@ -39,11 +39,13 @@ set(RESOURCES
 
 # library
 add_library(viewer3d STATIC ${SRCS} ${HEADERS} ${RESOURCES})
-target_link_libraries(viewer3d PRIVATE Qt${QT_VERSION_MAJOR}::Core 
-                                        Qt${QT_VERSION_MAJOR}::Gui 
-                                        Qt${QT_VERSION_MAJOR}::OpenGLWidgets 
+target_link_libraries(viewer3d PRIVATE Qt${QT_VERSION_MAJOR}::Core
+                                        Qt${QT_VERSION_MAJOR}::Gui
+                                        Qt${QT_VERSION_MAJOR}::OpenGLWidgets
                                         Qt${QT_VERSION_MAJOR}::Widgets
-                                        OpenGL::GL)
+                                        OpenGL::GL
+                                        theme)
+target_include_directories(viewer3d PRIVATE ${CMAKE_SOURCE_DIR}/src/theme)
 
 
 set_target_properties(viewer3d PROPERTIES
@@ -75,8 +77,10 @@ add_executable(viewer3d_app
         )
 target_link_libraries(viewer3d_app PRIVATE Qt${QT_VERSION_MAJOR}::Core
                                             Qt${QT_VERSION_MAJOR}::Gui
-                                            Qt${QT_VERSION_MAJOR}::OpenGLWidgets 
-                                            Qt${QT_VERSION_MAJOR}::Widgets)
+                                            Qt${QT_VERSION_MAJOR}::OpenGLWidgets
+                                            Qt${QT_VERSION_MAJOR}::Widgets
+                                            theme)
+target_include_directories(viewer3d_app PRIVATE ${CMAKE_SOURCE_DIR}/src/theme)
 
 
 set_target_properties(viewer3d_app PROPERTIES
