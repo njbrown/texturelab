@@ -40,7 +40,9 @@ NodeSearchPopup::NodeSearchPopup(QWidget* parent) : QFrame(parent)
             [this](QListWidgetItem* item) {
                 if (item) {
                     auto type = (PopupItemType)item->data(Qt::UserRole).toInt();
-                    emit itemSelected(item->text(), type, showPosition);
+                    auto name =
+                        item->data((int)Roles::LibraryItemName).toString();
+                    emit itemSelected(name, type, showPosition);
                     hide();
                 }
             });
@@ -57,18 +59,23 @@ void NodeSearchPopup::setLibrary(Library* lib)
     // Fixed entries: Frame and Comment always appear at the top
     auto frameItem = new QListWidgetItem(QIcon(":nodes/frame.png"), "Frame");
     frameItem->setData(Qt::UserRole, (int)PopupItemType::Frame);
+    frameItem->setData((int)Roles::LibraryItemName, "Frame");
     itemList->addItem(frameItem);
 
     auto commentItem = new QListWidgetItem(QIcon(":nodes/comment.png"), "Comment");
     commentItem->setData(Qt::UserRole, (int)PopupItemType::Comment);
+    commentItem->setData((int)Roles::LibraryItemName, "Comment");
     itemList->addItem(commentItem);
 
     if (lib) {
         for (auto& libraryItem : lib->items) {
             QListWidgetItem* item = new QListWidgetItem;
-            item->setText(libraryItem.name);
+            // Show the official title; the internal type name the graph needs
+            // travels in LibraryItemName (see itemName() below).
+            item->setText(libraryItem.displayName);
             item->setIcon(libraryItem.icon);
             item->setData(Qt::UserRole, (int)PopupItemType::Node);
+            item->setData((int)Roles::LibraryItemName, libraryItem.name);
             itemList->addItem(item);
         }
     }
@@ -114,9 +121,14 @@ void NodeSearchPopup::filterList(const QString& text)
     int visibleCount = 0;
     for (int i = 0; i < itemList->count(); i++) {
         QListWidgetItem* item = itemList->item(i);
-        QString itemName = item->text().toLower();
+        // Match the visible title as well as the type name, so searching
+        // "gradientnoise" still finds "Gradient Noise".
+        QString title = item->text().toLower();
+        QString typeName =
+            item->data((int)Roles::LibraryItemName).toString().toLower();
 
-        bool matches = searchText.isEmpty() || itemName.contains(searchText);
+        bool matches = searchText.isEmpty() || title.contains(searchText) ||
+                       typeName.contains(searchText);
         item->setHidden(!matches);
 
         if (matches && visibleCount == 0) {
@@ -140,7 +152,7 @@ QString NodeSearchPopup::getSelectedItemName() const
 {
     auto currentItem = itemList->currentItem();
     if (currentItem && !currentItem->isHidden()) {
-        return currentItem->text();
+        return currentItem->data((int)Roles::LibraryItemName).toString();
     }
     return QString();
 }

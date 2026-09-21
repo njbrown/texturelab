@@ -55,6 +55,7 @@
     <file alias="nodes/floodfilltorandomcolor.png">../../public/assets/nodes/floodfilltorandomcolor.png</file>
     <file alias="nodes/floodfilltorandomintensity.png">../../public/assets/nodes/floodfilltorandomintensity.png</file>
     <file alias="nodes/gradientdynamic.png">../../public/assets/nodes/gradientdynamic.png</file>
+    <file alias="nodes/gradientnoise.png">../../public/assets/nodes/gradientnoise.png</file>
     <file alias="nodes/gradientnoisefractalsum.png">../../public/assets/nodes/gradientnoisefractalsum.png</file>
     <file alias="nodes/grayscale.png">../../public/assets/nodes/grayscale.png</file>
     <file alias="nodes/histogramscan.png">../../public/assets/nodes/histogramscan.png</file>

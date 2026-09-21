@@ -59,7 +59,7 @@ Library* createLibraryV2()
                                      ":nodes/brickgenerator.png");
 
     lib->addNode<BrightnessContrastNode>("brightnesscontrast",
-                                         "Brick Generator",
+                                         "Brightness Contrast",
                                          ":nodes/brightnesscontrast.png");
     lib->addNode<CellNode>("cell", "Cell", ":nodes/cell.png");
     lib->addNode<CheckerboardNode>("checkerboard", "Checkerboard",
@@ -94,7 +94,7 @@ Library* createLibraryV2()
     lib->addNode<WaveNode>("wave", "Wave", ":nodes/wave.png");
 
     // V2 NODES START HERE
-    lib->addNode<AdvanceSplatterNode>("advancesplatter", "AdvanceSplatter",
+    lib->addNode<AdvanceSplatterNode>("advancesplatter", "Advance Splatter",
                                       ":nodes/advancesplatter.png");
     lib->addNode<AnisotropicBlurNode>("anisotropicblur", "Anisotropic Blur",
                                       ":nodes/anisotropicblur.png");
@@ -150,7 +150,7 @@ Library* createLibraryV2()
     lib->addNode<HslExtractNode>("hslextract", "HSL Extract",
                                  ":nodes/hslextract.png");
     lib->addNode<ImageNode>("image", "Image", ":nodes/image.png");
-    lib->addNode<InvertNormalNode>("invertnormal", "Node",
+    lib->addNode<InvertNormalNode>("invertnormal", "Invert Normal",
                                    ":nodes/invertnormal.png");
     lib->addNode<NormalMapV2Node>("normalmap", "Normal Map",
                                   ":nodes/normalmap.png");
@@ -158,7 +158,7 @@ Library* createLibraryV2()
                                        ":nodes/polartocartesian.png");
     lib->addNode<PowNode>("pow", "Pow", ":nodes/pow.png");
     lib->addNode<QuantizeNode>("quantize", "Quantize", ":nodes/quantize.png");
-    lib->addNode<RgbaMergeNode>("rgbamerge", "RGA Merge",
+    lib->addNode<RgbaMergeNode>("rgbamerge", "RGBA Merge",
                                 ":nodes/rgbamerge.png");
     lib->addNode<RgbaShuffleNode>("rgbashuffle", "RGBA Shuffle",
                                   ":nodes/rgbashuffle.png");
