@@ -84,6 +84,10 @@ public:
     void setProject(TextureProjectPtr project);
     void update();
     void updateOld();
+
+    // Every node rendered with its current inputs and props, and nothing in
+    // flight: what's in the textures is what the graph describes.
+    bool isRenderComplete() const;
     void testRendering();
 
     // False when the node's texture could not be allocated.

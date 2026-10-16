@@ -63,7 +63,10 @@ CrashConsentDialog::CrashConsentDialog(QWidget* parent) : QDialog(parent)
 
     auto* provider = new QLabel(
         tr("Reports are handled by Sentry, a crash-reporting service. You can change this "
-           "any time from the ⚙ menu."),
+           "any time from the ⚙ menu.\n\n"
+           "Separately, TextureLab checks texturelab.io for new versions when the launcher "
+           "opens, sending only its version number. That can be turned off from the "
+           "same menu."),
         this);
     provider->setObjectName(QStringLiteral("ConsentNote"));
     provider->setWordWrap(true);

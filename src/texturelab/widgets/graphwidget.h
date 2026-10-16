@@ -63,6 +63,9 @@ public:
     QAction* cutAction;
     QAction* copyAction;
     QAction* pasteAction;
+    // No shortcut of its own: NodeGraph handles Delete/Backspace directly so
+    // they still work inside in-place text editing.
+    QAction* deleteAction;
 
 protected:
     void addNode(const TextureNodePtr& node);

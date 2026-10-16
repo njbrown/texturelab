@@ -10,9 +10,19 @@
 #include <QString>
 
 #include <cstdint>
+#include <map>
+#include <mutex>
 #include <type_traits>
 
 static bool g_enabled = false;
+
+// Tags and contexts are recorded even while reporting is off, and replayed
+// when it's turned on. Device/GPU info is only gathered once, at startup and
+// GL init; without this, a user who opts in mid-session would send crashes
+// with none of it.
+static std::mutex g_scopeMutex;
+static std::map<std::string, std::string> g_tags;
+static std::map<std::string, Telemetry::Fields> g_contexts;
 
 namespace {
 
@@ -94,6 +104,13 @@ void Telemetry::init(bool enabled)
 
     sentry_init(options);
     g_enabled = true;
+
+    // Restore the scope recorded while reporting was off (see g_tags).
+    std::lock_guard<std::mutex> lock(g_scopeMutex);
+    for (const auto& [key, value] : g_tags)
+        sentry_set_tag(key.c_str(), value.c_str());
+    for (const auto& [name, fields] : g_contexts)
+        sentry_set_context(name.c_str(), toSentryObject(fields));
 }
 
 void Telemetry::close()
@@ -163,6 +180,10 @@ void Telemetry::breadcrumb(const char* category, const std::string& message,
 
 void Telemetry::setTag(const char* key, const std::string& value)
 {
+    {
+        std::lock_guard<std::mutex> lock(g_scopeMutex);
+        g_tags[key] = value;
+    }
     if (!g_enabled)
         return;
 
@@ -171,6 +192,10 @@ void Telemetry::setTag(const char* key, const std::string& value)
 
 void Telemetry::setContext(const char* name, const Fields& fields)
 {
+    {
+        std::lock_guard<std::mutex> lock(g_scopeMutex);
+        g_contexts[name] = fields;
+    }
     if (!g_enabled)
         return;
 

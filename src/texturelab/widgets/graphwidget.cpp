@@ -233,6 +233,10 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
                                      &GraphWidget::executeCopy);
     pasteAction = makeClipboardAction("Paste", QKeySequence::Paste,
                                       &GraphWidget::executePaste);
+
+    deleteAction = new QAction("Delete", this);
+    connect(deleteAction, &QAction::triggered, this,
+            [this]() { graph->deleteSelection(); });
 }
 
 void GraphWidget::setupToolbar()

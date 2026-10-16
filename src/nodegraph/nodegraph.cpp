@@ -139,7 +139,26 @@ void NodeGraph::scaleDown()
 
 void NodeGraph::keyPressEvent(QKeyEvent* event)
 {
-    if (event->key() == Qt::Key_Delete) {
+    // While a comment/frame title is being edited in place, Delete and
+    // Backspace belong to the text, not the selection.
+    auto* editing = dynamic_cast<QGraphicsTextItem*>(_scene->focusItem());
+    const bool editingText =
+        editing && (editing->textInteractionFlags() & Qt::TextEditable);
+
+    // Backspace too: it's the delete key on Mac keyboards.
+    if (!editingText &&
+        (event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace)) {
+        deleteSelection();
+        event->accept();
+        return;
+    }
+
+    QGraphicsView::keyPressEvent(event);
+}
+
+void NodeGraph::deleteSelection()
+{
+    {
         QList<NodePtr> selectedNodes;
         QList<FramePtr> selectedFrames;
         QList<CommentPtr> selectedComments;
@@ -156,8 +175,6 @@ void NodeGraph::keyPressEvent(QKeyEvent* event)
         if (!selectedNodes.isEmpty() || !selectedFrames.isEmpty() || !selectedComments.isEmpty())
             emit deleteRequested(selectedNodes, selectedFrames, selectedComments);
     }
-
-    QGraphicsView::keyPressEvent(event);
     this->invalidateScene(QRect(-1000, -1000, 1000, 1000));
 }
 

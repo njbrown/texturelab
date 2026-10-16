@@ -51,7 +51,7 @@ ExportResult Exporter::exportTexture(QOpenGLFramebufferObject* texture,
         qDebug() << "Exported:" << filePath;
     }
     else {
-        result.errorMessage = "Failed to save image to " + filePath;
+        result.errorMessage = "could not write the file (check the folder exists and is writable)";
         qDebug() << result.errorMessage;
     }
 

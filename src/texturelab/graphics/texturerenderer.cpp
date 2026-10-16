@@ -903,6 +903,16 @@ void TextureRenderer::initRenderWorker()
 #endif
 }
 
+bool TextureRenderer::isRenderComplete() const
+{
+    if (!project || renderInFlight)
+        return false;
+    for (const auto& node : project->nodes)
+        if (node && (node->isDirty || !node->texture))
+            return false;
+    return true;
+}
+
 void TextureRenderer::nodeRendered(const QString& nodeId, GLuint texId)
 {
     qDebug() << "TextureRenderer: Node rendered:" << nodeId;

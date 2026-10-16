@@ -62,6 +62,10 @@ public:
     ScenePtr scene() const { return _scene; }
     void setNodeGraphScene(const ScenePtr& scene);
 
+    // Asks for the selected nodes/frames/comments to be deleted (emits
+    // deleteRequested; GraphWidget pushes the undo command).
+    void deleteSelection();
+
     void scaleUp();
 
     void scaleDown();

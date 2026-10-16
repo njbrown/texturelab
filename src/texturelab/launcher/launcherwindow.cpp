@@ -730,8 +730,10 @@ void LauncherWindow::showEvent(QShowEvent* event)
     search->setFocus();
 
     // Throttled internally, so reopening the launcher from the Home button all
-    // day costs one request every few hours.
-    if (updates)
+    // day costs one request every few hours. On first run it waits for the
+    // first-run prompt, which is where the check is disclosed, so nothing goes
+    // over the network before the user has been told.
+    if (updates && !Telemetry::consentNeeded())
         updates->check();
 
     maybeAskCrashConsent();
@@ -753,6 +755,10 @@ void LauncherWindow::maybeAskCrashConsent()
             CrashConsentDialog::ask(this);
         if (crashReportsAction)
             crashReportsAction->setChecked(Telemetry::isAllowed());
+
+        // Deferred from showEvent() on first run; see there.
+        if (updates)
+            updates->check();
     });
 }
 

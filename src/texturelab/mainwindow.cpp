@@ -24,7 +24,10 @@
 #include <QOpenGLFunctions>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QEventLoop>
+#include <QProgressDialog>
 #include <QSaveFile>
+#include <QSet>
 #include <QSettings>
 #include <QStatusBar>
 #include <QTimer>
@@ -538,6 +541,7 @@ void MainWindow::setupMenus()
     editMenu->addAction(graphWidget->cutAction);
     editMenu->addAction(graphWidget->copyAction);
     editMenu->addAction(graphWidget->pasteAction);
+    editMenu->addAction(graphWidget->deleteAction);
 
     auto examplesMenu = this->menuBar()->addMenu("Examples");
 
@@ -1242,6 +1246,35 @@ void MainWindow::handleExport(const QString& destination,
         return;
     }
 
+    // Rendering is incremental and asynchronous, so right after an edit (or
+    // straight after opening) some outputs still hold stale or partial
+    // results. Wait for the graph to settle rather than exporting those.
+    if (!this->renderer->isRenderComplete()) {
+        QProgressDialog progress("Waiting for the texture to finish rendering...",
+                                 "Cancel", 0, 0, this);
+        progress.setWindowModality(Qt::WindowModal);
+        progress.setMinimumDuration(300);
+
+        QEventLoop loop;
+        TextureRenderer* r = this->renderer;
+        auto done = connect(r, &TextureRenderer::renderProgress, &loop,
+                            [&loop, r](int, int) {
+                                if (r->isRenderComplete())
+                                    loop.quit();
+                            });
+        connect(&progress, &QProgressDialog::canceled, &loop, &QEventLoop::quit);
+        r->update(); // in case nothing is queued yet
+        if (!r->isRenderComplete())
+            loop.exec();
+        disconnect(done);
+
+        // Cancelled, or the project was swapped out from under us.
+        if (this->renderer != r || !r->isRenderComplete()) {
+            Telemetry::breadcrumb("export", "export cancelled while rendering");
+            return;
+        }
+    }
+
     // Store the previous context to restore it later
     QOpenGLContext* previousContext = QOpenGLContext::currentContext();
     QSurface* previousSurface =
@@ -1255,7 +1288,9 @@ void MainWindow::handleExport(const QString& destination,
 
     // Export each output node
     int successCount = 0;
-    int failCount = 0;
+    QStringList failures; // "file: reason", shown to the user
+    QStringList renamed;  // outputs whose name collided with an earlier one
+    QSet<QString> usedNames;
 
     for (auto& node : outputNodes) {
         // Get the output name from the node's property
@@ -1282,17 +1317,26 @@ void MainWindow::handleExport(const QString& destination,
         }
 
         // Generate filename using pattern
-        QString filename = pattern;
-        filename.replace("${project}", this->project->name);
-        filename.replace("${name}", outputName);
-        filename += ".png";
+        QString baseName = pattern;
+        baseName.replace("${project}", this->project->name);
+        baseName.replace("${name}", outputName);
+
+        // Two outputs with the same name would silently overwrite each other;
+        // number the later ones instead.
+        QString uniqueName = baseName;
+        for (int n = 2; usedNames.contains(uniqueName.toLower()); ++n)
+            uniqueName = QString("%1_%2").arg(baseName).arg(n);
+        if (uniqueName != baseName)
+            renamed << QString("%1.png → %2.png").arg(baseName, uniqueName);
+        usedNames.insert(uniqueName.toLower());
+
+        QString filename = uniqueName + ".png";
 
         QString fullPath = destination + "/" + filename;
 
         // Get the texture from the node
         if (!node->texture) {
-            qDebug() << "Node" << node->title << "has no texture";
-            failCount++;
+            failures << QString("%1: not rendered").arg(filename);
             continue;
         }
 
@@ -1300,12 +1344,10 @@ void MainWindow::handleExport(const QString& destination,
         ExportResult result = exporter.exportTexture(node->texture, fullPath,
                                                      precision, components);
 
-        if (result.success) {
+        if (result.success)
             successCount++;
-        }
-        else {
-            failCount++;
-        }
+        else
+            failures << QString("%1: %2").arg(filename, result.errorMessage);
     }
 
     // Restore previous context
@@ -1316,13 +1358,24 @@ void MainWindow::handleExport(const QString& destination,
         this->renderer->ctx->doneCurrent();
     }
 
+    Telemetry::breadcrumb("export", "export finished",
+                          {{"exported", (int64_t)successCount},
+                           {"failed", (int64_t)failures.size()},
+                           {"renamed", (int64_t)renamed.size()}});
+
     // Show result message
     QString message =
-        QString("Export complete!\n\n") +
-        QString("Successfully exported: %1 file(s)\n").arg(successCount);
+        QString("Exported %1 file(s) to:\n%2").arg(successCount).arg(destination);
 
-    if (failCount > 0) {
-        message += QString("Failed: %1 file(s)").arg(failCount);
+    if (!renamed.isEmpty())
+        message += "\n\nSome outputs share a name, so these were numbered:\n" +
+                   renamed.join("\n");
+
+    if (!failures.isEmpty()) {
+        message += QString("\n\n%1 file(s) failed:\n").arg(failures.size()) +
+                   failures.join("\n");
+        QMessageBox::warning(this, "Export", message);
+        return;
     }
 
     QMessageBox::information(this, "Export", message);
