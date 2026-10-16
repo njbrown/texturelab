@@ -6,6 +6,7 @@
 #include <QList>
 #include <QMap>
 #include <QString>
+#include <QStringList>
 #include <QVector>
 
 // One node's identity/shape change for a single version step (from -> next).
@@ -58,6 +59,12 @@ public:
     // to the constructor. Idempotent. Sets "libraryVersion" on the result
     // to libVersionToString(targetVersion()).
     QJsonObject migrate() const;
+
+    // Display names of nodes in this file whose upgraded replacement is
+    // known not to reproduce the old look exactly (cell family, Blend in
+    // Overlay mode, Flood Fill to Color sampling from Center). Each name
+    // appears once. Empty if the migration doesn't cross into v3.
+    QStringList nodesThatLookDifferent() const;
 
 private:
     QJsonObject _json;

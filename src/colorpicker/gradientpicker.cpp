@@ -151,7 +151,8 @@ void GradientSlider::updateGradientDisplay()
 
 void GradientSlider::addControlPoint(float position, const QColor& color)
 {
-    gradient.addPoint(GradientPoint(position, color));
+    if (!gradient.addPoint(GradientPoint(position, color)))
+        return; // full: the shaders only take Gradient::MaxPoints stops
     updateGradientDisplay();
     emitGradientUpdate();
 }

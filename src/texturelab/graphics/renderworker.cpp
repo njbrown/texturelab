@@ -527,7 +527,11 @@ void RenderWorker::renderSinglePass(const RenderCommand& command)
             } break;
             case PropType::Gradient: {
                 auto gradientVal = prop.value.value<Gradient>();
-                auto numPoints = gradientVal.points.size();
+                // The shader's arrays hold Gradient::MaxPoints stops; uniforms
+                // past that don't exist. A hand-edited or older file can still
+                // carry more, so clamp here too.
+                int numPoints =
+                    qMin((int)gradientVal.points.size(), Gradient::MaxPoints);
 
                 gl->glUniform1i(
                     gl->glGetUniformLocation(

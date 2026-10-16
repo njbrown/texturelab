@@ -220,7 +220,8 @@ private:
                 float pixelDistance = (u_scaleInvariant == 1)
                     ? u_distance * (max(_textureSize.x, _textureSize.y) / 512.0)
                     : u_distance;
-                float t = clamp(dist / pixelDistance, 0.0, 1.0);
+                // Distance 0 would be 0/0 on the seeds themselves.
+                float t = clamp(dist / max(pixelDistance, 1e-4), 0.0, 1.0);
 
                 float bevel;
                 if (u_shape == SHAPE_ROUND) {

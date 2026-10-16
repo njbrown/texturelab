@@ -35,9 +35,11 @@ public:
         int w = ctx.textureWidth;
         int h = ctx.textureHeight;
 
-        // Require at least the mask input; color map is optional (falls back to
-        // mask)
-        if (ctx.inputs.isEmpty() || ctx.inputs[0].textureId == 0) {
+        // Require the mask input; color map is optional (falls back to mask).
+        // Looked up by name: `inputs` is in connection order, which can
+        // differ between sessions.
+        GLuint maskTex = ctx.inputTexture("mask");
+        if (maskTex == 0) {
             cache->bindFboToTexture(ctx.outputTextureId);
             gl->glViewport(0, 0, w, h);
             gl->glClearColor(0, 0, 0, 1);
@@ -45,11 +47,9 @@ public:
             return;
         }
 
-        GLuint maskTex = ctx.inputs[0].textureId;
-        GLuint colorTex =
-            (ctx.inputs.size() > 1 && ctx.inputs[1].textureId != 0)
-                ? ctx.inputs[1].textureId
-                : maskTex;
+        GLuint colorTex = ctx.inputTexture("color");
+        if (colorTex == 0)
+            colorTex = maskTex;
 
         GLuint seedShader = cache->getOrCompileShader(
             "cs_seed", RenderResourceCache::standardVertexSource(), seedFrag());

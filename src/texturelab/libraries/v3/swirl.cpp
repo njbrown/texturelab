@@ -23,7 +23,10 @@ void SwirlNode::init()
             float len = length(delta);
             float effectAngle = radians(prop_angle);
 
-            float swirlAmount = effectAngle * smoothstep(prop_radius, 0.0, len);
+            // smoothstep is undefined when its edges are equal (radius 0).
+            float swirlAmount = prop_radius > 0.0
+                ? effectAngle * smoothstep(prop_radius, 0.0, len)
+                : 0.0;
             float a = atan(delta.y, delta.x) + swirlAmount;
 
             vec2 swirlUV = center + vec2(cos(a), sin(a)) * len;

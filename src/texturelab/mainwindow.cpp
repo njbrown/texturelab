@@ -872,6 +872,18 @@ void MainWindow::openProject()
     openProjectFromPath(filePath);
 }
 
+// Upgrade-prompt paragraph naming the nodes in this file that won't look
+// exactly the same afterwards; empty when there are none.
+static QString lookChangeNote(const LibraryVersionMigrator& migrator)
+{
+    const QStringList nodes = migrator.nodesThatLookDifferent();
+    if (nodes.isEmpty())
+        return QString();
+    return QString("\n\nThese nodes will look different after upgrading and "
+                   "may need adjusting: %1.")
+        .arg(nodes.join(", "));
+}
+
 void MainWindow::openProjectFromPath(const QString& filePath)
 {
     if (!promptSaveIfDirty())
@@ -921,10 +933,11 @@ void MainWindow::openProjectFromPath(const QString& filePath)
             dialogParent(), "Upgrade Texture?",
             QString("This texture was created with library version %1.\n\n"
                     "Upgrade it to %2 (%3) to use the latest nodes and "
-                    "improvements? A few node behaviors may change slightly.")
+                    "improvements?%4")
                 .arg(libVersionToString(migrator.sourceVersion()),
                      libVersionToString(migrator.targetVersion()),
-                     chain.join(" → ")),
+                     chain.join(" → "),
+                     lookChangeNote(migrator)),
             QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
 
         if (choice == QMessageBox::Yes)
@@ -1024,8 +1037,8 @@ void MainWindow::upgradeCurrentProjectLibrary()
         "Upgrading the library version is irreversible and clears the "
         "undo/redo history for this session.\n\n"
         "Save your project (or save a copy) first if you want to keep the "
-        "ability to go back to the current version.\n\n"
-        "Continue with the upgrade?",
+        "ability to go back to the current version." +
+            lookChangeNote(migrator) + "\n\nContinue with the upgrade?",
         QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel);
 
     if (choice != QMessageBox::Yes)

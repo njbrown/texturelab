@@ -94,6 +94,11 @@ void Bricks2Node::init()
         CellInfo solveOrthoBond(vec2 uv, bool stagger)
         {
             vec2 tileSize = vec2(prop_columns, prop_rows);
+            // Staggered rows alternate, so the pattern only repeats every two
+            // rows: an odd count puts two unstaggered rows against each other
+            // at the top/bottom seam. Round up to even so it tiles.
+            if (stagger)
+                tileSize.y = 2.0 * ceil(tileSize.y * 0.5);
             vec2 pos = uv * tileSize;
 
             if (stagger) {
@@ -126,10 +131,15 @@ void Bricks2Node::init()
         // characteristic zig-zag.
         CellInfo solveWeave(vec2 uv, bool herringbone)
         {
-            vec2 tileSize = vec2(prop_columns, prop_rows);
-            vec2 pos = uv * tileSize;
-
             float L = max(1.0, floor(prop_brickAspect + 0.5));
+
+            // The weave checkerboard repeats every 2 weave cells (2L units),
+            // so the tile has to span a whole number of those in both axes or
+            // the seams don't line up. Round to the nearest multiple of 2L.
+            vec2 tileSize = vec2(prop_columns, prop_rows);
+            tileSize = max(vec2(2.0 * L),
+                           floor(tileSize / (2.0 * L) + 0.5) * 2.0 * L);
+            vec2 pos = uv * tileSize;
 
             vec2 weaveId = floor(pos / L);
             vec2 q = pos - weaveId * L;
@@ -145,8 +155,11 @@ void Bricks2Node::init()
                 float shiftedX = mod(pos.x + row * stagger, L);
 
                 c.localUV = vec2(shiftedX / L, fract(pos.y));
-                c.brickId =
-                    vec2(floor((pos.x + row * stagger) / L), floor(pos.y));
+                // Wrapped so a brick split by the seam hashes the same on
+                // both sides (same height/shape jitter).
+                c.brickId = mod(
+                    vec2(floor((pos.x + row * stagger) / L), floor(pos.y)),
+                    vec2(tileSize.x / L, tileSize.y));
                 c.brickDim = vec2(L, 1.0);
             }
             else {
@@ -155,8 +168,9 @@ void Bricks2Node::init()
                 float shiftedY = mod(pos.y + col * stagger, L);
 
                 c.localUV = vec2(fract(pos.x), shiftedY / L);
-                c.brickId =
-                    vec2(floor(pos.x), floor((pos.y + col * stagger) / L));
+                c.brickId = mod(
+                    vec2(floor(pos.x), floor((pos.y + col * stagger) / L)),
+                    vec2(tileSize.x, tileSize.y / L));
                 c.brickDim = vec2(1.0, L);
             }
 

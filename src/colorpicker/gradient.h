@@ -25,7 +25,18 @@ public:
     Gradient(const QVector<GradientPoint>& points) : points(points) {}
     Gradient(const Gradient& other) : points(other.points) {}
 
-    void addPoint(GradientPoint point) { points.append(point); }
+    // Must match GRADIENT_MAX_POINTS in the node shaders
+    // (texturelab/graphics/noderenderer.cpp): stops beyond it aren't rendered.
+    static constexpr int MaxPoints = 32;
+
+    // Returns false (and adds nothing) once the gradient is full.
+    bool addPoint(GradientPoint point)
+    {
+        if (points.size() >= MaxPoints)
+            return false;
+        points.append(point);
+        return true;
+    }
     void sort();
     QColor sample(float position) const;
 

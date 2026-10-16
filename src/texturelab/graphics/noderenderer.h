@@ -122,6 +122,11 @@ struct NodeRenderContext {
     // Set by useShader() when given a program that failed to build.
     bool shaderFailed = false;
 
+    // Texture bound to the named input, or 0 if it isn't connected. Use this
+    // rather than indexing `inputs`: their order follows the project's
+    // connection map, not the node's input declaration order.
+    GLuint inputTexture(const QString& name) const;
+
     // Bind shader, set viewport, set _textureSize and _seed uniforms
     void useShader(GLuint programId);
 

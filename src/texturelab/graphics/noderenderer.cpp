@@ -490,6 +490,15 @@ ScopedTextureParams::~ScopedTextureParams()
 // NodeRenderContext
 // ============================================================================
 
+GLuint NodeRenderContext::inputTexture(const QString& name) const
+{
+    for (const auto& input : inputs) {
+        if (input.name == name)
+            return input.textureId;
+    }
+    return 0;
+}
+
 void NodeRenderContext::useShader(GLuint programId)
 {
     // 0 = the shader failed to build. Unbind rather than leave the previous
