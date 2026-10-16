@@ -12,6 +12,7 @@ typedef QSharedPointer<Scene> ScenePtr;
 class EditCommentCommand : public QUndoCommand {
 public:
     EditCommentCommand(CommentPtr comment,
+                       TextureProjectPtr project,
                        nodegraph::ScenePtr scene,
                        const QString& oldText,
                        const QString& newText);
@@ -25,7 +26,8 @@ public:
 private:
     void apply(const QString& text);
 
-    CommentPtr _comment;
+    // Looked up by _commentId; see EditFrameCommand.
+    TextureProjectPtr _project;
     nodegraph::ScenePtr _scene;
     QString _commentId;
     QString _oldText, _newText;

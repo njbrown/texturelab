@@ -4,11 +4,12 @@
 #include "graph/scene.h"
 
 EditCommentCommand::EditCommentCommand(CommentPtr comment,
+                                       TextureProjectPtr project,
                                        nodegraph::ScenePtr scene,
                                        const QString& oldText,
                                        const QString& newText)
     : QUndoCommand("Edit Comment")
-    , _comment(comment)
+    , _project(project)
     , _scene(scene)
     , _commentId(comment->id)
     , _oldText(oldText)
@@ -26,7 +27,8 @@ bool EditCommentCommand::mergeWith(const QUndoCommand* other)
 
 void EditCommentCommand::apply(const QString& text)
 {
-    _comment->text = text;
+    if (auto comment = _project->comments.value(_commentId))
+        comment->text = text;
     auto gcomment  = _scene->getCommentById(_commentId);
     if (gcomment)
         gcomment->setText(text);

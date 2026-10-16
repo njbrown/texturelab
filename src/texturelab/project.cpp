@@ -142,6 +142,15 @@ TextureProjectPtr Project::loadTextureFromJson(QJsonObject json,
         texture->frames[frame->id] = frame;
     }
 
+    // Project-wide render settings. Older files have none: keep the defaults.
+    // Only accept resolutions the toolbar offers (powers of two, 32..4096).
+    int res = json["textureWidth"].toInt(texture->textureWidth);
+    if (res >= 32 && res <= 4096 && (res & (res - 1)) == 0) {
+        texture->textureWidth = res;
+        texture->textureHeight = res;
+    }
+    texture->randomSeed = json["randomSeed"].toInt(texture->randomSeed);
+
     if (json["export"].isObject()) {
         auto exportObj = json["export"].toObject();
         texture->exportFilePattern =
@@ -260,6 +269,11 @@ QByteArray Project::saveTexture(TextureProjectPtr texture)
 
     // library version this project's nodes/properties were saved against
     json["libraryVersion"] = texture->libraryVersion;
+
+    // project-wide render settings
+    json["textureWidth"] = texture->textureWidth;
+    json["textureHeight"] = texture->textureHeight;
+    json["randomSeed"] = texture->randomSeed;
 
     // export settings
     QJsonObject exportObj;

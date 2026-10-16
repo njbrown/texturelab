@@ -231,6 +231,8 @@ set(PROJECT_SOURCES
         ./undo/moveitemscommand.cpp
         ./undo/propertychangecommand.h
         ./undo/propertychangecommand.cpp
+        ./undo/projectsettingcommand.h
+        ./undo/projectsettingcommand.cpp
         ./undo/randomseedchangecommand.h
         ./undo/randomseedchangecommand.cpp
         ./undo/addframecommand.h

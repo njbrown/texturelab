@@ -17,7 +17,9 @@ public:
     void undo() override;
 
 private:
-    TextureNodePtr _node;
+    void apply(long seed);
+
+    QString _nodeId; // by id: a delete/undo recreates the node object
     TextureProjectPtr _project;
     TextureRenderer* _renderer;
     long _oldSeed, _newSeed;

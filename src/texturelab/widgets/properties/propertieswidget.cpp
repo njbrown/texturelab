@@ -305,7 +305,7 @@ void PropertiesWidget::setSelectedFrame(const FramePtr& frame)
             frame->text = value;
             emit framePropertyChanged(frame);
             undoStack->push(new EditFrameCommand(
-                frame, scene, oldTitle, oldColor, value, oldColor));
+                frame, project, scene, oldTitle, oldColor, value, oldColor));
         } else {
             frame->text = value;
             emit framePropertyChanged(frame);
@@ -327,7 +327,7 @@ void PropertiesWidget::setSelectedFrame(const FramePtr& frame)
             frame->color = color;
             emit framePropertyChanged(frame);
             undoStack->push(new EditFrameCommand(
-                frame, scene, oldTitle, oldColor, oldTitle, color));
+                frame, project, scene, oldTitle, oldColor, oldTitle, color));
         } else {
             frame->color = color;
             emit framePropertyChanged(frame);
@@ -366,7 +366,7 @@ void PropertiesWidget::setSelectedComment(const CommentPtr& comment)
             QString oldText = comment->text;
             comment->text = value;
             emit commentPropertyChanged(comment);
-            undoStack->push(new EditCommentCommand(comment, scene, oldText, value));
+            undoStack->push(new EditCommentCommand(comment, project, scene, oldText, value));
         } else {
             comment->text = value;
             emit commentPropertyChanged(comment);

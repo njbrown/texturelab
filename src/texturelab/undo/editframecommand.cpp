@@ -4,11 +4,12 @@
 #include "graph/scene.h"
 
 EditFrameCommand::EditFrameCommand(FramePtr frame,
+                                   TextureProjectPtr project,
                                    nodegraph::ScenePtr scene,
                                    const QString& oldTitle, const QColor& oldColor,
                                    const QString& newTitle, const QColor& newColor)
     : QUndoCommand("Edit Frame")
-    , _frame(frame)
+    , _project(project)
     , _scene(scene)
     , _frameId(frame->id)
     , _oldTitle(oldTitle), _newTitle(newTitle)
@@ -27,8 +28,10 @@ bool EditFrameCommand::mergeWith(const QUndoCommand* other)
 
 void EditFrameCommand::apply(const QString& title, const QColor& color)
 {
-    _frame->text  = title;
-    _frame->color = color;
+    if (auto frame = _project->frames.value(_frameId)) {
+        frame->text  = title;
+        frame->color = color;
+    }
     auto gframe   = _scene->getFrameById(_frameId);
     if (gframe) {
         gframe->setTitle(title);

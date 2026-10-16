@@ -13,6 +13,7 @@ typedef QSharedPointer<Scene> ScenePtr;
 class EditFrameCommand : public QUndoCommand {
 public:
     EditFrameCommand(FramePtr frame,
+                     TextureProjectPtr project,
                      nodegraph::ScenePtr scene,
                      const QString& oldTitle, const QColor& oldColor,
                      const QString& newTitle, const QColor& newColor);
@@ -26,7 +27,9 @@ public:
 private:
     void apply(const QString& title, const QColor& color);
 
-    FramePtr _frame;
+    // The model frame is looked up by _frameId: undoing a delete recreates it
+    // as a new object, which a held pointer would never see.
+    TextureProjectPtr _project;
     nodegraph::ScenePtr _scene;
     QString _frameId;
     QString _oldTitle, _newTitle;

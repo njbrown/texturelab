@@ -365,8 +365,20 @@ void TextureRenderer::update()
     const int requested = project->textureWidth;
     bool allocationFailed = false;
 
+    // A previous attempt at this size already failed with nowhere to go.
+    // Render what has textures (getNextUpdatableNode() skips the rest) and
+    // only try allocating again once something has freed memory.
+    const bool skipAllocation =
+        failedAtResolution == requested &&
+        int(project->nodes.size()) >= failedAtNodeCount;
+    if (!skipAllocation)
+        failedAtResolution = 0;
+
     // check for nodes that need updating and update
     for (auto& node : project->nodes) {
+        if (skipAllocation)
+            break;
+
         // Defensive: a null entry should never reach the map now that lookups
         // use .value() (Step 1), but guard the render loop regardless.
         if (!node)
@@ -406,7 +418,9 @@ void TextureRenderer::update()
         return;
     }
 
-    if (lastGoodResolution != requested) {
+    // Skipping allocation means some nodes may still have no texture, so
+    // this size isn't proven to fit.
+    if (!skipAllocation && lastGoodResolution != requested) {
         lastGoodResolution = requested;
         Telemetry::setTag("texture.resolution", std::to_string(requested));
     }
@@ -415,38 +429,88 @@ void TextureRenderer::update()
         this->queueNextNodeToRender();
 }
 
+static constexpr int kMinResolution = 32;
+
 void TextureRenderer::rollBackResolution(int requested)
 {
-    // Nothing known-good to retreat to — the very first allocation failed, so
-    // there is no smaller size on record. Leave the graph unrendered; the
-    // captureException in createNodeTexture() has already reported why.
-    if (lastGoodResolution <= 0 || lastGoodResolution == requested)
+    // Failed at the size already known to fit — a node added with VRAM full.
+    // Don't downscale the whole project for that; stop retrying instead.
+    if (lastGoodResolution == requested) {
+        failedAtResolution = requested;
+        failedAtNodeCount = int(project->nodes.size());
+        if (!renderInFlight)
+            this->queueNextNodeToRender();
         return;
-
-    const int fallback = lastGoodResolution;
-    project->textureWidth = fallback;
-    project->textureHeight = fallback;
-
-    Telemetry::breadcrumb(
-        "render", "resolution rolled back after allocation failure",
-        {{"requested", (int64_t)requested},
-         {"fallback", (int64_t)fallback},
-         {"node_count", (int64_t)project->nodes.size()}});
-    Telemetry::setTag("texture.resolution", std::to_string(fallback));
-
-    // Re-allocate everything at the size we know fits. A node whose texture was
-    // freed on the way up gets it back here; one that still fails is skipped by
-    // getNextUpdatableNode() rather than dereferenced.
-    for (auto& node : project->nodes) {
-        if (!node)
-            continue;
-        if (!node->texture || node->textureWidth != fallback ||
-            node->textureHeight != fallback)
-            this->createNodeTexture(node);
-        node->isDirty = true;
     }
 
-    emit resolutionChangeFailed(requested, fallback);
+    // Nothing has fitted yet: the project was opened (or created) at a size
+    // this GPU can't hold, so there's no known-good size. Halve until
+    // everything allocates.
+    const bool onLoad = lastGoodResolution <= 0;
+
+    // Free the textures the failed batch did manage to allocate first, so
+    // they don't crowd out the smaller ones. Only safe with nothing in flight
+    // (an in-flight command may hold one as an input); that's always the case
+    // on load, since nothing has rendered yet.
+    if (onLoad && !renderInFlight) {
+        ctx->makeCurrent(surface);
+        for (auto& node : project->nodes) {
+            if (node && node->texture) {
+                delete node->texture;
+                node->texture = nullptr;
+            }
+        }
+        ctx->doneCurrent();
+    }
+
+    int fallback = onLoad ? requested / 2 : lastGoodResolution;
+    while (fallback >= kMinResolution) {
+        project->textureWidth = fallback;
+        project->textureHeight = fallback;
+
+        Telemetry::breadcrumb(
+            "render", "resolution rolled back after allocation failure",
+            {{"requested", (int64_t)requested},
+             {"fallback", (int64_t)fallback},
+             {"node_count", (int64_t)project->nodes.size()}});
+
+        // Re-allocate everything at the fallback size. A node whose texture
+        // was freed on the way up gets it back here; one that still fails is
+        // skipped by getNextUpdatableNode() rather than dereferenced.
+        bool fits = true;
+        for (auto& node : project->nodes) {
+            if (!node)
+                continue;
+            if (!node->texture || node->textureWidth != fallback ||
+                node->textureHeight != fallback) {
+                if (!this->createNodeTexture(node)) {
+                    fits = false;
+                    if (onLoad)
+                        break;
+                }
+            }
+            node->isDirty = true;
+        }
+
+        if (fits || !onLoad)
+            break;
+        fallback /= 2;
+    }
+
+    if (fallback < kMinResolution) {
+        // Not even the smallest size fits. Leave the graph unrendered; the
+        // captureException in createNodeTexture() has already reported why.
+        project->textureWidth = requested;
+        project->textureHeight = requested;
+        failedAtResolution = requested;
+        failedAtNodeCount = int(project->nodes.size());
+        return;
+    }
+
+    lastGoodResolution = fallback;
+    Telemetry::setTag("texture.resolution", std::to_string(fallback));
+
+    emit resolutionChangeFailed(requested, fallback, onLoad);
 
     if (!renderInFlight)
         this->queueNextNodeToRender();

@@ -8,7 +8,7 @@ RandomSeedChangeCommand::RandomSeedChangeCommand(TextureNodePtr node,
                                                  long oldSeed,
                                                  long newSeed)
     : QUndoCommand("Change Random Seed")
-    , _node(node)
+    , _nodeId(node->id)
     , _project(project)
     , _renderer(renderer)
     , _oldSeed(oldSeed)
@@ -21,16 +21,21 @@ void RandomSeedChangeCommand::redo()
         _firstRedo = false;
         return;
     }
-    _node->randomSeed = _newSeed;
-    _project->markNodeAsDirty(_node);
-    if (_renderer)
-        _renderer->update();
+    apply(_newSeed);
 }
 
 void RandomSeedChangeCommand::undo()
 {
-    _node->randomSeed = _oldSeed;
-    _project->markNodeAsDirty(_node);
+    apply(_oldSeed);
+}
+
+void RandomSeedChangeCommand::apply(long seed)
+{
+    auto node = _project->getNodeById(_nodeId);
+    if (!node)
+        return;
+    node->randomSeed = seed;
+    _project->markNodeAsDirty(node);
     if (_renderer)
         _renderer->update();
 }

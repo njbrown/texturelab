@@ -28,7 +28,9 @@ public:
 private:
     void applyValue(const QVariant& value);
 
-    TextureNodePtr _node;
+    // Held by id, not pointer: undoing a delete recreates the node as a new
+    // object with the same id, which a held pointer would never see.
+    QString _nodeId;
     TextureProjectPtr _project;
     TextureRenderer* _renderer;
     QString _propName;

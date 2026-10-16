@@ -9,6 +9,7 @@
 #include "editframecommand.h"
 #include "moveitemscommand.h"
 #include "pastecommand.h"
+#include "projectsettingcommand.h"
 #include "propertychangecommand.h"
 #include "randomseedchangecommand.h"
 #include "removeconnectioncommand.h"

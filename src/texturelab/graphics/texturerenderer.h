@@ -58,6 +58,13 @@ class TextureRenderer : public QObject {
     // project back to it instead of aborting the process.
     int lastGoodResolution = 0;
 
+    // Set when allocation failed and there was nowhere to fall back to (the
+    // smallest size, or a node added at the current size with VRAM already
+    // full). update() stops retrying until the resolution changes or a node is
+    // removed; retrying on every update() leaked and spammed Sentry.
+    int failedAtResolution = 0;
+    int failedAtNodeCount = 0;
+
 public:
     TextureRenderer();
     ~TextureRenderer();
@@ -92,8 +99,9 @@ public:
     QOpenGLContext* ctx;
 
 private:
-    // Retreat to lastGoodResolution after a failed allocation batch, re-allocate
-    // there, and emit resolutionChangeFailed().
+    // Retreat to lastGoodResolution after a failed allocation batch — or, when
+    // nothing has fitted yet (a large file just opened), halve until it fits —
+    // re-allocate there, and emit resolutionChangeFailed().
     void rollBackResolution(int requested);
 
     void initRenderWorker();
@@ -111,8 +119,9 @@ signals:
 
     // The project could not be allocated at `requested`; it has been rolled
     // back to `fallback` and is rendering normally again. GraphWidget uses this
-    // to tell the user and put the resolution picker back.
-    void resolutionChangeFailed(int requested, int fallback);
+    // to tell the user and put the resolution picker back. `onLoad` is true
+    // when no size had fitted yet, i.e. the project was opened too large.
+    void resolutionChangeFailed(int requested, int fallback, bool onLoad);
 };
 
 // note: there's no specified fbo limit

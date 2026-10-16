@@ -9,7 +9,7 @@ PropertyChangeCommand::PropertyChangeCommand(TextureNodePtr node,
                                              QVariant oldValue,
                                              QVariant newValue)
     : QUndoCommand(QString("Change %1").arg(propName))
-    , _node(node)
+    , _nodeId(node->id)
     , _project(project)
     , _renderer(renderer)
     , _propName(propName)
@@ -20,7 +20,7 @@ PropertyChangeCommand::PropertyChangeCommand(TextureNodePtr node,
 bool PropertyChangeCommand::mergeWith(const QUndoCommand* other)
 {
     auto* cmd = static_cast<const PropertyChangeCommand*>(other);
-    if (cmd->_node != _node || cmd->_propName != _propName)
+    if (cmd->_nodeId != _nodeId || cmd->_propName != _propName)
         return false;
     _newValue = cmd->_newValue;
     return true;
@@ -28,8 +28,11 @@ bool PropertyChangeCommand::mergeWith(const QUndoCommand* other)
 
 void PropertyChangeCommand::applyValue(const QVariant& value)
 {
-    _node->setProp(_propName, value);
-    _project->markNodeAsDirty(_node);
+    auto node = _project->getNodeById(_nodeId);
+    if (!node)
+        return;
+    node->setProp(_propName, value);
+    _project->markNodeAsDirty(node);
     if (_renderer)
         _renderer->update();
 }
