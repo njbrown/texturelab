@@ -16,6 +16,12 @@ LibVersion libVersionFromString(const QString& str)
     return currentLibVersion();
 }
 
+bool isKnownLibVersionString(const QString& str)
+{
+    auto s = str.trimmed().toLower();
+    return s == "v1" || s == "v2" || s == "v3";
+}
+
 QString libVersionToString(LibVersion version)
 {
     switch (version) {

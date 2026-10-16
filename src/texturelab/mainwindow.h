@@ -58,6 +58,7 @@ protected:
     void newProject();
     void saveProject();
     void saveProjectAs();
+    bool saveProjectTo(const QString& filePath);
     void showExportDialog();
     void directExport();
     void handleExport(const QString& destination, const QString& pattern);

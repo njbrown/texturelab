@@ -13,20 +13,20 @@
 TextureProjectPtr Project::loadTexture(QString path)
 {
     QFile file(path);
-    file.open(QIODevice::ReadOnly);
+    if (!file.open(QIODevice::ReadOnly))
+        return TextureProjectPtr(nullptr);
     QJsonParseError error;
     auto doc = QJsonDocument::fromJson(file.readAll(), &error);
     file.close();
 
-    if (error.error) {
-        // report error
+    if (error.error != QJsonParseError::NoError || !doc.isObject())
         return TextureProjectPtr(nullptr);
-    }
 
     return Project::loadTextureFromJson(doc.object());
 }
 
-TextureProjectPtr Project::loadTextureFromJson(QJsonObject json)
+TextureProjectPtr Project::loadTextureFromJson(QJsonObject json,
+                                                QStringList* skippedTypes)
 {
     TextureProjectPtr texture(new TextureProject());
 
@@ -51,8 +51,11 @@ TextureProjectPtr Project::loadTextureFromJson(QJsonObject json)
         auto node = lib->createNode(nodeName);
         // createNode returns null for an unknown/legacy typeName the resolved
         // library can't build; skip it rather than dereferencing null.
-        if (!node)
+        if (!node) {
+            if (skippedTypes)
+                skippedTypes->append(nodeName);
             continue;
+        }
         node->exportName = nodeDef["exportName"].toString("");
         node->id = nodeDef["id"].toString();
         node->randomSeed = jsonutils::getLong(nodeDef["randomSeed"]);

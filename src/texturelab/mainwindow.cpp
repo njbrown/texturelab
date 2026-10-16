@@ -24,6 +24,7 @@
 #include <QOpenGLFunctions>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QSaveFile>
 #include <QSettings>
 #include <QStatusBar>
 #include <QTimer>
@@ -555,6 +556,8 @@ void MainWindow::setupMenus()
             if (!promptSaveIfDirty())
                 return;
             auto project = Project::loadTexture(":examples/" + example);
+            if (!project)
+                return;
             QString projectName = example;
             projectName.replace(".texture", "");
             project->name = projectName;
@@ -850,9 +853,7 @@ void MainWindow::showLauncher()
 
 void MainWindow::openProject()
 {
-    if (!promptSaveIfDirty())
-        return;
-
+    // openProjectFromPath() asks to save; asking here too prompted twice.
     auto filePath = QFileDialog::getOpenFileName(dialogParent(), "Open Texture File", "",
                                                  "Texturelab File (*.texture)");
 
@@ -873,8 +874,32 @@ void MainWindow::openProjectFromPath(const QString& filePath)
                              "Could not open file:\n" + filePath);
         return;
     }
-    auto json = QJsonDocument::fromJson(file.readAll()).object();
+    QJsonParseError parseError;
+    auto doc = QJsonDocument::fromJson(file.readAll(), &parseError);
     file.close();
+
+    // Never bind a document we couldn't parse to the real path: one Ctrl+S
+    // would overwrite the (possibly recoverable) file with an empty project.
+    if (parseError.error != QJsonParseError::NoError || !doc.isObject()) {
+        QMessageBox::warning(dialogParent(), "Open Texture",
+                             "This file is damaged or isn't a TextureLab "
+                             "texture, so it can't be opened:\n" + filePath);
+        return;
+    }
+    auto json = doc.object();
+
+    // A file from a newer TextureLab would otherwise be read as the current
+    // library version, its unknown nodes dropped, and re-saved as such.
+    auto versionStr = json["libraryVersion"].toString();
+    if (!versionStr.isEmpty() && !isKnownLibVersionString(versionStr)) {
+        QMessageBox::warning(
+            dialogParent(), "Open Texture",
+            QString("This texture uses library version \"%1\", which is "
+                    "newer than this version of TextureLab supports.\n\n"
+                    "Update TextureLab to open it.")
+                .arg(versionStr));
+        return;
+    }
 
     LibraryVersionMigrator migrator(json);
     if (migrator.needsMigration()) {
@@ -897,7 +922,8 @@ void MainWindow::openProjectFromPath(const QString& filePath)
             json = migrator.migrate();
     }
 
-    auto project = Project::loadTextureFromJson(json);
+    QStringList skippedTypes;
+    auto project = Project::loadTextureFromJson(json, &skippedTypes);
 
     QFileInfo fileInfo(filePath);
     project->name = fileInfo.baseName();
@@ -912,6 +938,16 @@ void MainWindow::openProjectFromPath(const QString& filePath)
                             project->libraryVersion.toStdString()}});
     setProject(project);
     addToRecentFiles(filePath);
+
+    if (!skippedTypes.isEmpty()) {
+        skippedTypes.removeDuplicates();
+        QMessageBox::warning(
+            dialogParent(), "Open Texture",
+            QString("Some nodes in this texture couldn't be loaded and were "
+                    "left out:\n\n%1\n\nSaving will remove them from the "
+                    "file. Use Save As to keep the original.")
+                .arg(skippedTypes.join(", ")));
+    }
 
     // The shared entry point for the Open dialog, the recent-files menu, and
     // drag-and-drop, so one hook here covers all three (LAUNCHER_PRD.md §6.1).
@@ -966,6 +1002,7 @@ void MainWindow::upgradeCurrentProjectLibrary()
     // Round-trip through the same JSON the file format uses, so the live
     // "Upgrade" button in the Library dock goes through the exact same
     // pure-JSON migration path as opening a legacy file does.
+    graphWidget->syncPositionsToModel();
     auto bytes = Project::saveTexture(this->project);
     auto json = QJsonDocument::fromJson(bytes).object();
 
@@ -990,6 +1027,10 @@ void MainWindow::upgradeCurrentProjectLibrary()
     newProject->filePath = this->project->filePath;
 
     setProject(newProject);
+
+    // setProject() clears the undo stack, which leaves it clean; the file on
+    // disk is still the old version, so make sure closing prompts to save.
+    undoStack->resetClean();
 }
 
 void MainWindow::newProject()
@@ -1002,33 +1043,19 @@ void MainWindow::newProject()
 
 void MainWindow::saveProject()
 {
-    if (project->filePath.isNull() || project->filePath.isEmpty()) {
-        QString filePath = QFileDialog::getSaveFileName(
+    QString filePath = project->filePath;
+    if (filePath.isEmpty()) {
+        filePath = QFileDialog::getSaveFileName(
             this, "Save Texture...", QString(), "Texturelab File (*.texture)");
 
-        if (filePath.isNull() || filePath.isEmpty()) {
+        if (filePath.isEmpty())
             return;
-        }
 
         if (!filePath.endsWith(".texture", Qt::CaseInsensitive))
             filePath += ".texture";
-
-        project->filePath = filePath;
     }
 
-    graphWidget->syncPositionsToModel();
-
-    Telemetry::breadcrumb("project", "saved",
-                          {{"node_count", (int64_t)project->nodes.size()},
-                           {"resolution", (int64_t)project->textureWidth}});
-    QFile file(project->filePath);
-    file.open(QIODevice::WriteOnly);
-    file.write(Project::saveTexture(project));
-    file.close();
-    undoStack->setClean();
-    addToRecentFiles(project->filePath);
-    CatalogService::instance().recordSaved(project, project->filePath);
-    captureLauncherThumbnail(int(catalog::ThumbSource::Save));
+    saveProjectTo(filePath);
 }
 
 void MainWindow::saveProjectAs()
@@ -1036,28 +1063,44 @@ void MainWindow::saveProjectAs()
     QString filePath = QFileDialog::getSaveFileName(
         this, "Save Texture As...", QString(), "Texturelab File (*.texture)");
 
-    if (filePath.isNull() || filePath.isEmpty())
+    if (filePath.isEmpty())
         return;
 
     if (!filePath.endsWith(".texture", Qt::CaseInsensitive))
         filePath += ".texture";
 
-    project->filePath = filePath;
+    saveProjectTo(filePath);
+}
 
-    QFileInfo fileInfo(filePath);
-    project->name = fileInfo.baseName();
-
+bool MainWindow::saveProjectTo(const QString& filePath)
+{
     graphWidget->syncPositionsToModel();
 
-    QFile file(project->filePath);
-    file.open(QIODevice::WriteOnly);
-    file.write(Project::saveTexture(project));
-    file.close();
+    Telemetry::breadcrumb("project", "saved",
+                          {{"node_count", (int64_t)project->nodes.size()},
+                           {"resolution", (int64_t)project->textureWidth}});
+
+    // QSaveFile writes to a temp file and renames on commit(), so a failed
+    // write (read-only location, full disk) leaves the existing file intact.
+    QSaveFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly) ||
+        file.write(Project::saveTexture(project)) < 0 || !file.commit()) {
+        QMessageBox::warning(this, "Save Texture",
+                             QString("Could not save the texture to:\n%1\n\n%2")
+                                 .arg(filePath, file.errorString()));
+        return false;
+    }
+
+    // Only adopt the new path/name once the write has succeeded.
+    project->filePath = filePath;
+    project->name = QFileInfo(filePath).baseName();
+
     undoStack->setClean();
-    setWindowTitle(project->name + " - TextureLab");
+    onCleanChanged(true); // name may have changed while already clean
     addToRecentFiles(project->filePath);
     CatalogService::instance().recordSaved(project, project->filePath);
     captureLauncherThumbnail(int(catalog::ThumbSource::Save));
+    return true;
 }
 
 void MainWindow::showExportDialog()

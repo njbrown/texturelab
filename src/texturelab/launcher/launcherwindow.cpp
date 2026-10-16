@@ -912,11 +912,17 @@ void LauncherWindow::removeSelectionFromLauncher()
     if (answer != QMessageBox::Yes)
         return;
 
+    // Resolve every id before forgetting any: each forget() emits
+    // catalogChanged, which resets the model and invalidates the remaining
+    // indexes mid-loop.
+    QList<qint64> ids;
     for (const QModelIndex& index : selection) {
         const catalog::TextureRecord rec = model->recordAt(index);
         if (rec.isValid())
-            catalog.forget(rec.id);
+            ids.append(rec.id);
     }
+    for (qint64 id : ids)
+        catalog.forget(id);
 
     refresh();
 }

@@ -16,6 +16,9 @@ LibVersion currentLibVersion();
 // Parses "v1"/"v2"/"v3" (case-insensitive). Unrecognized/empty strings fall
 // back to currentLibVersion().
 LibVersion libVersionFromString(const QString& str);
+// False for strings libVersionFromString doesn't recognise (e.g. a file
+// saved by a newer TextureLab), which it would otherwise map to current.
+bool isKnownLibVersionString(const QString& str);
 QString libVersionToString(LibVersion version);
 
 bool hasNextLibVersion(LibVersion version);
