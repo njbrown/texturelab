@@ -430,9 +430,17 @@ void TextureRenderer::update()
         return;
     }
 
-    // Skipping allocation means some nodes may still have no texture, so
-    // this size isn't proven to fit.
-    if (!skipAllocation && lastGoodResolution != requested) {
+    // Only a size every node actually holds is proven to fit. Skipped
+    // allocation, or a resize deferred because a render is in flight, leaves
+    // some nodes at the old size (or none), and recording `requested` then
+    // would make a later failure "roll back" to a size that never fitted.
+    const bool allAtRequested = std::all_of(
+        project->nodes.begin(), project->nodes.end(),
+        [&](const TextureNodePtr& n) {
+            return !n || (n->texture && n->textureWidth == requested &&
+                          n->textureHeight == project->textureHeight);
+        });
+    if (!skipAllocation && allAtRequested && lastGoodResolution != requested) {
         lastGoodResolution = requested;
         Telemetry::setTag("texture.resolution", std::to_string(requested));
     }
@@ -628,6 +636,31 @@ bool TextureRenderer::initializeNodeGraphicsResources(
     }
 
     return true;
+}
+
+QImage TextureRenderer::readNodeImage(const TextureNodePtr& node)
+{
+    if (!node || !node->texture || node->textureWidth <= 0 ||
+        node->textureHeight <= 0)
+        return QImage();
+
+    QOpenGLContext* previous = QOpenGLContext::currentContext();
+    QSurface* previousSurface = previous ? previous->surface() : nullptr;
+
+    ctx->makeCurrent(surface);
+    QImage image(node->textureWidth, node->textureHeight,
+                 QImage::Format_RGBA8888);
+    gl->glBindTexture(GL_TEXTURE_2D, node->textureId());
+    gl->glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                      image.bits());
+    gl->glBindTexture(GL_TEXTURE_2D, 0);
+    ctx->doneCurrent();
+
+    if (previous && previousSurface)
+        previous->makeCurrent(previousSurface);
+
+    // OpenGL rows are bottom-up
+    return image.mirrored(false, true);
 }
 
 SystemInfo::GpuMemory TextureRenderer::queryGpuMemory()

@@ -99,9 +99,10 @@ void Renderer::renderMesh(Mesh* mesh, Material* material) {}
 
 void Renderer::updateMaterial(Material* material)
 {
-    if (material->shader) {
-        material->shader->deleteLater();
-    }
+    // Called from paintGL with the context current, so free it now;
+    // deleteLater() could run with no (or another) context current.
+    delete material->shader;
+    material->shader = nullptr;
 
     // flags
     QStringList flags;

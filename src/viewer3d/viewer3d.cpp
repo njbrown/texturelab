@@ -47,6 +47,12 @@ Viewer3D::Viewer3D() : QOpenGLWidget()
     // this->setContext(context);
 
     Q_INIT_RESOURCE(viewerassets);
+
+    // Plain data, no GL needed: created here so set*Texture() calls that
+    // arrive before the widget is first shown (and initializeGL runs) are
+    // kept rather than dereferencing null. The shader is built on first
+    // paint since needsUpdate starts true.
+    material = new Material();
 }
 
 void Viewer3D::reRender() { this->update(); }
@@ -87,13 +93,8 @@ void Viewer3D::initializeGL()
     // mainProgram = createMainShader();
 
     // mesh = loadMesh();
-    auto mat = this->loadMaterial();
-    // mat->albedo = QVector4D(0.7, 0.7, 0.7, 1.0);
-    mat->roughness = 0.5; // Three.js default
-    mat->metalness = 0.0; // Three.js default
     // gltfMesh = loadMeshFromRc(":assets/cube.gltf");
     gltfMesh = createSphere(this->gl, 2, 1000, 1000);
-    this->material = mat;
 
     // Create skydome for rendering environment
     skydomeMesh = createSkydome(this->gl, 100, 32, 16);
@@ -222,10 +223,10 @@ void Viewer3D::mousePressEvent(QMouseEvent* e)
 void Viewer3D::mouseReleaseEvent(QMouseEvent* e)
 {
     if (e->button() == Qt::LeftButton) {
-        leftMouseDown = true;
+        leftMouseDown = false;
     }
     if (e->button() == Qt::MiddleButton) {
-        middleMouseDown = true;
+        middleMouseDown = false;
     }
 }
 void Viewer3D::mouseMoveEvent(QMouseEvent* e)
@@ -396,69 +397,6 @@ QOpenGLBuffer* loadMesh()
     return vbo;
 }
 
-Material* Viewer3D::loadMaterial()
-{
-    auto mat = new Material();
-
-    QStringList flags;
-    flags << "USE_IBL 1";
-    flags << "HAS_NORMAL_VEC3 1";
-    // flags << "LINEAR_OUTPUT 1";
-    // flags << "TEST 1";
-    // flags << "TEST2 1";
-    flags << "HAS_TANGENT_VEC4 1";
-    // flags << "DEBUG_NORMAL_GEOMETRY 1";
-    flags << "DEBUG_NONE 1"; // IMPORTANT!! caused many headaches..
-    flags << "DEBUG DEBUG_NONE";
-    // flags << "DEBUG DEBUG_METALLIC_ROUGHNESS";
-
-    flags << "HAS_TEXCOORD_0_VEC2 1";
-    flags << "HAS_BASE_COLOR_MAP 1";
-    // flags << "HAS_NORMAL_MAP 1";
-    // flags << "HAS_ROUGHNESS_MAP 1";
-    // flags << "HAS_METALNESS_MAP 1";
-    // flags << "HAS_METALLIC_ROUGHNESS_MAP 1";
-    // flags << "HAS_EMISSIVE_MAP 1";
-    flags << "MATERIAL_METALLICROUGHNESS 1"; // MR mode
-
-    flags << "ALPHAMODE_OPAQUE 0";
-    flags << "ALPHAMODE_MASK 1";
-    flags << "ALPHAMODE_BLEND 2";
-    flags << "ALPHAMODE ALPHAMODE_OPAQUE";
-    // flags << "TONEMAP_ACES_NARKOWICZ 1";
-    // flags << "TONEMAP_ACES_HILL_EXPOSURE_BOOST 1";
-
-    auto vertShader =
-        shaderCache->generateShaderSource("primitive.vert", flags);
-    auto fragShader = shaderCache->generateShaderSource("pbr.frag", flags);
-
-    auto shader = new QOpenGLShaderProgram;
-    shader->bind();
-    shader->addShaderFromSourceCode(QOpenGLShader::Vertex, vertShader);
-    shader->addShaderFromSourceCode(QOpenGLShader::Fragment, fragShader);
-
-    shader->bindAttributeLocation("a_position", (int)VertexUsage::Position);
-    shader->bindAttributeLocation("a_normal", (int)VertexUsage::Normal);
-    shader->bindAttributeLocation("a_tangent", (int)VertexUsage::Tangent);
-    shader->bindAttributeLocation("a_color_0", (int)VertexUsage::Color);
-    shader->bindAttributeLocation("a_texcoord_0", (int)VertexUsage::TexCoord0);
-    shader->bindAttributeLocation("a_texcoord_1", (int)VertexUsage::TexCoord1);
-
-    shader->link();
-    // shader->release();
-
-    mat->shader = shader;
-
-    // textures
-    // mat->albedoMapId = loadTextureId(":assets/brick.jpg");
-    // mat->albedoMap = loadTexture(":assets/brick.jpg");
-    // mat->albedoMap = loadTexture(":assets/albedo.jpg");
-    // mat->normalMap = loadTexture(":assets/normal.jpg");
-    // mat->metalnessMap = loadTexture(":assets/metalness.jpg");
-    // mat->roughnessMap = loadTexture(":assets/roughness.jpg");
-
-    return mat;
-}
 QOpenGLTexture* Viewer3D::loadTexture(const QString& path)
 {
     QImage image(path);
@@ -481,108 +419,91 @@ GLuint Viewer3D::loadTextureId(const QString& path)
     return tex->textureId();
 }
 
+// The PBR shader is specialised on which maps are present (HAS_*_MAP flags),
+// not on their texture ids, which are bound per frame. Only rebuild it when a
+// map appears or disappears; a new id for an existing map (every re-render of
+// a channel's node) used to recompile the whole shader on the GUI thread.
+void Viewer3D::assignMap(GLuint& slot, GLuint texId)
+{
+    if ((slot != 0) != (texId != 0))
+        this->material->needsUpdate = true;
+    slot = texId;
+}
+
 void Viewer3D::setAlbedoTexture(GLuint texId)
 {
-    this->material->albedoMapId = texId;
-    this->material->needsUpdate = true;
+    assignMap(this->material->albedoMapId, texId);
 }
 
 void Viewer3D::clearAlbedoTexture()
 {
-    if (!this->material)
-        return;
-    this->material->albedoMapId = 0;
-    this->material->needsUpdate = true;
+    assignMap(this->material->albedoMapId, 0);
 }
 
 void Viewer3D::setNormalTexture(GLuint texId)
 {
-    this->material->normalMapId = texId;
-    this->material->needsUpdate = true;
+    assignMap(this->material->normalMapId, texId);
 }
 
 void Viewer3D::clearNormalTexture()
 {
-    if (!this->material)
-        return;
-    this->material->normalMapId = 0;
-    this->material->needsUpdate = true;
+    assignMap(this->material->normalMapId, 0);
 }
 
 void Viewer3D::setMetalnessTexture(GLuint texId)
 {
-    this->material->metalnessMapId = texId;
-    this->material->needsUpdate = true;
+    assignMap(this->material->metalnessMapId, texId);
 }
 
 void Viewer3D::clearMetalnessTexture()
 {
-    if (!this->material)
-        return;
-    this->material->metalnessMapId = 0;
-    this->material->needsUpdate = true;
+    assignMap(this->material->metalnessMapId, 0);
 }
 
 void Viewer3D::setRoughnessTexture(GLuint texId)
 {
-    this->material->roughnessMapId = texId;
-    this->material->needsUpdate = true;
+    assignMap(this->material->roughnessMapId, texId);
 }
 
 void Viewer3D::clearRoughnessTexture()
 {
-    if (!this->material)
-        return;
-    this->material->roughnessMapId = 0;
-    this->material->needsUpdate = true;
+    assignMap(this->material->roughnessMapId, 0);
 }
 
 void Viewer3D::setHeightTexture(GLuint texId)
 {
-    this->material->heightMapId = texId;
-    this->material->needsUpdate = true;
+    assignMap(this->material->heightMapId, texId);
 }
 
 void Viewer3D::clearHeightTexture()
 {
-    if (!this->material)
-        return;
-    this->material->heightMapId = 0;
-    this->material->needsUpdate = true;
+    assignMap(this->material->heightMapId, 0);
 }
 
 void Viewer3D::setHeightScale(float scale)
 {
+    // A uniform, read every frame; no shader rebuild needed.
     this->material->heightScale = scale;
-    this->material->needsUpdate = true;
 }
 
 void Viewer3D::setAoTexture(GLuint texId)
 {
-    this->material->aoMapId = texId;
-    this->material->needsUpdate = true;
+    assignMap(this->material->aoMapId, texId);
 }
 
 void Viewer3D::clearAoTexture()
 {
-    if (!this->material)
-        return;
-    this->material->aoMapId = 0;
-    this->material->needsUpdate = true;
+    assignMap(this->material->aoMapId, 0);
 }
 
 void Viewer3D::setAlphaTexture(GLuint texId)
 {
-    this->material->alphaMapId = texId;
-    this->material->needsUpdate = true;
+    assignMap(this->material->alphaMapId, texId);
 }
 
 void Viewer3D::clearAlphaTexture()
 {
-    if (!this->material)
-        return;
-    this->material->alphaMapId = 0;
-    this->material->needsUpdate = true;
+    assignMap(this->material->alphaMapId, 0);
 }
 
 void Viewer3D::clearTextures()
@@ -607,10 +528,16 @@ void Viewer3D::resetCamera()
 
 void Viewer3D::loadEnvironment(const QString path, float rotation)
 {
-    if (renderer) {
-        renderer->loadEnvironment(path, rotation);
-        this->repaint();
+    if (!renderer) {
+        // Not initialised yet: initializeGL loads the default instead.
+        setDefaultEnvironment(path, rotation);
+        return;
     }
+    // IBL filtering issues GL calls; they must hit this widget's context.
+    makeCurrent();
+    renderer->loadEnvironment(path, rotation);
+    doneCurrent();
+    this->update();
 }
 
 void Viewer3D::setEnvironmentRotation(float rotation)

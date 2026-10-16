@@ -7,6 +7,7 @@
 #include <QtCore/QPropertyAnimation>
 #include <QtCore/QTimer>
 #include <QtGui/QBrush>
+#include <QMessageBox>
 #include <QtGui/QClipboard>
 #include <QtGui/QIcon>
 #include <QtGui/QImage>
@@ -99,6 +100,7 @@ void View2DWidget::reRenderNode()
 
 void View2DWidget::setTextureRenderer(TextureRenderer* renderer)
 {
+    this->renderer = renderer;
     // MainWindow passes null while swapping renderers; connecting to it logs
     // a Qt warning, which becomes a Sentry breadcrumb on every project switch.
     if (!renderer)
@@ -130,27 +132,14 @@ void View2DWidget::saveTextureAsImage()
         fileName += ".png";
     }
 
-    // Get the texture ID
-    GLuint texId = node->textureId();
-    if (texId == 0) {
+    // Read back in the renderer's context: there's no context current here.
+    QImage image = renderer ? renderer->readNodeImage(node) : QImage();
+    if (image.isNull())
         return;
-    }
 
-    // Bind the texture and get its dimensions
-    glBindTexture(GL_TEXTURE_2D, texId);
-    GLint width, height;
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
-
-    // Read texture data
-    QImage image(width, height, QImage::Format_RGBA8888);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
-
-    // Flip image vertically (OpenGL coordinates are bottom-up)
-    image = image.mirrored(false, true);
-
-    // Save the image
-    image.save(fileName);
+    if (!image.save(fileName))
+        QMessageBox::warning(this, tr("Save Texture"),
+                             tr("Could not save the image to:\n%1").arg(fileName));
 }
 
 void View2DWidget::toggleTileView()
@@ -181,24 +170,10 @@ void View2DWidget::copyTextureToClipboard()
         return;
     }
 
-    // Get the texture ID
-    GLuint texId = node->textureId();
-    if (texId == 0) {
+    // Read back in the renderer's context: there's no context current here.
+    QImage image = renderer ? renderer->readNodeImage(node) : QImage();
+    if (image.isNull())
         return;
-    }
-
-    // Bind the texture and get its dimensions
-    glBindTexture(GL_TEXTURE_2D, texId);
-    GLint width, height;
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
-
-    // Read texture data
-    QImage image(width, height, QImage::Format_RGBA8888);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
-
-    // Flip image vertically (OpenGL coordinates are bottom-up)
-    image = image.mirrored(false, true);
 
     // Copy to clipboard
     QClipboard* clipboard = QApplication::clipboard();

@@ -99,6 +99,11 @@ public:
     // relying on whichever context a widget happened to leave bound.
     SystemInfo::GpuMemory queryGpuMemory();
 
+    // Reads a node's current texture back as 8-bit RGBA, top row first.
+    // Makes the renderer's context current (restoring the caller's), so it's
+    // safe from any GUI-thread code. Null image if the node has no texture.
+    QImage readNodeImage(const TextureNodePtr& node);
+
     // Bytes of VRAM one node's texture needs at the given square resolution.
     // RGBA32F: 4 channels x 4 bytes.
     static int64_t estimatedNodeTextureBytes(int resolution)
