@@ -51,23 +51,89 @@ void reportFatalGlState(const char* what, Telemetry::Fields extra)
 RenderWorker::RenderWorker()
     : QObject(), surface(nullptr), ctx(nullptr), gl(nullptr), vao(nullptr),
       vbo(nullptr), vshader(nullptr), fshader(nullptr), fbo(nullptr),
-      running(false)
+      fboId(0), running(true)
 {
+    // running starts true (rather than being set in setup()) so a kill()
+    // that lands before the thread reaches setup() still ends run().
+}
+
+RenderWorker::~RenderWorker()
+{
+    // Normally already done at the end of run(); this covers
+    // RENDER_IN_MAIN_THREAD builds and a thread that never started.
+    cleanup();
+
+    // The surface was created on the GUI thread and must be destroyed there,
+    // which is where TextureRenderer deletes us.
+    if (surface) {
+        surface->destroy();
+        delete surface;
+        surface = nullptr;
+    }
 }
 
 void RenderWorker::setRenderQueue(QQueue<RenderCommand> renderQueue)
 {
     QMutexLocker locker(&mutex);
     this->renderQueue = renderQueue;
+    queueChanged.wakeOne();
 }
 
 void RenderWorker::run()
 {
     this->setup();
 
-    while (running) {
-        this->renderNextInQueue();
+    while (true) {
+        mutex.lock();
+        while (running && renderQueue.isEmpty())
+            queueChanged.wait(&mutex);
+        if (!running) {
+            mutex.unlock();
+            break;
+        }
+        RenderCommand command = renderQueue.dequeue();
+        mutex.unlock();
+        this->processRenderCommand(command);
     }
+
+    // Free GPU resources on this thread, where the context lives.
+    cleanup();
+}
+
+void RenderWorker::cleanup()
+{
+    if (!ctx)
+        return;
+
+    ctx->makeCurrent(surface);
+
+    resourceCache.cleanup();
+
+    if (vao) {
+        vao->destroy();
+        delete vao;
+        vao = nullptr;
+    }
+    if (vbo) {
+        vbo->destroy();
+        delete vbo;
+        vbo = nullptr;
+    }
+    delete fbo;
+    fbo = nullptr;
+    delete vshader;
+    vshader = nullptr;
+    delete fshader;
+    fshader = nullptr;
+    if (fboId && gl) {
+        gl->glDeleteFramebuffers(1, &fboId);
+        fboId = 0;
+    }
+
+    ctx->doneCurrent();
+    delete ctx;
+    ctx = nullptr;
+    gl = nullptr;
 }
 
 void RenderWorker::renderNextInQueue()
@@ -107,8 +173,6 @@ void RenderWorker::initSurface()
 
 void RenderWorker::setup()
 {
-    running = true;
-
     Telemetry::breadcrumb("render.setup", "RenderWorker::setup() start");
 
     // Surface must already be created via initSurface() from main thread
@@ -300,6 +364,7 @@ void RenderWorker::processRenderCommand(const RenderCommand& command)
                 NodeInputBinding{input.inputName, input.textureId});
         }
 
+        resourceCache.trimPool(command.textureWidth, command.textureHeight);
         command.renderer->render(renderCtx, *command.renderData);
         resourceCache.releaseAllTextures();
 
@@ -555,4 +620,9 @@ void RenderWorker::renderSinglePass(const RenderCommand& command)
     vao->release();
 }
 
-void RenderWorker::kill() { running = false; }
+void RenderWorker::kill()
+{
+    QMutexLocker locker(&mutex);
+    running = false;
+    queueChanged.wakeAll();
+}

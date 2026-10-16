@@ -1,4 +1,5 @@
 #include "texturerenderer.h"
+#include <algorithm>
 #include "noderenderer.h"
 #include "renderworker.h"
 // #include "../models.h"
@@ -322,6 +323,11 @@ TextureRenderer::~TextureRenderer()
     if (ctx && surface) {
         ctx->makeCurrent(surface);
 
+        // The worker has stopped, so no command can still be using these.
+        for (const auto& node : allocatedNodes)
+            freeNodeResources(node);
+        allocatedNodes.clear();
+
         if (fbo) {
             delete fbo;
             fbo = nullptr;
@@ -364,6 +370,9 @@ void TextureRenderer::update()
 {
     if (!project)
         return;
+
+    if (!renderInFlight)
+        freeRemovedNodes();
 
     const int requested = project->textureWidth;
     bool allocationFailed = false;
@@ -430,6 +439,36 @@ void TextureRenderer::update()
 
     if (!renderInFlight)
         this->queueNextNodeToRender();
+}
+
+void TextureRenderer::freeNodeResources(const TextureNodePtr& node)
+{
+    delete node->texture;
+    node->texture = nullptr;
+    delete node->shader;
+    node->shader = nullptr;
+    node->textureWidth = 0;
+    node->textureHeight = 0;
+}
+
+void TextureRenderer::freeRemovedNodes()
+{
+    // Compared by object, not id: undoing a delete recreates the node as a
+    // new object with the same id, and the old one is gone for good.
+    auto removed = [this](const TextureNodePtr& node) {
+        return project->nodes.value(node->id) != node;
+    };
+    if (std::none_of(allocatedNodes.begin(), allocatedNodes.end(), removed))
+        return;
+
+    ctx->makeCurrent(surface);
+    for (int i = allocatedNodes.size() - 1; i >= 0; --i) {
+        if (removed(allocatedNodes[i])) {
+            freeNodeResources(allocatedNodes[i]);
+            allocatedNodes.removeAt(i);
+        }
+    }
+    ctx->doneCurrent();
 }
 
 static constexpr int kMinResolution = 32;
@@ -580,10 +619,13 @@ bool TextureRenderer::initializeNodeGraphicsResources(
     if (!this->createNodeTexture(node))
         return false;
 
-    ctx->makeCurrent(surface);
-    // build and compile shaders
-    node->shader = buildShaderForNode(node);
-    ctx->doneCurrent();
+    // A node whose texture was freed by a resolution fallback keeps its
+    // shader; rebuilding would leak the old one.
+    if (!node->shader) {
+        ctx->makeCurrent(surface);
+        node->shader = buildShaderForNode(node);
+        ctx->doneCurrent();
+    }
 
     return true;
 }
@@ -631,6 +673,8 @@ bool TextureRenderer::createNodeTexture(const TextureNodePtr& node)
     node->texture = new QOpenGLFramebufferObject(width, height, fboFormat);
     node->textureWidth = width;
     node->textureHeight = height;
+    if (!allocatedNodes.contains(node))
+        allocatedNodes.append(node);
 
     // Running out of VRAM shows up either as an incomplete FBO or as a
     // GL_OUT_OF_MEMORY left behind by the texture allocation, depending on the
@@ -992,9 +1036,10 @@ TextureRenderer::buildShaderForNode(const TextureNodePtr& node)
 {
     ctx->makeCurrent(surface);
 
-    QOpenGLShader* vshader = new QOpenGLShader(QOpenGLShader::Vertex);
-    QOpenGLShader* fshader = new QOpenGLShader(QOpenGLShader::Fragment);
+    // Parented to the program so deleting it frees them too.
     auto program = new QOpenGLShaderProgram;
+    QOpenGLShader* vshader = new QOpenGLShader(QOpenGLShader::Vertex, program);
+    QOpenGLShader* fshader = new QOpenGLShader(QOpenGLShader::Fragment, program);
 
     // Build input/prop declaration lists for RenderResourceCache helpers
     QStringList inputNames = node->inputs;

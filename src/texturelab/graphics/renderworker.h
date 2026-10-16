@@ -7,6 +7,7 @@
 #include <QObject>
 #include <QOpenGLFunctions>
 #include <QQueue>
+#include <QWaitCondition>
 #include <QSharedPointer>
 #include <atomic>
 #include <memory>
@@ -90,13 +91,22 @@ class RenderWorker : public QObject {
     RenderResourceCache resourceCache;
 
     QMutex mutex;
+    // Signalled when the queue gets work or the worker is killed, so run()
+    // sleeps instead of spinning a core while idle.
+    QWaitCondition queueChanged;
     std::atomic<bool> running;
     QQueue<RenderCommand> renderQueue;
+
+    // Frees every GL object setup() created, then the context. Must run on
+    // the thread that owns the context (the worker thread, at the end of
+    // run(); or the GUI thread in RENDER_IN_MAIN_THREAD builds).
+    void cleanup();
 
     void renderSinglePass(const RenderCommand& command);
 
 public:
     RenderWorker();
+    ~RenderWorker();
 
     void setRenderQueue(QQueue<RenderCommand> renderQueue);
     void run();

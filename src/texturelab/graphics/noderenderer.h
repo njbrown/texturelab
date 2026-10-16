@@ -48,6 +48,12 @@ public:
     // renderer can never inherit filtering or wrapping left behind by whoever
     // used the texture last.
     GLuint acquireTexture(int width, int height);
+
+    // When the output resolution differs from the last call, deletes every
+    // free pooled texture so the old size's pool isn't stranded in VRAM.
+    // Smaller per-pass sizes (Auto Levels' reduction chain) are kept while
+    // the resolution stays put.
+    void trimPool(int width, int height);
     void releaseTexture(GLuint textureId);
     void releaseAllTextures();
 
@@ -91,6 +97,8 @@ private:
         bool inUse = false;
     };
     QList<CachedTexture> texturePool;
+    int poolWidth = 0;
+    int poolHeight = 0;
 
     QMap<QString, QOpenGLShaderProgram*> shaderCache;
 };

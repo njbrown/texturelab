@@ -58,6 +58,18 @@ class TextureRenderer : public QObject {
     // project back to it instead of aborting the process.
     int lastGoodResolution = 0;
 
+    // Every node this renderer has allocated a texture or shader for. Nodes
+    // removed from the project are freed by update(); the rest when the
+    // renderer is destroyed (project switch). Without this, each open leaked
+    // every node's FBO — RGBA32F at 2K is 64 MB a node.
+    QList<TextureNodePtr> allocatedNodes;
+
+    // Frees `node`'s texture and shader. Context must be current.
+    void freeNodeResources(const TextureNodePtr& node);
+    // Frees nodes that have left the project. Only safe with nothing in
+    // flight: the in-flight command may hold their textures as inputs.
+    void freeRemovedNodes();
+
     // Set when allocation failed and there was nowhere to fall back to (the
     // smallest size, or a node added at the current size with VRAM already
     // full). update() stops retrying until the resolution changes or a node is

@@ -99,6 +99,10 @@ void View2DWidget::reRenderNode()
 
 void View2DWidget::setTextureRenderer(TextureRenderer* renderer)
 {
+    // MainWindow passes null while swapping renderers; connecting to it logs
+    // a Qt warning, which becomes a Sentry breadcrumb on every project switch.
+    if (!renderer)
+        return;
     connect(renderer, &TextureRenderer::thumbnailGenerated,
             [=](const QString& nodeId, GLint texId, const QPixmap& pixmap) {
                 if (!!node && node->id == nodeId) {

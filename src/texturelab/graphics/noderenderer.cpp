@@ -44,6 +44,22 @@ void RenderResourceCache::applyDefaultTextureParams(
     gl->glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+void RenderResourceCache::trimPool(int width, int height)
+{
+    if (width == poolWidth && height == poolHeight)
+        return;
+    poolWidth = width;
+    poolHeight = height;
+
+    for (int i = texturePool.size() - 1; i >= 0; --i) {
+        auto& tex = texturePool[i];
+        if (!tex.inUse) {
+            gl->glDeleteTextures(1, &tex.id);
+            texturePool.removeAt(i);
+        }
+    }
+}
+
 GLuint RenderResourceCache::acquireTexture(int width, int height)
 {
     // Reuse an existing free texture of matching size
