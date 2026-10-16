@@ -94,7 +94,11 @@ void RenderWorker::initSurface()
     format.setSamples(1);
     format.setSwapInterval(0);
     format.setSwapBehavior(QSurfaceFormat::SingleBuffer);
-    format.setOption(QSurfaceFormat::DebugContext); // for debugging
+#ifdef TEXTURELAB_DEV_BUILD
+    // Debug contexts are slower and only feed the logger in setup(), which is
+    // dev-only too.
+    format.setOption(QSurfaceFormat::DebugContext);
+#endif
 
     surface = new QOffscreenSurface();
     surface->setFormat(format);
@@ -138,20 +142,21 @@ void RenderWorker::setup()
         qFatal("Could not obtain required OpenGL context version");
     }
 
-    // setup debugging
+#ifdef TEXTURELAB_DEV_BUILD
+    // Dev builds surface GL errors in the console. Never fatal: drivers raise
+    // errors for benign things, and GL_OUT_OF_MEMORY has its own recovery
+    // path (TextureRenderer::rollBackResolution) that an abort would bypass.
     QOpenGLDebugLogger* logger = new QOpenGLDebugLogger();
-    logger->initialize();
-
-    QObject::connect(logger, &QOpenGLDebugLogger::messageLogged,
-                     [=](const QOpenGLDebugMessage& debugMessage) {
-                         if (debugMessage.type() ==
-                             QOpenGLDebugMessage::ErrorType)
-                             qFatal() << debugMessage;
-                         //  else
-                         //      qDebug() << debugMessage;
-                     });
-
-    logger->startLogging();
+    if (logger->initialize()) {
+        QObject::connect(logger, &QOpenGLDebugLogger::messageLogged,
+                         [](const QOpenGLDebugMessage& debugMessage) {
+                             if (debugMessage.type() ==
+                                 QOpenGLDebugMessage::ErrorType)
+                                 qWarning() << "GL error:" << debugMessage;
+                         });
+        logger->startLogging();
+    }
+#endif
 
     gl->initializeOpenGLFunctions();
 

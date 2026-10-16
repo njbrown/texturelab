@@ -13,6 +13,7 @@
 #include <QtWidgets>
 
 #include <QDebug>
+#include <QSet>
 #include <cmath>
 #include <iostream>
 
@@ -193,6 +194,31 @@ void NodeGraph::mouseMoveEvent(QMouseEvent* event)
         return;
     }
     QGraphicsView::mouseMoveEvent(event);
+}
+
+// True if `node` is `target` or is upstream of it, i.e. connecting target's
+// output into one of node's inputs would close a cycle.
+static bool feedsInto(const NodePtr& node, const NodePtr& target)
+{
+    QSet<Node*> visited;
+    QVector<Node*> pending{target.data()};
+    while (!pending.isEmpty()) {
+        Node* current = pending.takeLast();
+        if (current == node.data())
+            return true;
+        if (visited.contains(current))
+            continue;
+        visited.insert(current);
+        for (const auto& port : current->getInPorts()) {
+            for (const auto& con : port->connections) {
+                auto upstream =
+                    con->startPort == port ? con->endPort : con->startPort;
+                if (upstream && upstream->node)
+                    pending.append(upstream->node.data());
+            }
+        }
+    }
+    return false;
 }
 
 void NodeGraph::mouseReleaseEvent(QMouseEvent* event)
@@ -476,7 +502,12 @@ bool NodeGraph::sceneMouseReleaseEvent(QGraphicsSceneMouseEvent* event)
                 qDebug() << "right port has existing connections";
             }
 
-            // todo: check for cycle
+            // A back-edge or self-loop never renders: the nodes on the cycle
+            // wait on each other forever and progress never reaches Ready.
+            if (isConValid && feedsInto(rightPort->node, leftPort->node)) {
+                isConValid = false;
+                qDebug() << "connection would create a cycle";
+            }
 
             if (isConValid) {
                 // actually make connection

@@ -8,7 +8,30 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSet>
 #include <QUuid>
+
+// True if `node` is `target` or upstream of it in `texture`'s graph, i.e. a
+// connection from target's output into node would close a cycle.
+static bool feedsInto(const TextureProjectPtr& texture, const QString& node,
+                      const QString& target)
+{
+    QSet<QString> visited;
+    QStringList pending{target};
+    while (!pending.isEmpty()) {
+        QString current = pending.takeLast();
+        if (current == node)
+            return true;
+        if (visited.contains(current))
+            continue;
+        visited.insert(current);
+        for (const auto& con : texture->connections)
+            if (con && con->leftNode && con->rightNode &&
+                con->rightNode->id == current)
+                pending.append(con->leftNode->id);
+    }
+    return false;
+}
 
 TextureProjectPtr Project::loadTexture(QString path)
 {
@@ -101,6 +124,11 @@ TextureProjectPtr Project::loadTextureFromJson(QJsonObject json,
         // that was skipped, or a hand-edited/migrated file). Storing a
         // connection with a null endpoint would crash save/remove later.
         if (!leftNode || !rightNode)
+            continue;
+
+        // Older builds allowed cycles, which never finish rendering. Drop
+        // the connection that would close one.
+        if (feedsInto(texture, rightNodeId, leftNodeId))
             continue;
 
         QString rightNodeInputId = conObj["rightNodeInput"].toString();

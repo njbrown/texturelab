@@ -1,5 +1,6 @@
 #include "noderenderer.h"
 #include "../props.h"
+#include "../telemetry.h"
 
 #include <QDebug>
 #include <QOpenGLBuffer>
@@ -98,8 +99,12 @@ GLuint RenderResourceCache::getOrCompileShader(const QString& key,
                                                const QString& vertexSource,
                                                const QString& fragmentSource)
 {
-    if (shaderCache.contains(key))
-        return shaderCache[key]->programId();
+    // A cached nullptr records a shader that failed to build, so it isn't
+    // recompiled (and re-reported) on every render.
+    if (shaderCache.contains(key)) {
+        auto cached = shaderCache[key];
+        return cached ? cached->programId() : 0;
+    }
 
     auto program = new QOpenGLShaderProgram();
 
@@ -124,6 +129,19 @@ GLuint RenderResourceCache::getOrCompileShader(const QString& key,
         qDebug() << program->log();
     }
 
+    // Compile errors leave the program unlinked, so this covers both. Using an
+    // unlinked program is undefined; callers get 0 and NodeRenderContext
+    // skips drawing with it.
+    if (!program->isLinked()) {
+        Telemetry::captureException(
+            "custom node shader failed to build",
+            {{"shader", key.toStdString()},
+             {"log", program->log().left(2000).toStdString()}});
+        delete program;
+        shaderCache[key] = nullptr;
+        return 0;
+    }
+
     shaderCache[key] = program;
     return program->programId();
 }
@@ -133,8 +151,10 @@ GLuint RenderResourceCache::compileNodeShader(
     const QStringList& inputNames,
     const QList<QPair<QString, int>>& propTypes)
 {
-    if (shaderCache.contains(key))
-        return shaderCache[key]->programId();
+    if (shaderCache.contains(key)) {
+        auto cached = shaderCache[key];
+        return cached ? cached->programId() : 0;
+    }
 
     QString fSource = fragmentPreamble() + randomLib() + gradientLib() +
                       curveLib() +
@@ -456,6 +476,13 @@ ScopedTextureParams::~ScopedTextureParams()
 
 void NodeRenderContext::useShader(GLuint programId)
 {
+    // 0 = the shader failed to build. Unbind rather than leave the previous
+    // program active, and make drawQuad() a no-op.
+    shaderFailed = programId == 0;
+    if (shaderFailed) {
+        gl->glUseProgram(0);
+        return;
+    }
     gl->glUseProgram(programId);
     gl->glViewport(0, 0, textureWidth, textureHeight);
     gl->glUniform2f(gl->glGetUniformLocation(programId, "_textureSize"),
@@ -467,6 +494,8 @@ void NodeRenderContext::bindTexture(GLuint programId,
                                     const QString& uniformName,
                                     GLuint textureId, int unit)
 {
+    if (programId == 0)
+        return;
     gl->glActiveTexture(GL_TEXTURE0 + unit);
     gl->glBindTexture(GL_TEXTURE_2D, textureId);
     gl->glUniform1i(
@@ -477,6 +506,8 @@ void NodeRenderContext::bindTexture(GLuint programId,
 
 void NodeRenderContext::drawQuad()
 {
+    if (shaderFailed)
+        return;
     vao->bind();
     vbo->bind();
 

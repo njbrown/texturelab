@@ -176,7 +176,9 @@ void TextureRenderer::setup()
     format.setProfile(QSurfaceFormat::CoreProfile);
     format.setSamples(1);
     format.setSwapInterval(0);
-    format.setOption(QSurfaceFormat::DebugContext); // for debugging
+#ifdef TEXTURELAB_DEV_BUILD
+    format.setOption(QSurfaceFormat::DebugContext);
+#endif
 
     surface->setFormat(format);
     surface->create();
@@ -199,16 +201,17 @@ void TextureRenderer::setup()
         qFatal("Could not obtain required OpenGL context version");
     }
 
-    // setup debugging
+#ifdef TEXTURELAB_DEV_BUILD
+    // Debug context (and so this logger) only exists in dev builds.
     QOpenGLDebugLogger* logger = new QOpenGLDebugLogger();
-    logger->initialize();
-
-    QObject::connect(logger, &QOpenGLDebugLogger::messageLogged,
-                     [=](const QOpenGLDebugMessage& debugMessage) {
-                         qDebug() << debugMessage;
-                     });
-
-    logger->startLogging();
+    if (logger->initialize()) {
+        QObject::connect(logger, &QOpenGLDebugLogger::messageLogged,
+                         [](const QOpenGLDebugMessage& debugMessage) {
+                             qDebug() << debugMessage;
+                         });
+        logger->startLogging();
+    }
+#endif
 
     gl->initializeOpenGLFunctions();
 

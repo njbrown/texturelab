@@ -111,6 +111,9 @@ struct NodeRenderContext {
     QOpenGLVertexArrayObject* vao;
     QOpenGLBuffer* vbo;
 
+    // Set by useShader() when given a program that failed to build.
+    bool shaderFailed = false;
+
     // Bind shader, set viewport, set _textureSize and _seed uniforms
     void useShader(GLuint programId);
 
