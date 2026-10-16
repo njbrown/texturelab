@@ -15,6 +15,18 @@ RandomSeedChangeCommand::RandomSeedChangeCommand(TextureNodePtr node,
     , _newSeed(newSeed)
 {}
 
+// Consecutive ticks of the same node's seed slider are one undo step.
+bool RandomSeedChangeCommand::mergeWith(const QUndoCommand* other)
+{
+    auto* cmd = static_cast<const RandomSeedChangeCommand*>(other);
+    if (cmd->_nodeId != _nodeId ||
+        !UndoMerge::withinWindow(_editedAt, cmd->_editedAt))
+        return false;
+    _newSeed = cmd->_newSeed;
+    _editedAt = cmd->_editedAt;
+    return true;
+}
+
 void RandomSeedChangeCommand::redo()
 {
     if (_firstRedo) {

@@ -21,9 +21,11 @@ int ProjectSettingCommand::id() const
 bool ProjectSettingCommand::mergeWith(const QUndoCommand* other)
 {
     auto* cmd = static_cast<const ProjectSettingCommand*>(other);
-    if (cmd->_setting != _setting)
+    if (cmd->_setting != _setting ||
+        !UndoMerge::withinWindow(_editedAt, cmd->_editedAt))
         return false;
     _newValue = cmd->_newValue;
+    _editedAt = cmd->_editedAt;
     return true;
 }
 

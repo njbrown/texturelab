@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../models.h"
+#include "undocommandids.h"
 #include <QUndoCommand>
 
 class TextureRenderer;
@@ -13,6 +14,9 @@ public:
                             long oldSeed,
                             long newSeed);
 
+    int id() const override { return UndoCommandId::NodeSeed; }
+    bool mergeWith(const QUndoCommand* other) override;
+
     void redo() override;
     void undo() override;
 
@@ -24,4 +28,5 @@ private:
     TextureRenderer* _renderer;
     long _oldSeed, _newSeed;
     bool _firstRedo = true;
+    qint64 _editedAt = UndoMerge::now();
 };

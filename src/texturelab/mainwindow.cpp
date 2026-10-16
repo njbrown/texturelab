@@ -514,9 +514,6 @@ void MainWindow::setupMenus()
     connect(recentFilesMenu, &QMenu::aboutToShow, this,
             &MainWindow::updateRecentFilesMenu);
 
-    fileMenu->addSeparator();
-    fileMenu->addAction("Edit", []() {});
-
     auto editMenu = this->menuBar()->addMenu("Edit");
     auto undoAction = undoStack->createUndoAction(this, tr("Undo"));
     undoAction->setShortcut(QKeySequence::Undo);
@@ -524,6 +521,12 @@ void MainWindow::setupMenus()
     auto redoAction = undoStack->createRedoAction(this, tr("Redo"));
     redoAction->setShortcut(QKeySequence::Redo);
     editMenu->addAction(redoAction);
+    // Connected after createUndo/RedoAction's own connection, so this runs
+    // once the stack has moved.
+    connect(undoAction, &QAction::triggered, this,
+            [this]() { propWidget->refreshFromModel(); });
+    connect(redoAction, &QAction::triggered, this,
+            [this]() { propWidget->refreshFromModel(); });
     editMenu->addSeparator();
 
     // The graph owns these — their shortcuts are scoped to it, so Ctrl+C in a
@@ -636,14 +639,20 @@ void MainWindow::setupToolbar()
     // to avoid an ambiguous-shortcut clash.
     auto undoAction = new QAction(themedToolIcon(":/icons/undo.svg"), "Undo", this);
     undoAction->setEnabled(undoStack->canUndo());
-    connect(undoAction, &QAction::triggered, undoStack, &QUndoStack::undo);
+    connect(undoAction, &QAction::triggered, this, [this]() {
+        undoStack->undo();
+        propWidget->refreshFromModel();
+    });
     connect(undoStack, &QUndoStack::canUndoChanged, undoAction,
             &QAction::setEnabled);
     toolBar->addAction(undoAction);
 
     auto redoAction = new QAction(themedToolIcon(":/icons/redo.svg"), "Redo", this);
     redoAction->setEnabled(undoStack->canRedo());
-    connect(redoAction, &QAction::triggered, undoStack, &QUndoStack::redo);
+    connect(redoAction, &QAction::triggered, this, [this]() {
+        undoStack->redo();
+        propWidget->refreshFromModel();
+    });
     connect(undoStack, &QUndoStack::canRedoChanged, redoAction,
             &QAction::setEnabled);
     toolBar->addAction(redoAction);
@@ -1107,6 +1116,10 @@ void MainWindow::showExportDialog()
 {
     if (!this->exportDialog) {
         this->exportDialog = new ExportDialog(this);
+        // Export settings are saved in the file but aren't undoable; make
+        // sure closing still prompts.
+        connect(this->exportDialog, &ExportDialog::settingsChanged, this,
+                [this]() { undoStack->resetClean(); });
     }
 
     if (this->project) {
@@ -1137,8 +1150,9 @@ void MainWindow::directExport()
             return;
         }
 
-        // Save destination to project
+        // Save destination to project (saved in the file, so mark dirty)
         this->project->exportDestination = dir;
+        undoStack->resetClean();
 
         // Also update dialog if it exists
         if (this->exportDialog) {

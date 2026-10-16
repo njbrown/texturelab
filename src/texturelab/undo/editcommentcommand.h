@@ -32,4 +32,5 @@ private:
     QString _commentId;
     QString _oldText, _newText;
     bool _firstRedo = true;
+    qint64 _editedAt = UndoMerge::now();
 };

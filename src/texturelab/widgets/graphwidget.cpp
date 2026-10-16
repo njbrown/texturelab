@@ -183,11 +183,12 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
             emit commentSelectionChanged(CommentPtr(nullptr));
         });
 
-    connect(graph, &nodegraph::NodeGraph::itemsMoveFinished,
-            [=](QMap<QString, QPointF> oldPos, QMap<QString, QPointF> newPos) {
+    connect(graph, &nodegraph::NodeGraph::layoutChanged,
+            [=](const nodegraph::LayoutSnapshot& before,
+                const nodegraph::LayoutSnapshot& after) {
                 if (undoStack)
                     undoStack->push(
-                        new MoveItemsCommand(project, scene, oldPos, newPos));
+                        new MoveItemsCommand(project, scene, before, after));
             });
 
     connect(graph, &nodegraph::NodeGraph::frameSelectionChanged,

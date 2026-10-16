@@ -19,10 +19,12 @@ EditFrameCommand::EditFrameCommand(FramePtr frame,
 bool EditFrameCommand::mergeWith(const QUndoCommand* other)
 {
     auto* cmd = static_cast<const EditFrameCommand*>(other);
-    if (cmd->_frameId != _frameId)
+    if (cmd->_frameId != _frameId ||
+        !UndoMerge::withinWindow(_editedAt, cmd->_editedAt))
         return false;
     _newTitle = cmd->_newTitle;
     _newColor = cmd->_newColor;
+    _editedAt = cmd->_editedAt;
     return true;
 }
 

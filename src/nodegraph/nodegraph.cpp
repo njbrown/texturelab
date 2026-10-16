@@ -196,6 +196,20 @@ void NodeGraph::mouseMoveEvent(QMouseEvent* event)
     QGraphicsView::mouseMoveEvent(event);
 }
 
+LayoutSnapshot NodeGraph::captureLayout() const
+{
+    LayoutSnapshot layout;
+    for (auto& node : _scene->nodes)
+        layout.nodes[node->id()] = node->getCenter();
+    for (auto& frame : _scene->frames) {
+        layout.frames[frame->id()] = frame->pos();
+        layout.frameSizes[frame->id()] = frame->frameRect().size();
+    }
+    for (auto& comment : _scene->comments)
+        layout.comments[comment->id()] = comment->pos();
+    return layout;
+}
+
 // True if `node` is `target` or is upstream of it, i.e. connecting target's
 // output into one of node's inputs would close a cycle.
 static bool feedsInto(const NodePtr& node, const NodePtr& target)
@@ -344,10 +358,8 @@ bool NodeGraph::sceneMousePressEvent(QGraphicsSceneMouseEvent* event)
         auto scenePos = event->scenePos();
         auto rawPort = this->getPortAtScenePos(scenePos.x(), scenePos.y());
         if (!rawPort) {
-            // Record node positions for move-tracking (no port drag starting)
-            _preDragPositions.clear();
-            for (auto& node : _scene->nodes)
-                _preDragPositions[node->id()] = node->getCenter();
+            // Record layout for move-tracking (no port drag starting)
+            _preDragLayout = captureLayout();
             _trackingMove = true;
         }
         if (rawPort) {
@@ -530,21 +542,30 @@ bool NodeGraph::sceneMouseReleaseEvent(QGraphicsSceneMouseEvent* event)
         activeCon.clear();
     }
 
-    // Emit move command if nodes changed position
+    // Emit a layout change if anything moved or was resized
     if (_trackingMove && !activeCon) {
-        QMap<QString, QPointF> newPositions;
-        bool moved = false;
-        for (auto it = _preDragPositions.begin(); it != _preDragPositions.end(); ++it) {
-            auto node = _scene->nodes.value(it.key());
-            if (!node)
-                continue;
-            QPointF newPos = node->getCenter();
-            newPositions[it.key()] = newPos;
-            if (newPos != it.value())
-                moved = true;
-        }
-        if (moved)
-            emit itemsMoveFinished(_preDragPositions, newPositions);
+        const LayoutSnapshot after = captureLayout();
+        LayoutSnapshot oldChanged, newChanged;
+        auto diff = [](const auto& before, const auto& now, auto& oldOut,
+                       auto& newOut) {
+            for (auto it = before.begin(); it != before.end(); ++it) {
+                auto found = now.find(it.key());
+                if (found != now.end() && found.value() != it.value()) {
+                    oldOut[it.key()] = it.value();
+                    newOut[it.key()] = found.value();
+                }
+            }
+        };
+        diff(_preDragLayout.nodes, after.nodes, oldChanged.nodes,
+             newChanged.nodes);
+        diff(_preDragLayout.frames, after.frames, oldChanged.frames,
+             newChanged.frames);
+        diff(_preDragLayout.frameSizes, after.frameSizes,
+             oldChanged.frameSizes, newChanged.frameSizes);
+        diff(_preDragLayout.comments, after.comments, oldChanged.comments,
+             newChanged.comments);
+        if (!newChanged.isEmpty())
+            emit layoutChanged(oldChanged, newChanged);
     }
     _trackingMove = false;
 

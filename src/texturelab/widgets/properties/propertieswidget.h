@@ -64,6 +64,12 @@ public:
     void setSelectedComment(const CommentPtr& comment);
     void clearSelection();
 
+    // Rebuilds the panel for the current selection, re-resolving it by id.
+    // Called after undo/redo, which change values (and can replace the node
+    // object) behind the widgets' backs — e.g. the curve editor keeps its own
+    // copy of the curve and would re-apply an undone edit on the next touch.
+    void refreshFromModel();
+
     void setProject(const TextureProjectPtr& project);
     void setScene(NgScenePtr ngScene);
     void setUndoStack(QUndoStack* stack);

@@ -26,4 +26,5 @@ private:
     int _oldValue, _newValue;
     std::function<void(int)> _apply;
     bool _firstRedo = true;
+    qint64 _editedAt = UndoMerge::now();
 };

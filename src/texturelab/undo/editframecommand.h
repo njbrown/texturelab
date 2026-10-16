@@ -35,4 +35,5 @@ private:
     QString _oldTitle, _newTitle;
     QColor _oldColor, _newColor;
     bool _firstRedo = true;
+    qint64 _editedAt = UndoMerge::now();
 };

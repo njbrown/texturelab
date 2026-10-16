@@ -125,6 +125,13 @@ QWidget* PropertiesWidget::createPropWidget(Prop* prop,
         auto widget = new ColorPropWidget();
         widget->setProp((ColorProp*)prop);
         propWidgets.append(widget);
+        // Picker preview: render it, but the baseline stays at the pre-pick
+        // value so the commit below records one step from there.
+        connect(widget, &ColorPropWidget::valuePreviewed, [=](const QColor& value) {
+            node->setProp(prop->name, value);
+            project->markNodeAsDirty(node);
+            emit propertyUpdated(prop->name, value);
+        });
         connect(widget, &ColorPropWidget::valueChanged, [=](const QColor& value) {
             QVariant oldVal = takePropBaseline(prop, value);
             node->setProp(prop->name, value);
@@ -138,6 +145,12 @@ QWidget* PropertiesWidget::createPropWidget(Prop* prop,
         auto widget = new GradientPropWidget();
         widget->setProp((GradientProp*)prop);
         propWidgets.append(widget);
+        connect(widget, &GradientPropWidget::valuePreviewed, [=](const Gradient& value) {
+            QVariant newVal = QVariant::fromValue(value);
+            node->setProp(prop->name, newVal);
+            project->markNodeAsDirty(node);
+            emit propertyUpdated(prop->name, newVal);
+        });
         connect(widget, &GradientPropWidget::valueChanged, [=](const Gradient& value) {
             QVariant newVal = QVariant::fromValue(value);
             QVariant oldVal = takePropBaseline(prop, newVal);
@@ -320,10 +333,17 @@ void PropertiesWidget::setSelectedFrame(const FramePtr& frame)
     colorWidget->setProp(colorProp);
     propWidgets.append(colorWidget);
 
+    // Color before the current pick; previews change frame->color live.
+    auto colorBaseline = std::make_shared<QColor>(frame->color);
+    connect(colorWidget, &ColorPropWidget::valuePreviewed, [=](const QColor& color) {
+        frame->color = color;
+        emit framePropertyChanged(frame);
+    });
     connect(colorWidget, &ColorPropWidget::valueChanged, [=](const QColor& color) {
         if (undoStack) {
             QString oldTitle = frame->text;
-            QColor  oldColor = frame->color;
+            QColor  oldColor = *colorBaseline;
+            *colorBaseline = color;
             frame->color = color;
             emit framePropertyChanged(frame);
             undoStack->push(new EditFrameCommand(
@@ -375,6 +395,34 @@ void PropertiesWidget::setSelectedComment(const CommentPtr& comment)
     layout->addWidget(textWidget);
 
     layout->addStretch(1);
+}
+
+void PropertiesWidget::refreshFromModel()
+{
+    if (!project)
+        return;
+
+    if (selectedNode) {
+        auto node = project->getNodeById(selectedNode->id);
+        if (node)
+            setSelectedNode(node);
+        else
+            clearSelection();
+    }
+    else if (selectedFrame) {
+        auto frame = project->frames.value(selectedFrame->id);
+        if (frame)
+            setSelectedFrame(frame);
+        else
+            clearSelection();
+    }
+    else if (selectedComment) {
+        auto comment = project->comments.value(selectedComment->id);
+        if (comment)
+            setSelectedComment(comment);
+        else
+            clearSelection();
+    }
 }
 
 void PropertiesWidget::clearSelection()

@@ -19,9 +19,11 @@ EditCommentCommand::EditCommentCommand(CommentPtr comment,
 bool EditCommentCommand::mergeWith(const QUndoCommand* other)
 {
     auto* cmd = static_cast<const EditCommentCommand*>(other);
-    if (cmd->_commentId != _commentId)
+    if (cmd->_commentId != _commentId ||
+        !UndoMerge::withinWindow(_editedAt, cmd->_editedAt))
         return false;
     _newText = cmd->_newText;
+    _editedAt = cmd->_editedAt;
     return true;
 }
 

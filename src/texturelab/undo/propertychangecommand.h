@@ -37,4 +37,5 @@ private:
     QVariant _oldValue;
     QVariant _newValue;
     bool _firstRedo = true;
+    qint64 _editedAt = UndoMerge::now();
 };

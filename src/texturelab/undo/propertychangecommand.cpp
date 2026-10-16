@@ -20,9 +20,11 @@ PropertyChangeCommand::PropertyChangeCommand(TextureNodePtr node,
 bool PropertyChangeCommand::mergeWith(const QUndoCommand* other)
 {
     auto* cmd = static_cast<const PropertyChangeCommand*>(other);
-    if (cmd->_nodeId != _nodeId || cmd->_propName != _propName)
+    if (cmd->_nodeId != _nodeId || cmd->_propName != _propName ||
+        !UndoMerge::withinWindow(_editedAt, cmd->_editedAt))
         return false;
     _newValue = cmd->_newValue;
+    _editedAt = cmd->_editedAt;
     return true;
 }
 
