@@ -112,7 +112,7 @@ jobs:
             libcurl4-openssl-dev xvfb
 
       - name: Configure
-        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}" -DTEXTURELAB_SENTRY_ENVIRONMENT=production
 
       - name: Build
         run: cmake --build build --target texturelab --parallel $(nproc)
@@ -185,7 +185,7 @@ jobs:
           cache: true
 
       - name: Configure
-        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}" -DTEXTURELAB_SENTRY_ENVIRONMENT=production
 
       - name: Build
         run: cmake --build build --target texturelab --config Release --parallel
@@ -295,7 +295,7 @@ jobs:
           cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
             -DCMAKE_OSX_SYSROOT="$(xcrun --show-sdk-path)" \
-            -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
+            -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}" -DTEXTURELAB_SENTRY_ENVIRONMENT=production
 
       - name: Build
         run: cmake --build build --target texturelab --parallel $(sysctl -n hw.ncpu)
@@ -397,6 +397,12 @@ jobs:
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
             # Re-run: refresh the assets on the existing release, keep its notes.
+            # Only while it's still a draft — replacing assets people may already
+            # have downloaded (and whose checksums were published) is not allowed.
+            if [ "$(gh release view "$TAG" --json isDraft -q .isDraft)" != "true" ]; then
+              echo "::error::Release $TAG is already published; refusing to replace its assets. Bump the version instead."
+              exit 1
+            fi
             gh release upload "$TAG" dist/* --clobber
           else
             FLAGS=(--draft --verify-tag --generate-notes --title "TextureLab ${TAG}")

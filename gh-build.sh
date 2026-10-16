@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-source .env
+if [ -f .env ]; then source .env; fi
 
 # Force gh to use the keyring login (which has repo scope). gh prefers the
 # GH_TOKEN / GITHUB_TOKEN env vars over keyring auth, and the token exported
@@ -10,7 +10,15 @@ unset GH_TOKEN GITHUB_TOKEN
 
 REPO="njbrown/texturelab"
 WORKFLOW="build.yml"
-BRANCH="${1:-$(git rev-parse --abbrev-ref HEAD)}"
+WATCH=false
+BRANCH=""
+for arg in "$@"; do
+    case "$arg" in
+        --watch) WATCH=true ;;
+        *) BRANCH="$arg" ;;
+    esac
+done
+BRANCH="${BRANCH:-$(git rev-parse --abbrev-ref HEAD)}"
 
 echo "Triggering build for branch: $BRANCH"
 gh workflow run "$WORKFLOW" --repo "$REPO" --ref "$BRANCH"
@@ -23,6 +31,6 @@ RUN_ID=$(gh run list --repo "$REPO" --workflow "$WORKFLOW" --branch "$BRANCH" --
 echo "Run ID: $RUN_ID"
 echo "https://github.com/$REPO/actions/runs/$RUN_ID"
 
-if [[ "${2:-}" == "--watch" || "${1:-}" == "--watch" ]]; then
+if [ "$WATCH" = true ]; then
     gh run watch "$RUN_ID" --repo "$REPO"
 fi

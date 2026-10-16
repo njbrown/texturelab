@@ -42,6 +42,8 @@ fi
 find "$APP/Contents/PlugIns/sqldrivers" -name 'libqsql*.dylib' \
     ! -name 'libqsqlite.dylib' -delete 2>/dev/null || true
 cp LICENSE "$APP/Contents/Resources/"
+# Third-party notices + licence texts (Qt LGPL, ADS, sentry-native, Crashpad, ...).
+cp -R packaging/licenses "$APP/Contents/Resources/licenses"
 
 if [ -n "${MAC_SIGN_ID:-}" ]; then
     # Hardened runtime + a secure timestamp are required for notarization.

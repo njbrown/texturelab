@@ -78,7 +78,7 @@ jobs:
             libcurl4-openssl-dev
 
       - name: Configure CMake
-        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}" -DTEXTURELAB_SENTRY_ENVIRONMENT=nightly -DTEXTURELAB_CRASH_TEST_HOOK=${{ github.event.inputs.sentry_crash_test == 'true' && 'ON' || 'OFF' }}
 
       - name: Build
         run: cmake --build build --target texturelab --parallel $(nproc)
@@ -185,7 +185,7 @@ jobs:
           cache: true
 
       - name: Configure CMake
-        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DSENTRY_BACKEND=crashpad -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}" -DTEXTURELAB_SENTRY_ENVIRONMENT=nightly -DTEXTURELAB_CRASH_TEST_HOOK=${{ github.event.inputs.sentry_crash_test == 'true' && 'ON' || 'OFF' }}
 
       - name: Build
         run: cmake --build build --target texturelab --config Release --parallel
@@ -286,7 +286,7 @@ jobs:
           # and configure fails. Point it explicitly at the SDK, which ships them.
           SDKROOT=$(xcrun --show-sdk-path)
           echo "Using SDK: $SDKROOT"
-          cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_OSX_SYSROOT="$SDKROOT" -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
+          cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_OSX_SYSROOT="$SDKROOT" -DTEXTURELAB_SENTRY_DSN="${{ secrets.SENTRY_DSN }}" -DTEXTURELAB_SENTRY_ENVIRONMENT=nightly -DTEXTURELAB_CRASH_TEST_HOOK=${{ github.event.inputs.sentry_crash_test == 'true' && 'ON' || 'OFF' }}
 
       - name: Build
         run: cmake --build build --target texturelab --parallel $(sysctl -n hw.ncpu)
@@ -321,7 +321,9 @@ jobs:
 
   deploy:
     needs: [version, build-linux, build-windows, build-macos]
-    if: always()
+    # PR builds (including forks) must not land in the public nightlies bucket
+    # or be announced on Discord; only pushes to master and manual runs do.
+    if: always() && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     env:
       TAG: ${{ needs.version.outputs.tag }}

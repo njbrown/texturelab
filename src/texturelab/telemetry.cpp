@@ -59,11 +59,12 @@ sentry_value_t toSentryObject(const Telemetry::Fields& fields)
 
 void Telemetry::init(bool enabled)
 {
-    // TEXTURELAB_SENTRY_DSN is injected at compile time from CMake.
-    // Fall back to the hardcoded DSN for local dev builds.
+    // TEXTURELAB_SENTRY_DSN is injected at compile time from CMake. Local and
+    // fork builds have none and send nothing; they must not report into the
+    // production project. Pass -DTEXTURELAB_SENTRY_DSN=... to test locally.
     const char* dsn = TEXTURELAB_SENTRY_DSN;
     if (!dsn || dsn[0] == '\0')
-        dsn = "https://93029fba3adb2d1782affd712d013a2b@o216182.ingest.us.sentry.io/4511628329680896";
+        enabled = false;
     if (!enabled) {
         g_enabled = false;
         return;
@@ -73,6 +74,7 @@ void Telemetry::init(bool enabled)
 
     sentry_options_set_dsn(options, dsn);
     sentry_options_set_release(options, "texturelab@" TEXTURELAB_VERSION "+" TEXTURELAB_BUILD_HASH);
+    sentry_options_set_environment(options, TEXTURELAB_SENTRY_ENVIRONMENT);
     sentry_options_set_debug(options, 0);
 
     // Writable per-user directory for Crashpad's crash database

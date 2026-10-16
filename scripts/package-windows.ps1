@@ -62,6 +62,8 @@ if ($Stage -eq "Deploy" -or $Stage -eq "Both") {
     Copy-Item $handler $dist
 
     Copy-Item LICENSE "$dist\LICENSE.txt"
+    # Third-party notices + licence texts (Qt LGPL, ADS, sentry-native, Crashpad, ...).
+    Copy-Item packaging\licenses "$dist\licenses" -Recurse
     Write-Host "deployed: $dist"
 }
 

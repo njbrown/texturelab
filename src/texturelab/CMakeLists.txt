@@ -8,6 +8,7 @@ project(texturelab VERSION 0.4.0 LANGUAGES CXX)
 # (TEXTURELAB_VERSION compile def below) and is reconstructed from these same two
 # lines by the build workflow (.github/workflows/build.yml) for artifact names.
 set(TEXTURELAB_VERSION_SUFFIX "-beta")
+set(TEXTURELAB_FULL_VERSION "${PROJECT_VERSION}${TEXTURELAB_VERSION_SUFFIX}")
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -272,8 +273,9 @@ set(PROJECT_RESOURCES
 # main.cpp (QApplication::setWindowIcon); these give the built artifact its icon.
 set(APP_ICON_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../icons)
 if(WIN32)
-    # Embedded into the .exe via a resource script.
-    list(APPEND PROJECT_RESOURCES ./texturelab.rc)
+    # Embedded into the .exe via a resource script (icon + VERSIONINFO).
+    configure_file(texturelab.rc.in ${CMAKE_CURRENT_BINARY_DIR}/texturelab.rc @ONLY)
+    list(APPEND PROJECT_RESOURCES ${CMAKE_CURRENT_BINARY_DIR}/texturelab.rc)
 elseif(APPLE)
     # Copied into TextureLab.app/Contents/Resources and named in Info.plist
     # through MACOSX_BUNDLE_ICON_FILE below.
@@ -323,9 +325,24 @@ if(NOT DEFINED TEXTURELAB_SENTRY_DSN)
     set(TEXTURELAB_SENTRY_DSN "")
 endif()
 
+# Sentry environment: release.yml builds are "production", build.yml CI builds
+# pass "nightly", anything else defaults to "development".
+if(NOT DEFINED TEXTURELAB_SENTRY_ENVIRONMENT)
+    set(TEXTURELAB_SENTRY_ENVIRONMENT "development")
+endif()
+
+# Compiles in the --sentry-crash-test flag (deliberate null deref to verify
+# symbolication). Only build.yml's sentry_crash_test dispatch turns this on;
+# it must never be in a shipped binary.
+option(TEXTURELAB_CRASH_TEST_HOOK "Compile in the --sentry-crash-test flag" OFF)
+if(TEXTURELAB_CRASH_TEST_HOOK)
+    target_compile_definitions(texturelab PRIVATE TEXTURELAB_CRASH_TEST_HOOK)
+endif()
+
 target_compile_definitions(texturelab PRIVATE
-    TEXTURELAB_VERSION="${PROJECT_VERSION}${TEXTURELAB_VERSION_SUFFIX}"
+    TEXTURELAB_VERSION="${TEXTURELAB_FULL_VERSION}"
     TEXTURELAB_SENTRY_DSN="${TEXTURELAB_SENTRY_DSN}"
+    TEXTURELAB_SENTRY_ENVIRONMENT="${TEXTURELAB_SENTRY_ENVIRONMENT}"
     # Absolute path to the theme source files, so `--dev-theme` can live-reload
     # colors/QSS from disk without a rebuild. Dev convenience only.
     TEXTURELAB_SOURCE_RESOURCES="${CMAKE_SOURCE_DIR}/resources"
@@ -370,7 +387,7 @@ set_target_properties(texturelab PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER io.texturelab.app
     MACOSX_BUNDLE_ICON_FILE logo.icns
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
-    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
 )

@@ -52,6 +52,8 @@ HANDLER=$(ls "$BUILD/src/texturelab/crashpad_handler" \
 [ -n "$HANDLER" ] || { echo "error: crashpad_handler not found in $BUILD" >&2; exit 1; }
 cp "$HANDLER" "$APPDIR/usr/bin/"
 cp LICENSE "$APPDIR/usr/share/doc/texturelab/"
+# Third-party notices + licence texts (Qt LGPL, ADS, sentry-native, Crashpad, ...).
+cp -R packaging/licenses "$APPDIR/usr/share/doc/texturelab/licenses"
 
 # The icon's basename must match the desktop entry's Icon= key (texturelab).
 cp packaging/linux/texturelab.desktop "$STAGE/texturelab.desktop"
