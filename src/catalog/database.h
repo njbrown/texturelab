@@ -71,12 +71,21 @@ public:
     bool inTransaction() const { return transactionActive; }
 
     QString lastError() const { return errorText; }
-    void setError(const QString& text) { errorText = text; }
+    void setError(const QString& text)
+    {
+        errorText = text;
+        errorCode = 0;
+    }
+
+    // The last failure was SQLITE_CORRUPT (11) or SQLITE_NOTADB (26): the
+    // file itself is unusable, as opposed to busy, locked or unreadable.
+    bool lastErrorIsCorruption() const { return errorCode == 11 || errorCode == 26; }
 
 private:
     bool applyPragmas(const Options& options);
 
     QString connectionName;
+    int errorCode = 0; // SQLite result code of the last failure
     QString dbPath;
     QString errorText;
     bool opened = false;

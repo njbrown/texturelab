@@ -11,6 +11,7 @@
 #include <QThread>
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 // Hints that a dedicated GPU should be used whenever possible
@@ -218,7 +219,13 @@ int main(int argc, char* argv[])
 
     // Close the catalog databases here, while Qt's SQL layer is still alive.
     // Leaving it to static destruction crashes on exit (see instance()).
-    CatalogService::instance().shutdown();
+    if (!CatalogService::instance().shutdown()) {
+        // A reconcile is stuck (e.g. a stat on a dead network mount). Normal
+        // teardown would block in QThreadPool's destructor or race it, so
+        // leave now; the OS reclaims everything.
+        Telemetry::close();
+        std::_Exit(ret);
+    }
 
     Telemetry::close();
     return ret;

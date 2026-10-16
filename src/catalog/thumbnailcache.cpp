@@ -42,8 +42,17 @@ bool ThumbnailCache::open(const QString& path)
 {
     close();
 
-    if (!db.open(path, cacheOptions()))
-        return recreate(path);
+    // Only a file that isn't a usable SQLite database is worth deleting. A
+    // failure to open or read for any other reason (locked by another
+    // instance, permissions, a full disk) leaves the file alone and runs this
+    // session without a cache — it may be someone else's live database.
+    if (!db.open(path, cacheOptions())) {
+        if (db.lastErrorIsCorruption()) {
+            qInfo("catalog: thumbnail cache is corrupt; rebuilding %s", qPrintable(path));
+            return recreate(path);
+        }
+        return false;
+    }
 
     const bool fresh = db.scalar(
                            QStringLiteral("SELECT count(*) FROM sqlite_master WHERE type='table'"))
@@ -52,7 +61,18 @@ bool ThumbnailCache::open(const QString& path)
     if (fresh)
         return createSchema();
 
-    if (readSchemaVersion() != SchemaVersion) {
+    const int version = readSchemaVersion();
+    if (version == SchemaReadCorrupt) {
+        qInfo("catalog: thumbnail cache is corrupt; rebuilding %s", qPrintable(path));
+        return recreate(path);
+    }
+    if (version == SchemaReadFailed) {
+        qWarning("catalog: could not read thumbnail cache %s; running without it",
+                 qPrintable(path));
+        db.close();
+        return false;
+    }
+    if (version != SchemaVersion) {
         qInfo("catalog: thumbnail cache schema mismatch; rebuilding %s", qPrintable(path));
         return recreate(path);
     }
@@ -72,8 +92,13 @@ bool ThumbnailCache::recreate(const QString& path)
     QFile::remove(path + QStringLiteral("-wal"));
     QFile::remove(path + QStringLiteral("-shm"));
 
-    if (!db.open(path, cacheOptions()))
+    if (!db.open(path, cacheOptions())) {
+        if (db.lastErrorIsCorruption()) {
+            qInfo("catalog: thumbnail cache is corrupt; rebuilding %s", qPrintable(path));
+            return recreate(path);
+        }
         return false;
+    }
 
     return createSchema();
 }
@@ -108,8 +133,15 @@ bool ThumbnailCache::createSchema()
 int ThumbnailCache::readSchemaVersion()
 {
     QSqlQuery query = db.prepare(QStringLiteral("SELECT v FROM meta WHERE k = 'schema_version'"));
-    if (!query.exec() || !query.next())
-        return 0;
+    if (!query.exec()) {
+        // SQLITE_CORRUPT (11) / SQLITE_NOTADB (26): the file itself is bad.
+        // Anything else (SQLITE_BUSY, SQLITE_LOCKED, I/O) is not ours to fix
+        // by deleting the file.
+        const int code = query.lastError().nativeErrorCode().toInt();
+        return (code == 11 || code == 26) ? SchemaReadCorrupt : SchemaReadFailed;
+    }
+    if (!query.next())
+        return 0; // tables but no version row: an old/foreign schema
 
     return query.value(0).toInt();
 }
@@ -146,6 +178,10 @@ bool ThumbnailCache::putBatch(const QVector<Entry>& entries, qint64 whenMs)
 
         // created_at is preserved on conflict so the row keeps its original
         // provenance; last_used moves forward because we just produced it.
+        // An Open capture only fills an empty slot or refreshes another Open
+        // capture: it must not replace the Save one, which shows the material
+        // as the user framed it when saving. (Edits made outside the app are
+        // caught by size/mtime checks, which drop the row first.)
         QSqlQuery query = db.prepare(QStringLiteral(R"(
             INSERT INTO thumb (texture_id, mesh, hdri, size, format, source,
                                bytes, created_at, last_used)
@@ -154,6 +190,7 @@ bool ThumbnailCache::putBatch(const QVector<Entry>& entries, qint64 whenMs)
                 source    = excluded.source,
                 bytes     = excluded.bytes,
                 last_used = excluded.last_used
+            WHERE excluded.source = 'save' OR thumb.source = 'open'
         )"));
 
         query.addBindValue(entry.key.textureId);

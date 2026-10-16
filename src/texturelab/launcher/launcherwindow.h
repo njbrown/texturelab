@@ -38,6 +38,10 @@ public:
     // dot. Empty when nothing is loaded.
     void setOpenPath(const QString& path);
 
+    // While set, closing the launcher closes it instead of returning to the
+    // editor. MainWindow sets it when the application is quitting.
+    void setQuitting(bool on) { quitting = on; }
+
     // True once a document exists behind the launcher, which is what makes Esc
     // and the close button meaningful — on first launch there is nowhere to go.
     void setHasDocument(bool hasDocument);
@@ -118,6 +122,7 @@ private:
     QToolButton* starredTab = nullptr;
 
     bool hasDocument = false;
+    bool quitting = false;
     bool gridMode = true;
 
     // The prompt is deferred a tick so the launcher paints behind it, which

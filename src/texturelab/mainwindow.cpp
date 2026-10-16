@@ -64,6 +64,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 {
     resize(1280, 720);
     setAcceptDrops(true);
+    qApp->installEventFilter(this); // for QEvent::Quit, see eventFilter()
 
     undoStack = new QUndoStack(this);
     connect(undoStack, &QUndoStack::cleanChanged, this,
@@ -385,6 +386,8 @@ void MainWindow::syncChannelLabelsToScene()
 
 void MainWindow::setProject(TextureProjectPtr project)
 {
+    catalogTextureId = -1;
+
     // Clear widget state from the old project
     this->view2DWidget->clearSelection();
     this->view3DWidget->viewer->clearTextures();
@@ -795,11 +798,11 @@ void MainWindow::captureLauncherThumbnail(int source)
     if (frame.isNull())
         return;
 
-    const catalog::TextureRecord rec = catalog.index().byPath(project->filePath);
-    if (!rec.isValid())
+    if (catalogTextureId < 0)
         return;
 
-    catalog.captureThumbnail(rec.id, frame, static_cast<catalog::ThumbSource>(source));
+    catalog.captureThumbnail(catalogTextureId, frame,
+                             static_cast<catalog::ThumbSource>(source));
 }
 
 void MainWindow::showLauncher()
@@ -821,6 +824,20 @@ void MainWindow::showLauncher()
         connect(launcher, &LauncherWindow::openPathRequested, this,
                 [this](const QString& path) {
                     const QString before = project ? project->filePath : QString();
+
+                    // The card for the document that's already open: go back
+                    // to it rather than reloading (which would drop its undo
+                    // history and unsaved changes behind a save prompt).
+                    if (!before.isEmpty() &&
+                        QFileInfo(before).absoluteFilePath() ==
+                            QFileInfo(path).absoluteFilePath()) {
+                        launcher->hide();
+                        showMaximized();
+                        raise();
+                        activateWindow();
+                        return;
+                    }
+
                     openProjectFromPath(path);
 
                     // openProjectFromPath bails out silently if the user
@@ -853,6 +870,12 @@ void MainWindow::showLauncher()
         });
     }
 
+    // Files may have moved, appeared or been edited since startup (PRD §6.2).
+    // No-op while one is already running; the launcher refreshes on
+    // catalogChanged when it finishes.
+    CatalogService::instance().reconcileAsync();
+
+    launcher->setQuitting(false);
     launcher->setHasDocument(project && !project->filePath.isEmpty());
     launcher->setOpenPath(project ? project->filePath : QString());
     launcher->show();
@@ -973,7 +996,7 @@ void MainWindow::openProjectFromPath(const QString& filePath)
 
     // The shared entry point for the Open dialog, the recent-files menu, and
     // drag-and-drop, so one hook here covers all three (LAUNCHER_PRD.md §6.1).
-    CatalogService::instance().recordOpened(project, filePath);
+    catalogTextureId = CatalogService::instance().recordOpened(project, filePath);
 
     // Can't grab yet: opening kicks off an asynchronous render and the viewport
     // is still showing the previous document (or nothing). Captured when
@@ -1048,7 +1071,9 @@ void MainWindow::upgradeCurrentProjectLibrary()
     newProject->name = this->project->name;
     newProject->filePath = this->project->filePath;
 
+    const qint64 textureId = catalogTextureId; // same file, same catalog row
     setProject(newProject);
+    catalogTextureId = textureId;
 
     // setProject() clears the undo stack, which leaves it clean; the file on
     // disk is still the old version, so make sure closing prompts to save.
@@ -1120,7 +1145,8 @@ bool MainWindow::saveProjectTo(const QString& filePath)
     undoStack->setClean();
     onCleanChanged(true); // name may have changed while already clean
     addToRecentFiles(project->filePath);
-    CatalogService::instance().recordSaved(project, project->filePath);
+    catalogTextureId =
+        CatalogService::instance().recordSaved(project, project->filePath);
     captureLauncherThumbnail(int(catalog::ThumbSource::Save));
     return true;
 }
@@ -1392,10 +1418,28 @@ bool MainWindow::promptSaveIfDirty()
 void MainWindow::closeEvent(QCloseEvent* event)
 {
     if (!promptSaveIfDirty()) {
+        // Quit cancelled from the save prompt: the launcher should go back to
+        // returning to the editor when closed.
+        if (launcher)
+            launcher->setQuitting(false);
         event->ignore();
         return;
     }
     event->accept();
+
+    // Closing the editor quits, even if the launcher is up; otherwise the
+    // launcher stays open, and closing it reopens the editor — no way out.
+    if (launcher) {
+        launcher->setQuitting(true);
+        launcher->close();
+    }
+}
+
+bool MainWindow::eventFilter(QObject* watched, QEvent* event)
+{
+    if (watched == qApp && event->type() == QEvent::Quit && launcher)
+        launcher->setQuitting(true);
+    return QMainWindow::eventFilter(watched, event);
 }
 
 MainWindow::~MainWindow()

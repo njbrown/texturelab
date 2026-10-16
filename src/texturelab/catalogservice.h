@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 #include "catalogindex.h"
 #include "thumbnailcache.h"
 
@@ -37,7 +39,13 @@ public:
 
     // Closes both databases while Qt is still alive. Must be called from main()
     // after the event loop returns — see the comment on instance().
-    void shutdown();
+    // Returns false if a reconcile is still running (stuck on a slow mount)
+    // after the timeout; the caller must then exit without running static or
+    // thread-pool destructors, which would block on or race with it.
+    bool shutdown();
+
+    // Polled by the reconcile task between files.
+    bool reconcileCancelled() const { return cancelReconcile; }
 
     static QString dataDir();
     static QString indexPath();
@@ -57,6 +65,12 @@ public:
     // both cache sizes. A null or degenerate image is ignored rather than
     // caching a blank card.
     void captureThumbnail(qint64 textureId, const QImage& frame, catalog::ThumbSource source);
+
+    // Textures currently flagged missing (file not found at last reconcile).
+    int missingCount() const;
+    // Forgets every missing texture and drops its cached thumbnails.
+    // Returns how many were removed.
+    int removeAllMissing();
 
     // Forgets a texture and its thumbnails. Never touches the file on disk.
     void forget(qint64 textureId);
@@ -93,4 +107,5 @@ private:
     catalog::ThumbnailCache thumbCache;
     bool ready = false;
     bool reconcileRunning = false;
+    std::atomic<bool> cancelReconcile{false};
 };

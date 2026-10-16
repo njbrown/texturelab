@@ -332,8 +332,26 @@ QWidget* LauncherWindow::buildTopBar()
         CatalogService& catalog = CatalogService::instance();
         if (!catalog.isReady())
             return;
-        const int removed = catalog.index().removeAllMissing();
-        if (removed > 0)
+
+        const int count = catalog.missingCount();
+        if (count == 0) {
+            QMessageBox::information(this, tr("Clear Missing Textures"),
+                                     tr("No textures are missing."));
+            return;
+        }
+        // "Missing" can just mean an unplugged drive or an unmounted share;
+        // clearing loses their stars and history, so ask.
+        const auto answer = QMessageBox::question(
+            this, tr("Clear Missing Textures"),
+            tr("Remove %n texture(s) whose files can't be found from the launcher?\n\n"
+               "If they're on a drive or network share that isn't connected right "
+               "now, they'll lose their stars and history.",
+               nullptr, count),
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+        if (answer != QMessageBox::Yes)
+            return;
+
+        if (catalog.removeAllMissing() > 0)
             refresh();
     });
     gear->setMenu(menu);
@@ -972,7 +990,9 @@ void LauncherWindow::keyPressEvent(QKeyEvent* event)
 
 void LauncherWindow::closeEvent(QCloseEvent* event)
 {
-    if (!hasDocument) {
+    // Quitting (Cmd+Q, the app closing all windows, or the editor window
+    // being closed): don't bounce back to the editor, which would cancel it.
+    if (!hasDocument || quitting) {
         // The window manager's close button on first launch means "quit", not
         // "show me the empty editor behind this".
         event->accept();

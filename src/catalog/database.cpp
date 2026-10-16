@@ -73,6 +73,7 @@ bool Database::open(const QString& path, const Options& options)
 
         if (!conn.open()) {
             errorText = conn.lastError().text();
+            errorCode = conn.lastError().nativeErrorCode().toInt();
             openFailed = true;
         }
     }
@@ -165,6 +166,7 @@ bool Database::exec(const QString& sql)
     QSqlQuery query(handle());
     if (!query.exec(sql)) {
         errorText = query.lastError().text();
+        errorCode = query.lastError().nativeErrorCode().toInt();
         qWarning("catalog: query failed: %s [%s]", qPrintable(errorText), qPrintable(sql));
         return false;
     }
@@ -200,6 +202,7 @@ QSqlQuery Database::prepare(const QString& sql)
     QSqlQuery query(handle());
     if (!query.prepare(sql)) {
         errorText = query.lastError().text();
+        errorCode = query.lastError().nativeErrorCode().toInt();
         qWarning("catalog: prepare failed: %s [%s]", qPrintable(errorText), qPrintable(sql));
     }
     return query;
