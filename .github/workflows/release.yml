@@ -48,17 +48,26 @@ jobs:
     outputs:
       tag: ${{ steps.v.outputs.tag }}
       build_id: ${{ steps.v.outputs.build_id }}
+      identifier: ${{ steps.v.outputs.identifier }}
+      version: ${{ steps.v.outputs.version }}
+      channel: ${{ steps.v.outputs.channel }}
+      build: ${{ steps.v.outputs.build }}
+      commit: ${{ steps.v.outputs.commit }}
       prerelease: ${{ steps.v.outputs.prerelease }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.TAG }}
+          # scripts/build-id.sh counts commits for the build number, so it
+          # needs full history.
+          fetch-depth: 0
 
       - name: Check tag matches the app version
         id: v
         run: |
-          NUM=$(grep -oP 'project\(texturelab VERSION \K[0-9.]+' src/texturelab/CMakeLists.txt)
-          CHANNEL=$(grep -oP 'set\(TEXTURELAB_CHANNEL "\K[^"]*' src/texturelab/CMakeLists.txt)
+          # Same rules as GetGitHash.cmake and build.yml, via one script.
+          NUM=$(scripts/build-id.sh --field version)
+          CHANNEL=$(scripts/build-id.sh --field channel)
           # The tag has to say the same channel the build will report: v<num>
           # for stable, v<num>-beta or v<num>-beta.<n> for beta. A stable tag
           # on a beta-configured tree (or the reverse) would put a build on the
@@ -73,8 +82,19 @@ jobs:
             exit 1
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          # --short=7 matches GetGitHash.cmake.
-          echo "build_id=v${NUM}-${CHANNEL}-$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+          echo "build_id=$(scripts/build-id.sh --field tag)" >> "$GITHUB_OUTPUT"
+          for field in identifier version channel build commit; do
+            echo "$field=$(scripts/build-id.sh --field "$field")" >> "$GITHUB_OUTPUT"
+          done
+          {
+            echo "### Build identity — $TAG"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            for field in identifier version channel build commit; do
+              echo "| $field | \`$(scripts/build-id.sh --field "$field")\` |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
           if [ "$CHANNEL" = "stable" ]; then echo "prerelease=false"; else echo "prerelease=true"; fi >> "$GITHUB_OUTPUT"
 
       - name: Check update checker points at production
@@ -393,6 +413,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      url: ${{ steps.draft.outputs.url }}
     env:
       TAG: ${{ needs.preflight.outputs.tag }}
       PRERELEASE: ${{ needs.preflight.outputs.prerelease }}
@@ -412,6 +434,7 @@ jobs:
           cat SHA256SUMS.txt
 
       - name: Create or update draft release
+        id: draft
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
             # Re-run: refresh the assets on the existing release, keep its notes.
@@ -428,3 +451,96 @@ jobs:
             gh release create "$TAG" dist/* "${FLAGS[@]}"
           fi
           gh release view "$TAG" --json url,isDraft,assets --jq '{url, isDraft, assets: [.assets[].name]}'
+          echo "url=$(gh release view "$TAG" --json url -q .url)" >> "$GITHUB_OUTPUT"
+
+  # Same post as build.yml's, for a release: the build identity texturelab.io
+  # asks for, and the download URLs to paste into its release form. Those are
+  # the GitHub Release asset URLs, which only answer once the draft is
+  # published. Runs on failure too, so a broken release doesn't go unnoticed.
+  announce:
+    needs: [preflight, build-linux, build-windows, build-macos, draft-release]
+    if: always() && needs.preflight.result == 'success'
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ needs.preflight.outputs.tag }}
+      BUILD_ID: ${{ needs.preflight.outputs.build_id }}
+      IDENTIFIER: ${{ needs.preflight.outputs.identifier }}
+      VERSION: ${{ needs.preflight.outputs.version }}
+      CHANNEL: ${{ needs.preflight.outputs.channel }}
+      BUILD: ${{ needs.preflight.outputs.build }}
+      COMMIT: ${{ needs.preflight.outputs.commit }}
+      DRAFT_URL: ${{ needs.draft-release.outputs.url }}
+      DRAFT_RESULT: ${{ needs.draft-release.result }}
+      LINUX_RESULT: ${{ needs.build-linux.result }}
+      WINDOWS_RESULT: ${{ needs.build-windows.result }}
+      MACOS_RESULT: ${{ needs.build-macos.result }}
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      ASSET_BASE: ${{ github.server_url }}/${{ github.repository }}/releases/download
+    steps:
+      - name: Post to Discord
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "DISCORD_WEBHOOK is not set; skipping."
+            exit 0
+          fi
+
+          status_emoji() {
+            case "$1" in
+              success) echo "✅" ;;
+              failure) echo "❌" ;;
+              cancelled) echo "⏹️" ;;
+              *) echo "⚠️" ;;
+            esac
+          }
+
+          # File names as the package scripts write them.
+          download_line() {
+            local result="$1" label="$2" file="$3"
+            if [[ "$result" == "success" && "$DRAFT_RESULT" == "success" ]]; then
+              echo "$(status_emoji "$result") **$label** — $ASSET_BASE/$TAG/$file"
+            elif [[ "$result" == "success" ]]; then
+              echo "$(status_emoji "$result") **$label** — built, not released"
+            else
+              echo "$(status_emoji "$result") **$label** — build $result"
+            fi
+          }
+
+          if [[ "$DRAFT_RESULT" == "success" ]]; then
+            TITLE="Release draft ready — $TAG ($CHANNEL)"
+            COLOR=3066993
+            NEXT="[Review and publish the draft]($DRAFT_URL), then add it on texturelab.io. Download links work once the draft is published."
+          else
+            TITLE="Release failed — $TAG ($CHANNEL)"
+            COLOR=15158332
+            NEXT="No draft was created."
+          fi
+
+          DESCRIPTION="$(download_line "$LINUX_RESULT" "Linux" "texturelab-linux-${BUILD_ID}-x86_64.AppImage")
+          $(download_line "$WINDOWS_RESULT" "Windows" "texturelab-win-${BUILD_ID}-x64.zip")
+          $(download_line "$MACOS_RESULT" "macOS" "texturelab-mac-${BUILD_ID}-universal.dmg")
+
+          $NEXT
+
+          [View run]($RUN_URL)"
+          DESCRIPTION=$(sed 's/^ *//' <<<"$DESCRIPTION")
+
+          PAYLOAD=$(jq -n \
+            --arg title "$TITLE" --arg description "$DESCRIPTION" \
+            --arg url "${DRAFT_URL:-$RUN_URL}" --argjson color "$COLOR" \
+            --arg identifier "$IDENTIFIER" --arg build "$BUILD" \
+            --arg channel "$CHANNEL" --arg version "$VERSION" --arg commit "$COMMIT" \
+            '{embeds: [{
+              title: $title, description: $description, color: $color, url: $url,
+              fields: [
+                {name: "Identifier", value: "`\($identifier)`", inline: false},
+                {name: "Build",      value: "`\($build)`",      inline: true},
+                {name: "Channel",    value: "`\($channel)`",    inline: true},
+                {name: "Version",    value: "`\($version)`",    inline: true},
+                {name: "Commit",     value: "`\($commit)`",     inline: true}
+              ]
+            }]}')
+
+          curl -s -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD"

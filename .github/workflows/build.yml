@@ -13,24 +13,39 @@ on:
         default: false
 
 jobs:
-  # Single source of truth for the build tag used in artifact names.
-  # tag = v<version>-<channel>-<short git hash>: "v" + the identifier the app
-  # shows in-app (TEXTURELAB_VERSION-TEXTURELAB_CHANNEL-TEXTURELAB_BUILD_HASH),
-  # so a build file name matches the About box and what the site publishes.
+  # Single source of truth for the build's identity, from scripts/build-id.sh —
+  # the same rules as GetGitHash.cmake, so artifact names, the Discord post and
+  # the About box agree. tag = "v" + identifier, used in artifact file names.
+  # identifier + build are exactly what texturelab.io asks for when publishing.
   version:
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.v.outputs.tag }}
+      identifier: ${{ steps.v.outputs.identifier }}
+      version: ${{ steps.v.outputs.version }}
+      channel: ${{ steps.v.outputs.channel }}
+      build: ${{ steps.v.outputs.build }}
+      commit: ${{ steps.v.outputs.commit }}
     steps:
       - uses: actions/checkout@v4
-      - name: Compute build tag
+        with:
+          # The build number is the commit count, so this needs full history.
+          fetch-depth: 0
+      - name: Compute build identity
         id: v
         run: |
-          # --short=7 matches GetGitHash.cmake; this checkout is shallow, and
-          # an unpinned short hash can come out a different length here.
-          NUM=$(grep -oP 'project\(texturelab VERSION \K[0-9.]+' src/texturelab/CMakeLists.txt)
-          CHANNEL=$(grep -oP 'set\(TEXTURELAB_CHANNEL "\K[^"]*' src/texturelab/CMakeLists.txt)
-          echo "tag=v${NUM}-${CHANNEL}-$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+          for field in tag identifier version channel build commit; do
+            echo "$field=$(scripts/build-id.sh --field "$field")" >> "$GITHUB_OUTPUT"
+          done
+          {
+            echo "### Build identity"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            for field in identifier version channel build commit; do
+              echo "| $field | \`$(scripts/build-id.sh --field "$field")\` |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # Fails the build if inline widget stylesheets or hardcoded QColor literals
   # creep into the UI/rendering code (they'd bypass the theme system and break
@@ -326,6 +341,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TAG: ${{ needs.version.outputs.tag }}
+      IDENTIFIER: ${{ needs.version.outputs.identifier }}
+      VERSION: ${{ needs.version.outputs.version }}
+      CHANNEL: ${{ needs.version.outputs.channel }}
+      BUILD: ${{ needs.version.outputs.build }}
+      COMMIT: ${{ needs.version.outputs.commit }}
     steps:
       - name: Download artifacts
         if: ${{ needs.build-linux.result == 'success' || needs.build-windows.result == 'success' || needs.build-macos.result == 'success' }}
@@ -407,15 +427,32 @@ jobs:
             COLOR=15158332
           fi
 
-          DESCRIPTION="$(download_line "$LINUX_RESULT" "Linux" "$S3_BASE/texturelab-linux-$TAG.zip")\n$(download_line "$WINDOWS_RESULT" "Windows" "$S3_BASE/texturelab-win-$TAG.zip")\n$(download_line "$MACOS_RESULT" "macOS" "$S3_BASE/texturelab-mac-$TAG.zip")\n\n[View run]($RUN_URL)"
+          DESCRIPTION="$(download_line "$LINUX_RESULT" "Linux" "$S3_BASE/texturelab-linux-$TAG.zip")
+          $(download_line "$WINDOWS_RESULT" "Windows" "$S3_BASE/texturelab-win-$TAG.zip")
+          $(download_line "$MACOS_RESULT" "macOS" "$S3_BASE/texturelab-mac-$TAG.zip")
+
+          [View run]($RUN_URL)"
+          DESCRIPTION=$(sed 's/^ *//' <<<"$DESCRIPTION")
+
+          # The build identity as embed fields, in code spans so each copies
+          # cleanly into texturelab.io's release form (Build identifier, Build
+          # number). jq builds the JSON, so nothing here needs hand-escaping.
+          PAYLOAD=$(jq -n \
+            --arg title "$TITLE" --arg description "$DESCRIPTION" \
+            --arg url "$RUN_URL" --argjson color "$COLOR" \
+            --arg identifier "$IDENTIFIER" --arg build "$BUILD" \
+            --arg channel "$CHANNEL" --arg version "$VERSION" --arg commit "$COMMIT" \
+            '{embeds: [{
+              title: $title, description: $description, color: $color, url: $url,
+              fields: [
+                {name: "Identifier", value: "`\($identifier)`", inline: false},
+                {name: "Build",      value: "`\($build)`",      inline: true},
+                {name: "Channel",    value: "`\($channel)`",    inline: true},
+                {name: "Version",    value: "`\($version)`",    inline: true},
+                {name: "Commit",     value: "`\($commit)`",     inline: true}
+              ]
+            }]}')
 
           curl -s -X POST "$DISCORD_WEBHOOK" \
             -H "Content-Type: application/json" \
-            -d "{
-              \"embeds\": [{
-                \"title\": \"$TITLE\",
-                \"description\": \"$DESCRIPTION\",
-                \"color\": $COLOR,
-                \"url\": \"$RUN_URL\"
-              }]
-            }"
+            -d "$PAYLOAD"
