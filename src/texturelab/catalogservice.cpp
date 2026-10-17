@@ -79,6 +79,10 @@ public:
         int updated = 0;
 
         for (const catalog::TextureRecord& rec : index.allRecords()) {
+            // shutdown() is waiting on us; stop between files.
+            if (service->reconcileCancelled())
+                break;
+
             const QFileInfo info(rec.path);
 
             if (!info.exists()) {
@@ -144,18 +148,26 @@ CatalogService& CatalogService::instance()
     return *service;
 }
 
-void CatalogService::shutdown()
+bool CatalogService::shutdown()
 {
     if (!ready)
-        return;
+        return true; // nothing open, nothing running
 
     // An in-flight reconciliation holds its own connections and would otherwise
-    // still be writing while we close ours.
-    QThreadPool::globalInstance()->waitForDone(5000);
+    // still be writing while we close ours. Ask it to stop, then wait; it
+    // checks between files, so this is quick unless a single stat is stuck
+    // (a dead network mount).
+    cancelReconcile = true;
+    if (!QThreadPool::globalInstance()->waitForDone(5000)) {
+        qWarning("catalog: reconcile did not stop; leaving databases open");
+        ready = false;
+        return false;
+    }
 
     thumbCache.close();
     catalogIndex.close();
     ready = false;
+    return true;
 }
 
 QString CatalogService::dataDir()
@@ -289,6 +301,15 @@ qint64 CatalogService::recordOpened(const TextureProjectPtr& project, const QStr
         return -1;
 
     catalog::TextureRecord rec = recordFor(project, path);
+
+    // Edited outside the app since we last saw it (another machine, a sync
+    // client, git): the cached thumbnail shows a material that's gone. Drop it
+    // so the Open capture can replace it — it won't overwrite a Save one.
+    const catalog::TextureRecord previous = catalogIndex.byPath(rec.path);
+    if (previous.isValid() &&
+        (previous.fileSize != rec.fileSize || previous.fileMtime != rec.fileMtime))
+        thumbCache.removeTexture(previous.id);
+
     if (!catalogIndex.recordOpened(rec, nowMs())) {
         qWarning("catalog: could not record open of %s: %s", qPrintable(path),
                  qPrintable(catalogIndex.lastError()));
@@ -318,6 +339,36 @@ qint64 CatalogService::recordSaved(const TextureProjectPtr& project, const QStri
 
     emit catalogChanged();
     return rec.id;
+}
+
+int CatalogService::missingCount() const
+{
+    if (!ready)
+        return 0;
+    int count = 0;
+    for (const catalog::TextureRecord& rec : catalogIndex.allRecords())
+        count += rec.isMissing() ? 1 : 0;
+    return count;
+}
+
+int CatalogService::removeAllMissing()
+{
+    if (!ready)
+        return 0;
+
+    QVector<qint64> ids;
+    for (const catalog::TextureRecord& rec : catalogIndex.allRecords())
+        if (rec.isMissing())
+            ids.append(rec.id);
+
+    const int removed = catalogIndex.removeAllMissing();
+    if (removed > 0) {
+        // The rows are gone, so nothing would ever look these up again.
+        for (qint64 id : ids)
+            thumbCache.removeTexture(id);
+        emit catalogChanged();
+    }
+    return removed;
 }
 
 void CatalogService::captureThumbnail(qint64 textureId, const QImage& frame,

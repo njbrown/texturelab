@@ -25,6 +25,11 @@ public:
     QString getExportDestination() const { return exportDestination; }
     QString getExportPattern() const;
 
+signals:
+    // OK changed the project's export folder or file pattern; the document
+    // needs saving.
+    void settingsChanged();
+
 private slots:
     void onChooseDestination();
     void onResetPattern();

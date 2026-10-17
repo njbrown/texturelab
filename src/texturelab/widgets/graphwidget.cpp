@@ -183,11 +183,12 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
             emit commentSelectionChanged(CommentPtr(nullptr));
         });
 
-    connect(graph, &nodegraph::NodeGraph::itemsMoveFinished,
-            [=](QMap<QString, QPointF> oldPos, QMap<QString, QPointF> newPos) {
+    connect(graph, &nodegraph::NodeGraph::layoutChanged,
+            [=](const nodegraph::LayoutSnapshot& before,
+                const nodegraph::LayoutSnapshot& after) {
                 if (undoStack)
                     undoStack->push(
-                        new MoveItemsCommand(project, scene, oldPos, newPos));
+                        new MoveItemsCommand(project, scene, before, after));
             });
 
     connect(graph, &nodegraph::NodeGraph::frameSelectionChanged,
@@ -232,6 +233,10 @@ GraphWidget::GraphWidget() : QMainWindow(nullptr)
                                      &GraphWidget::executeCopy);
     pasteAction = makeClipboardAction("Paste", QKeySequence::Paste,
                                       &GraphWidget::executePaste);
+
+    deleteAction = new QAction("Delete", this);
+    connect(deleteAction, &QAction::triggered, this,
+            [this]() { graph->deleteSelection(); });
 }
 
 void GraphWidget::setupToolbar()
@@ -265,12 +270,11 @@ void GraphWidget::setupToolbar()
                     return;
                 }
 
-                project->textureWidth = res;
-                project->textureHeight = res;
-                for (auto& node : project->nodes)
-                    node->isDirty = true;
-                if (renderer)
-                    renderer->update();
+                applyResolution(res);
+                if (undoStack)
+                    undoStack->push(new ProjectSettingCommand(
+                        ProjectSettingCommand::Setting::Resolution, previous,
+                        res, [this](int v) { applyResolution(v); }));
             });
 
     toolbar->addSeparator();
@@ -290,12 +294,51 @@ void GraphWidget::setupToolbar()
         Telemetry::breadcrumb("ui.seed", "random seed changed",
                               {{"seed", (int64_t)seedInput->value()},
                                {"node_count", (int64_t)project->nodes.size()}});
-        project->randomSeed = seedInput->value();
-        for (auto& node : project->nodes)
-            node->isDirty = true;
-        if (renderer)
-            renderer->update();
+        const int previous = project->randomSeed;
+        const int seed = seedInput->value();
+        applySeed(seed);
+        if (undoStack)
+            undoStack->push(new ProjectSettingCommand(
+                ProjectSettingCommand::Setting::RandomSeed, previous, seed,
+                [this](int v) { applySeed(v); }));
     });
+}
+
+// Applies a project-wide setting to the model and the toolbar (which may be
+// showing a different value when called from undo/redo), then re-renders
+// everything. The undo stack is cleared on project switch, so `project` is
+// always the one the command was recorded against.
+void GraphWidget::applyResolution(int res)
+{
+    if (!project)
+        return;
+    project->textureWidth = res;
+    project->textureHeight = res;
+    {
+        QSignalBlocker block(resolutionPicker);
+        const int index = resolutionPicker->findData(res);
+        if (index >= 0)
+            resolutionPicker->setCurrentIndex(index);
+    }
+    for (auto& node : project->nodes)
+        node->isDirty = true;
+    if (renderer)
+        renderer->update();
+}
+
+void GraphWidget::applySeed(int seed)
+{
+    if (!project)
+        return;
+    project->randomSeed = seed;
+    {
+        QSignalBlocker block(seedInput);
+        seedInput->setValue(seed);
+    }
+    for (auto& node : project->nodes)
+        node->isDirty = true;
+    if (renderer)
+        renderer->update();
 }
 
 void GraphWidget::setTextureProject(TextureProjectPtr project)
@@ -544,13 +587,26 @@ bool GraphWidget::confirmResolutionChange(int from, int to)
     return true;
 }
 
-void GraphWidget::onResolutionChangeFailed(int requested, int fallback)
+void GraphWidget::onResolutionChangeFailed(int requested, int fallback,
+                                           bool onLoad)
 {
     {
         QSignalBlocker block(resolutionPicker);
         const int index = resolutionPicker->findData(fallback);
         if (index >= 0)
             resolutionPicker->setCurrentIndex(index);
+    }
+
+    if (onLoad) {
+        QMessageBox::warning(
+            this, tr("Not enough video memory"),
+            tr("This texture is set to %1 x %1, but your GPU ran out of memory "
+               "allocating it.\n\n"
+               "It has been opened at %2 x %2 instead. Saving will store the "
+               "lower resolution.")
+                .arg(requested)
+                .arg(fallback));
+        return;
     }
 
     QMessageBox::warning(

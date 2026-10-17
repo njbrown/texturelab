@@ -13,6 +13,7 @@
 #include <QtWidgets>
 
 #include <QDebug>
+#include <QSet>
 #include <cmath>
 #include <iostream>
 
@@ -138,7 +139,26 @@ void NodeGraph::scaleDown()
 
 void NodeGraph::keyPressEvent(QKeyEvent* event)
 {
-    if (event->key() == Qt::Key_Delete) {
+    // While a comment/frame title is being edited in place, Delete and
+    // Backspace belong to the text, not the selection.
+    auto* editing = dynamic_cast<QGraphicsTextItem*>(_scene->focusItem());
+    const bool editingText =
+        editing && (editing->textInteractionFlags() & Qt::TextEditable);
+
+    // Backspace too: it's the delete key on Mac keyboards.
+    if (!editingText &&
+        (event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace)) {
+        deleteSelection();
+        event->accept();
+        return;
+    }
+
+    QGraphicsView::keyPressEvent(event);
+}
+
+void NodeGraph::deleteSelection()
+{
+    {
         QList<NodePtr> selectedNodes;
         QList<FramePtr> selectedFrames;
         QList<CommentPtr> selectedComments;
@@ -155,8 +175,6 @@ void NodeGraph::keyPressEvent(QKeyEvent* event)
         if (!selectedNodes.isEmpty() || !selectedFrames.isEmpty() || !selectedComments.isEmpty())
             emit deleteRequested(selectedNodes, selectedFrames, selectedComments);
     }
-
-    QGraphicsView::keyPressEvent(event);
     this->invalidateScene(QRect(-1000, -1000, 1000, 1000));
 }
 
@@ -193,6 +211,45 @@ void NodeGraph::mouseMoveEvent(QMouseEvent* event)
         return;
     }
     QGraphicsView::mouseMoveEvent(event);
+}
+
+LayoutSnapshot NodeGraph::captureLayout() const
+{
+    LayoutSnapshot layout;
+    for (auto& node : _scene->nodes)
+        layout.nodes[node->id()] = node->getCenter();
+    for (auto& frame : _scene->frames) {
+        layout.frames[frame->id()] = frame->pos();
+        layout.frameSizes[frame->id()] = frame->frameRect().size();
+    }
+    for (auto& comment : _scene->comments)
+        layout.comments[comment->id()] = comment->pos();
+    return layout;
+}
+
+// True if `node` is `target` or is upstream of it, i.e. connecting target's
+// output into one of node's inputs would close a cycle.
+static bool feedsInto(const NodePtr& node, const NodePtr& target)
+{
+    QSet<Node*> visited;
+    QVector<Node*> pending{target.data()};
+    while (!pending.isEmpty()) {
+        Node* current = pending.takeLast();
+        if (current == node.data())
+            return true;
+        if (visited.contains(current))
+            continue;
+        visited.insert(current);
+        for (const auto& port : current->getInPorts()) {
+            for (const auto& con : port->connections) {
+                auto upstream =
+                    con->startPort == port ? con->endPort : con->startPort;
+                if (upstream && upstream->node)
+                    pending.append(upstream->node.data());
+            }
+        }
+    }
+    return false;
 }
 
 void NodeGraph::mouseReleaseEvent(QMouseEvent* event)
@@ -318,10 +375,8 @@ bool NodeGraph::sceneMousePressEvent(QGraphicsSceneMouseEvent* event)
         auto scenePos = event->scenePos();
         auto rawPort = this->getPortAtScenePos(scenePos.x(), scenePos.y());
         if (!rawPort) {
-            // Record node positions for move-tracking (no port drag starting)
-            _preDragPositions.clear();
-            for (auto& node : _scene->nodes)
-                _preDragPositions[node->id()] = node->getCenter();
+            // Record layout for move-tracking (no port drag starting)
+            _preDragLayout = captureLayout();
             _trackingMove = true;
         }
         if (rawPort) {
@@ -476,7 +531,12 @@ bool NodeGraph::sceneMouseReleaseEvent(QGraphicsSceneMouseEvent* event)
                 qDebug() << "right port has existing connections";
             }
 
-            // todo: check for cycle
+            // A back-edge or self-loop never renders: the nodes on the cycle
+            // wait on each other forever and progress never reaches Ready.
+            if (isConValid && feedsInto(rightPort->node, leftPort->node)) {
+                isConValid = false;
+                qDebug() << "connection would create a cycle";
+            }
 
             if (isConValid) {
                 // actually make connection
@@ -499,21 +559,30 @@ bool NodeGraph::sceneMouseReleaseEvent(QGraphicsSceneMouseEvent* event)
         activeCon.clear();
     }
 
-    // Emit move command if nodes changed position
+    // Emit a layout change if anything moved or was resized
     if (_trackingMove && !activeCon) {
-        QMap<QString, QPointF> newPositions;
-        bool moved = false;
-        for (auto it = _preDragPositions.begin(); it != _preDragPositions.end(); ++it) {
-            auto node = _scene->nodes.value(it.key());
-            if (!node)
-                continue;
-            QPointF newPos = node->getCenter();
-            newPositions[it.key()] = newPos;
-            if (newPos != it.value())
-                moved = true;
-        }
-        if (moved)
-            emit itemsMoveFinished(_preDragPositions, newPositions);
+        const LayoutSnapshot after = captureLayout();
+        LayoutSnapshot oldChanged, newChanged;
+        auto diff = [](const auto& before, const auto& now, auto& oldOut,
+                       auto& newOut) {
+            for (auto it = before.begin(); it != before.end(); ++it) {
+                auto found = now.find(it.key());
+                if (found != now.end() && found.value() != it.value()) {
+                    oldOut[it.key()] = it.value();
+                    newOut[it.key()] = found.value();
+                }
+            }
+        };
+        diff(_preDragLayout.nodes, after.nodes, oldChanged.nodes,
+             newChanged.nodes);
+        diff(_preDragLayout.frames, after.frames, oldChanged.frames,
+             newChanged.frames);
+        diff(_preDragLayout.frameSizes, after.frameSizes,
+             oldChanged.frameSizes, newChanged.frameSizes);
+        diff(_preDragLayout.comments, after.comments, oldChanged.comments,
+             newChanged.comments);
+        if (!newChanged.isEmpty())
+            emit layoutChanged(oldChanged, newChanged);
     }
     _trackingMove = false;
 

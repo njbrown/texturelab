@@ -88,7 +88,7 @@ protected:
 
     void buildView();
 
-    Material* loadMaterial();
+    void assignMap(GLuint& slot, GLuint texId);
     QOpenGLTexture* loadTexture(const QString& path);
     GLuint loadTextureId(const QString& path);
     // void renderMesh(Mesh* mesh);

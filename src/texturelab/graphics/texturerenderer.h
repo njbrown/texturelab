@@ -58,6 +58,25 @@ class TextureRenderer : public QObject {
     // project back to it instead of aborting the process.
     int lastGoodResolution = 0;
 
+    // Every node this renderer has allocated a texture or shader for. Nodes
+    // removed from the project are freed by update(); the rest when the
+    // renderer is destroyed (project switch). Without this, each open leaked
+    // every node's FBO — RGBA32F at 2K is 64 MB a node.
+    QList<TextureNodePtr> allocatedNodes;
+
+    // Frees `node`'s texture and shader. Context must be current.
+    void freeNodeResources(const TextureNodePtr& node);
+    // Frees nodes that have left the project. Only safe with nothing in
+    // flight: the in-flight command may hold their textures as inputs.
+    void freeRemovedNodes();
+
+    // Set when allocation failed and there was nowhere to fall back to (the
+    // smallest size, or a node added at the current size with VRAM already
+    // full). update() stops retrying until the resolution changes or a node is
+    // removed; retrying on every update() leaked and spammed Sentry.
+    int failedAtResolution = 0;
+    int failedAtNodeCount = 0;
+
 public:
     TextureRenderer();
     ~TextureRenderer();
@@ -65,6 +84,10 @@ public:
     void setProject(TextureProjectPtr project);
     void update();
     void updateOld();
+
+    // Every node rendered with its current inputs and props, and nothing in
+    // flight: what's in the textures is what the graph describes.
+    bool isRenderComplete() const;
     void testRendering();
 
     // False when the node's texture could not be allocated.
@@ -80,6 +103,11 @@ public:
     // relying on whichever context a widget happened to leave bound.
     SystemInfo::GpuMemory queryGpuMemory();
 
+    // Reads a node's current texture back as 8-bit RGBA, top row first.
+    // Makes the renderer's context current (restoring the caller's), so it's
+    // safe from any GUI-thread code. Null image if the node has no texture.
+    QImage readNodeImage(const TextureNodePtr& node);
+
     // Bytes of VRAM one node's texture needs at the given square resolution.
     // RGBA32F: 4 channels x 4 bytes.
     static int64_t estimatedNodeTextureBytes(int resolution)
@@ -92,8 +120,9 @@ public:
     QOpenGLContext* ctx;
 
 private:
-    // Retreat to lastGoodResolution after a failed allocation batch, re-allocate
-    // there, and emit resolutionChangeFailed().
+    // Retreat to lastGoodResolution after a failed allocation batch — or, when
+    // nothing has fitted yet (a large file just opened), halve until it fits —
+    // re-allocate there, and emit resolutionChangeFailed().
     void rollBackResolution(int requested);
 
     void initRenderWorker();
@@ -111,8 +140,9 @@ signals:
 
     // The project could not be allocated at `requested`; it has been rolled
     // back to `fallback` and is rendering normally again. GraphWidget uses this
-    // to tell the user and put the resolution picker back.
-    void resolutionChangeFailed(int requested, int fallback);
+    // to tell the user and put the resolution picker back. `onLoad` is true
+    // when no size had fitted yet, i.e. the project was opened too large.
+    void resolutionChangeFailed(int requested, int fallback, bool onLoad);
 };
 
 // note: there's no specified fbo limit

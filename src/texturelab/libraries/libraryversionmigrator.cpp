@@ -156,3 +156,38 @@ bool LibraryVersionMigrator::looksLegacy(const QJsonObject& json)
     }
     return false;
 }
+
+QStringList LibraryVersionMigrator::nodesThatLookDifferent() const
+{
+    if (!versionsCrossed().contains(LibVersion::V3))
+        return {};
+
+    // Enum props are stored as their index.
+    constexpr int kBlendOverlay = 7;     // v1/v2 Blend "type"
+    constexpr int kFloodFillCenter = 1;  // v2 Flood Fill to Color "source"
+
+    QStringList names;
+    auto add = [&names](const QString& name) {
+        if (!names.contains(name))
+            names.append(name);
+    };
+
+    for (const auto& item : _json["nodes"].toArray()) {
+        const auto node = item.toObject();
+        const auto type = node["typeName"].toString();
+        const auto props = node["properties"].toObject();
+
+        if (type == "cell")
+            add("Cell");
+        else if (type == "linecell")
+            add("Line Cell");
+        else if (type == "solidcell")
+            add("Solid Cell");
+        else if (type == "blend" && props["type"].toInt() == kBlendOverlay)
+            add("Blend (Overlay)");
+        else if (type == "floodfilltocolor" &&
+                 props["source"].toInt() == kFloodFillCenter)
+            add("Flood Fill to Color (Center)");
+    }
+    return names;
+}

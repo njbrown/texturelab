@@ -24,6 +24,10 @@
 #include <QOpenGLFunctions>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QEventLoop>
+#include <QProgressDialog>
+#include <QSaveFile>
+#include <QSet>
 #include <QSettings>
 #include <QStatusBar>
 #include <QTimer>
@@ -63,6 +67,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 {
     resize(1280, 720);
     setAcceptDrops(true);
+    qApp->installEventFilter(this); // for QEvent::Quit, see eventFilter()
 
     undoStack = new QUndoStack(this);
     connect(undoStack, &QUndoStack::cleanChanged, this,
@@ -384,6 +389,8 @@ void MainWindow::syncChannelLabelsToScene()
 
 void MainWindow::setProject(TextureProjectPtr project)
 {
+    catalogTextureId = -1;
+
     // Clear widget state from the old project
     this->view2DWidget->clearSelection();
     this->view3DWidget->viewer->clearTextures();
@@ -513,9 +520,6 @@ void MainWindow::setupMenus()
     connect(recentFilesMenu, &QMenu::aboutToShow, this,
             &MainWindow::updateRecentFilesMenu);
 
-    fileMenu->addSeparator();
-    fileMenu->addAction("Edit", []() {});
-
     auto editMenu = this->menuBar()->addMenu("Edit");
     auto undoAction = undoStack->createUndoAction(this, tr("Undo"));
     undoAction->setShortcut(QKeySequence::Undo);
@@ -523,6 +527,12 @@ void MainWindow::setupMenus()
     auto redoAction = undoStack->createRedoAction(this, tr("Redo"));
     redoAction->setShortcut(QKeySequence::Redo);
     editMenu->addAction(redoAction);
+    // Connected after createUndo/RedoAction's own connection, so this runs
+    // once the stack has moved.
+    connect(undoAction, &QAction::triggered, this,
+            [this]() { propWidget->refreshFromModel(); });
+    connect(redoAction, &QAction::triggered, this,
+            [this]() { propWidget->refreshFromModel(); });
     editMenu->addSeparator();
 
     // The graph owns these — their shortcuts are scoped to it, so Ctrl+C in a
@@ -531,6 +541,7 @@ void MainWindow::setupMenus()
     editMenu->addAction(graphWidget->cutAction);
     editMenu->addAction(graphWidget->copyAction);
     editMenu->addAction(graphWidget->pasteAction);
+    editMenu->addAction(graphWidget->deleteAction);
 
     auto examplesMenu = this->menuBar()->addMenu("Examples");
 
@@ -555,6 +566,8 @@ void MainWindow::setupMenus()
             if (!promptSaveIfDirty())
                 return;
             auto project = Project::loadTexture(":examples/" + example);
+            if (!project)
+                return;
             QString projectName = example;
             projectName.replace(".texture", "");
             project->name = projectName;
@@ -633,14 +646,20 @@ void MainWindow::setupToolbar()
     // to avoid an ambiguous-shortcut clash.
     auto undoAction = new QAction(themedToolIcon(":/icons/undo.svg"), "Undo", this);
     undoAction->setEnabled(undoStack->canUndo());
-    connect(undoAction, &QAction::triggered, undoStack, &QUndoStack::undo);
+    connect(undoAction, &QAction::triggered, this, [this]() {
+        undoStack->undo();
+        propWidget->refreshFromModel();
+    });
     connect(undoStack, &QUndoStack::canUndoChanged, undoAction,
             &QAction::setEnabled);
     toolBar->addAction(undoAction);
 
     auto redoAction = new QAction(themedToolIcon(":/icons/redo.svg"), "Redo", this);
     redoAction->setEnabled(undoStack->canRedo());
-    connect(redoAction, &QAction::triggered, undoStack, &QUndoStack::redo);
+    connect(redoAction, &QAction::triggered, this, [this]() {
+        undoStack->redo();
+        propWidget->refreshFromModel();
+    });
     connect(undoStack, &QUndoStack::canRedoChanged, redoAction,
             &QAction::setEnabled);
     toolBar->addAction(redoAction);
@@ -783,11 +802,11 @@ void MainWindow::captureLauncherThumbnail(int source)
     if (frame.isNull())
         return;
 
-    const catalog::TextureRecord rec = catalog.index().byPath(project->filePath);
-    if (!rec.isValid())
+    if (catalogTextureId < 0)
         return;
 
-    catalog.captureThumbnail(rec.id, frame, static_cast<catalog::ThumbSource>(source));
+    catalog.captureThumbnail(catalogTextureId, frame,
+                             static_cast<catalog::ThumbSource>(source));
 }
 
 void MainWindow::showLauncher()
@@ -809,6 +828,20 @@ void MainWindow::showLauncher()
         connect(launcher, &LauncherWindow::openPathRequested, this,
                 [this](const QString& path) {
                     const QString before = project ? project->filePath : QString();
+
+                    // The card for the document that's already open: go back
+                    // to it rather than reloading (which would drop its undo
+                    // history and unsaved changes behind a save prompt).
+                    if (!before.isEmpty() &&
+                        QFileInfo(before).absoluteFilePath() ==
+                            QFileInfo(path).absoluteFilePath()) {
+                        launcher->hide();
+                        showMaximized();
+                        raise();
+                        activateWindow();
+                        return;
+                    }
+
                     openProjectFromPath(path);
 
                     // openProjectFromPath bails out silently if the user
@@ -841,6 +874,12 @@ void MainWindow::showLauncher()
         });
     }
 
+    // Files may have moved, appeared or been edited since startup (PRD §6.2).
+    // No-op while one is already running; the launcher refreshes on
+    // catalogChanged when it finishes.
+    CatalogService::instance().reconcileAsync();
+
+    launcher->setQuitting(false);
     launcher->setHasDocument(project && !project->filePath.isEmpty());
     launcher->setOpenPath(project ? project->filePath : QString());
     launcher->show();
@@ -850,9 +889,7 @@ void MainWindow::showLauncher()
 
 void MainWindow::openProject()
 {
-    if (!promptSaveIfDirty())
-        return;
-
+    // openProjectFromPath() asks to save; asking here too prompted twice.
     auto filePath = QFileDialog::getOpenFileName(dialogParent(), "Open Texture File", "",
                                                  "Texturelab File (*.texture)");
 
@@ -860,6 +897,18 @@ void MainWindow::openProject()
         return;
 
     openProjectFromPath(filePath);
+}
+
+// Upgrade-prompt paragraph naming the nodes in this file that won't look
+// exactly the same afterwards; empty when there are none.
+static QString lookChangeNote(const LibraryVersionMigrator& migrator)
+{
+    const QStringList nodes = migrator.nodesThatLookDifferent();
+    if (nodes.isEmpty())
+        return QString();
+    return QString("\n\nThese nodes will look different after upgrading and "
+                   "may need adjusting: %1.")
+        .arg(nodes.join(", "));
 }
 
 void MainWindow::openProjectFromPath(const QString& filePath)
@@ -873,8 +922,32 @@ void MainWindow::openProjectFromPath(const QString& filePath)
                              "Could not open file:\n" + filePath);
         return;
     }
-    auto json = QJsonDocument::fromJson(file.readAll()).object();
+    QJsonParseError parseError;
+    auto doc = QJsonDocument::fromJson(file.readAll(), &parseError);
     file.close();
+
+    // Never bind a document we couldn't parse to the real path: one Ctrl+S
+    // would overwrite the (possibly recoverable) file with an empty project.
+    if (parseError.error != QJsonParseError::NoError || !doc.isObject()) {
+        QMessageBox::warning(dialogParent(), "Open Texture",
+                             "This file is damaged or isn't a TextureLab "
+                             "texture, so it can't be opened:\n" + filePath);
+        return;
+    }
+    auto json = doc.object();
+
+    // A file from a newer TextureLab would otherwise be read as the current
+    // library version, its unknown nodes dropped, and re-saved as such.
+    auto versionStr = json["libraryVersion"].toString();
+    if (!versionStr.isEmpty() && !isKnownLibVersionString(versionStr)) {
+        QMessageBox::warning(
+            dialogParent(), "Open Texture",
+            QString("This texture uses library version \"%1\", which is "
+                    "newer than this version of TextureLab supports.\n\n"
+                    "Update TextureLab to open it.")
+                .arg(versionStr));
+        return;
+    }
 
     LibraryVersionMigrator migrator(json);
     if (migrator.needsMigration()) {
@@ -887,17 +960,19 @@ void MainWindow::openProjectFromPath(const QString& filePath)
             dialogParent(), "Upgrade Texture?",
             QString("This texture was created with library version %1.\n\n"
                     "Upgrade it to %2 (%3) to use the latest nodes and "
-                    "improvements? A few node behaviors may change slightly.")
+                    "improvements?%4")
                 .arg(libVersionToString(migrator.sourceVersion()),
                      libVersionToString(migrator.targetVersion()),
-                     chain.join(" → ")),
+                     chain.join(" → "),
+                     lookChangeNote(migrator)),
             QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
 
         if (choice == QMessageBox::Yes)
             json = migrator.migrate();
     }
 
-    auto project = Project::loadTextureFromJson(json);
+    QStringList skippedTypes;
+    auto project = Project::loadTextureFromJson(json, &skippedTypes);
 
     QFileInfo fileInfo(filePath);
     project->name = fileInfo.baseName();
@@ -913,9 +988,19 @@ void MainWindow::openProjectFromPath(const QString& filePath)
     setProject(project);
     addToRecentFiles(filePath);
 
+    if (!skippedTypes.isEmpty()) {
+        skippedTypes.removeDuplicates();
+        QMessageBox::warning(
+            dialogParent(), "Open Texture",
+            QString("Some nodes in this texture couldn't be loaded and were "
+                    "left out:\n\n%1\n\nSaving will remove them from the "
+                    "file. Use Save As to keep the original.")
+                .arg(skippedTypes.join(", ")));
+    }
+
     // The shared entry point for the Open dialog, the recent-files menu, and
     // drag-and-drop, so one hook here covers all three (LAUNCHER_PRD.md §6.1).
-    CatalogService::instance().recordOpened(project, filePath);
+    catalogTextureId = CatalogService::instance().recordOpened(project, filePath);
 
     // Can't grab yet: opening kicks off an asynchronous render and the viewport
     // is still showing the previous document (or nothing). Captured when
@@ -966,6 +1051,7 @@ void MainWindow::upgradeCurrentProjectLibrary()
     // Round-trip through the same JSON the file format uses, so the live
     // "Upgrade" button in the Library dock goes through the exact same
     // pure-JSON migration path as opening a legacy file does.
+    graphWidget->syncPositionsToModel();
     auto bytes = Project::saveTexture(this->project);
     auto json = QJsonDocument::fromJson(bytes).object();
 
@@ -978,8 +1064,8 @@ void MainWindow::upgradeCurrentProjectLibrary()
         "Upgrading the library version is irreversible and clears the "
         "undo/redo history for this session.\n\n"
         "Save your project (or save a copy) first if you want to keep the "
-        "ability to go back to the current version.\n\n"
-        "Continue with the upgrade?",
+        "ability to go back to the current version." +
+            lookChangeNote(migrator) + "\n\nContinue with the upgrade?",
         QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel);
 
     if (choice != QMessageBox::Yes)
@@ -989,7 +1075,13 @@ void MainWindow::upgradeCurrentProjectLibrary()
     newProject->name = this->project->name;
     newProject->filePath = this->project->filePath;
 
+    const qint64 textureId = catalogTextureId; // same file, same catalog row
     setProject(newProject);
+    catalogTextureId = textureId;
+
+    // setProject() clears the undo stack, which leaves it clean; the file on
+    // disk is still the old version, so make sure closing prompts to save.
+    undoStack->resetClean();
 }
 
 void MainWindow::newProject()
@@ -1002,33 +1094,19 @@ void MainWindow::newProject()
 
 void MainWindow::saveProject()
 {
-    if (project->filePath.isNull() || project->filePath.isEmpty()) {
-        QString filePath = QFileDialog::getSaveFileName(
+    QString filePath = project->filePath;
+    if (filePath.isEmpty()) {
+        filePath = QFileDialog::getSaveFileName(
             this, "Save Texture...", QString(), "Texturelab File (*.texture)");
 
-        if (filePath.isNull() || filePath.isEmpty()) {
+        if (filePath.isEmpty())
             return;
-        }
 
         if (!filePath.endsWith(".texture", Qt::CaseInsensitive))
             filePath += ".texture";
-
-        project->filePath = filePath;
     }
 
-    graphWidget->syncPositionsToModel();
-
-    Telemetry::breadcrumb("project", "saved",
-                          {{"node_count", (int64_t)project->nodes.size()},
-                           {"resolution", (int64_t)project->textureWidth}});
-    QFile file(project->filePath);
-    file.open(QIODevice::WriteOnly);
-    file.write(Project::saveTexture(project));
-    file.close();
-    undoStack->setClean();
-    addToRecentFiles(project->filePath);
-    CatalogService::instance().recordSaved(project, project->filePath);
-    captureLauncherThumbnail(int(catalog::ThumbSource::Save));
+    saveProjectTo(filePath);
 }
 
 void MainWindow::saveProjectAs()
@@ -1036,34 +1114,55 @@ void MainWindow::saveProjectAs()
     QString filePath = QFileDialog::getSaveFileName(
         this, "Save Texture As...", QString(), "Texturelab File (*.texture)");
 
-    if (filePath.isNull() || filePath.isEmpty())
+    if (filePath.isEmpty())
         return;
 
     if (!filePath.endsWith(".texture", Qt::CaseInsensitive))
         filePath += ".texture";
 
-    project->filePath = filePath;
+    saveProjectTo(filePath);
+}
 
-    QFileInfo fileInfo(filePath);
-    project->name = fileInfo.baseName();
-
+bool MainWindow::saveProjectTo(const QString& filePath)
+{
     graphWidget->syncPositionsToModel();
 
-    QFile file(project->filePath);
-    file.open(QIODevice::WriteOnly);
-    file.write(Project::saveTexture(project));
-    file.close();
+    Telemetry::breadcrumb("project", "saved",
+                          {{"node_count", (int64_t)project->nodes.size()},
+                           {"resolution", (int64_t)project->textureWidth}});
+
+    // QSaveFile writes to a temp file and renames on commit(), so a failed
+    // write (read-only location, full disk) leaves the existing file intact.
+    QSaveFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly) ||
+        file.write(Project::saveTexture(project)) < 0 || !file.commit()) {
+        QMessageBox::warning(this, "Save Texture",
+                             QString("Could not save the texture to:\n%1\n\n%2")
+                                 .arg(filePath, file.errorString()));
+        return false;
+    }
+
+    // Only adopt the new path/name once the write has succeeded.
+    project->filePath = filePath;
+    project->name = QFileInfo(filePath).baseName();
+
     undoStack->setClean();
-    setWindowTitle(project->name + " - TextureLab");
+    onCleanChanged(true); // name may have changed while already clean
     addToRecentFiles(project->filePath);
-    CatalogService::instance().recordSaved(project, project->filePath);
+    catalogTextureId =
+        CatalogService::instance().recordSaved(project, project->filePath);
     captureLauncherThumbnail(int(catalog::ThumbSource::Save));
+    return true;
 }
 
 void MainWindow::showExportDialog()
 {
     if (!this->exportDialog) {
         this->exportDialog = new ExportDialog(this);
+        // Export settings are saved in the file but aren't undoable; make
+        // sure closing still prompts.
+        connect(this->exportDialog, &ExportDialog::settingsChanged, this,
+                [this]() { undoStack->resetClean(); });
     }
 
     if (this->project) {
@@ -1094,8 +1193,9 @@ void MainWindow::directExport()
             return;
         }
 
-        // Save destination to project
+        // Save destination to project (saved in the file, so mark dirty)
         this->project->exportDestination = dir;
+        undoStack->resetClean();
 
         // Also update dialog if it exists
         if (this->exportDialog) {
@@ -1146,6 +1246,35 @@ void MainWindow::handleExport(const QString& destination,
         return;
     }
 
+    // Rendering is incremental and asynchronous, so right after an edit (or
+    // straight after opening) some outputs still hold stale or partial
+    // results. Wait for the graph to settle rather than exporting those.
+    if (!this->renderer->isRenderComplete()) {
+        QProgressDialog progress("Waiting for the texture to finish rendering...",
+                                 "Cancel", 0, 0, this);
+        progress.setWindowModality(Qt::WindowModal);
+        progress.setMinimumDuration(300);
+
+        QEventLoop loop;
+        TextureRenderer* r = this->renderer;
+        auto done = connect(r, &TextureRenderer::renderProgress, &loop,
+                            [&loop, r](int, int) {
+                                if (r->isRenderComplete())
+                                    loop.quit();
+                            });
+        connect(&progress, &QProgressDialog::canceled, &loop, &QEventLoop::quit);
+        r->update(); // in case nothing is queued yet
+        if (!r->isRenderComplete())
+            loop.exec();
+        disconnect(done);
+
+        // Cancelled, or the project was swapped out from under us.
+        if (this->renderer != r || !r->isRenderComplete()) {
+            Telemetry::breadcrumb("export", "export cancelled while rendering");
+            return;
+        }
+    }
+
     // Store the previous context to restore it later
     QOpenGLContext* previousContext = QOpenGLContext::currentContext();
     QSurface* previousSurface =
@@ -1159,7 +1288,9 @@ void MainWindow::handleExport(const QString& destination,
 
     // Export each output node
     int successCount = 0;
-    int failCount = 0;
+    QStringList failures; // "file: reason", shown to the user
+    QStringList renamed;  // outputs whose name collided with an earlier one
+    QSet<QString> usedNames;
 
     for (auto& node : outputNodes) {
         // Get the output name from the node's property
@@ -1186,17 +1317,26 @@ void MainWindow::handleExport(const QString& destination,
         }
 
         // Generate filename using pattern
-        QString filename = pattern;
-        filename.replace("${project}", this->project->name);
-        filename.replace("${name}", outputName);
-        filename += ".png";
+        QString baseName = pattern;
+        baseName.replace("${project}", this->project->name);
+        baseName.replace("${name}", outputName);
+
+        // Two outputs with the same name would silently overwrite each other;
+        // number the later ones instead.
+        QString uniqueName = baseName;
+        for (int n = 2; usedNames.contains(uniqueName.toLower()); ++n)
+            uniqueName = QString("%1_%2").arg(baseName).arg(n);
+        if (uniqueName != baseName)
+            renamed << QString("%1.png → %2.png").arg(baseName, uniqueName);
+        usedNames.insert(uniqueName.toLower());
+
+        QString filename = uniqueName + ".png";
 
         QString fullPath = destination + "/" + filename;
 
         // Get the texture from the node
         if (!node->texture) {
-            qDebug() << "Node" << node->title << "has no texture";
-            failCount++;
+            failures << QString("%1: not rendered").arg(filename);
             continue;
         }
 
@@ -1204,12 +1344,10 @@ void MainWindow::handleExport(const QString& destination,
         ExportResult result = exporter.exportTexture(node->texture, fullPath,
                                                      precision, components);
 
-        if (result.success) {
+        if (result.success)
             successCount++;
-        }
-        else {
-            failCount++;
-        }
+        else
+            failures << QString("%1: %2").arg(filename, result.errorMessage);
     }
 
     // Restore previous context
@@ -1220,13 +1358,24 @@ void MainWindow::handleExport(const QString& destination,
         this->renderer->ctx->doneCurrent();
     }
 
+    Telemetry::breadcrumb("export", "export finished",
+                          {{"exported", (int64_t)successCount},
+                           {"failed", (int64_t)failures.size()},
+                           {"renamed", (int64_t)renamed.size()}});
+
     // Show result message
     QString message =
-        QString("Export complete!\n\n") +
-        QString("Successfully exported: %1 file(s)\n").arg(successCount);
+        QString("Exported %1 file(s) to:\n%2").arg(successCount).arg(destination);
 
-    if (failCount > 0) {
-        message += QString("Failed: %1 file(s)").arg(failCount);
+    if (!renamed.isEmpty())
+        message += "\n\nSome outputs share a name, so these were numbered:\n" +
+                   renamed.join("\n");
+
+    if (!failures.isEmpty()) {
+        message += QString("\n\n%1 file(s) failed:\n").arg(failures.size()) +
+                   failures.join("\n");
+        QMessageBox::warning(this, "Export", message);
+        return;
     }
 
     QMessageBox::information(this, "Export", message);
@@ -1322,10 +1471,28 @@ bool MainWindow::promptSaveIfDirty()
 void MainWindow::closeEvent(QCloseEvent* event)
 {
     if (!promptSaveIfDirty()) {
+        // Quit cancelled from the save prompt: the launcher should go back to
+        // returning to the editor when closed.
+        if (launcher)
+            launcher->setQuitting(false);
         event->ignore();
         return;
     }
     event->accept();
+
+    // Closing the editor quits, even if the launcher is up; otherwise the
+    // launcher stays open, and closing it reopens the editor — no way out.
+    if (launcher) {
+        launcher->setQuitting(true);
+        launcher->close();
+    }
+}
+
+bool MainWindow::eventFilter(QObject* watched, QEvent* event)
+{
+    if (watched == qApp && event->type() == QEvent::Quit && launcher)
+        launcher->setQuitting(true);
+    return QMainWindow::eventFilter(watched, event);
 }
 
 MainWindow::~MainWindow()

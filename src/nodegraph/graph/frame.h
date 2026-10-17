@@ -68,6 +68,7 @@ private:
     // Drag start state (for undo/redo)
     QPointF _dragStartPos;
     QRectF _dragStartRect;
+    QPointF _dragStartFramePos;
 
     // UI dimensions
     static constexpr qreal HANDLE_SIZE = 30.0;

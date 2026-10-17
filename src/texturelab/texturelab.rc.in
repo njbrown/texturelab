@@ -1,0 +1,34 @@
+// Windows resource script, configured by CMake (configure_file, @ONLY): embeds
+// the application icon (Explorer, taskbar, Alt-Tab — the first ICON resource is
+// the one Windows uses) and the version shown in the file's Properties > Details.
+#include <winver.h>
+
+IDI_ICON1 ICON "@APP_ICON_DIR@/logo.ico"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION     @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,0
+PRODUCTVERSION  @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,0
+FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+FILEFLAGS       0
+FILEOS          VOS_NT_WINDOWS32
+FILETYPE        VFT_APP
+FILESUBTYPE     VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName",      "TextureLab"
+            VALUE "FileDescription",  "TextureLab"
+            VALUE "FileVersion",      "@TEXTURELAB_FULL_VERSION@"
+            VALUE "InternalName",     "texturelab"
+            VALUE "OriginalFilename", "texturelab.exe"
+            VALUE "ProductName",      "TextureLab"
+            VALUE "ProductVersion",   "@TEXTURELAB_FULL_VERSION@"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

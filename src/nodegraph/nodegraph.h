@@ -4,6 +4,7 @@
 #include <QSharedPointer>
 #include <QtCore/QPointF>
 #include <QtCore/QRectF>
+#include <QtCore/QSizeF>
 #include <QtWidgets/QGraphicsView>
 
 class QWidget;
@@ -22,6 +23,21 @@ typedef QSharedPointer<Scene> ScenePtr;
 typedef QSharedPointer<Node> NodePtr;
 typedef QSharedPointer<Connection> ConnectionPtr;
 class Port;
+
+// Geometry of every movable item, captured around a mouse gesture so a node
+// drag, frame move/resize or comment move is recorded as one undo step.
+struct LayoutSnapshot {
+    QMap<QString, QPointF> nodes;      // node centers
+    QMap<QString, QPointF> frames;     // frame pos()
+    QMap<QString, QSizeF> frameSizes;  // frame rect size
+    QMap<QString, QPointF> comments;   // comment pos()
+
+    bool isEmpty() const
+    {
+        return nodes.isEmpty() && frames.isEmpty() && frameSizes.isEmpty() &&
+               comments.isEmpty();
+    }
+};
 
 struct MouseButtonStates {
     bool left;
@@ -45,6 +61,10 @@ public:
 
     ScenePtr scene() const { return _scene; }
     void setNodeGraphScene(const ScenePtr& scene);
+
+    // Asks for the selected nodes/frames/comments to be deleted (emits
+    // deleteRequested; GraphWidget pushes the undo command).
+    void deleteSelection();
 
     void scaleUp();
 
@@ -113,7 +133,8 @@ private:
 
     // Position tracking for move commands
     bool _trackingMove = false;
-    QMap<QString, QPointF> _preDragPositions;
+    LayoutSnapshot _preDragLayout;
+    LayoutSnapshot captureLayout() const;
 
 signals:
     void connectionAdded(ConnectionPtr con);
@@ -126,9 +147,10 @@ signals:
                          QList<FramePtr> frames,
                          QList<CommentPtr> comments);
 
-    // Emitted on mouse-release when selected nodes moved; oldPos/newPos keyed by node id
-    void itemsMoveFinished(QMap<QString, QPointF> oldPositions,
-                           QMap<QString, QPointF> newPositions);
+    // Emitted on mouse-release when any node, frame or comment moved (or a
+    // frame was resized). Both snapshots hold only the items that changed.
+    void layoutChanged(nodegraph::LayoutSnapshot before,
+                       nodegraph::LayoutSnapshot after);
 
     // null nodeptr means no active node selected
     void nodeSelectionChanged(const NodePtr& node);

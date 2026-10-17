@@ -48,6 +48,12 @@ public:
     // renderer can never inherit filtering or wrapping left behind by whoever
     // used the texture last.
     GLuint acquireTexture(int width, int height);
+
+    // When the output resolution differs from the last call, deletes every
+    // free pooled texture so the old size's pool isn't stranded in VRAM.
+    // Smaller per-pass sizes (Auto Levels' reduction chain) are kept while
+    // the resolution stays put.
+    void trimPool(int width, int height);
     void releaseTexture(GLuint textureId);
     void releaseAllTextures();
 
@@ -91,6 +97,8 @@ private:
         bool inUse = false;
     };
     QList<CachedTexture> texturePool;
+    int poolWidth = 0;
+    int poolHeight = 0;
 
     QMap<QString, QOpenGLShaderProgram*> shaderCache;
 };
@@ -110,6 +118,14 @@ struct NodeRenderContext {
 
     QOpenGLVertexArrayObject* vao;
     QOpenGLBuffer* vbo;
+
+    // Set by useShader() when given a program that failed to build.
+    bool shaderFailed = false;
+
+    // Texture bound to the named input, or 0 if it isn't connected. Use this
+    // rather than indexing `inputs`: their order follows the project's
+    // connection map, not the node's input declaration order.
+    GLuint inputTexture(const QString& name) const;
 
     // Bind shader, set viewport, set _textureSize and _seed uniforms
     void useShader(GLuint programId);

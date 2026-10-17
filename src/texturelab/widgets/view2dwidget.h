@@ -34,6 +34,8 @@ class View2DWidget : public QMainWindow {
     TextureNodePtr node;
     QToolBar* toolbar;
     bool showTiled = false;
+    // non-owning; null while MainWindow swaps renderers
+    TextureRenderer* renderer = nullptr;
 
 public:
     View2DWidget();

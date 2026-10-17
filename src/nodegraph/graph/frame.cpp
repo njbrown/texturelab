@@ -261,6 +261,7 @@ void Frame::mousePressEvent(QGraphicsSceneMouseEvent* event)
         _isDragged = true;
         _dragStartPos = event->scenePos();
         _dragStartRect = _frameRect;
+        _dragStartFramePos = this->pos();
 
         // Find resize direction
         QVector<ResizeRegion> regions = getFrameRegions();
@@ -348,7 +349,12 @@ void Frame::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
                 newRect.setHeight(qMax(newHeight, MIN_HEIGHT));
             }
 
-            _frameRect = newRect;
+            // Left/top edges move the item, not the rect's origin: everything
+            // that stores a frame (save, copy/paste, delete-undo) records
+            // pos() + size and would otherwise lose the shift.
+            setPos(_dragStartFramePos +
+                   (newRect.topLeft() - _dragStartRect.topLeft()));
+            _frameRect = QRectF(_dragStartRect.topLeft(), newRect.size());
             update();
         }
 

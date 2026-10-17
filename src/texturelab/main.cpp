@@ -11,6 +11,7 @@
 #include <QThread>
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 // Hints that a dedicated GPU should be used whenever possible
@@ -52,15 +53,17 @@ static void qtMessageHandler(QtMsgType type, const QMessageLogContext& /*ctx*/,
 #define TL_NOINLINE __attribute__((noinline))
 #endif
 
+#ifdef TEXTURELAB_CRASH_TEST_HOOK
 // Deliberately dereference a null pointer so Crashpad captures a minidump.
 // Kept in a named, non-inlined function so the symbolicated Sentry stack trace
-// shows a recognizable frame. Triggered only via the --sentry-crash-test flag;
-// remove this hook once symbolication is confirmed in production.
+// shows a recognizable frame. Triggered only via the --sentry-crash-test flag,
+// which only exists in builds configured with -DTEXTURELAB_CRASH_TEST_HOOK=ON.
 TL_NOINLINE static void sentryCrashTest()
 {
     volatile int* p = nullptr;
     *p = 0xC0FFEE;
 }
+#endif
 
 // Force a consistent dark theme on every platform, independent of the host
 // system theme. Loads the design-token theme (Fusion + dark palette + app
@@ -81,7 +84,19 @@ int main(int argc, char* argv[])
     // Read the stored answer before constructing QApplication. Off until the
     // consent prompt has actually been answered — the launcher puts it up on
     // first run and turns collection on from there if the answer is yes.
-    const bool crashReportingEnabled = Telemetry::isAllowed();
+    bool crashReportingEnabled = Telemetry::isAllowed();
+
+#ifdef TEXTURELAB_CRASH_TEST_HOOK
+    bool crashTest = false;
+    for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--sentry-crash-test") == 0)
+            crashTest = true;
+    }
+    // A fresh CI runner has no stored consent, so without this the test
+    // crash is never uploaded.
+    if (crashTest)
+        crashReportingEnabled = true;
+#endif
 
     // Init Sentry before QApplication; resolves paths via Qt helpers after
     // QCoreApplication is available (handler_path needs applicationDirPath).
@@ -165,20 +180,16 @@ int main(int argc, char* argv[])
     if (CatalogService::instance().init())
         CatalogService::instance().reconcileAsync();
 
+#ifdef TEXTURELAB_CRASH_TEST_HOOK
     // Crash-test hook for verifying Sentry symbolication end-to-end.
     // Must run after Telemetry::init so the crash handler is armed.
-    for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--sentry-crash-test") == 0) {
-            // Give the SDK's network transport a moment to spin up before we
-            // crash. Crashpad (Win/Linux) uploads out-of-process so this isn't
-            // needed there, but the macOS inproc backend must send the event
-            // synchronously from the dying process — an instant crash at
-            // startup dies before the transport is ready. A real crash happens
-            // after the app has been running, so this warm-up is representative.
-            QThread::sleep(4);
-            sentryCrashTest();
-        }
+    if (crashTest) {
+        // Give the SDK's network transport a moment to spin up before we
+        // crash, so the crash isn't racing SDK startup.
+        QThread::sleep(4);
+        sentryCrashTest();
     }
+#endif
 
     // Install message handler after Sentry is up so breadcrumbs are captured
     qInstallMessageHandler(qtMessageHandler);
@@ -208,7 +219,13 @@ int main(int argc, char* argv[])
 
     // Close the catalog databases here, while Qt's SQL layer is still alive.
     // Leaving it to static destruction crashes on exit (see instance()).
-    CatalogService::instance().shutdown();
+    if (!CatalogService::instance().shutdown()) {
+        // A reconcile is stuck (e.g. a stat on a dead network mount). Normal
+        // teardown would block in QThreadPool's destructor or race it, so
+        // leave now; the OS reclaims everything.
+        Telemetry::close();
+        std::_Exit(ret);
+    }
 
     Telemetry::close();
     return ret;

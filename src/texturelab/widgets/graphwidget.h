@@ -63,6 +63,9 @@ public:
     QAction* cutAction;
     QAction* copyAction;
     QAction* pasteAction;
+    // No shortcut of its own: NodeGraph handles Delete/Backspace directly so
+    // they still work inside in-place text editing.
+    QAction* deleteAction;
 
 protected:
     void addNode(const TextureNodePtr& node);
@@ -71,6 +74,8 @@ protected:
 
 private:
     void setupToolbar();
+    void applyResolution(int res);
+    void applySeed(int seed);
 
     // Breadcrumbs the change, and — when the driver tells us how much VRAM is
     // free — asks first if the new resolution plausibly won't fit. Returns
@@ -79,7 +84,7 @@ private:
 
     // Puts the picker back and explains, after TextureRenderer gave up on a
     // resolution and rolled the project back.
-    void onResolutionChangeFailed(int requested, int fallback);
+    void onResolutionChangeFailed(int requested, int fallback, bool onLoad);
 
     NodeSearchPopup* searchPopup;
     QPoint lastMousePos;

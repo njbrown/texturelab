@@ -1,4 +1,5 @@
 #include "texturerenderer.h"
+#include <algorithm>
 #include "noderenderer.h"
 #include "renderworker.h"
 // #include "../models.h"
@@ -176,7 +177,9 @@ void TextureRenderer::setup()
     format.setProfile(QSurfaceFormat::CoreProfile);
     format.setSamples(1);
     format.setSwapInterval(0);
-    format.setOption(QSurfaceFormat::DebugContext); // for debugging
+#ifdef TEXTURELAB_DEV_BUILD
+    format.setOption(QSurfaceFormat::DebugContext);
+#endif
 
     surface->setFormat(format);
     surface->create();
@@ -199,16 +202,17 @@ void TextureRenderer::setup()
         qFatal("Could not obtain required OpenGL context version");
     }
 
-    // setup debugging
+#ifdef TEXTURELAB_DEV_BUILD
+    // Debug context (and so this logger) only exists in dev builds.
     QOpenGLDebugLogger* logger = new QOpenGLDebugLogger();
-    logger->initialize();
-
-    QObject::connect(logger, &QOpenGLDebugLogger::messageLogged,
-                     [=](const QOpenGLDebugMessage& debugMessage) {
-                         qDebug() << debugMessage;
-                     });
-
-    logger->startLogging();
+    if (logger->initialize()) {
+        QObject::connect(logger, &QOpenGLDebugLogger::messageLogged,
+                         [](const QOpenGLDebugMessage& debugMessage) {
+                             qDebug() << debugMessage;
+                         });
+        logger->startLogging();
+    }
+#endif
 
     gl->initializeOpenGLFunctions();
 
@@ -319,6 +323,11 @@ TextureRenderer::~TextureRenderer()
     if (ctx && surface) {
         ctx->makeCurrent(surface);
 
+        // The worker has stopped, so no command can still be using these.
+        for (const auto& node : allocatedNodes)
+            freeNodeResources(node);
+        allocatedNodes.clear();
+
         if (fbo) {
             delete fbo;
             fbo = nullptr;
@@ -362,11 +371,26 @@ void TextureRenderer::update()
     if (!project)
         return;
 
+    if (!renderInFlight)
+        freeRemovedNodes();
+
     const int requested = project->textureWidth;
     bool allocationFailed = false;
 
+    // A previous attempt at this size already failed with nowhere to go.
+    // Render what has textures (getNextUpdatableNode() skips the rest) and
+    // only try allocating again once something has freed memory.
+    const bool skipAllocation =
+        failedAtResolution == requested &&
+        int(project->nodes.size()) >= failedAtNodeCount;
+    if (!skipAllocation)
+        failedAtResolution = 0;
+
     // check for nodes that need updating and update
     for (auto& node : project->nodes) {
+        if (skipAllocation)
+            break;
+
         // Defensive: a null entry should never reach the map now that lookups
         // use .value() (Step 1), but guard the render loop regardless.
         if (!node)
@@ -406,7 +430,17 @@ void TextureRenderer::update()
         return;
     }
 
-    if (lastGoodResolution != requested) {
+    // Only a size every node actually holds is proven to fit. Skipped
+    // allocation, or a resize deferred because a render is in flight, leaves
+    // some nodes at the old size (or none), and recording `requested` then
+    // would make a later failure "roll back" to a size that never fitted.
+    const bool allAtRequested = std::all_of(
+        project->nodes.begin(), project->nodes.end(),
+        [&](const TextureNodePtr& n) {
+            return !n || (n->texture && n->textureWidth == requested &&
+                          n->textureHeight == project->textureHeight);
+        });
+    if (!skipAllocation && allAtRequested && lastGoodResolution != requested) {
         lastGoodResolution = requested;
         Telemetry::setTag("texture.resolution", std::to_string(requested));
     }
@@ -415,38 +449,118 @@ void TextureRenderer::update()
         this->queueNextNodeToRender();
 }
 
-void TextureRenderer::rollBackResolution(int requested)
+void TextureRenderer::freeNodeResources(const TextureNodePtr& node)
 {
-    // Nothing known-good to retreat to — the very first allocation failed, so
-    // there is no smaller size on record. Leave the graph unrendered; the
-    // captureException in createNodeTexture() has already reported why.
-    if (lastGoodResolution <= 0 || lastGoodResolution == requested)
+    delete node->texture;
+    node->texture = nullptr;
+    delete node->shader;
+    node->shader = nullptr;
+    node->textureWidth = 0;
+    node->textureHeight = 0;
+}
+
+void TextureRenderer::freeRemovedNodes()
+{
+    // Compared by object, not id: undoing a delete recreates the node as a
+    // new object with the same id, and the old one is gone for good.
+    auto removed = [this](const TextureNodePtr& node) {
+        return project->nodes.value(node->id) != node;
+    };
+    if (std::none_of(allocatedNodes.begin(), allocatedNodes.end(), removed))
         return;
 
-    const int fallback = lastGoodResolution;
-    project->textureWidth = fallback;
-    project->textureHeight = fallback;
+    ctx->makeCurrent(surface);
+    for (int i = allocatedNodes.size() - 1; i >= 0; --i) {
+        if (removed(allocatedNodes[i])) {
+            freeNodeResources(allocatedNodes[i]);
+            allocatedNodes.removeAt(i);
+        }
+    }
+    ctx->doneCurrent();
+}
 
-    Telemetry::breadcrumb(
-        "render", "resolution rolled back after allocation failure",
-        {{"requested", (int64_t)requested},
-         {"fallback", (int64_t)fallback},
-         {"node_count", (int64_t)project->nodes.size()}});
-    Telemetry::setTag("texture.resolution", std::to_string(fallback));
+static constexpr int kMinResolution = 32;
 
-    // Re-allocate everything at the size we know fits. A node whose texture was
-    // freed on the way up gets it back here; one that still fails is skipped by
-    // getNextUpdatableNode() rather than dereferenced.
-    for (auto& node : project->nodes) {
-        if (!node)
-            continue;
-        if (!node->texture || node->textureWidth != fallback ||
-            node->textureHeight != fallback)
-            this->createNodeTexture(node);
-        node->isDirty = true;
+void TextureRenderer::rollBackResolution(int requested)
+{
+    // Failed at the size already known to fit — a node added with VRAM full.
+    // Don't downscale the whole project for that; stop retrying instead.
+    if (lastGoodResolution == requested) {
+        failedAtResolution = requested;
+        failedAtNodeCount = int(project->nodes.size());
+        if (!renderInFlight)
+            this->queueNextNodeToRender();
+        return;
     }
 
-    emit resolutionChangeFailed(requested, fallback);
+    // Nothing has fitted yet: the project was opened (or created) at a size
+    // this GPU can't hold, so there's no known-good size. Halve until
+    // everything allocates.
+    const bool onLoad = lastGoodResolution <= 0;
+
+    // Free the textures the failed batch did manage to allocate first, so
+    // they don't crowd out the smaller ones. Only safe with nothing in flight
+    // (an in-flight command may hold one as an input); that's always the case
+    // on load, since nothing has rendered yet.
+    if (onLoad && !renderInFlight) {
+        ctx->makeCurrent(surface);
+        for (auto& node : project->nodes) {
+            if (node && node->texture) {
+                delete node->texture;
+                node->texture = nullptr;
+            }
+        }
+        ctx->doneCurrent();
+    }
+
+    int fallback = onLoad ? requested / 2 : lastGoodResolution;
+    while (fallback >= kMinResolution) {
+        project->textureWidth = fallback;
+        project->textureHeight = fallback;
+
+        Telemetry::breadcrumb(
+            "render", "resolution rolled back after allocation failure",
+            {{"requested", (int64_t)requested},
+             {"fallback", (int64_t)fallback},
+             {"node_count", (int64_t)project->nodes.size()}});
+
+        // Re-allocate everything at the fallback size. A node whose texture
+        // was freed on the way up gets it back here; one that still fails is
+        // skipped by getNextUpdatableNode() rather than dereferenced.
+        bool fits = true;
+        for (auto& node : project->nodes) {
+            if (!node)
+                continue;
+            if (!node->texture || node->textureWidth != fallback ||
+                node->textureHeight != fallback) {
+                if (!this->createNodeTexture(node)) {
+                    fits = false;
+                    if (onLoad)
+                        break;
+                }
+            }
+            node->isDirty = true;
+        }
+
+        if (fits || !onLoad)
+            break;
+        fallback /= 2;
+    }
+
+    if (fallback < kMinResolution) {
+        // Not even the smallest size fits. Leave the graph unrendered; the
+        // captureException in createNodeTexture() has already reported why.
+        project->textureWidth = requested;
+        project->textureHeight = requested;
+        failedAtResolution = requested;
+        failedAtNodeCount = int(project->nodes.size());
+        return;
+    }
+
+    lastGoodResolution = fallback;
+    Telemetry::setTag("texture.resolution", std::to_string(fallback));
+
+    emit resolutionChangeFailed(requested, fallback, onLoad);
 
     if (!renderInFlight)
         this->queueNextNodeToRender();
@@ -513,12 +627,40 @@ bool TextureRenderer::initializeNodeGraphicsResources(
     if (!this->createNodeTexture(node))
         return false;
 
-    ctx->makeCurrent(surface);
-    // build and compile shaders
-    node->shader = buildShaderForNode(node);
-    ctx->doneCurrent();
+    // A node whose texture was freed by a resolution fallback keeps its
+    // shader; rebuilding would leak the old one.
+    if (!node->shader) {
+        ctx->makeCurrent(surface);
+        node->shader = buildShaderForNode(node);
+        ctx->doneCurrent();
+    }
 
     return true;
+}
+
+QImage TextureRenderer::readNodeImage(const TextureNodePtr& node)
+{
+    if (!node || !node->texture || node->textureWidth <= 0 ||
+        node->textureHeight <= 0)
+        return QImage();
+
+    QOpenGLContext* previous = QOpenGLContext::currentContext();
+    QSurface* previousSurface = previous ? previous->surface() : nullptr;
+
+    ctx->makeCurrent(surface);
+    QImage image(node->textureWidth, node->textureHeight,
+                 QImage::Format_RGBA8888);
+    gl->glBindTexture(GL_TEXTURE_2D, node->textureId());
+    gl->glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                      image.bits());
+    gl->glBindTexture(GL_TEXTURE_2D, 0);
+    ctx->doneCurrent();
+
+    if (previous && previousSurface)
+        previous->makeCurrent(previousSurface);
+
+    // OpenGL rows are bottom-up
+    return image.mirrored(false, true);
 }
 
 SystemInfo::GpuMemory TextureRenderer::queryGpuMemory()
@@ -564,6 +706,8 @@ bool TextureRenderer::createNodeTexture(const TextureNodePtr& node)
     node->texture = new QOpenGLFramebufferObject(width, height, fboFormat);
     node->textureWidth = width;
     node->textureHeight = height;
+    if (!allocatedNodes.contains(node))
+        allocatedNodes.append(node);
 
     // Running out of VRAM shows up either as an incomplete FBO or as a
     // GL_OUT_OF_MEMORY left behind by the texture allocation, depending on the
@@ -759,6 +903,16 @@ void TextureRenderer::initRenderWorker()
 #endif
 }
 
+bool TextureRenderer::isRenderComplete() const
+{
+    if (!project || renderInFlight)
+        return false;
+    for (const auto& node : project->nodes)
+        if (node && (node->isDirty || !node->texture))
+            return false;
+    return true;
+}
+
 void TextureRenderer::nodeRendered(const QString& nodeId, GLuint texId)
 {
     qDebug() << "TextureRenderer: Node rendered:" << nodeId;
@@ -925,9 +1079,10 @@ TextureRenderer::buildShaderForNode(const TextureNodePtr& node)
 {
     ctx->makeCurrent(surface);
 
-    QOpenGLShader* vshader = new QOpenGLShader(QOpenGLShader::Vertex);
-    QOpenGLShader* fshader = new QOpenGLShader(QOpenGLShader::Fragment);
+    // Parented to the program so deleting it frees them too.
     auto program = new QOpenGLShaderProgram;
+    QOpenGLShader* vshader = new QOpenGLShader(QOpenGLShader::Vertex, program);
+    QOpenGLShader* fshader = new QOpenGLShader(QOpenGLShader::Fragment, program);
 
     // Build input/prop declaration lists for RenderResourceCache helpers
     QStringList inputNames = node->inputs;

@@ -59,8 +59,37 @@ IblSampler::IblSampler()
                                ":assets/ibl_filtering.frag");
 }
 
+void IblSampler::releaseResources()
+{
+    delete framebuffer;
+    framebuffer = nullptr;
+    if (vao) {
+        vao->destroy();
+        delete vao;
+        vao = nullptr;
+    }
+    if (vbo) {
+        vbo->destroy();
+        delete vbo;
+        vbo = nullptr;
+    }
+    delete inputTexture;
+    inputTexture = nullptr;
+
+    for (GLuint* id : {&cubemapTextureID, &lambertianTextureID, &ggxTextureID,
+                       &sheenTextureID, &ggxLutTextureID,
+                       &charlieLutTextureID}) {
+        if (*id) {
+            gl->glDeleteTextures(1, id);
+            *id = 0;
+        }
+    }
+}
+
 void IblSampler::init(const QString& panoramaPath)
 {
+    releaseResources();
+
     // THIS SOLVES THE ISSUE CAUSING BANDING TO SHOW
     // AROUND BRIGHT AREAS NEAR SEEMS IN LAMBERTIAN CUBEMAP!!!
     gl->glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -309,7 +338,6 @@ GLuint IblSampler::createLut()
 
 void IblSampler::panoramaToCubemap()
 {
-    // todo: cleanup old cubemap
 
     auto vertSource = shaderCache->generateShaderSource("fullscreen.vert");
     auto fragSource =
@@ -355,14 +383,18 @@ void IblSampler::panoramaToCubemap()
     gl->glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTextureID);
     gl->glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
     gl->glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+    delete shader;
 }
 
 QOpenGLShaderProgram* IblSampler::createShader(const QString& vertSource,
                                                const QString& fragSource)
 {
-    QOpenGLShader* vshader = new QOpenGLShader(QOpenGLShader::Vertex);
-    QOpenGLShader* fshader = new QOpenGLShader(QOpenGLShader::Fragment);
+    // Shaders parented to the program; callers delete the program after
+    // their one-off pass.
     auto program = new QOpenGLShaderProgram;
+    QOpenGLShader* vshader = new QOpenGLShader(QOpenGLShader::Vertex, program);
+    QOpenGLShader* fshader = new QOpenGLShader(QOpenGLShader::Fragment, program);
 
     if (!vshader->compileSourceCode(vertSource)) {
         qDebug() << "VERTEX SHADER ERROR";
@@ -448,6 +480,9 @@ void IblSampler::applyFilter(int distribution, float roughness,
     // gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
     auto ctx = QOpenGLContext::currentContext();
     gl->glBindFramebuffer(GL_FRAMEBUFFER, ctx->defaultFramebufferObject());
+
+    // One program per mip level per environment used to be leaked here.
+    delete shader;
 }
 
 void IblSampler::cubeMapToLambertian()
@@ -531,16 +566,18 @@ void IblSampler::sampleLut(int distribution, int targetTextureId,
     // gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
     auto ctx = QOpenGLContext::currentContext();
     gl->glBindFramebuffer(GL_FRAMEBUFFER, ctx->defaultFramebufferObject());
+
+    delete shader;
 }
 
+// The LUT textures are allocated once in init(); allocating them again here
+// leaked 2 x 16 MB per environment load.
 void IblSampler::sampleGGXLut()
 {
-    this->ggxLutTextureID = this->createLut();
     this->sampleLut(1, this->ggxLutTextureID, this->lutResolution);
 }
 
 void IblSampler::sampleCharlieLut()
 {
-    this->charlieLutTextureID = this->createLut();
     this->sampleLut(2, this->charlieLutTextureID, this->lutResolution);
 }

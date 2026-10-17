@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(qtcompleteapp VERSION 0.1 LANGUAGES CXX)
+# Workspace root. The app's version lives in src/texturelab/CMakeLists.txt.
+project(texturelab_workspace LANGUAGES CXX)
 
 # sentry-native (Crashpad backend for out-of-process crash capture)
 include(FetchContent)

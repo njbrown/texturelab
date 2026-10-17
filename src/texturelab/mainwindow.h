@@ -45,6 +45,9 @@ protected:
     void setupMenus();
     void setupDocks();
     void closeEvent(QCloseEvent* event) override;
+    // Watches the application for QEvent::Quit (Cmd+Q, session logout) so the
+    // launcher lets itself be closed instead of cancelling the quit.
+    bool eventFilter(QObject* watched, QEvent* event) override;
     void dragEnterEvent(QDragEnterEvent* event) override;
     void dropEvent(QDropEvent* event) override;
 
@@ -58,6 +61,7 @@ protected:
     void newProject();
     void saveProject();
     void saveProjectAs();
+    bool saveProjectTo(const QString& filePath);
     void showExportDialog();
     void directExport();
     void handleExport(const QString& destination, const QString& pattern);
@@ -123,6 +127,11 @@ private:
     // rendering and the thumbnail has been captured. Opening is asynchronous —
     // the viewport shows nothing useful until the last node is clean.
     bool thumbnailCapturePending = false;
+    // Catalog row for the open document, from recordOpened/recordSaved; -1
+    // when it has none (unsaved, an example, or the catalog is unavailable).
+    // The index stores absolute paths, so a lookup by project->filePath can
+    // miss; the id can't.
+    qint64 catalogTextureId = -1;
 
     TextureRenderer* renderer;
 

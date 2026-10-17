@@ -8,25 +8,48 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSet>
 #include <QUuid>
+
+// True if `node` is `target` or upstream of it in `texture`'s graph, i.e. a
+// connection from target's output into node would close a cycle.
+static bool feedsInto(const TextureProjectPtr& texture, const QString& node,
+                      const QString& target)
+{
+    QSet<QString> visited;
+    QStringList pending{target};
+    while (!pending.isEmpty()) {
+        QString current = pending.takeLast();
+        if (current == node)
+            return true;
+        if (visited.contains(current))
+            continue;
+        visited.insert(current);
+        for (const auto& con : texture->connections)
+            if (con && con->leftNode && con->rightNode &&
+                con->rightNode->id == current)
+                pending.append(con->leftNode->id);
+    }
+    return false;
+}
 
 TextureProjectPtr Project::loadTexture(QString path)
 {
     QFile file(path);
-    file.open(QIODevice::ReadOnly);
+    if (!file.open(QIODevice::ReadOnly))
+        return TextureProjectPtr(nullptr);
     QJsonParseError error;
     auto doc = QJsonDocument::fromJson(file.readAll(), &error);
     file.close();
 
-    if (error.error) {
-        // report error
+    if (error.error != QJsonParseError::NoError || !doc.isObject())
         return TextureProjectPtr(nullptr);
-    }
 
     return Project::loadTextureFromJson(doc.object());
 }
 
-TextureProjectPtr Project::loadTextureFromJson(QJsonObject json)
+TextureProjectPtr Project::loadTextureFromJson(QJsonObject json,
+                                                QStringList* skippedTypes)
 {
     TextureProjectPtr texture(new TextureProject());
 
@@ -51,8 +74,11 @@ TextureProjectPtr Project::loadTextureFromJson(QJsonObject json)
         auto node = lib->createNode(nodeName);
         // createNode returns null for an unknown/legacy typeName the resolved
         // library can't build; skip it rather than dereferencing null.
-        if (!node)
+        if (!node) {
+            if (skippedTypes)
+                skippedTypes->append(nodeName);
             continue;
+        }
         node->exportName = nodeDef["exportName"].toString("");
         node->id = nodeDef["id"].toString();
         node->randomSeed = jsonutils::getLong(nodeDef["randomSeed"]);
@@ -100,6 +126,11 @@ TextureProjectPtr Project::loadTextureFromJson(QJsonObject json)
         if (!leftNode || !rightNode)
             continue;
 
+        // Older builds allowed cycles, which never finish rendering. Drop
+        // the connection that would close one.
+        if (feedsInto(texture, rightNodeId, leftNodeId))
+            continue;
+
         QString rightNodeInputId = conObj["rightNodeInput"].toString();
         texture->addConnection(leftNode, rightNode, rightNodeInputId);
     }
@@ -138,6 +169,15 @@ TextureProjectPtr Project::loadTextureFromJson(QJsonObject json)
             frame->color = QColor(colorStr);
         texture->frames[frame->id] = frame;
     }
+
+    // Project-wide render settings. Older files have none: keep the defaults.
+    // Only accept resolutions the toolbar offers (powers of two, 32..4096).
+    int res = json["textureWidth"].toInt(texture->textureWidth);
+    if (res >= 32 && res <= 4096 && (res & (res - 1)) == 0) {
+        texture->textureWidth = res;
+        texture->textureHeight = res;
+    }
+    texture->randomSeed = json["randomSeed"].toInt(texture->randomSeed);
 
     if (json["export"].isObject()) {
         auto exportObj = json["export"].toObject();
@@ -257,6 +297,11 @@ QByteArray Project::saveTexture(TextureProjectPtr texture)
 
     // library version this project's nodes/properties were saved against
     json["libraryVersion"] = texture->libraryVersion;
+
+    // project-wide render settings
+    json["textureWidth"] = texture->textureWidth;
+    json["textureHeight"] = texture->textureHeight;
+    json["randomSeed"] = texture->randomSeed;
 
     // export settings
     QJsonObject exportObj;

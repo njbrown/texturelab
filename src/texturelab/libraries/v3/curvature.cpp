@@ -47,9 +47,28 @@ void CurvatureNode::init()
             return -a - b;
         }
 
+        // Taps per pixel this draw can afford: ~1e10 texture fetches per draw keeps a
+        // maxed-out node under the Windows GPU watchdog (TDR, 2 s) on modest GPUs.
+        // At 1024x1024 that's 10000 taps, so nothing changes at or below 1K; at 4K it's
+        // ~600. Large kernels keep their radius and sigma and sample with a stride
+        // instead, so the look is preserved apart from some coarseness.
+        // Mix runs three kernels, so each gets a third.
+        float curvatureMaxSamples()
+        {
+            float passes = prop_type == TYPE_MIX ? 3.0 : 1.0;
+            float tapBudget = 1.0e10 / (_textureSize.x * _textureSize.y * passes);
+            return max(1.0, floor(sqrt(tapBudget) * 0.5));
+        }
+
         float CurvatureMap(vec2 p, float r)
         {
-            float q = float(prop_samples);
+            // Zero radius (intensity or a curvature slider at 0) has no
+            // neighbourhood; the weights below would divide by zero.
+            if (r <= 0.0)
+                return 0.0;
+
+            // Fewer, wider-spaced taps over the same radius at high res.
+            float q = min(float(prop_samples), curvatureMaxSamples());
             float s = r / q;
             float H = HeightMap(p) * LAPLACIAN_CENTER_WEIGHT;
             float v = 0.0;

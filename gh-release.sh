@@ -40,6 +40,8 @@ if [ -z "$TAG" ]; then
 fi
 
 echo "Release tag: $TAG"
+# Runs created before this moment belong to an earlier attempt.
+STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
     echo "Tag already on origin — dispatching a re-run against it."
@@ -47,6 +49,22 @@ if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; the
 else
     BRANCH=$(git rev-parse --abbrev-ref HEAD)
     SHA=$(git rev-parse --short HEAD)
+
+    # The tag is cut from HEAD, so HEAD must be exactly what's on master.
+    if [ "$BRANCH" != "master" ]; then
+        echo "Refusing to tag: on '$BRANCH', not master." >&2
+        exit 1
+    fi
+    if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+        echo "Refusing to tag: uncommitted changes to tracked files." >&2
+        git status --short --untracked-files=no >&2
+        exit 1
+    fi
+    git fetch --quiet origin master
+    if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/master)" ]; then
+        echo "Refusing to tag: HEAD ($SHA) is not origin/master. Push or pull first." >&2
+        exit 1
+    fi
     echo
     echo "Tag $TAG does not exist on origin. It would be created at $BRANCH ($SHA)"
     echo "and pushed, which starts the release build."
@@ -59,10 +77,21 @@ else
     git push origin "$TAG"
 fi
 
+# Find this attempt's run for this tag; "--limit 1" alone can pick up a
+# previous run if the new one hasn't registered yet.
 echo "Waiting for run to start..."
-sleep 5
-
-RUN_ID=$(gh run list --repo "$REPO" --workflow "$WORKFLOW" --limit 1 --json databaseId -q '.[0].databaseId')
+RUN_ID=""
+for _ in $(seq 1 20); do
+    sleep 3
+    RUN_ID=$(gh run list --repo "$REPO" --workflow "$WORKFLOW" --branch "$TAG" \
+        --limit 5 --json databaseId,createdAt \
+        -q "[.[] | select(.createdAt >= \"$STARTED_AT\")][0].databaseId // empty")
+    [ -n "$RUN_ID" ] && break
+done
+if [ -z "$RUN_ID" ]; then
+    echo "No run found for $TAG yet — check https://github.com/$REPO/actions" >&2
+    exit 1
+fi
 RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
 echo "Run ID: $RUN_ID"
 echo "$RUN_URL"

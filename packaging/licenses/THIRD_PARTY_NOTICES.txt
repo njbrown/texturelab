@@ -1,0 +1,76 @@
+TextureLab — third-party software notices
+=========================================
+
+TextureLab itself is licensed under the GNU General Public License v3
+(see LICENSE, and GPL-3.0.txt in this folder). Its source code is available at
+https://github.com/njbrown/texturelab.
+
+TextureLab includes the following third-party components. The full licence
+texts are in this folder.
+
+
+Qt 6
+----
+Copyright (C) The Qt Company Ltd. and other contributors.
+Licence: GNU Lesser General Public License v3 (LGPL-3.0.txt, which incorporates
+GPL-3.0.txt).
+https://www.qt.io
+
+Qt is dynamically linked: the Qt libraries shipped with TextureLab are the
+unmodified Qt binaries and can be replaced with your own build of the same Qt
+version. The Qt source code is available from https://download.qt.io/ and
+https://code.qt.io/.
+
+
+Qt Advanced Docking System
+--------------------------
+Copyright (C) Uwe Kindler and contributors.
+Licence: GNU Lesser General Public License v2.1 (LGPL-2.1.txt).
+https://github.com/githubuser0xFFFF/Qt-Advanced-Docking-System
+
+Statically linked. The complete source of TextureLab, including this library
+(src/ads), is available at https://github.com/njbrown/texturelab, so the
+application can be rebuilt and relinked against a modified version.
+
+
+sentry-native
+-------------
+Copyright (c) 2019 Sentry (https://sentry.io) and individual contributors.
+Licence: MIT (sentry-native.txt).
+https://github.com/getsentry/sentry-native
+
+
+Crashpad
+--------
+Copyright The Crashpad Authors.
+Licence: Apache License 2.0 (Apache-2.0.txt).
+https://chromium.googlesource.com/crashpad/crashpad
+
+Crashpad bundles the following, used under their own licences:
+  - mini_chromium — BSD 3-Clause (mini_chromium.txt)
+  - linux-syscall-support — BSD 3-Clause (linux-syscall-support.txt)
+  - zlib — zlib licence (zlib.txt)
+  - cpp-httplib — MIT (cpp-httplib.txt)
+  - getopt — public domain, Gregory Pietsch (getopt.txt)
+
+
+TinyGLTF
+--------
+Copyright (c) 2015 - Present Syoyo Fujita, Aurélien Chatelain and many
+contributors.
+Licence: MIT (tinygltf.txt).
+https://github.com/syoyo/tinygltf
+
+
+JSON for Modern C++
+-------------------
+Copyright (c) 2013-2019 Niels Lohmann.
+Licence: MIT (nlohmann-json.txt).
+https://github.com/nlohmann/json
+
+
+stb_image
+---------
+Copyright (c) 2017 Sean Barrett.
+Licence: MIT, or public domain at your option (stb_image.txt).
+https://github.com/nothings/stb

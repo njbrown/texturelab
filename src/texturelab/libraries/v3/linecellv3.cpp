@@ -76,7 +76,8 @@ void LineCellV3Node::init()
 
             // c.x = 0 at edge centre, grows away from it.
             // Smooth bright line that fades to black past `thickness`.
-            float edge = 1.0 - smoothstep(0.0, prop_thickness, c.x);
+            // max(): smoothstep is undefined with equal edges (thickness 0)
+            float edge = 1.0 - smoothstep(0.0, max(prop_thickness, 1e-5), c.x);
             vec3 color = vec3(edge);
 
             if (prop_invert) color = 1.0 - color;

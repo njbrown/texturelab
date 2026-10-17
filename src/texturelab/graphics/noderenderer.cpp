@@ -1,5 +1,6 @@
 #include "noderenderer.h"
 #include "../props.h"
+#include "../telemetry.h"
 
 #include <QDebug>
 #include <QOpenGLBuffer>
@@ -41,6 +42,22 @@ void RenderResourceCache::applyDefaultTextureParams(
     gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     gl->glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void RenderResourceCache::trimPool(int width, int height)
+{
+    if (width == poolWidth && height == poolHeight)
+        return;
+    poolWidth = width;
+    poolHeight = height;
+
+    for (int i = texturePool.size() - 1; i >= 0; --i) {
+        auto& tex = texturePool[i];
+        if (!tex.inUse) {
+            gl->glDeleteTextures(1, &tex.id);
+            texturePool.removeAt(i);
+        }
+    }
 }
 
 GLuint RenderResourceCache::acquireTexture(int width, int height)
@@ -98,8 +115,12 @@ GLuint RenderResourceCache::getOrCompileShader(const QString& key,
                                                const QString& vertexSource,
                                                const QString& fragmentSource)
 {
-    if (shaderCache.contains(key))
-        return shaderCache[key]->programId();
+    // A cached nullptr records a shader that failed to build, so it isn't
+    // recompiled (and re-reported) on every render.
+    if (shaderCache.contains(key)) {
+        auto cached = shaderCache[key];
+        return cached ? cached->programId() : 0;
+    }
 
     auto program = new QOpenGLShaderProgram();
 
@@ -124,6 +145,19 @@ GLuint RenderResourceCache::getOrCompileShader(const QString& key,
         qDebug() << program->log();
     }
 
+    // Compile errors leave the program unlinked, so this covers both. Using an
+    // unlinked program is undefined; callers get 0 and NodeRenderContext
+    // skips drawing with it.
+    if (!program->isLinked()) {
+        Telemetry::captureException(
+            "custom node shader failed to build",
+            {{"shader", key.toStdString()},
+             {"log", program->log().left(2000).toStdString()}});
+        delete program;
+        shaderCache[key] = nullptr;
+        return 0;
+    }
+
     shaderCache[key] = program;
     return program->programId();
 }
@@ -133,8 +167,10 @@ GLuint RenderResourceCache::compileNodeShader(
     const QStringList& inputNames,
     const QList<QPair<QString, int>>& propTypes)
 {
-    if (shaderCache.contains(key))
-        return shaderCache[key]->programId();
+    if (shaderCache.contains(key)) {
+        auto cached = shaderCache[key];
+        return cached ? cached->programId() : 0;
+    }
 
     QString fSource = fragmentPreamble() + randomLib() + gradientLib() +
                       curveLib() +
@@ -454,8 +490,24 @@ ScopedTextureParams::~ScopedTextureParams()
 // NodeRenderContext
 // ============================================================================
 
+GLuint NodeRenderContext::inputTexture(const QString& name) const
+{
+    for (const auto& input : inputs) {
+        if (input.name == name)
+            return input.textureId;
+    }
+    return 0;
+}
+
 void NodeRenderContext::useShader(GLuint programId)
 {
+    // 0 = the shader failed to build. Unbind rather than leave the previous
+    // program active, and make drawQuad() a no-op.
+    shaderFailed = programId == 0;
+    if (shaderFailed) {
+        gl->glUseProgram(0);
+        return;
+    }
     gl->glUseProgram(programId);
     gl->glViewport(0, 0, textureWidth, textureHeight);
     gl->glUniform2f(gl->glGetUniformLocation(programId, "_textureSize"),
@@ -467,6 +519,8 @@ void NodeRenderContext::bindTexture(GLuint programId,
                                     const QString& uniformName,
                                     GLuint textureId, int unit)
 {
+    if (programId == 0)
+        return;
     gl->glActiveTexture(GL_TEXTURE0 + unit);
     gl->glBindTexture(GL_TEXTURE_2D, textureId);
     gl->glUniform1i(
@@ -477,6 +531,8 @@ void NodeRenderContext::bindTexture(GLuint programId,
 
 void NodeRenderContext::drawQuad()
 {
+    if (shaderFailed)
+        return;
     vao->bind();
     vbo->bind();
 

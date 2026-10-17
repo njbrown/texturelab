@@ -121,6 +121,10 @@ public:
     void setProp(ColorProp* prop);
     bool eventFilter(QObject* obj, QEvent* event) override;
 signals:
+    // Live updates while the picker is open (apply, but don't record undo).
+    void valuePreviewed(QColor);
+    // Once when the picker closes with a different color. Not emitted on
+    // cancel, which reverts through valuePreviewed instead.
     void valueChanged(QColor);
 };
 
@@ -140,6 +144,8 @@ public:
     bool eventFilter(QObject* obj, QEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
 signals:
+    // See ColorPropWidget: live while the picker is open, then one commit.
+    void valuePreviewed(Gradient);
     void valueChanged(Gradient);
 };
 

@@ -421,7 +421,8 @@ bool ColorPropWidget::eventFilter(QObject* obj, QEvent* event)
 {
     if (obj == colorPreview && event->type() == QEvent::MouseButtonPress) {
         auto picker = new ColorPicker();
-        picker->setColor(prop->value);
+        const QColor initialColor = prop->value;
+        picker->setColor(initialColor);
 
         // Position dialog below the colorPreview widget
         QPoint globalPos = colorPreview->mapToGlobal(QPoint(0, 0));
@@ -432,9 +433,15 @@ bool ColorPropWidget::eventFilter(QObject* obj, QEvent* event)
                     if (prop) {
                         prop->value = color;
                         updateColorPreview();
-                        emit valueChanged(color); // signal value changed
+                        emit valuePreviewed(color);
                     }
                 });
+        // Closing commits (Escape has already reverted to initialColor via
+        // onColorChanged, so a cancelled pick commits nothing).
+        connect(picker, &ColorPicker::onClosed, this, [this, initialColor]() {
+            if (prop && QColor(prop->value) != initialColor)
+                emit valueChanged(prop->value);
+        });
         connect(picker, &ColorPicker::onClosed, picker,
                 &ColorPicker::deleteLater);
 
@@ -502,6 +509,18 @@ void GradientPropWidget::updateGradientPreview()
     }
 }
 
+static bool sameGradient(const Gradient& a, const Gradient& b)
+{
+    if (a.points.size() != b.points.size())
+        return false;
+    for (int i = 0; i < a.points.size(); ++i) {
+        if (a.points[i].position != b.points[i].position ||
+            a.points[i].color != b.points[i].color)
+            return false;
+    }
+    return true;
+}
+
 bool GradientPropWidget::eventFilter(QObject* obj, QEvent* event)
 {
     if (obj == gradientPreview && event->type() == QEvent::MouseButtonPress) {
@@ -518,24 +537,26 @@ bool GradientPropWidget::eventFilter(QObject* obj, QEvent* event)
                     if (prop) {
                         prop->value = gradient;
                         updateGradientPreview();
-                        emit valueChanged(gradient); // signal value changed
+                        emit valuePreviewed(gradient);
                     }
                 });
 
         connect(picker, &GradientPickerDialog::onGradientAccepted, this,
-                [this](const Gradient& gradient) {
+                [this, initialGradient](const Gradient& gradient) {
                     if (prop) {
                         prop->value = gradient;
                         updateGradientPreview();
-                        emit valueChanged(gradient); // signal value changed
+                        if (!sameGradient(gradient, initialGradient))
+                            emit valueChanged(gradient);
                     }
                 });
 
+        // Cancel only reverts the preview; nothing to record.
         connect(picker, &QDialog::rejected, this, [this, initialGradient]() {
             if (prop) {
                 prop->value = initialGradient;
                 updateGradientPreview();
-                emit valueChanged(initialGradient); // revert to initial value
+                emit valuePreviewed(initialGradient);
             }
         });
 

@@ -31,23 +31,28 @@ public:
     // QOpenGLTexture* lambertianTexture;
     // QOpenGLTexture* ggxTexture;
     // QOpenGLTexture* sheenTexture;
-    GLuint lambertianTextureID;
-    GLuint ggxTextureID;
-    GLuint sheenTextureID;
+    GLuint lambertianTextureID = 0;
+    GLuint ggxTextureID = 0;
+    GLuint sheenTextureID = 0;
 
     // QOpenGLTexture* ggxLutTexture;
     // QOpenGLTexture* charlieLutTexture;
-    GLuint ggxLutTextureID;
-    GLuint charlieLutTextureID;
+    GLuint ggxLutTextureID = 0;
+    GLuint charlieLutTextureID = 0;
 
-    QOpenGLTexture* inputTexture;
+    QOpenGLTexture* inputTexture = nullptr;
     // QOpenGLTexture* cubemapTexture;
     // GLuint inputTextureID;
-    GLuint cubemapTextureID;
+    GLuint cubemapTextureID = 0;
 
-    QOpenGLFramebufferObject* framebuffer;
-    QOpenGLVertexArrayObject* vao;
-    QOpenGLBuffer* vbo;
+    QOpenGLFramebufferObject* framebuffer = nullptr;
+    QOpenGLVertexArrayObject* vao = nullptr;
+    QOpenGLBuffer* vbo = nullptr;
+
+    // Frees everything init() allocated (~70 MB of float cubemaps and LUTs).
+    // Called at the start of init(), so switching environments doesn't stack
+    // a new set on top of the old. GL context must be current.
+    void releaseResources();
 
     ShaderCache* shaderCache;
 

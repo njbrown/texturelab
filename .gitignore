@@ -10,8 +10,10 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 
-build/
-build-sentry-test/
+# Any build tree (build/, build-catalog/, build-sentry-test/, ...)
+build*/
+# Local packaging output
+artifacts/
 
 # Secrets — Sentry auth token, org/project slugs
 .env

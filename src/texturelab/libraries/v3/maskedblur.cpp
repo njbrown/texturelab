@@ -28,9 +28,21 @@ void MaskedBlurNode::init()
             float accum = 0.0;
             float sigma = float(prop_samples) * 0.25;
             int half_samples = prop_samples / 2;
+            // 1 sample: nothing to average (and 0/0 below).
+            if (half_samples < 1)
+                return texture(sp, uv).rgb;
 
-            for (int x = -half_samples; x < half_samples; x++)
-            for (int y = -half_samples; y < half_samples; y++)
+            // Taps per pixel this draw can afford: ~1e10 texture fetches per draw keeps a
+            // maxed-out node under the Windows GPU watchdog (TDR, 2 s) on modest GPUs.
+            // At 1024x1024 that's 10000 taps, so nothing changes at or below 1K; at 4K it's
+            // ~600. Large kernels keep their radius and sigma and sample with a stride
+            // instead, so the look is preserved apart from some coarseness.
+            float tapBudget = 1.0e10 / (_textureSize.x * _textureSize.y);
+            int maxHalf = max(1, int(sqrt(tapBudget) * 0.5));
+            int stride = (half_samples + maxHalf - 1) / maxHalf;
+
+            for (int x = -half_samples; x < half_samples; x += stride)
+            for (int y = -half_samples; y < half_samples; y += stride)
             {
                 vec2 offset = vec2(float(x), float(y));
                 float weight = gaussian(offset, sigma);

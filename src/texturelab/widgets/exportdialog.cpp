@@ -120,11 +120,11 @@ void ExportDialog::onChooseDestination()
         this, "Select Export Destination", exportDestination,
         QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 
+    // Only the dialog's copy changes here; onOk() commits it to the project,
+    // so Cancel leaves the project untouched (setProject() resets the dialog
+    // from the project the next time it's shown).
     if (!dir.isEmpty()) {
         exportDestination = dir;
-        if (project) {
-            project->exportDestination = dir;
-        }
         updateDestinationDisplay();
     }
 }
@@ -133,9 +133,6 @@ void ExportDialog::onResetPattern()
 {
     QString defaultPattern = "${project}_${name}";
     patternEdit->setText(defaultPattern);
-    if (project) {
-        project->exportFilePattern = defaultPattern;
-    }
 }
 
 void ExportDialog::onOk()
@@ -150,9 +147,12 @@ void ExportDialog::onOk()
         return;
     }
 
-    // Save pattern to project
-    if (project) {
+    // Commit to the project
+    if (project && (project->exportFilePattern != pattern ||
+                    project->exportDestination != exportDestination)) {
         project->exportFilePattern = pattern;
+        project->exportDestination = exportDestination;
+        emit settingsChanged();
     }
 
     // Close dialog

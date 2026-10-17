@@ -23,16 +23,18 @@ void ToonGradientNode::init()
             if (!image_connected)
                 return vec4(0.0, 0.0, 0.0, 1.0);
 
-            float input = texture(image, uv).r;
+            float value = texture(image, uv).r; // not "input": reserved in GLSL 1.50
             float bands = float(prop_bands);
 
             // Quantise to N bands
-            float bandIdx   = floor(input * bands);
-            float bandFract = fract(input * bands);
+            float bandIdx   = floor(value * bands);
+            float bandFract = fract(value * bands);
 
             // Soft transition between bands using smoothstep on the intra-band fraction
-            float soft = smoothstep(0.0, prop_softness * bands, bandFract)
-                       * (1.0 - smoothstep((1.0 - prop_softness) * bands,
+            // smoothstep is undefined with equal edges, i.e. softness 0
+            float softness = max(prop_softness, 1e-4);
+            float soft = smoothstep(0.0, softness * bands, bandFract)
+                       * (1.0 - smoothstep((1.0 - softness) * bands,
                                             bands, bandFract + bandIdx * 1.0));
 
             // Map to [0,1] for gradient sampling

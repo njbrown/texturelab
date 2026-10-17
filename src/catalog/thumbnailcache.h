@@ -101,6 +101,9 @@ public:
 private:
     bool createSchema();
     bool recreate(const QString& path);
+    // Schema version, 0 if the meta row is missing, or one of these.
+    static constexpr int SchemaReadFailed = -1;
+    static constexpr int SchemaReadCorrupt = -2;
     int readSchemaVersion();
 
     Database db;

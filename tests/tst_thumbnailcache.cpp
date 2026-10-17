@@ -43,6 +43,8 @@ private slots:
     void missReturnsEmpty();
     void sizeAndMeshArePartOfTheKey();
     void putOverwritesExistingVariant();
+    void openCaptureDoesNotReplaceSaveCapture();
+    void openCaptureRefreshesOpenCapture();
     void putRejectsEmptyOrUnkeyedImages();
     void putBatchWritesAll();
 
@@ -176,6 +178,28 @@ void TestThumbnailCache::putOverwritesExistingVariant()
     QCOMPARE(cache->rowCount(), 1);
     QCOMPARE(cache->get(key).size(), 200);
     QCOMPARE(cache->get(key).at(0), 'b');
+}
+
+void TestThumbnailCache::openCaptureDoesNotReplaceSaveCapture()
+{
+    // The Save capture is the one the user framed; reopening the file and
+    // grabbing whatever the viewport shows must not clobber it.
+    const ThumbKey key = keyFor(1);
+    QVERIFY(cache->put(key, fakeImage(100, 's'), ThumbSource::Save, kT0));
+    QVERIFY(cache->put(key, fakeImage(200, 'o'), ThumbSource::Open, kT0 + 1000));
+
+    QCOMPARE(cache->rowCount(), 1);
+    QCOMPARE(cache->get(key), fakeImage(100, 's'));
+}
+
+void TestThumbnailCache::openCaptureRefreshesOpenCapture()
+{
+    const ThumbKey key = keyFor(1);
+    QVERIFY(cache->put(key, fakeImage(100, 'a'), ThumbSource::Open, kT0));
+    QVERIFY(cache->put(key, fakeImage(200, 'b'), ThumbSource::Open, kT0 + 1000));
+
+    QCOMPARE(cache->rowCount(), 1);
+    QCOMPARE(cache->get(key), fakeImage(200, 'b'));
 }
 
 void TestThumbnailCache::putRejectsEmptyOrUnkeyedImages()
