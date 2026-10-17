@@ -29,6 +29,10 @@ cd "$ROOT"
 
 command -v gh >/dev/null || { echo "error: needs the GitHub CLI (gh)" >&2; exit 1; }
 
+# Use the keyring login. gh prefers GH_TOKEN / GITHUB_TOKEN over it, and a token
+# exported in the shell (read:packages only) 403s on workflow dispatch.
+unset GH_TOKEN GITHUB_TOKEN
+
 COMMAND=${1:-}
 [ -n "$COMMAND" ] || usage 2
 shift
