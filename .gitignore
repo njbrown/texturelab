@@ -17,3 +17,6 @@ artifacts/
 
 # Secrets — Sentry auth token, org/project slugs
 .env
+
+# Local planning notes (PRDs, audits, checklists)
+notes/
