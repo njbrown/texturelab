@@ -28,8 +28,9 @@ public:
     static bool isEnabled();
     static void setEnabled(bool enabled);
 
-    // "stable" or "beta". Defaults to beta when this build's own version
-    // carries a pre-release tag — someone running a beta wants beta news.
+    // "stable" or "beta", derived from this build's own version alone: a
+    // pre-release tag means beta — someone running a beta wants beta news.
+    // Not a setting, so a build can never ask about a channel it isn't on.
     static QString channel();
 
     // Asks the server, once per application run. Nothing is remembered across

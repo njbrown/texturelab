@@ -62,11 +62,6 @@ void UpdateChecker::setEnabled(bool enabled)
 
 QString UpdateChecker::channel()
 {
-    const QString stored =
-        appSettings().value(QStringLiteral("updateChannel")).toString();
-    if (stored == QLatin1String("stable") || stored == QLatin1String("beta"))
-        return stored;
-
     // A pre-release tag on our own version means this is a beta build, and its
     // user is better served by beta releases than by being told nothing exists.
     const QString self =

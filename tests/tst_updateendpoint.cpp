@@ -29,8 +29,7 @@ private slots:
     void endpointIgnoresTheEnvironment();
 
     void channelFollowsOwnVersion();
-    void channelSettingWinsOverVersion();
-    void nonsenseChannelSettingIsIgnored();
+    void channelIgnoresStoredSetting();
 };
 
 void TestUpdateEndpoint::initTestCase()
@@ -84,23 +83,19 @@ void TestUpdateEndpoint::channelFollowsOwnVersion()
     QCOMPARE(UpdateChecker::channel(), QStringLiteral("stable"));
 }
 
-void TestUpdateEndpoint::channelSettingWinsOverVersion()
+void TestUpdateEndpoint::channelIgnoresStoredSetting()
 {
+    // The channel used to be a setting. A value left over in someone's config
+    // must not move a beta build onto the stable channel, or vice versa.
+    QSettings settings(QSettings::UserScope, "texturelab", "texturelab");
+    settings.setValue(QStringLiteral("updateChannel"), QStringLiteral("stable"));
+
     QCoreApplication::setApplicationVersion(QStringLiteral("0.4.0-beta"));
-    QSettings(QSettings::UserScope, "texturelab", "texturelab")
-        .setValue(QStringLiteral("updateChannel"), QStringLiteral("stable"));
-
-    QCOMPARE(UpdateChecker::channel(), QStringLiteral("stable"));
-}
-
-void TestUpdateEndpoint::nonsenseChannelSettingIsIgnored()
-{
-    QCoreApplication::setApplicationVersion(QStringLiteral("0.4.0-beta"));
-    QSettings(QSettings::UserScope, "texturelab", "texturelab")
-        .setValue(QStringLiteral("updateChannel"), QStringLiteral("nightly"));
-
-    // The API only accepts stable|beta; anything else would come back 422.
     QCOMPARE(UpdateChecker::channel(), QStringLiteral("beta"));
+
+    settings.setValue(QStringLiteral("updateChannel"), QStringLiteral("beta"));
+    QCoreApplication::setApplicationVersion(QStringLiteral("1.0.0"));
+    QCOMPARE(UpdateChecker::channel(), QStringLiteral("stable"));
 }
 
 QTEST_GUILESS_MAIN(TestUpdateEndpoint)
