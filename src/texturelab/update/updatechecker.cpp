@@ -26,12 +26,6 @@ constexpr const char* kApiBase = "https://texturelab.io";
 
 constexpr const char* kEnabledKey = "updateCheck";
 
-// The last release the server told us about. Remembered so the launcher can say
-// so on every open, not just during the minutes after a check completes.
-constexpr const char* kKnownVersionKey = "updateKnownVersion";
-constexpr const char* kKnownTitleKey = "updateKnownTitle";
-constexpr const char* kKnownUrlKey = "updateKnownUrl";
-
 QSettings appSettings()
 {
     return QSettings(QSettings::UserScope, "texturelab", "texturelab");
@@ -81,55 +75,10 @@ QString UpdateChecker::channel()
                                            : QStringLiteral("stable");
 }
 
-QString UpdateChecker::knownUpdateVersion()
-{
-    const QString version =
-        appSettings().value(QLatin1String(kKnownVersionKey)).toString();
-    if (version.isEmpty())
-        return QString();
-
-    // A remembered update the running build has caught up with is stale — the
-    // user updated, and nothing should still be nagging them.
-    if (!appversion::isNewer(version, QCoreApplication::applicationVersion()))
-        return QString();
-
-    return version;
-}
-
-void UpdateChecker::rememberUpdate(const QString& version, const QString& title,
-                                   const QString& url)
-{
-    QSettings settings = appSettings();
-    settings.setValue(QLatin1String(kKnownVersionKey), version);
-    settings.setValue(QLatin1String(kKnownTitleKey), title);
-    settings.setValue(QLatin1String(kKnownUrlKey), url);
-}
-
-void UpdateChecker::forgetUpdate()
-{
-    QSettings settings = appSettings();
-    settings.remove(QLatin1String(kKnownVersionKey));
-    settings.remove(QLatin1String(kKnownTitleKey));
-    settings.remove(QLatin1String(kKnownUrlKey));
-}
-
 void UpdateChecker::check(bool force)
 {
-    if (!isEnabled() || inFlight)
-        return;
-
-    QSettings settings = appSettings();
-
-    // Say what we already know before deciding whether to ask again.
-    const QString known = knownUpdateVersion();
-    if (!known.isEmpty()) {
-        emit updateAvailable(
-            known, settings.value(QLatin1String(kKnownTitleKey)).toString(),
-            settings.value(QLatin1String(kKnownUrlKey)).toString());
-    }
-
     // Once per run unless explicitly forced.
-    if (!force && checkedThisRun)
+    if (!isEnabled() || inFlight || (!force && checkedThisRun))
         return;
 
     QUrl url(apiBase() + QStringLiteral("/api/releases/latest"));
@@ -161,6 +110,16 @@ void UpdateChecker::handleReply(QNetworkReply* reply)
     inFlight = false;
     reply->deleteLater();
 
+    // 404 is the server saying the channel has no published release (a pulled
+    // release looks the same), so there is nothing newer to offer. Qt reports it
+    // as an error; it is an answer.
+    const int status =
+        reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    if (status == 404) {
+        emit checkFinished(false, QString());
+        return;
+    }
+
     if (reply->error() != QNetworkReply::NoError) {
         // Being offline is the normal case, not an incident: report it to the
         // caller and leave no trace beyond a breadcrumb.
@@ -180,8 +139,6 @@ void UpdateChecker::handleReply(QNetworkReply* reply)
         return;
     }
 
-    // 404 with {"error": ...} is a legitimate answer: the channel has no
-    // published release yet.
     const QJsonObject root = doc.object();
     if (!root.value(QStringLiteral("data")).isObject()) {
         const QString error = root.value(QStringLiteral("error")).toString();
@@ -199,9 +156,6 @@ void UpdateChecker::handleReply(QNetworkReply* reply)
 
     const QString current = QCoreApplication::applicationVersion();
     if (!appversion::isNewer(version, current)) {
-        // Up to date now — drop anything remembered from before, so a notice
-        // can't outlive the update it referred to.
-        forgetUpdate();
         emit checkFinished(false, QString());
         return;
     }
@@ -212,9 +166,6 @@ void UpdateChecker::handleReply(QNetworkReply* reply)
     const QString downloadUrl = apiBase() + QStringLiteral("/download");
 
     Telemetry::breadcrumb("update", "found " + version.toStdString());
-
-    rememberUpdate(version, data.value(QStringLiteral("title")).toString(),
-                   downloadUrl);
 
     emit updateAvailable(
         version, data.value(QStringLiteral("title")).toString(), downloadUrl);

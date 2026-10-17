@@ -32,21 +32,13 @@ public:
     // carries a pre-release tag — someone running a beta wants beta news.
     static QString channel();
 
-    // Surfaces any already-known update immediately, then asks the server —
-    // once per application run. Reopening the launcher from the Home button
-    // reuses the answer from the first check rather than asking again.
+    // Asks the server, once per application run. Nothing is remembered across
+    // runs: every launch asks afresh, so a pulled or corrected release can't
+    // leave a stale notice behind. Reopening the launcher from the Home button
+    // doesn't ask again — the launcher is reused, and so is what it shows.
     //
     // `force` overrides that, for the menu-driven "check now".
-    //
-    // The two halves are independent on purpose: how often the server is asked
-    // is not how often the user is told. Without the first half, an update
-    // found at startup would stop being displayed the moment the launcher was
-    // closed and reopened.
     void check(bool force = false);
-
-    // The newest release seen by a previous check, remembered across restarts.
-    // Empty when there is none, or when this build has caught up with it.
-    static QString knownUpdateVersion();
 
 signals:
     // Emitted only when the published version is strictly newer than this one.
@@ -55,13 +47,13 @@ signals:
                          const QString& downloadUrl);
 
     // Emitted on every completed check, including "you're up to date" and
-    // failures, so a manual check can report something either way.
+    // failures, so a manual check can report something either way. An empty
+    // `error` with `foundUpdate` false means the server answered and there is
+    // nothing newer — including a 404, which is a channel with no release.
     void checkFinished(bool foundUpdate, const QString& error);
 
 private:
     void handleReply(class QNetworkReply* reply);
-    static void rememberUpdate(const QString& version, const QString& title, const QString& url);
-    static void forgetUpdate();
 
     QNetworkAccessManager* network = nullptr;
     bool inFlight = false;

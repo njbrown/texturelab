@@ -31,9 +31,6 @@ private slots:
     void channelFollowsOwnVersion();
     void channelSettingWinsOverVersion();
     void nonsenseChannelSettingIsIgnored();
-
-    void remembersAKnownUpdateAcrossRestarts();
-    void forgetsAKnownUpdateOnceTheBuildCatchesUp();
 };
 
 void TestUpdateEndpoint::initTestCase()
@@ -49,7 +46,6 @@ void TestUpdateEndpoint::cleanup()
 
     QSettings settings(QSettings::UserScope, "texturelab", "texturelab");
     settings.remove("updateChannel");
-    settings.remove("updateKnownVersion");
 }
 
 void TestUpdateEndpoint::endpointIsAWellFormedAbsoluteUrl()
@@ -105,36 +101,6 @@ void TestUpdateEndpoint::nonsenseChannelSettingIsIgnored()
 
     // The API only accepts stable|beta; anything else would come back 422.
     QCOMPARE(UpdateChecker::channel(), QStringLiteral("beta"));
-}
-
-void TestUpdateEndpoint::remembersAKnownUpdateAcrossRestarts()
-{
-    // The launcher shows the notice from this, not from a fresh request — the
-    // network check is throttled to once every few hours, and without a
-    // remembered answer the notice would vanish in between.
-    QCoreApplication::setApplicationVersion(QStringLiteral("0.4.0-beta+abc1234"));
-
-    QSettings settings(QSettings::UserScope, "texturelab", "texturelab");
-    settings.setValue(QStringLiteral("updateKnownVersion"), QStringLiteral("1.3.0-beta"));
-
-    QCOMPARE(UpdateChecker::knownUpdateVersion(), QStringLiteral("1.3.0-beta"));
-}
-
-void TestUpdateEndpoint::forgetsAKnownUpdateOnceTheBuildCatchesUp()
-{
-    QSettings settings(QSettings::UserScope, "texturelab", "texturelab");
-    settings.setValue(QStringLiteral("updateKnownVersion"), QStringLiteral("1.3.0-beta"));
-
-    // Running exactly the remembered version: nothing left to announce.
-    QCoreApplication::setApplicationVersion(QStringLiteral("1.3.0-beta+deadbee"));
-    QVERIFY(UpdateChecker::knownUpdateVersion().isEmpty());
-
-    // And past it, which is what a beta tester hits after installing.
-    QCoreApplication::setApplicationVersion(QStringLiteral("1.4.0"));
-    QVERIFY(UpdateChecker::knownUpdateVersion().isEmpty());
-
-    settings.remove(QStringLiteral("updateKnownVersion"));
-    QVERIFY(UpdateChecker::knownUpdateVersion().isEmpty());
 }
 
 QTEST_GUILESS_MAIN(TestUpdateEndpoint)

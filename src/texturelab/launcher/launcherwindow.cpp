@@ -179,6 +179,14 @@ LauncherWindow::LauncherWindow(QWidget* parent) : QWidget(parent)
 
     updates = new UpdateChecker(this);
     connect(updates, &UpdateChecker::updateAvailable, this, &LauncherWindow::showUpdateNotice);
+
+    // A check that reached the server and found nothing newer retracts the
+    // notice; a failed one (offline, timeout) leaves whatever is showing.
+    connect(updates, &UpdateChecker::checkFinished, this,
+            [this](bool found, const QString& error) {
+                if (!found && error.isEmpty() && updateButton)
+                    updateButton->setVisible(false);
+            });
 }
 
 LauncherWindow::~LauncherWindow() = default;
@@ -729,8 +737,8 @@ void LauncherWindow::showEvent(QShowEvent* event)
     refresh();
     search->setFocus();
 
-    // Throttled internally, so reopening the launcher from the Home button all
-    // day costs one request every few hours. On first run it waits for the
+    // Once per run internally, so reopening the launcher from the Home button
+    // costs nothing after the first show. On first run it waits for the
     // first-run prompt, which is where the check is disclosed, so nothing goes
     // over the network before the user has been told.
     if (updates && !Telemetry::consentNeeded())
