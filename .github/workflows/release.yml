@@ -1,7 +1,8 @@
 name: Release
 
-# Official release builds. Pushing a tag like v0.4.0 (stable) or v0.4.0-beta /
-# v0.4.0-beta.2 (beta) builds all
+# Official release builds. Run manually (Actions tab or scripts/ci.sh release)
+# for an already-pushed tag like v0.4.0 (stable) or v0.4.0-beta / v0.4.0-beta.2
+# (beta); pushing the tag alone builds nothing. It builds all
 # three platforms, verifies and packages them, and creates a DRAFT GitHub
 # Release with the files attached. Review the draft, then publish it and upload
 # the same files to itch.io etc. Nightly/CI builds stay in build.yml.
@@ -20,12 +21,10 @@ name: Release
 #            AZURE_SIGNING_ACCOUNT, AZURE_SIGNING_PROFILE
 
 on:
-  push:
-    tags: ["v*"]
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing tag to (re)build, e.g. v0.4.0"
+        description: "Existing tag to build, e.g. v0.4.0 or v0.4.0-beta"
         required: true
 
 permissions:
@@ -33,12 +32,12 @@ permissions:
 
 # Never run two releases of the same tag at once.
 concurrency:
-  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  group: release-${{ inputs.tag }}
   cancel-in-progress: false
 
 env:
   QT_VERSION: "6.7.3"
-  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+  TAG: ${{ inputs.tag }}
 
 jobs:
   # Refuses to build unless the tag, the CMake version and the release config

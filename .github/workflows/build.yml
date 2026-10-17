@@ -1,10 +1,8 @@
 name: Build
 
+# Manual only: run from the Actions tab or scripts/ci.sh. Nothing builds on
+# push or pull request, so every nightly upload and Discord post is deliberate.
 on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
   workflow_dispatch:
     inputs:
       sentry_crash_test:
@@ -335,8 +333,8 @@ jobs:
 
   deploy:
     needs: [version, build-linux, build-windows, build-macos]
-    # PR builds (including forks) must not land in the public nightlies bucket
-    # or be announced on Discord; only pushes to master and manual runs do.
+    # The workflow is manual-only, but keep PR builds (including forks) out of
+    # the public nightlies bucket and Discord should a PR trigger come back.
     if: always() && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     env:
