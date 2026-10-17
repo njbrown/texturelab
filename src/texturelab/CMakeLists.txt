@@ -2,13 +2,19 @@ cmake_minimum_required(VERSION 3.10)
 
 project(texturelab VERSION 0.4.0 LANGUAGES CXX)
 
-# Optional pre-release suffix appended to the numeric project() version above to
-# form the full app version (e.g. "0.4.0" + "-beta" = "0.4.0-beta"); leave empty
-# for a final release. The full string is the in-app version / Sentry release
-# (TEXTURELAB_VERSION compile def below) and is reconstructed from these same two
-# lines by the build workflow (.github/workflows/build.yml) for artifact names.
-set(TEXTURELAB_VERSION_SUFFIX "-beta")
-set(TEXTURELAB_FULL_VERSION "${PROJECT_VERSION}${TEXTURELAB_VERSION_SUFFIX}")
+# Release channel this build belongs to: "stable" or "beta". It is part of the
+# build's identity, not of its version — the version above stays purely numeric,
+# and the update checker asks this channel's feed (beta also hears of newer
+# stables; the server decides that). Together with the git commit count and
+# short hash (GetGitHash.cmake) it forms the identifier shown in-app and in
+# artifact names, e.g. "0.4.0-beta-039faa9". The build and release workflows
+# read these same two lines, so keep the set() on one line.
+set(TEXTURELAB_CHANNEL "beta")
+if(NOT TEXTURELAB_CHANNEL MATCHES "^(stable|beta)$")
+    message(FATAL_ERROR "TEXTURELAB_CHANNEL must be stable or beta, got '${TEXTURELAB_CHANNEL}'")
+endif()
+# Display form for places with no room for the hash (Windows file properties).
+set(TEXTURELAB_FULL_VERSION "${PROJECT_VERSION}-${TEXTURELAB_CHANNEL}")
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -340,7 +346,8 @@ if(TEXTURELAB_CRASH_TEST_HOOK)
 endif()
 
 target_compile_definitions(texturelab PRIVATE
-    TEXTURELAB_VERSION="${TEXTURELAB_FULL_VERSION}"
+    TEXTURELAB_VERSION="${PROJECT_VERSION}"
+    TEXTURELAB_CHANNEL="${TEXTURELAB_CHANNEL}"
     TEXTURELAB_SENTRY_DSN="${TEXTURELAB_SENTRY_DSN}"
     TEXTURELAB_SENTRY_ENVIRONMENT="${TEXTURELAB_SENTRY_ENVIRONMENT}"
     # Absolute path to the theme source files, so `--dev-theme` can live-reload
@@ -351,7 +358,7 @@ target_compile_definitions(texturelab PRIVATE
     $<$<CONFIG:Debug>:TEXTURELAB_DEV_BUILD>
 )
 
-# Generate version.h (with git hash) at every build, not just configure time
+# Generate version.h (git hash + commit count) at every build, not just configure time
 add_custom_target(texturelab_version
     COMMAND ${CMAKE_COMMAND}
         -DSOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"

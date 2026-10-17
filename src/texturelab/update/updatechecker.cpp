@@ -3,7 +3,6 @@
 #include "telemetry.h"
 #include "versioncompare.h"
 
-#include <QCoreApplication>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QNetworkAccessManager>
@@ -29,6 +28,14 @@ constexpr const char* kEnabledKey = "updateCheck";
 QSettings appSettings()
 {
     return QSettings(QSettings::UserScope, "texturelab", "texturelab");
+}
+
+// Set once by main() from the compiled-in build info. Empty until then, which
+// isValid() rejects — an unset build never claims an update.
+appversion::Build& runningBuild()
+{
+    static appversion::Build build;
+    return build;
 }
 
 } // namespace
@@ -60,14 +67,19 @@ void UpdateChecker::setEnabled(bool enabled)
     settings.setValue(QLatin1String(kEnabledKey), enabled);
 }
 
+void UpdateChecker::setCurrentBuild(const appversion::Build& build)
+{
+    runningBuild() = build;
+}
+
+appversion::Build UpdateChecker::currentBuild()
+{
+    return runningBuild();
+}
+
 QString UpdateChecker::channel()
 {
-    // A pre-release tag on our own version means this is a beta build, and its
-    // user is better served by beta releases than by being told nothing exists.
-    const QString self =
-        appversion::normalize(QCoreApplication::applicationVersion());
-    return self.contains(QLatin1Char('-')) ? QStringLiteral("beta")
-                                           : QStringLiteral("stable");
+    return runningBuild().channel;
 }
 
 void UpdateChecker::check(bool force)
@@ -76,6 +88,13 @@ void UpdateChecker::check(bool force)
     if (!isEnabled() || inFlight || (!force && checkedThisRun))
         return;
 
+    // A build that doesn't know what it is (no git at configure time) can't be
+    // ordered against anything, so there is nothing worth asking.
+    if (!runningBuild().isValid()) {
+        emit checkFinished(false, QStringLiteral("This build has no version information"));
+        return;
+    }
+
     QUrl url(apiBase() + QStringLiteral("/api/releases/latest"));
     QUrlQuery query;
     query.addQueryItem(QStringLiteral("channel"), channel());
@@ -83,8 +102,9 @@ void UpdateChecker::check(bool force)
 
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::UserAgentHeader,
-                      QStringLiteral("TextureLab/%1")
-                          .arg(QCoreApplication::applicationVersion()));
+                      QStringLiteral("TextureLab/%1 (build %2)")
+                          .arg(runningBuild().identifier())
+                          .arg(runningBuild().number));
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                          QNetworkRequest::NoLessSafeRedirectPolicy);
     request.setTransferTimeout(8000);
@@ -141,28 +161,52 @@ void UpdateChecker::handleReply(QNetworkReply* reply)
         return;
     }
 
-    const QJsonObject data = root.value(QStringLiteral("data")).toObject();
-    const QString version = data.value(QStringLiteral("version")).toString();
-    if (version.isEmpty()) {
-        emit checkFinished(false,
-                           QStringLiteral("Update server returned no version"));
+    const Offer offer =
+        evaluate(root.value(QStringLiteral("data")).toObject(), runningBuild());
+    if (!offer.found) {
+        emit checkFinished(false, offer.error);
         return;
     }
 
-    const QString current = QCoreApplication::applicationVersion();
-    if (!appversion::isNewer(version, current)) {
-        emit checkFinished(false, QString());
-        return;
-    }
+    Telemetry::breadcrumb("update", "found " + offer.identifier.toStdString());
 
-    // Always the site's download page rather than a per-platform binary URL:
-    // it lists every build, so it stays correct when the server has no artifact
-    // for this platform yet, and the user lands somewhere that explains itself.
-    const QString downloadUrl = apiBase() + QStringLiteral("/download");
-
-    Telemetry::breadcrumb("update", "found " + version.toStdString());
-
-    emit updateAvailable(
-        version, data.value(QStringLiteral("title")).toString(), downloadUrl);
+    emit updateAvailable(offer.identifier, offer.title, offer.downloadUrl);
     emit checkFinished(true, QString());
+}
+
+UpdateChecker::Offer UpdateChecker::evaluate(const QJsonObject& data,
+                                             const appversion::Build& current)
+{
+    Offer offer;
+
+    appversion::Build latest;
+    latest.version = data.value(QStringLiteral("version")).toString();
+    latest.channel = data.value(QStringLiteral("channel")).toString();
+    latest.number = data.value(QStringLiteral("build")).toInt();
+    latest.commit = data.value(QStringLiteral("commit")).toString();
+    if (!latest.isValid()) {
+        offer.error = QStringLiteral("Update server returned no usable version");
+        return offer;
+    }
+
+    // The server answers the beta channel with a stable release when that is
+    // newer, so a beta build accepts either. A stable build accepts only
+    // stable: whatever the server sends, a stable user is never moved onto a
+    // beta by a misconfigured release.
+    const bool channelOk = latest.channel == current.channel ||
+                           latest.channel == QLatin1String("stable");
+    if (!channelOk || !appversion::isNewer(latest, current))
+        return offer;
+
+    // The release's own page, so a beta user lands on the beta they were told
+    // about rather than on /download's headline stable. Only taken when it
+    // points back at the same site; otherwise the generic download page.
+    offer.downloadUrl = data.value(QStringLiteral("pageUrl")).toString();
+    if (!offer.downloadUrl.startsWith(apiBase() + QLatin1Char('/')))
+        offer.downloadUrl = apiBase() + QStringLiteral("/download");
+
+    offer.found = true;
+    offer.identifier = latest.identifier();
+    offer.title = data.value(QStringLiteral("title")).toString();
+    return offer;
 }

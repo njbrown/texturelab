@@ -14,9 +14,9 @@ on:
 
 jobs:
   # Single source of truth for the build tag used in artifact names.
-  # tag = v<cmake project version>-<short git hash>, where the short hash is the
-  # SAME `git rev-parse --short HEAD` the app embeds (TEXTURELAB_BUILD_HASH), so
-  # a build file name matches the version shown in-app / in screenshots.
+  # tag = v<version>-<channel>-<short git hash>: "v" + the identifier the app
+  # shows in-app (TEXTURELAB_VERSION-TEXTURELAB_CHANNEL-TEXTURELAB_BUILD_HASH),
+  # so a build file name matches the About box and what the site publishes.
   version:
     runs-on: ubuntu-latest
     outputs:
@@ -26,12 +26,11 @@ jobs:
       - name: Compute build tag
         id: v
         run: |
-          # tag = v<app version>-<short hash>, where <app version> is the numeric
-          # project() version + optional suffix — the same string the app embeds
-          # as TEXTURELAB_VERSION, so file names match the in-app version.
+          # --short=7 matches GetGitHash.cmake; this checkout is shallow, and
+          # an unpinned short hash can come out a different length here.
           NUM=$(grep -oP 'project\(texturelab VERSION \K[0-9.]+' src/texturelab/CMakeLists.txt)
-          SUFFIX=$(grep -oP 'set\(TEXTURELAB_VERSION_SUFFIX "\K[^"]*' src/texturelab/CMakeLists.txt)
-          echo "tag=v${NUM}${SUFFIX}-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          CHANNEL=$(grep -oP 'set\(TEXTURELAB_CHANNEL "\K[^"]*' src/texturelab/CMakeLists.txt)
+          echo "tag=v${NUM}-${CHANNEL}-$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
 
   # Fails the build if inline widget stylesheets or hardcoded QColor literals
   # creep into the UI/rendering code (they'd bypass the theme system and break

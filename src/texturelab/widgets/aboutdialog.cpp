@@ -1,5 +1,7 @@
 #include "aboutdialog.h"
 
+#include "update/updatechecker.h"
+
 #include <QApplication>
 #include <QDesktopServices>
 #include <QFrame>
@@ -66,8 +68,14 @@ void AboutDialog::setupUI()
     bodyLayout->setContentsMargins(28, 22, 28, 20);
     bodyLayout->setSpacing(10);
 
-    QString version = QCoreApplication::applicationVersion();
-    auto versionLabel = new QLabel(QString("Version %1").arg(version));
+    // Channel spelled out, so "which channel am I on?" is answered here rather
+    // than inferred from the identifier.
+    const appversion::Build build = UpdateChecker::currentBuild();
+    const QString channel = build.channel == QLatin1String("stable") ? tr("Stable") : tr("Beta");
+    auto versionLabel = new QLabel(tr("Version %1 · %2 · build %3 (%4)")
+                                       .arg(build.version, channel)
+                                       .arg(build.number)
+                                       .arg(build.commit));
     versionLabel->setObjectName("AboutVersion");
     bodyLayout->addWidget(versionLabel);
 

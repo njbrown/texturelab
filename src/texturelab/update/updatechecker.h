@@ -1,8 +1,11 @@
 #pragma once
 
+#include "versioncompare.h"
+
 #include <QObject>
 #include <QString>
 
+class QJsonObject;
 class QNetworkAccessManager;
 
 // Asks texturelab.io whether a newer build exists.
@@ -28,9 +31,14 @@ public:
     static bool isEnabled();
     static void setEnabled(bool enabled);
 
-    // "stable" or "beta", derived from this build's own version alone: a
-    // pre-release tag means beta — someone running a beta wants beta news.
-    // Not a setting, so a build can never ask about a channel it isn't on.
+    // What this build is. main() sets it from the compiled-in version,
+    // channel, commit count and hash before anything checks.
+    static void setCurrentBuild(const appversion::Build& build);
+    static appversion::Build currentBuild();
+
+    // "stable" or "beta": this build's own channel, never a setting, so a build
+    // can't ask about a channel it isn't on. The server answers "beta" with
+    // the newer of the latest beta and the latest stable.
     static QString channel();
 
     // Asks the server, once per application run. Nothing is remembered across
@@ -41,10 +49,22 @@ public:
     // `force` overrides that, for the menu-driven "check now".
     void check(bool force = false);
 
+    // What a `data` object from /api/releases/latest means for `current`.
+    // Pure, so the channel and ordering rules are testable without a network.
+    struct Offer {
+        bool found = false;
+        QString identifier;
+        QString title;
+        QString downloadUrl;
+        QString error; // set when the response itself was unusable
+    };
+    static Offer evaluate(const QJsonObject& data, const appversion::Build& current);
+
 signals:
-    // Emitted only when the published version is strictly newer than this one.
-    // `downloadUrl` is the site's /download page, which lists every build.
-    void updateAvailable(const QString& version, const QString& title,
+    // Emitted only when the published build is strictly newer than this one.
+    // `identifier` is the release's display name ("0.4.0-beta-039faa9");
+    // `downloadUrl` is that release's page on the site.
+    void updateAvailable(const QString& identifier, const QString& title,
                          const QString& downloadUrl);
 
     // Emitted on every completed check, including "you're up to date" and

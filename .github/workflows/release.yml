@@ -1,9 +1,14 @@
 name: Release
 
-# Official release builds. Pushing a tag like v0.4.0 (or v0.4.0-beta) builds all
+# Official release builds. Pushing a tag like v0.4.0 (stable) or v0.4.0-beta /
+# v0.4.0-beta.2 (beta) builds all
 # three platforms, verifies and packages them, and creates a DRAFT GitHub
 # Release with the files attached. Review the draft, then publish it and upload
 # the same files to itch.io etc. Nightly/CI builds stay in build.yml.
+#
+# The git tag names the GitHub Release; the files inside are named by the build
+# identifier the app shows (v<version>-<channel>-<hash>), the same scheme as
+# build.yml, so texturelab.io can check a download belongs to the release.
 #
 # Optional signing: each platform signs only when its secrets exist, otherwise
 # it ships unsigned (Gatekeeper / SmartScreen warnings).
@@ -42,6 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.v.outputs.tag }}
+      build_id: ${{ steps.v.outputs.build_id }}
       prerelease: ${{ steps.v.outputs.prerelease }}
     steps:
       - uses: actions/checkout@v4
@@ -52,15 +58,24 @@ jobs:
         id: v
         run: |
           NUM=$(grep -oP 'project\(texturelab VERSION \K[0-9.]+' src/texturelab/CMakeLists.txt)
-          SUFFIX=$(grep -oP 'set\(TEXTURELAB_VERSION_SUFFIX "\K[^"]*' src/texturelab/CMakeLists.txt)
-          EXPECTED="v${NUM}${SUFFIX}"
-          if [ "$TAG" != "$EXPECTED" ]; then
-            echo "::error::Tag '$TAG' does not match the app version '$EXPECTED' (project() VERSION + TEXTURELAB_VERSION_SUFFIX in src/texturelab/CMakeLists.txt)."
+          CHANNEL=$(grep -oP 'set\(TEXTURELAB_CHANNEL "\K[^"]*' src/texturelab/CMakeLists.txt)
+          # The tag has to say the same channel the build will report: v<num>
+          # for stable, v<num>-beta or v<num>-beta.<n> for beta. A stable tag
+          # on a beta-configured tree (or the reverse) would put a build on the
+          # wrong update channel.
+          case "$CHANNEL" in
+            stable) PATTERN="^v${NUM//./\\.}$" ;;
+            beta)   PATTERN="^v${NUM//./\\.}-beta(\.[0-9]+)?$" ;;
+            *) echo "::error::TEXTURELAB_CHANNEL is '$CHANNEL', expected stable or beta"; exit 1 ;;
+          esac
+          if ! echo "$TAG" | grep -qE "$PATTERN"; then
+            echo "::error::Tag '$TAG' does not match version ${NUM} on the ${CHANNEL} channel (project() VERSION + TEXTURELAB_CHANNEL in src/texturelab/CMakeLists.txt)."
             exit 1
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          # Any suffix (-beta, -rc1, ...) marks the GitHub Release as a prerelease.
-          if [ -n "$SUFFIX" ]; then echo "prerelease=true"; else echo "prerelease=false"; fi >> "$GITHUB_OUTPUT"
+          # --short=7 matches GetGitHash.cmake.
+          echo "build_id=v${NUM}-${CHANNEL}-$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+          if [ "$CHANNEL" = "stable" ]; then echo "prerelease=false"; else echo "prerelease=true"; fi >> "$GITHUB_OUTPUT"
 
       - name: Check update checker points at production
         run: |
@@ -89,6 +104,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       TAG: ${{ needs.preflight.outputs.tag }}
+      BUILD_ID: ${{ needs.preflight.outputs.build_id }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -140,15 +156,15 @@ jobs:
       - name: Create AppImage
         env:
           QTDIR: ${{ github.workspace }}/Qt/Qt/${{ env.QT_VERSION }}/gcc_64
-        run: scripts/package-linux.sh "$TAG"
+        run: scripts/package-linux.sh "$BUILD_ID"
 
       - name: Smoke test AppImage
         env:
           APPIMAGE_EXTRACT_AND_RUN: 1
         run: |
-          OUT=$(xvfb-run -a "dist/texturelab-linux-${TAG}-x86_64.AppImage" --version)
+          OUT=$(xvfb-run -a "dist/texturelab-linux-${BUILD_ID}-x86_64.AppImage" --version)
           echo "$OUT"
-          echo "$OUT" | grep -q "texturelab ${TAG#v}+" || { echo "::error::unexpected --version output"; exit 1; }
+          echo "$OUT" | grep -q "texturelab ${BUILD_ID#v}" || { echo "::error::unexpected --version output"; exit 1; }
 
       - uses: actions/upload-artifact@v4
         with:
@@ -167,6 +183,7 @@ jobs:
     runs-on: windows-2022
     env:
       TAG: ${{ needs.preflight.outputs.tag }}
+      BUILD_ID: ${{ needs.preflight.outputs.build_id }}
       HAS_WIN_SIGNING: ${{ secrets.AZURE_CLIENT_ID != '' }}
     steps:
       - uses: actions/checkout@v4
@@ -211,7 +228,7 @@ jobs:
         shell: pwsh
         env:
           QTDIR: ${{ github.workspace }}\Qt\Qt\${{ env.QT_VERSION }}\msvc2019_64
-        run: scripts/package-windows.ps1 -Tag $env:TAG -Stage Deploy
+        run: scripts/package-windows.ps1 -Tag $env:BUILD_ID -Stage Deploy
 
       # Authenticode signing doesn't touch the CodeView record, so the Debug IDs
       # uploaded to Sentry above still match the signed binaries.
@@ -227,8 +244,8 @@ jobs:
           signing-account-name: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
           certificate-profile-name: ${{ secrets.AZURE_SIGNING_PROFILE }}
           files: |
-            ${{ github.workspace }}\dist\texturelab-win-${{ env.TAG }}\texturelab.exe
-            ${{ github.workspace }}\dist\texturelab-win-${{ env.TAG }}\crashpad_handler.exe
+            ${{ github.workspace }}\dist\texturelab-win-${{ env.BUILD_ID }}\texturelab.exe
+            ${{ github.workspace }}\dist\texturelab-win-${{ env.BUILD_ID }}\crashpad_handler.exe
           file-digest: SHA256
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
           timestamp-digest: SHA256
@@ -237,14 +254,14 @@ jobs:
         shell: pwsh
         run: |
           # GUI-subsystem exe: redirect stdout to a file to read the --version line.
-          $p = Start-Process "dist\texturelab-win-$env:TAG\texturelab.exe" -ArgumentList "--version" `
+          $p = Start-Process "dist\texturelab-win-$env:BUILD_ID\texturelab.exe" -ArgumentList "--version" `
                  -RedirectStandardOutput version.txt -PassThru -Wait
           Get-Content version.txt
           if ($p.ExitCode -ne 0) { Write-Error "texturelab.exe --version exited with $($p.ExitCode)" }
 
       - name: Zip
         shell: pwsh
-        run: scripts/package-windows.ps1 -Tag $env:TAG -Stage Zip
+        run: scripts/package-windows.ps1 -Tag $env:BUILD_ID -Stage Zip
 
       - uses: actions/upload-artifact@v4
         with:
@@ -264,6 +281,7 @@ jobs:
     runs-on: macos-14
     env:
       TAG: ${{ needs.preflight.outputs.tag }}
+      BUILD_ID: ${{ needs.preflight.outputs.build_id }}
       HAS_MAC_SIGNING: ${{ secrets.APPLE_CERT_P12 != '' }}
       HAS_MAC_NOTARIZE: ${{ secrets.APPLE_CERT_P12 != '' && secrets.APPLE_ID != '' }}
       APP: build/src/texturelab/texturelab.app
@@ -336,13 +354,13 @@ jobs:
       - name: Bundle Qt, sign and create DMG
         env:
           QTDIR: ${{ github.workspace }}/Qt/Qt/${{ env.QT_VERSION }}/macos
-        run: scripts/package-macos.sh "$TAG"
+        run: scripts/package-macos.sh "$BUILD_ID"
 
       - name: Smoke test
         run: |
           OUT=$("$APP/Contents/MacOS/texturelab" --version)
           echo "$OUT"
-          echo "$OUT" | grep -q "texturelab ${TAG#v}+" || { echo "::error::unexpected --version output"; exit 1; }
+          echo "$OUT" | grep -q "texturelab ${BUILD_ID#v}" || { echo "::error::unexpected --version output"; exit 1; }
 
       - name: Notarize and staple
         if: env.HAS_MAC_NOTARIZE == 'true'
@@ -351,7 +369,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
         run: |
-          DMG="dist/texturelab-mac-${TAG}-universal.dmg"
+          DMG="dist/texturelab-mac-${BUILD_ID}-universal.dmg"
           xcrun notarytool submit "$DMG" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" \
             --password "$APPLE_APP_PASSWORD" --wait --timeout 30m
           xcrun stapler staple "$DMG"

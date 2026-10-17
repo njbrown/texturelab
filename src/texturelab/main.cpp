@@ -3,6 +3,7 @@
 #include "systeminfo.h"
 #include "telemetry.h"
 #include "thememanager.h"
+#include "update/updatechecker.h"
 #include "version.h"
 
 #include <QApplication>
@@ -119,7 +120,18 @@ int main(int argc, char* argv[])
     QApplication a(argc, argv);
     a.setOrganizationName("texturelab");
     a.setApplicationName("texturelab");
-    a.setApplicationVersion(QString(TEXTURELAB_VERSION) + "+" + TEXTURELAB_BUILD_HASH);
+
+    // The build's identity, from CMake (version, channel) and version.h (commit
+    // count, hash). applicationVersion() carries the display identifier, e.g.
+    // "0.4.0-beta-039faa9"; the update checker gets the separate fields, since
+    // it orders by them and never by the string.
+    appversion::Build build;
+    build.version = QStringLiteral(TEXTURELAB_VERSION);
+    build.channel = QStringLiteral(TEXTURELAB_CHANNEL);
+    build.number = TEXTURELAB_BUILD_NUMBER;
+    build.commit = QStringLiteral(TEXTURELAB_BUILD_HASH);
+    UpdateChecker::setCurrentBuild(build);
+    a.setApplicationVersion(build.identifier());
     a.setWindowIcon(QIcon(":/icons/logo.png"));
     // Wayland ignores setWindowIcon; compositors resolve the icon from the
     // installed desktop entry (packaging/linux/texturelab.desktop) instead.
@@ -133,7 +145,8 @@ int main(int argc, char* argv[])
     // proves the Qt libraries, platform plugin and resources all load.
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--version") == 0) {
-            std::printf("texturelab %s\n", qPrintable(a.applicationVersion()));
+            std::printf("texturelab %s (build %d)\n", qPrintable(a.applicationVersion()),
+                        build.number);
             std::fflush(stdout);
             return 0;
         }

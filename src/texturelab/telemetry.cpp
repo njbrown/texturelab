@@ -37,6 +37,10 @@ QSettings consentSettings()
 constexpr const char* kAllowedKey = "crashReporting";
 constexpr const char* kAskedVersionKey = "crashReportingConsentVersion";
 
+// Consent is asked once per version and channel ("0.4.0-beta"), not per build:
+// every beta of a cycle shares one answer.
+constexpr const char* kConsentVersion = TEXTURELAB_VERSION "-" TEXTURELAB_CHANNEL;
+
 // Fields -> sentry object. Kept in one place so breadcrumbs, contexts and
 // events all serialize identically.
 sentry_value_t toSentryObject(const Telemetry::Fields& fields)
@@ -83,7 +87,8 @@ void Telemetry::init(bool enabled)
     sentry_options_t* options = sentry_options_new();
 
     sentry_options_set_dsn(options, dsn);
-    sentry_options_set_release(options, "texturelab@" TEXTURELAB_VERSION "+" TEXTURELAB_BUILD_HASH);
+    sentry_options_set_release(options, "texturelab@" TEXTURELAB_VERSION "-" TEXTURELAB_CHANNEL
+                                        "-" TEXTURELAB_BUILD_HASH);
     sentry_options_set_environment(options, TEXTURELAB_SENTRY_ENVIRONMENT);
     sentry_options_set_debug(options, 0);
 
@@ -150,14 +155,14 @@ bool Telemetry::consentNeeded()
 {
     const QString asked =
         consentSettings().value(QLatin1String(kAskedVersionKey)).toString();
-    return asked != QLatin1String(TEXTURELAB_VERSION);
+    return asked != QLatin1String(kConsentVersion);
 }
 
 void Telemetry::recordConsent(bool allowed)
 {
     QSettings settings = consentSettings();
     settings.setValue(QLatin1String(kAllowedKey), allowed);
-    settings.setValue(QLatin1String(kAskedVersionKey), QLatin1String(TEXTURELAB_VERSION));
+    settings.setValue(QLatin1String(kAskedVersionKey), QLatin1String(kConsentVersion));
 }
 
 void Telemetry::breadcrumb(const char* category, const std::string& message)
