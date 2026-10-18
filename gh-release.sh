@@ -7,9 +7,10 @@
 #   ./gh-release.sh v0.4.0-beta     # explicit tag
 #   ./gh-release.sh --watch         # follow the run until it finishes
 #
-# If the tag doesn't exist on the remote yet it offers to create and push it,
-# which is what starts the workflow. If it already exists, the run is dispatched
-# against that tag instead (for re-running a failed release).
+# If the tag doesn't exist on the remote yet it offers to create and push it.
+# Either way the build is then started with scripts/ci.sh release — pushing a
+# tag doesn't start anything on its own. Re-running for an existing tag is how
+# a failed release is retried.
 set -euo pipefail
 
 if [ -f .env ]; then source .env; fi
@@ -20,7 +21,6 @@ if [ -f .env ]; then source .env; fi
 unset GH_TOKEN GITHUB_TOKEN
 
 REPO="njbrown/texturelab"
-WORKFLOW="release.yml"
 
 WATCH=false
 TAG=""
@@ -31,21 +31,19 @@ for arg in "$@"; do
     esac
 done
 
-# Default tag = the version the app will report, which is what release.yml's
-# preflight job insists the tag matches.
+# Default tag = the version and channel the app will report, which is what
+# release.yml's preflight job insists the tag matches: v0.4.0 for stable,
+# v0.4.0-beta for beta (pass v0.4.0-beta.2 etc. explicitly for later betas).
 if [ -z "$TAG" ]; then
-    NUM=$(grep -oP 'project\(texturelab VERSION \K[0-9.]+' src/texturelab/CMakeLists.txt)
-    SUFFIX=$(grep -oP 'set\(TEXTURELAB_VERSION_SUFFIX "\K[^"]*' src/texturelab/CMakeLists.txt)
-    TAG="v${NUM}${SUFFIX}"
+    NUM=$(scripts/build-id.sh --field version)
+    CHANNEL=$(scripts/build-id.sh --field channel)
+    if [ "$CHANNEL" = "stable" ]; then TAG="v${NUM}"; else TAG="v${NUM}-${CHANNEL}"; fi
 fi
 
 echo "Release tag: $TAG"
-# Runs created before this moment belong to an earlier attempt.
-STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
-    echo "Tag already on origin — dispatching a re-run against it."
-    gh workflow run "$WORKFLOW" --repo "$REPO" --ref "$TAG" -f tag="$TAG"
+    echo "Tag already on origin — re-running the release build for it."
 else
     BRANCH=$(git rev-parse --abbrev-ref HEAD)
     SHA=$(git rev-parse --short HEAD)
@@ -67,7 +65,8 @@ else
     fi
     echo
     echo "Tag $TAG does not exist on origin. It would be created at $BRANCH ($SHA)"
-    echo "and pushed, which starts the release build."
+    echo "as $(scripts/build-id.sh --field identifier) (build $(scripts/build-id.sh --field build)),"
+    echo "pushed, and the release build started."
     read -r -p "Create and push $TAG? [y/N] " answer
     [[ "$answer" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 1; }
 
@@ -77,31 +76,17 @@ else
     git push origin "$TAG"
 fi
 
-# Find this attempt's run for this tag; "--limit 1" alone can pick up a
-# previous run if the new one hasn't registered yet.
-echo "Waiting for run to start..."
-RUN_ID=""
-for _ in $(seq 1 20); do
-    sleep 3
-    RUN_ID=$(gh run list --repo "$REPO" --workflow "$WORKFLOW" --branch "$TAG" \
-        --limit 5 --json databaseId,createdAt \
-        -q "[.[] | select(.createdAt >= \"$STARTED_AT\")][0].databaseId // empty")
-    [ -n "$RUN_ID" ] && break
-done
-if [ -z "$RUN_ID" ]; then
-    echo "No run found for $TAG yet — check https://github.com/$REPO/actions" >&2
-    exit 1
-fi
-RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
-echo "Run ID: $RUN_ID"
-echo "$RUN_URL"
-
+# Checks the tag on origin matches, starts the run and prints its URL.
 if [ "$WATCH" = true ]; then
-    # Non-zero exit here means the release build failed; the draft is not created.
-    gh run watch "$RUN_ID" --repo "$REPO" --exit-status || {
-        echo "Release build failed — see $RUN_URL"
+    scripts/ci.sh release "$TAG" --watch || {
+        echo "Release build failed — no draft was created."
         exit 1
     }
+else
+    scripts/ci.sh release "$TAG"
+fi
+
+if [ "$WATCH" = true ]; then
     echo
     echo "Draft release:"
     gh release view "$TAG" --repo "$REPO" --json url,isDraft,assets \
