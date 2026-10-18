@@ -1,0 +1,22 @@
+{
+  "name": "texturelab-web",
+  "private": true,
+  "type": "module",
+  "packageManager": "yarn@1.22.22",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "port-nodes": "node scripts/port-node.ts",
+    "build": "yarn workspace @njbrown/texturelab-runtime build",
+    "typecheck": "yarn workspaces run typecheck",
+    "dev": "yarn workspace playground dev",
+    "smoke": "node tests/smoke.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "playwright-core": "^1.55.0",
+    "typescript": "~5.9.3"
+  }
+}

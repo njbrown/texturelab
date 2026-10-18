@@ -1,0 +1,49 @@
+{
+  "name": "@njbrown/texturelab-runtime",
+  "version": "0.1.0",
+  "description": "Evaluate TextureLab .texture graphs with WebGL2 and preview them in three.js",
+  "license": "GPL-3.0-only",
+  "repository": "github:njbrown/texturelab",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "texturelab-source": "./src/core/index.ts",
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    },
+    "./viewer": {
+      "texturelab-source": "./src/viewer/index.ts",
+      "types": "./dist/viewer/index.d.ts",
+      "import": "./dist/viewer/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "three": ">=0.180.0",
+    "@types/three": ">=0.180.0"
+  },
+  "peerDependenciesMeta": {
+    "three": {
+      "optional": true
+    },
+    "@types/three": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "three": "^0.186.1",
+    "typescript": "~5.9.3"
+  }
+}
