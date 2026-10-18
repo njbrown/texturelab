@@ -19,7 +19,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const webRoot = resolve(here, "..");
 const assets = resolve(webRoot, "../public/assets");
 const outDir = join(here, "out");
-const port = 5199;
+const port = 5198; // not 5199, so it can run alongside `yarn dev`
 
 const args = process.argv.slice(2);
 const includeNodes = args.includes("--nodes");

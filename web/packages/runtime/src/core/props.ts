@@ -5,7 +5,7 @@
 import { colorFromJson, QColor, type Color } from "./color.js";
 import { Curve } from "./curve.js";
 import { Gradient } from "./gradient.js";
-import { getBool, getDouble, getInt, getLong, getString } from "./json.js";
+import { getBool, getDouble, getString, getTruncatedInt } from "./json.js";
 
 export type PropType =
     | "float"
@@ -73,7 +73,7 @@ export class IntProp extends Prop {
         this.value = Math.trunc(getDouble(val, this.value));
     }
     fromJsonValue(val: unknown) {
-        this.value = getLong(val, this.value);
+        this.value = getTruncatedInt(val, this.value);
     }
 }
 
@@ -101,10 +101,10 @@ export class EnumProp extends Prop {
         return this.index;
     }
     setValue(val: unknown) {
-        this.index = getInt(val, this.index);
+        this.index = getTruncatedInt(val, this.index);
     }
     fromJsonValue(val: unknown) {
-        this.index = getInt(val, this.index);
+        this.index = getTruncatedInt(val, this.index);
     }
 }
 

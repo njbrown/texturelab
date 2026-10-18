@@ -35,6 +35,19 @@ export function getInt(val: unknown, defaultValue = 0): number {
     return getLong(val, defaultValue) | 0;
 }
 
+/**
+ * Int props and enum indices. Fractional values only occur in files saved by
+ * the old Electron app, which passed them straight to gl.uniform1i — and that
+ * truncates. Truncating here keeps those files looking the way they were
+ * authored (Grenade.texture's polygon has sides: "4.72" and should have 4).
+ *
+ * Deliberately differs from jsonutils::getLong, which rounds (since ba1deac),
+ * and so renders such files differently from how they were made.
+ */
+export function getTruncatedInt(val: unknown, defaultValue = 0): number {
+    return Math.trunc(getDouble(val, defaultValue)) | 0;
+}
+
 export function getBool(val: unknown, defaultValue = false): boolean {
     if (typeof val === "boolean") return val;
 
