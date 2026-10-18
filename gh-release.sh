@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # Kicks off an official release build (.github/workflows/release.yml), which
-# ends in a DRAFT GitHub Release you review and publish yourself.
+# ends in two DRAFTS you review and publish yourself: a GitHub Release with the
+# files, and a prefilled release on texturelab.io linking to them.
 #
 #   ./gh-release.sh                 # tag taken from the version in CMakeLists.txt
 #   ./gh-release.sh v0.4.0-beta     # explicit tag
@@ -92,6 +93,9 @@ if [ "$WATCH" = true ]; then
     gh release view "$TAG" --repo "$REPO" --json url,isDraft,assets \
         --jq '"\(.url)\ndraft: \(.isDraft)\nassets:\n" + (.assets | map("  " + .name) | join("\n"))'
     echo
-    echo "Review it, then publish with:"
-    echo "  gh release edit $TAG --repo $REPO --draft=false"
+    echo "Review both drafts, then publish them in this order:"
+    echo "  1. GitHub (the site's download links point at these files):"
+    echo "       gh release edit $TAG --repo $REPO --draft=false"
+    echo "  2. texturelab.io, which offers it to the $(scripts/build-id.sh --field channel "$TAG") channel:"
+    echo "       https://texturelab.io/ops/releases"
 fi

@@ -452,12 +452,100 @@ jobs:
           gh release view "$TAG" --json url,isDraft,assets --jq '{url, isDraft, assets: [.assets[].name]}'
           echo "url=$(gh release view "$TAG" --json url -q .url)" >> "$GITHUB_OUTPUT"
 
-  # Same post as build.yml's, for a release: the build identity texturelab.io
-  # asks for, and the download URLs to paste into its release form. Those are
-  # the GitHub Release asset URLs, which only answer once the draft is
-  # published. Runs on failure too, so a broken release doesn't go unnoticed.
+  # Creates the matching DRAFT release on texturelab.io, prefilled: identity,
+  # title, the GitHub-generated notes, and download links. The links are the
+  # GitHub Release asset URLs — permanent and tied to the tag, unlike Actions
+  # artifacts (which expire) — so they answer once the GitHub draft is
+  # published. The site endpoint only ever creates or updates drafts; going
+  # live is still a human click in its ops UI. Re-running updates the same
+  # draft (matched by identifier) instead of adding another.
+  #
+  # Needs the repository secret TEXTURELAB_SITE_TOKEN (an API token from the
+  # site's ops dashboard, ability releases:draft). Optional repository variable
+  # TEXTURELAB_SITE_URL points it elsewhere (default https://texturelab.io).
+  site-draft:
+    needs: [preflight, draft-release]
+    runs-on: ubuntu-latest
+    outputs:
+      edit_url: ${{ steps.post.outputs.edit_url }}
+    env:
+      TAG: ${{ needs.preflight.outputs.tag }}
+      BUILD_ID: ${{ needs.preflight.outputs.build_id }}
+      IDENTIFIER: ${{ needs.preflight.outputs.identifier }}
+      BUILD: ${{ needs.preflight.outputs.build }}
+      SITE_TOKEN: ${{ secrets.TEXTURELAB_SITE_TOKEN }}
+      SITE_URL: ${{ vars.TEXTURELAB_SITE_URL || 'https://texturelab.io' }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      ASSET_BASE: ${{ github.server_url }}/${{ github.repository }}/releases/download
+    steps:
+      - name: Create draft on texturelab.io
+        id: post
+        run: |
+          if [ -z "$SITE_TOKEN" ]; then
+            echo "::error::TEXTURELAB_SITE_TOKEN secret is not set; create a token in the site's ops dashboard (API tokens) and add it as a repository secret."
+            exit 1
+          fi
+
+          # File names as the package scripts write them; checked against the
+          # GitHub draft so the site never gets a link to a file that isn't there.
+          WINDOWS="texturelab-win-${BUILD_ID}-x64.zip"
+          MAC="texturelab-mac-${BUILD_ID}-universal.dmg"
+          LINUX="texturelab-linux-${BUILD_ID}-x86_64.AppImage"
+          RELEASE=$(gh release view "$TAG" --json name,body,assets)
+          for f in "$WINDOWS" "$MAC" "$LINUX"; do
+            jq -e --arg f "$f" '.assets | map(.name) | index($f)' <<<"$RELEASE" >/dev/null || {
+              echo "::error::$f is not attached to the GitHub release $TAG"
+              exit 1
+            }
+          done
+
+          PAYLOAD=$(jq -n \
+            --arg identifier "$IDENTIFIER" --argjson build "$BUILD" \
+            --arg title "$(jq -r .name <<<"$RELEASE")" \
+            --arg notes "$(jq -r '.body // ""' <<<"$RELEASE")" \
+            --arg windows "$ASSET_BASE/$TAG/$WINDOWS" \
+            --arg mac "$ASSET_BASE/$TAG/$MAC" \
+            --arg linux "$ASSET_BASE/$TAG/$LINUX" \
+            '{identifier: $identifier, build: $build, title: $title,
+              notes: (if $notes == "" then null else $notes end),
+              downloads: {windows: $windows, mac: $mac, linux: $linux, itch: null}}')
+
+          # The token goes in a header read from a file, not on the command
+          # line, so it never shows in the process list.
+          printf 'Authorization: Bearer %s\n' "$SITE_TOKEN" > "$RUNNER_TEMP/auth-header"
+          STATUS=$(curl -sS -o response.json -w '%{http_code}' --max-time 30 \
+            -X POST "${SITE_URL%/}/api/ops/releases/drafts" \
+            -H @"$RUNNER_TEMP/auth-header" \
+            -H "Content-Type: application/json" -H "Accept: application/json" \
+            --data-binary "$PAYLOAD")
+          rm -f "$RUNNER_TEMP/auth-header"
+
+          case "$STATUS" in
+            200|201)
+              EDIT_URL=$(jq -r .data.editUrl response.json)
+              CREATED=$(jq -r .data.created response.json)
+              echo "edit_url=$EDIT_URL" >> "$GITHUB_OUTPUT"
+              VERB=$([ "$CREATED" = "true" ] && echo "Created" || echo "Updated")
+              echo "$VERB draft $IDENTIFIER on $SITE_URL: $EDIT_URL"
+              echo "### texturelab.io draft: [$IDENTIFIER]($EDIT_URL) ($VERB)" >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            409)
+              echo "::error::$IDENTIFIER is already published on $SITE_URL; the API never changes a published release. $(jq -r '.error // empty' response.json)"
+              exit 1
+              ;;
+            *)
+              echo "::error::$SITE_URL answered HTTP $STATUS"
+              cat response.json
+              exit 1
+              ;;
+          esac
+
+  # Same post as build.yml's, for a release: the build identity, the download
+  # URLs (which only answer once the GitHub draft is published), and links to
+  # both drafts. Runs on failure too, so a broken release doesn't go unnoticed.
   announce:
-    needs: [preflight, build-linux, build-windows, build-macos, draft-release]
+    needs: [preflight, build-linux, build-windows, build-macos, draft-release, site-draft]
     if: always() && needs.preflight.result == 'success'
     runs-on: ubuntu-latest
     env:
@@ -470,6 +558,8 @@ jobs:
       COMMIT: ${{ needs.preflight.outputs.commit }}
       DRAFT_URL: ${{ needs.draft-release.outputs.url }}
       DRAFT_RESULT: ${{ needs.draft-release.result }}
+      SITE_EDIT_URL: ${{ needs.site-draft.outputs.edit_url }}
+      SITE_RESULT: ${{ needs.site-draft.result }}
       LINUX_RESULT: ${{ needs.build-linux.result }}
       WINDOWS_RESULT: ${{ needs.build-windows.result }}
       MACOS_RESULT: ${{ needs.build-macos.result }}
@@ -505,10 +595,15 @@ jobs:
             fi
           }
 
-          if [[ "$DRAFT_RESULT" == "success" ]]; then
-            TITLE="Release draft ready — $TAG ($CHANNEL)"
+          if [[ "$DRAFT_RESULT" == "success" && "$SITE_RESULT" == "success" ]]; then
+            TITLE="Release drafts ready — $TAG ($CHANNEL)"
             COLOR=3066993
-            NEXT="[Review and publish the draft]($DRAFT_URL), then add it on texturelab.io. Download links work once the draft is published."
+            NEXT="1. [Publish the GitHub draft]($DRAFT_URL) — the download links start working.
+          2. [Publish on texturelab.io]($SITE_EDIT_URL) — builds on the $CHANNEL channel are offered it."
+          elif [[ "$DRAFT_RESULT" == "success" ]]; then
+            TITLE="Release draft ready, site draft failed — $TAG ($CHANNEL)"
+            COLOR=15105570
+            NEXT="[GitHub draft]($DRAFT_URL) is ready, but creating the texturelab.io draft failed ($SITE_RESULT); see the run. Re-running the release updates it."
           else
             TITLE="Release failed — $TAG ($CHANNEL)"
             COLOR=15158332
