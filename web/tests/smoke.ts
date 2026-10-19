@@ -5,6 +5,7 @@
 //   node tests/smoke.ts --nodes          # the per-node demo files too
 //   node tests/smoke.ts --all-nodes      # compile + render every node type (v2 and v3)
 //   node tests/smoke.ts --custom         # multi-pass and CPU nodes, fed by generators
+//   node tests/smoke.ts --variables      # texture variables change the render
 //   node tests/smoke.ts --headed         # watch it
 //
 // Screenshots land in tests/out/. Needs Chrome/Chromium installed; set
@@ -26,6 +27,7 @@ const args = process.argv.slice(2);
 const includeNodes = args.includes("--nodes");
 const allNodes = args.includes("--all-nodes");
 const customNodes = args.includes("--custom");
+const variablesMode = args.includes("--variables");
 const headed = args.includes("--headed");
 const res = args.find((a) => a.startsWith("--res="))?.slice(6) ?? "512";
 
@@ -45,7 +47,7 @@ const list = (dir: string) =>
         .map((f) => f.replace(/\.texture$/, ""))
         .sort();
 
-const cases: { param: string; name: string }[] = allNodes || customNodes ? [] : [
+const cases: { param: string; name: string }[] = allNodes || customNodes || variablesMode ? [] : [
     ...list("examples").map((name) => ({ param: `example=${encodeURIComponent(name)}`, name })),
     ...(includeNodes ? list("nodes").map((name) => ({ param: `node=${encodeURIComponent(name)}`, name: `node:${name}` })) : []),
 ];
@@ -225,6 +227,80 @@ if (customNodes) {
         if (status.error) console.log(`       ${status.error}`);
         for (const e of consoleErrors) console.log(`       console: ${e.slice(0, 300)}`);
     }
+}
+
+// Variables: every variable in Copper, plus a fixture for bool and enum (with
+// a restricted, relabelled option list). Each change must re-render and
+// change the output; reset must restore it.
+if (variablesMode) {
+    type PG = {
+        render(n: string, t: string): Promise<void>;
+        setVariable(name: string, value: unknown): Promise<void>;
+        variables(): { name: string; type: string; value: unknown; min?: number; max?: number; options?: { index: number }[] }[];
+        channelHash(channel: string): number | null;
+        state: string;
+    };
+    const pg = <T>(fn: (pg: PG, arg: any) => T | Promise<T>, arg?: unknown) =>
+        page.evaluate(([src, a]) => new Function("pg", "a", `return (${src})(pg, a)`)((window as any).__playground, a), [fn.toString(), arg] as const) as Promise<T>;
+    const hashes = () => pg((p) => ["albedo", "normal", "roughness", "height"].map((c) => p.channelHash(c)).join(","));
+    const check = (name: string, ok: boolean, detail = "") => {
+        if (!ok) failures++;
+        cases.push({ param: "", name });
+        console.log(`${ok ? "ok  " : "FAIL"} ${name.padEnd(36)} ${detail}`);
+    };
+
+    await page.goto(`http://localhost:${port}/?example=Copper&res=${res}`);
+    await page.waitForFunction(() => (window as any).__playground?.state === "done", undefined, { timeout: 60000 });
+    const vars = await pg((p) => p.variables());
+    check("copper has variables", vars.length === 5, vars.map((v) => v.name).join(", "));
+    const base = await hashes();
+    for (const v of vars) {
+        const value =
+            v.type === "color" ? { r: 0.2, g: 0.6, b: 0.9, a: 1 } : v.type === "float" || v.type === "int" ? (v.max as number) : v.value;
+        await pg((p, a) => p.setVariable(a.name, a.value), { name: v.name, value });
+        const after = await hashes();
+        check(`copper:${v.name}`, after !== base, `-> ${JSON.stringify(value)}`);
+        await pg((p, a) => p.setVariable(a.name, a.value), { name: v.name, value: v.value });
+        const restored = await hashes();
+        check(`copper:${v.name} restore`, restored === base);
+    }
+    // Out-of-bounds values clamp.
+    await pg((p) => p.setVariable("wear_steps", 999));
+    const steps = await pg((p) => p.variables().find((v) => v.name === "wear_steps")!.value);
+    check("copper:clamp", steps === 12, `999 -> ${steps}`);
+
+    // Bool + enum fixture.
+    const fixture = JSON.stringify({
+        libraryVersion: "v3",
+        nodes: [
+            { id: "g", typeName: "gradient", properties: {} },
+            { id: "c", typeName: "cell", properties: {} },
+        ],
+        connections: [],
+        editor: { textureChannels: { albedo: "g", roughness: "c" } },
+        variables: [
+            {
+                id: "dir", type: 4,
+                property: { name: "direction", displayName: "Direction", index: 0, values: ["Left To Right", "Right To Left", "Top To Bottom", "Bottom To Top"] },
+                options: [{ index: 0, label: "Horizontal" }, { index: 2, label: "Vertical" }],
+                linkedProperties: [{ nodeId: "g", name: "mode" }],
+            },
+            { id: "inv", type: 3, property: { name: "invert", displayName: "Invert", value: false }, linkedProperties: [{ nodeId: "c", name: "invert" }] },
+        ],
+    });
+    await pg((p, a) => p.render("fixture", a), fixture);
+    const fx = await pg((p) => p.variables());
+    check("fixture parsed", fx.length === 2 && fx[0]!.options!.length === 2, JSON.stringify(fx.map((v) => [v.name, v.type, v.value])));
+    const f0 = await hashes();
+    await pg((p) => p.setVariable("direction", 2));
+    const f1 = await hashes();
+    check("fixture:enum changes render", f1 !== f0);
+    await pg((p) => p.setVariable("direction", 1)); // hidden option -> first enabled
+    const dir = await pg((p) => p.variables()[0]!.value);
+    check("fixture:enum hidden option clamps", dir === 0, `1 -> ${dir}`);
+    await pg((p) => p.setVariable("invert", true));
+    const f2 = await hashes();
+    check("fixture:bool changes render", f2 !== f0);
 }
 
 if (unsupported.size) {

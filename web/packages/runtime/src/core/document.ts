@@ -8,6 +8,7 @@ import { getInt, getLong, isObject } from "./json.js";
 import type { Library } from "./libraries/library.js";
 import { createLibraryV2, createLibraryV3 } from "./libraries/registry.js";
 import type { TextureNode } from "./node.js";
+import { applyVariable, clampValue, loadVariables, type TextureVariable, type VariableValue } from "./variables.js";
 
 export type LibraryVersion = "v1" | "v2" | "v3";
 
@@ -38,6 +39,8 @@ export interface TextureDocument {
     exportFilePattern: string;
     /** typeNames the library couldn't create; those nodes were skipped. */
     skippedTypes: string[];
+    /** Exposed variables, in display order. Their values are applied to the linked props. */
+    variables: TextureVariable[];
 }
 
 export interface ParseOptions {
@@ -184,6 +187,9 @@ export function parseTexture(input: string | object, options: ParseOptions = {})
 
     const exportObj = isObject(json.export) ? json.export : {};
 
+    // Variables last: links are validated against the loaded nodes.
+    const variables = loadVariables(json.variables, nodes);
+
     return {
         libraryVersion,
         width,
@@ -195,5 +201,32 @@ export function parseTexture(input: string | object, options: ParseOptions = {})
         exportFilePattern:
             typeof exportObj.filePattern === "string" ? exportObj.filePattern : "${project}_${name}",
         skippedTypes,
+        variables,
     };
+}
+
+export function getVariable(doc: TextureDocument, name: string): TextureVariable | undefined {
+    return doc.variables.find((v) => v.name === name);
+}
+
+/**
+ * Set a variable (by name) and write it into its linked props. The value is
+ * clamped to the variable's bounds / enabled options. Returns the ids of the
+ * nodes that changed; re-evaluate the document to see the result.
+ */
+export function setVariable(doc: TextureDocument, name: string, value: VariableValue): string[] {
+    const variable = getVariable(doc, name);
+    if (!variable) throw new Error(`No variable named "${name}"`);
+    variable.value = clampValue(variable, value);
+    return applyVariable(variable, doc.nodes);
+}
+
+/** Put every variable back to the value it had in the file. */
+export function resetVariables(doc: TextureDocument): string[] {
+    const changed = new Set<string>();
+    for (const variable of doc.variables) {
+        variable.value = clampValue(variable, variable.defaultValue);
+        for (const id of applyVariable(variable, doc.nodes)) changed.add(id);
+    }
+    return [...changed];
 }

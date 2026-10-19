@@ -2,6 +2,7 @@
 #define MODELS_H
 
 #include "gradient.h"
+#include "variables.h"
 #include <QEnableSharedFromThis>
 #include <QList>
 #include <QMap>
@@ -79,6 +80,9 @@ public:
     QMap<QString, CommentPtr> comments;
     QMap<QString, FramePtr> frames;
 
+    // Exposed texture variables, in display order. See variables.h.
+    QList<TextureVariablePtr> variables;
+
     TextureNodePtr getNodeById(const QString& id);
     ConnectionPtr getConnectionById(const QString& id);
     QVector<TextureNodePtr> getNodeDependencies(const QString& id);
@@ -109,6 +113,19 @@ public:
 
     // Marks the node and every node downstream of it as needing a re-render.
     void markNodeAsDirty(const TextureNodePtr& node);
+
+    // --- variables ---
+    TextureVariablePtr getVariableById(const QString& id) const;
+    // The variable a node prop is linked to, if any.
+    TextureVariablePtr variableForProp(const QString& nodeId,
+                                       const QString& propName) const;
+    Prop* resolveProp(const QString& nodeId, const QString& propName);
+    // Writes the variable's value into every linked prop and marks those
+    // nodes (and everything downstream) dirty.
+    void applyVariable(const TextureVariablePtr& var);
+    // Drops every variable link pointing at this node.
+    void removeVariableLinksForNode(const QString& nodeId);
+    QStringList variableNames() const;
 
     static TextureProjectPtr createEmpty(Library* library = nullptr);
 };

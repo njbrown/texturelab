@@ -262,6 +262,40 @@ input[type="range"] {
     background: #000;
 }
 
+.heading-row {
+    align-items: center;
+}
+
+button.small {
+    padding: 2px 8px;
+    font-size: 12px;
+}
+
+.variables {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.field.toggle {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.field.toggle > span {
+    color: var(--text);
+}
+
+input[type="color"] {
+    width: 100%;
+    height: 28px;
+    padding: 0 2px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--panel-2);
+}
+
 .warnings {
     list-style: none;
     margin: 0;

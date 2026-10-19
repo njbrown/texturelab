@@ -878,3 +878,14 @@ void GraphWidget::addItemFromSearch(const QString& name, PopupItemType type,
         }
     }
 }
+void GraphWidget::selectNode(const QString& nodeId)
+{
+    if (!scene)
+        return;
+    auto gnode = scene->getNodeById(nodeId);
+    if (!gnode)
+        return;
+    scene->clearSelection();
+    gnode->setSelected(true);
+    graph->centerOn(gnode.data());
+}

@@ -1,6 +1,9 @@
 export {
     parseTexture,
     supportedNodes,
+    getVariable,
+    setVariable,
+    resetVariables,
     libraryForVersion,
     TextureParseError,
     TEXTURE_CHANNELS,
@@ -28,6 +31,16 @@ export * from "./props.js";
 export { Gradient, type GradientPoint } from "./gradient.js";
 export { Curve, type CurvePoint } from "./curve.js";
 export { QColor, type Color } from "./color.js";
+export {
+    accepts as variableAcceptsProp,
+    clampValue as clampVariableValue,
+    sanitizeName as sanitizeVariableName,
+    type TextureVariable,
+    type VariableType,
+    type VariableValue,
+    type VariableLink,
+    type EnumOption,
+} from "./variables.js";
 
 /** Library versions this runtime can render. */
 export const SUPPORTED_LIBRARY_VERSIONS = ["v1", "v2", "v3"] as const;

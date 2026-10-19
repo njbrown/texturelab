@@ -5,9 +5,14 @@
 #include "accordionwidget.h"
 #include "curvepropwidget.h"
 #include "propwidgets.h"
+#include "../themedicon.h"
 
-#include <QVBoxLayout>
+#include <QGridLayout>
 #include <QLabel>
+#include <QMenu>
+#include <QTimer>
+#include <QToolButton>
+#include <QVBoxLayout>
 
 PropertiesWidget::PropertiesWidget() : QWidget()
 {
@@ -64,6 +69,168 @@ void PropertiesWidget::syncPropBaselines()
 }
 
 QWidget* PropertiesWidget::createPropWidget(Prop* prop,
+                                            const TextureNodePtr& node)
+{
+    auto editor = createPropEditor(prop, node);
+    if (editor && project && TextureVariable::isExposable(prop))
+        return wrapWithVariableLink(editor, prop, node);
+    return editor;
+}
+
+QWidget* PropertiesWidget::wrapWithVariableLink(QWidget* editor, Prop* prop,
+                                                const TextureNodePtr& node)
+{
+    auto var = project->variableForProp(node->id, prop->name);
+
+    // The button overlays the right end of the editor's label row: both sit
+    // in one grid cell, so the editor keeps its layout and disabling it (for
+    // a linked prop) leaves the button usable.
+    auto container = new QWidget();
+    auto grid = new QGridLayout(container);
+    grid->setContentsMargins(0, 0, 0, 0);
+    grid->addWidget(editor, 0, 0);
+
+    auto button = new QToolButton(container);
+    button->setObjectName("VariableLinkButton");
+    button->setPopupMode(QToolButton::InstantPopup);
+    button->setIcon(themedToolIcon(":/icons/link.svg"));
+    button->setIconSize(QSize(12, 12));
+    button->setProperty("linked", !!var);
+    if (var) {
+        button->setText(var->displayName());
+        button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        button->setToolTip(QString("Driven by variable \"%1\". Edit it in the "
+                                   "Variables tab.")
+                               .arg(var->displayName()));
+        editor->setEnabled(false);
+    }
+    else {
+        button->setToolButtonStyle(Qt::ToolButtonIconOnly);
+        button->setToolTip("Expose as a texture variable");
+    }
+    // Top-right, in the label row (prop widgets have ~9px top margin).
+    grid->addWidget(button, 0, 0, Qt::AlignTop | Qt::AlignRight);
+    button->setContentsMargins(0, 0, 0, 0);
+    grid->setAlignment(button, Qt::AlignTop | Qt::AlignRight);
+
+    auto menu = new QMenu(button);
+    QString nodeId = node->id;
+    QString propName = prop->name;
+    // Menu actions rebuild this panel, which deletes the button; do the work
+    // after the menu has closed.
+    auto later = [this](std::function<void()> fn) {
+        QTimer::singleShot(0, this, fn);
+    };
+
+    if (var) {
+        QString varId = var->id;
+        menu->addAction("Go to Variable", this, [=]() {
+            emit variableActivated(varId);
+        });
+        menu->addAction("Unlink", this, [=]() {
+            later([=]() {
+                auto n = project->getNodeById(nodeId);
+                if (n)
+                    unlinkProp(n, n->getProp(propName));
+            });
+        });
+    }
+    else {
+        menu->addAction("Expose as New Variable", this, [=]() {
+            later([=]() {
+                auto n = project->getNodeById(nodeId);
+                if (n)
+                    exposeProp(n, n->getProp(propName));
+            });
+        });
+        auto linkMenu = menu->addMenu("Link to Variable");
+        for (const auto& candidate : project->variables) {
+            if (!candidate->accepts(prop))
+                continue;
+            QString varId = candidate->id;
+            linkMenu->addAction(candidate->displayName(), this, [=]() {
+                later([=]() {
+                    auto n = project->getNodeById(nodeId);
+                    if (n)
+                        linkProp(n, n->getProp(propName), varId);
+                });
+            });
+        }
+        linkMenu->setEnabled(!linkMenu->isEmpty());
+        if (linkMenu->isEmpty())
+            linkMenu->setTitle("Link to Variable (none compatible)");
+    }
+    button->setMenu(menu);
+
+    return container;
+}
+
+void PropertiesWidget::exposeProp(const TextureNodePtr& node, Prop* prop)
+{
+    if (!node || !prop || !project ||
+        project->variableForProp(node->id, prop->name))
+        return;
+
+    VariablesEdit edit(project, renderer,
+                       QString("Expose %1").arg(prop->displayName));
+    auto name = variables::uniqueName(variables::sanitizeName(prop->displayName),
+                                      project->variableNames());
+    auto var = TextureVariable::createFromProp(prop, name, prop->displayName);
+    if (!var)
+        return;
+    var->links.append({node->id, prop->name});
+    project->variables.append(var);
+    if (undoStack)
+        undoStack->push(edit.finish());
+
+    refreshFromModel();
+    emit variablesChanged();
+    emit variableActivated(var->id);
+}
+
+void PropertiesWidget::linkProp(const TextureNodePtr& node, Prop* prop,
+                                const QString& variableId)
+{
+    auto var = project ? project->getVariableById(variableId) : nullptr;
+    if (!node || !prop || !var || !var->accepts(prop) ||
+        project->variableForProp(node->id, prop->name))
+        return;
+
+    VariablesEdit edit(project, renderer,
+                       QString("Link %1 to %2")
+                           .arg(prop->displayName, var->displayName()));
+    edit.touchProp(node->id, prop->name);
+    var->links.append({node->id, prop->name});
+    // The prop takes the variable's value.
+    var->writeTo(prop);
+    project->markNodeAsDirty(node);
+    if (undoStack)
+        undoStack->push(edit.finish());
+
+    refreshFromModel();
+    emit propertyUpdated(prop->name, prop->getValue());
+    emit variablesChanged();
+}
+
+void PropertiesWidget::unlinkProp(const TextureNodePtr& node, Prop* prop)
+{
+    auto var = (node && prop && project)
+                   ? project->variableForProp(node->id, prop->name)
+                   : nullptr;
+    if (!var)
+        return;
+
+    VariablesEdit edit(project, renderer,
+                       QString("Unlink %1").arg(prop->displayName));
+    var->links.removeAll(VariableLink{node->id, prop->name});
+    if (undoStack)
+        undoStack->push(edit.finish());
+
+    refreshFromModel();
+    emit variablesChanged();
+}
+
+QWidget* PropertiesWidget::createPropEditor(Prop* prop,
                                             const TextureNodePtr& node)
 {
     propBaselines[prop] = prop->getValue();

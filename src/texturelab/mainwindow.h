@@ -17,6 +17,7 @@
 class GraphWidget;
 class LibraryWidget;
 class PropertiesWidget;
+class VariablesWidget;
 class View2DWidget;
 class View3DWidget;
 class TextureRenderer;
@@ -102,6 +103,7 @@ protected:
                                   ads::CDockAreaWidget* areaWidget);
 
 private:
+    void refreshAfterUndo();
     static constexpr int MaxRecentFiles = 10;
 
     QUndoStack* undoStack;
@@ -115,6 +117,9 @@ private:
     GraphWidget* graphWidget;
     LibraryWidget* libraryWidget;
     PropertiesWidget* propWidget;
+    VariablesWidget* variablesWidget;
+    ads::CDockWidget* propertiesDock = nullptr;
+    ads::CDockWidget* variablesDock = nullptr;
     View2DWidget* view2DWidget;
     View3DWidget* view3DWidget;
     ExportDialog* exportDialog;

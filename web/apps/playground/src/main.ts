@@ -1,12 +1,18 @@
 import {
     createRuntime,
     parseTexture,
+    resetVariables,
+    setVariable,
     supportedNodes,
     TextureParseError,
     type ChannelPixels,
+    type Color,
     type EvaluationResult,
     type TextureChannel,
+    type TextureDocument,
     type TextureMaps,
+    type TextureVariable,
+    type VariableValue,
 } from "@njbrown/texturelab-runtime";
 import {
     createViewer,
@@ -51,6 +57,9 @@ const ui = {
     tilingValue: $<HTMLOutputElement>("tiling-value"),
     exposure: $<HTMLInputElement>("exposure"),
     exposureValue: $<HTMLOutputElement>("exposure-value"),
+    variablesGroup: $("variables-group"),
+    variables: $("variables"),
+    resetVariables: $<HTMLButtonElement>("reset-variables"),
 };
 
 // State exposed for the smoke test (tests/smoke.ts).
@@ -67,6 +76,21 @@ const status: PlaygroundStatus = { state: "idle", warnings: [], channels: [] };
 (window as unknown as { __playground: unknown }).__playground = Object.assign(status, {
     supportedNodes,
     render: (name: string, text: string) => render(name, text),
+    /** Set a variable and wait for the re-render (smoke test). */
+    setVariable: async (name: string, value: VariableValue) => {
+        if (!currentDoc) throw new Error("no document");
+        setVariable(currentDoc, name, value);
+        await requestRender({ preview: false, showProgress: false });
+    },
+    variables: () => currentDoc?.variables ?? [],
+    /** FNV-1a hash of a channel's pixels, to tell whether a render changed (smoke test). */
+    channelHash: (channel: TextureChannel) => {
+        const px = result?.readUint8(channel);
+        if (!px) return null;
+        let h = 0x811c9dc5;
+        for (let i = 0; i < px.data.length; i++) h = Math.imul(h ^ px.data[i]!, 0x01000193);
+        return h >>> 0;
+    },
 });
 
 // --- Runtime + viewer ---------------------------------------------------------
@@ -81,28 +105,86 @@ viewer.on("environmentError", (err) => {
     console.error("environment failed to load", err);
 });
 
+let currentDoc: TextureDocument | null = null;
+// Bumped when a new file loads; renders of an older document are discarded.
+let generation = 0;
+
+/** Load a file: parse it, build its variable controls and render it. */
 async function render(name: string, text: string): Promise<void> {
     current = { name, text };
+    generation++;
     abort?.abort();
-    const controller = (abort = new AbortController());
 
     Object.assign(status, { state: "rendering", file: name, error: undefined, warnings: [], channels: [] });
     ui.empty.hidden = true;
     ui.infoGroup.hidden = false;
     ui.fileName.textContent = name;
     ui.warnings.replaceChildren();
-    showProgress(0, 1);
 
     try {
-        const doc = parseTexture(text);
-        const resolution = ui.resolution.value === "file" ? undefined : Number(ui.resolution.value);
+        currentDoc = parseTexture(text);
+    } catch (e) {
+        currentDoc = null;
+        const message = e instanceof TextureParseError ? e.message : `Couldn't load: ${(e as Error).message}`;
+        renderStats([]);
+        ui.channels.replaceChildren();
+        renderVariables(null);
+        renderWarnings([{ kind: "error", message }], true);
+        Object.assign(status, { state: "error", error: message });
+        return;
+    }
+
+    renderVariables(currentDoc);
+    await requestRender({ preview: false, showProgress: true });
+}
+
+// --- Render queue ---------------------------------------------------------------
+// One evaluation at a time. Requests made while one runs collapse into a
+// single follow-up render of the latest state, so dragging a variable slider
+// renders as fast as the GPU allows without piling up work.
+
+interface RenderRequest {
+    /** Half resolution, for slider drags. */
+    preview: boolean;
+    showProgress: boolean;
+}
+let pendingRequest: RenderRequest | null = null;
+let pumping: Promise<void> | null = null;
+
+function requestRender(request: RenderRequest): Promise<void> {
+    status.state = "rendering";
+    // A full-quality request wins over a preview one queued before it.
+    pendingRequest = pendingRequest && !pendingRequest.preview ? pendingRequest : request;
+    if (!pumping) {
+        pumping = (async () => {
+            while (pendingRequest) {
+                const next = pendingRequest;
+                pendingRequest = null;
+                await evaluateCurrent(next);
+            }
+            pumping = null;
+        })();
+    }
+    return pumping;
+}
+
+async function evaluateCurrent(request: RenderRequest): Promise<void> {
+    const doc = currentDoc;
+    if (!doc) return;
+    const gen = generation;
+    const controller = (abort = new AbortController());
+    if (request.showProgress) showProgress(0, 1);
+
+    try {
+        const chosen = ui.resolution.value === "file" ? doc.width : Number(ui.resolution.value);
+        const resolution = request.preview ? Math.max(128, chosen / 2) : chosen;
 
         const next = await runtime.evaluate(doc, {
             resolution,
             signal: controller.signal,
-            onProgress: ({ done, total }) => showProgress(done, total),
+            onProgress: request.showProgress ? ({ done, total }) => showProgress(done, total) : undefined,
         });
-        if (controller.signal.aborted) {
+        if (controller.signal.aborted || gen !== generation) {
             next.dispose();
             return;
         }
@@ -120,21 +202,22 @@ async function render(name: string, text: string): Promise<void> {
             ["Precision", runtime.renderTargetFormat],
         ]);
         renderChannels(maps);
+        ui.warnings.replaceChildren();
         renderWarnings(next.warnings.map((w) => ({ kind: w.kind, message: w.message })));
         if (next.channels.length === 0) {
             renderWarnings([{ kind: "missing-channel", message: "This file has no texture channels assigned, so there's nothing to preview." }]);
         }
 
         Object.assign(status, {
-            state: "done",
+            state: pendingRequest ? "rendering" : "done",
             warnings: next.warnings.map((w) => ({ kind: w.kind, message: w.message })),
             channels: next.channels,
             timeMs: next.timeMs,
             nodesRendered: next.nodesRendered,
         });
     } catch (e) {
-        if (controller.signal.aborted) return;
-        const message = e instanceof TextureParseError ? e.message : `Render failed: ${(e as Error).message}`;
+        if (controller.signal.aborted || gen !== generation) return;
+        const message = `Render failed: ${(e as Error).message}`;
         console.error(e);
         renderStats([]);
         ui.channels.replaceChildren();
@@ -146,8 +229,103 @@ async function render(name: string, text: string): Promise<void> {
 }
 
 function rerender(): void {
-    if (current) void render(current.name, current.text);
+    void requestRender({ preview: false, showProgress: true });
 }
+
+// --- Variables ------------------------------------------------------------------
+
+function renderVariables(doc: TextureDocument | null): void {
+    const vars = doc?.variables ?? [];
+    ui.variablesGroup.hidden = vars.length === 0;
+    ui.variables.replaceChildren(...vars.map((v) => variableControl(v)));
+}
+
+/** A control for one variable. Sliders render at half resolution while dragged. */
+function variableControl(variable: TextureVariable): HTMLElement {
+    const set = (value: VariableValue, preview: boolean) => {
+        if (!currentDoc) return;
+        setVariable(currentDoc, variable.name, value);
+        void requestRender({ preview, showProgress: false });
+    };
+
+    const field = document.createElement("label");
+    field.className = "field";
+    field.dataset.variable = variable.name;
+    const caption = document.createElement("span");
+    caption.textContent = variable.displayName;
+    field.append(caption);
+
+    switch (variable.type) {
+        case "float":
+        case "int": {
+            field.classList.add("slider");
+            const output = document.createElement("output");
+            caption.append(output);
+            const input = document.createElement("input");
+            input.type = "range";
+            const min = variable.min ?? 0;
+            const max = variable.max ?? 1;
+            input.min = String(min);
+            input.max = String(max);
+            input.step =
+                variable.type === "int"
+                    ? String(Math.max(1, variable.step ?? 1))
+                    : String(variable.step && variable.step > 0 ? Math.min(variable.step, (max - min) / 100) : (max - min) / 100);
+            input.value = String(variable.value);
+            const fmt = (v: number) => (variable.type === "int" ? String(v) : v.toFixed(3).replace(/0+$/, "").replace(/\.$/, ""));
+            output.textContent = fmt(variable.value as number);
+            input.addEventListener("input", () => {
+                output.textContent = fmt(Number(input.value));
+                set(Number(input.value), true);
+            });
+            input.addEventListener("change", () => set(Number(input.value), false));
+            field.append(input);
+            break;
+        }
+        case "bool": {
+            field.classList.add("toggle");
+            const input = document.createElement("input");
+            input.type = "checkbox";
+            input.checked = variable.value as boolean;
+            input.addEventListener("change", () => set(input.checked, false));
+            field.prepend(input);
+            break;
+        }
+        case "enum": {
+            const select = document.createElement("select");
+            for (const option of variable.options ?? []) select.append(new Option(option.label, String(option.index)));
+            select.value = String(variable.value);
+            select.addEventListener("change", () => set(Number(select.value), false));
+            field.append(select);
+            break;
+        }
+        case "color": {
+            const input = document.createElement("input");
+            input.type = "color";
+            const c = variable.value as Color;
+            const hex = (x: number) => Math.round(Math.min(1, Math.max(0, x)) * 255).toString(16).padStart(2, "0");
+            input.value = `#${hex(c.r)}${hex(c.g)}${hex(c.b)}`;
+            const parse = (): Color => ({
+                r: parseInt(input.value.slice(1, 3), 16) / 255,
+                g: parseInt(input.value.slice(3, 5), 16) / 255,
+                b: parseInt(input.value.slice(5, 7), 16) / 255,
+                a: (variable.value as Color).a,
+            });
+            input.addEventListener("input", () => set(parse(), true));
+            input.addEventListener("change", () => set(parse(), false));
+            field.append(input);
+            break;
+        }
+    }
+    return field;
+}
+
+ui.resetVariables.addEventListener("click", () => {
+    if (!currentDoc) return;
+    resetVariables(currentDoc);
+    renderVariables(currentDoc);
+    rerender();
+});
 
 // --- UI rendering ---------------------------------------------------------------
 

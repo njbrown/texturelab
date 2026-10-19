@@ -61,3 +61,18 @@ target_link_libraries(tst_texturelistmodel PRIVATE Qt${QT_VERSION_MAJOR}::Gui)
 texturelab_add_test(tst_jsonutils)
 target_include_directories(tst_jsonutils PRIVATE
     ${CMAKE_SOURCE_DIR}/src/texturelab)
+
+# Texture variables: format round trip, tolerant loading, compatibility.
+# Compiles the model straight in, with props and their value types.
+texturelab_add_test(tst_variables)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS OpenGL)
+target_sources(tst_variables PRIVATE
+    ${CMAKE_SOURCE_DIR}/src/texturelab/variables.cpp
+    ${CMAKE_SOURCE_DIR}/src/texturelab/props.cpp
+    ${CMAKE_SOURCE_DIR}/src/texturelab/curve.cpp
+    ${CMAKE_SOURCE_DIR}/src/colorpicker/gradient.cpp)
+target_include_directories(tst_variables PRIVATE
+    ${CMAKE_SOURCE_DIR}/src/texturelab
+    ${CMAKE_SOURCE_DIR}/src/colorpicker)
+target_link_libraries(tst_variables PRIVATE
+    Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::OpenGL)

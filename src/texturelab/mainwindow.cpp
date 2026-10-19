@@ -42,6 +42,8 @@
 #include "launcher/launcherwindow.h"
 #include "telemetry.h"
 #include "thememanager.h"
+#include "widgets/themedicon.h"
+#include "widgets/variables/variableswidget.h"
 #include "tokens.h"
 #include "undo/undocommands.h"
 #include "widgets/aboutdialog.h"
@@ -84,6 +86,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 
         // undo/redo changes prop values behind the properties panel's back
         this->propWidget->syncPropBaselines();
+        // graph edits (deleting or pasting linked nodes) change variable links
+        this->variablesWidget->refreshIfChanged();
 
         // this fires on every push too (including merged ones, i.e. every
         // step of a slider scrub), so only touch the viewer when the channel
@@ -235,6 +239,30 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     connect(this->propWidget, &PropertiesWidget::commentPropertyChanged,
             [this](const CommentPtr& comment) {
                 this->graphWidget->syncCommentToScene(comment);
+            });
+
+    // Texture variables. A variable change rewrites linked props, so it
+    // re-renders like a prop edit; structural changes refresh the panels.
+    connect(this->propWidget, &PropertiesWidget::variablesChanged, this,
+            [this]() { this->variablesWidget->refresh(); });
+    connect(this->propWidget, &PropertiesWidget::variableActivated, this,
+            [this](const QString& id) {
+                this->variablesWidget->selectVariable(id);
+                this->variablesDock->setAsCurrentTab();
+            });
+    connect(this->variablesWidget, &VariablesWidget::valueChanged, this,
+            [this]() {
+                if (this->renderer && !!this->project)
+                    this->renderer->update();
+                this->view2DWidget->reRenderNode();
+                this->view3DWidget->reRender();
+            });
+    connect(this->variablesWidget, &VariablesWidget::variablesChanged, this,
+            [this]() { this->propWidget->refreshFromModel(); });
+    connect(this->variablesWidget, &VariablesWidget::nodeActivated, this,
+            [this](const QString& nodeId) {
+                this->graphWidget->selectNode(nodeId);
+                this->propertiesDock->setAsCurrentTab();
             });
 
     connect(this->propWidget, &PropertiesWidget::propertyUpdated,
@@ -401,6 +429,7 @@ void MainWindow::setProject(TextureProjectPtr project)
         this->graphWidget->setTextureRenderer(nullptr);
         this->view2DWidget->setTextureRenderer(nullptr);
         this->propWidget->setTextureRenderer(nullptr);
+        this->variablesWidget->setTextureRenderer(nullptr);
 
         delete this->renderer;
         this->renderer = nullptr;
@@ -427,6 +456,7 @@ void MainWindow::setProject(TextureProjectPtr project)
     this->propWidget->clearSelection();
     this->propWidget->setProject(project);
     this->propWidget->setScene(this->graphWidget->scene);
+    this->variablesWidget->setProject(project);
 
     renderer = new TextureRenderer();
     renderer->setProject(project);
@@ -435,6 +465,7 @@ void MainWindow::setProject(TextureProjectPtr project)
     // undo/redo of a property change has no propertyUpdated signal to kick the
     // render loop, so the commands need the renderer directly
     this->propWidget->setTextureRenderer(renderer);
+    this->variablesWidget->setTextureRenderer(renderer);
 
     connect(renderer, &TextureRenderer::renderProgress,
             [this](int clean, int total) {
@@ -530,9 +561,9 @@ void MainWindow::setupMenus()
     // Connected after createUndo/RedoAction's own connection, so this runs
     // once the stack has moved.
     connect(undoAction, &QAction::triggered, this,
-            [this]() { propWidget->refreshFromModel(); });
+            [this]() { refreshAfterUndo(); });
     connect(redoAction, &QAction::triggered, this,
-            [this]() { propWidget->refreshFromModel(); });
+            [this]() { refreshAfterUndo(); });
     editMenu->addSeparator();
 
     // The graph owns these — their shortcuts are scoped to it, so Ctrl+C in a
@@ -603,31 +634,12 @@ void MainWindow::setupMenus()
     });
 }
 
-// Recolor a rendered (white) icon pixmap to `color`, keeping its alpha shape.
-static QPixmap tintPixmap(const QPixmap& src, const QColor& color)
+void MainWindow::refreshAfterUndo()
 {
-    QPixmap out(src.size());
-    out.setDevicePixelRatio(src.devicePixelRatio());
-    out.fill(Qt::transparent);
-    QPainter p(&out);
-    p.drawPixmap(0, 0, src);
-    p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-    p.fillRect(out.rect(), color);
-    p.end();
-    return out;
-}
-
-// Build a toolbar QIcon whose Normal/Disabled variants are tinted to the theme's
-// text colors, so the icon always matches the button label's color in each state
-// (Qt's auto-generated disabled fade doesn't match text.disabled exactly).
-static QIcon themedToolIcon(const QString& svgPath)
-{
-    const Theme& t = ThemeManager::instance().theme();
-    const QPixmap base = QIcon(svgPath).pixmap(QSize(32, 32)); // white source SVG
-    QIcon icon;
-    icon.addPixmap(tintPixmap(base, t.color(Tokens::TextPrimary)), QIcon::Normal);
-    icon.addPixmap(tintPixmap(base, t.color(Tokens::TextDisabled)), QIcon::Disabled);
-    return icon;
+    // Undo/redo changes values (and can replace node and variable objects)
+    // behind the panels' backs.
+    propWidget->refreshFromModel();
+    variablesWidget->refresh();
 }
 
 void MainWindow::setupToolbar()
@@ -648,7 +660,7 @@ void MainWindow::setupToolbar()
     undoAction->setEnabled(undoStack->canUndo());
     connect(undoAction, &QAction::triggered, this, [this]() {
         undoStack->undo();
-        propWidget->refreshFromModel();
+        refreshAfterUndo();
     });
     connect(undoStack, &QUndoStack::canUndoChanged, undoAction,
             &QAction::setEnabled);
@@ -658,7 +670,7 @@ void MainWindow::setupToolbar()
     redoAction->setEnabled(undoStack->canRedo());
     connect(redoAction, &QAction::triggered, this, [this]() {
         undoStack->redo();
-        propWidget->refreshFromModel();
+        refreshAfterUndo();
     });
     connect(undoStack, &QUndoStack::canRedoChanged, redoAction,
             &QAction::setEnabled);
@@ -742,8 +754,18 @@ void MainWindow::setupDocks()
 
     this->propWidget = new PropertiesWidget();
     this->propWidget->setUndoStack(undoStack);
-    auto rightArea = addDock("Properties", ads::RightDockWidgetArea,
-                             this->propWidget, graphArea);
+    propertiesDock = dockManager->createDockWidget("Properties");
+    propertiesDock->setWidget(this->propWidget);
+    auto rightArea = dockManager->addDockWidget(ads::RightDockWidgetArea,
+                                                propertiesDock, graphArea);
+
+    // Texture variables, tabbed with Properties.
+    this->variablesWidget = new VariablesWidget();
+    this->variablesWidget->setUndoStack(undoStack);
+    variablesDock = dockManager->createDockWidget("Variables");
+    variablesDock->setWidget(this->variablesWidget);
+    dockManager->addDockWidgetTabToArea(variablesDock, rightArea);
+    rightArea->setCurrentDockWidget(propertiesDock);
 
     this->libraryWidget = new LibraryWidget();
     connect(this->libraryWidget, &LibraryWidget::upgradeRequested, this,

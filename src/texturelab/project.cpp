@@ -213,6 +213,17 @@ TextureProjectPtr Project::loadTextureFromJson(QJsonObject json,
         }
     }
 
+    // Variables last: their links are validated against the loaded nodes.
+    // Applying them makes linked props match the variable (the source of
+    // truth) even in a hand-edited file.
+    texture->variables = variables::fromJson(json["variables"].toArray());
+    variables::validate(texture->variables,
+                        [&](const QString& nodeId, const QString& propName) {
+                            return texture->resolveProp(nodeId, propName);
+                        });
+    for (const auto& var : texture->variables)
+        texture->applyVariable(var);
+
     texture->library = lib;
 
     return texture;
@@ -329,6 +340,11 @@ QByteArray Project::saveTexture(TextureProjectPtr texture)
     QJsonObject editorObj;
     editorObj["textureChannels"] = channelsObj;
     json["editor"] = editorObj;
+
+    // Exposed variables. Linked props already hold the variables' values in
+    // their node's "properties", so readers that ignore this key still render
+    // the texture identically.
+    json["variables"] = variables::toJson(texture->variables);
 
     return QJsonDocument(json).toJson();
 }

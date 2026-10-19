@@ -5,6 +5,7 @@
 #include <QQueue>
 #include <QRandomGenerator>
 #include <QSet>
+#include <algorithm>
 
 TextureNodePtr TextureProject::getNodeById(const QString& id)
 {
@@ -138,6 +139,8 @@ void TextureProject::removeNode(const QString& id)
             textureChannels.remove(channel);
     }
 
+    removeVariableLinksForNode(id);
+
     nodes.remove(id);
 }
 
@@ -167,6 +170,66 @@ void TextureProject::markNodeAsDirty(const TextureNodePtr& node)
             queue.enqueue(item);
         }
     }
+}
+
+TextureVariablePtr TextureProject::getVariableById(const QString& id) const
+{
+    for (const auto& var : variables)
+        if (var->id == id)
+            return var;
+    return {};
+}
+
+TextureVariablePtr TextureProject::variableForProp(const QString& nodeId,
+                                                   const QString& propName) const
+{
+    for (const auto& var : variables)
+        if (var->hasLink(nodeId, propName))
+            return var;
+    return {};
+}
+
+Prop* TextureProject::resolveProp(const QString& nodeId,
+                                  const QString& propName)
+{
+    auto node = nodes.value(nodeId);
+    return node ? node->getProp(propName) : nullptr;
+}
+
+void TextureProject::applyVariable(const TextureVariablePtr& var)
+{
+    if (!var)
+        return;
+    for (const auto& link : var->links) {
+        auto node = nodes.value(link.nodeId);
+        if (!node)
+            continue;
+        auto prop = node->getProp(link.propName);
+        if (!prop)
+            continue;
+        var->writeTo(prop);
+        node->isDirty = true;
+        markNodeAsDirty(node);
+    }
+}
+
+void TextureProject::removeVariableLinksForNode(const QString& nodeId)
+{
+    for (const auto& var : variables) {
+        var->links.erase(std::remove_if(var->links.begin(), var->links.end(),
+                                        [&](const VariableLink& l) {
+                                            return l.nodeId == nodeId;
+                                        }),
+                         var->links.end());
+    }
+}
+
+QStringList TextureProject::variableNames() const
+{
+    QStringList names;
+    for (const auto& var : variables)
+        names.append(var->name());
+    return names;
 }
 
 TextureProjectPtr TextureProject::createEmpty(Library* library)

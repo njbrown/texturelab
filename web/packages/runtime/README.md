@@ -40,6 +40,22 @@ viewer.setMaps(result.toMaps());
 result.dispose();
 ```
 
+### Texture variables
+
+A `.texture` file can expose variables, which are named values that drive node props, created in the desktop app's **Variables** tab. They're parsed into `doc.variables` (in display order) with their type, bounds, enum options and current value:
+
+```ts
+import { setVariable, resetVariables } from "@njbrown/texturelab-runtime";
+
+for (const v of doc.variables) console.log(v.name, v.type, v.value, v.min, v.max, v.options);
+
+setVariable(doc, "roughness", 0.4);   // clamped to the variable's bounds / enabled options
+const result = await runtime.evaluate(doc);   // re-render to see it
+resetVariables(doc);                  // back to the values in the file
+```
+
+The types are `float`, `int`, `bool`, `enum` and `color`. An enum's value is an index into the linked props' option list, and `options` lists the ones to offer, with their labels.
+
 ### Viewer
 
 - **Meshes:** `viewer.setMesh("sphere" | "cube" | "plane" | "cylinder")`.

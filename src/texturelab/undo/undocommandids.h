@@ -9,6 +9,7 @@ static constexpr int EditFrame      = 3;
 static constexpr int EditComment    = 4;
 static constexpr int GlobalSeed     = 5;
 static constexpr int NodeSeed       = 6;
+static constexpr int VariablesChange = 7;
 } // namespace UndoCommandId
 
 // Mergeable commands (slider scrubs, typing) only merge with the previous

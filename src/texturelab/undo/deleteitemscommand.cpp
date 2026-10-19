@@ -45,6 +45,12 @@ DeleteItemsCommand::DeleteItemsCommand(TextureProjectPtr project,
             _channelAssignments.insert(it.key(), it.value());
     }
 
+    for (const auto& var : _project->variables) {
+        for (const auto& link : var->links)
+            if (deletedNodeIds.contains(link.nodeId))
+                _variableLinks.append({var->id, link});
+    }
+
     for (const auto& id : nodeIds) {
         auto node = _project->getNodeById(id);
         if (!node)
@@ -120,6 +126,7 @@ void DeleteItemsCommand::redo()
         auto gnode = _scene->getNodeById(sn.id);
         if (gnode)
             _scene->removeNode(gnode);
+        _project->removeVariableLinksForNode(sn.id);
         _project->nodes.remove(sn.id);
     }
 
@@ -214,6 +221,14 @@ void DeleteItemsCommand::undo()
         gcomment->setText(sc.text);
         gcomment->setPos(sc.pos.x(), sc.pos.y());
         _scene->addComment(gcomment);
+    }
+
+    // Restore variable links; the restored props already hold the variable's
+    // value from when they were deleted.
+    for (const auto& entry : _variableLinks) {
+        auto var = _project->getVariableById(entry.first);
+        if (var && !var->hasLink(entry.second.nodeId, entry.second.propName))
+            var->links.append(entry.second);
     }
 
     // Restore channel assignments now that the nodes they reference exist again.
