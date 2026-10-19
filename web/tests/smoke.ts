@@ -269,6 +269,21 @@ if (variablesMode) {
     const steps = await pg((p) => p.variables().find((v) => v.name === "wear_steps")!.value);
     check("copper:clamp", steps === 12, `999 -> ${steps}`);
 
+    // Presets: Copper ships "Polished" and "Worn".
+    const presets = await pg((p: any) => p.presets().map((x: any) => ({ id: x.id, name: x.name })));
+    check("copper presets", presets.length === 2, presets.map((x: any) => x.name).join(", "));
+    await pg((p: any) => p.selectPreset(""));
+    check("preset:saved values restores", (await hashes()) === base);
+    await pg((p: any, a) => p.selectPreset(a), presets.find((x: any) => x.name === "Worn")!.id);
+    const worn = await hashes();
+    const wornVars = await pg((p) => p.variables().map((v) => [v.name, v.value]));
+    check("preset:worn changes render", worn !== base, JSON.stringify(wornVars).slice(0, 90));
+    check("preset:not modified after apply", !(await pg((p: any) => p.presetModified())));
+    await pg((p) => p.setVariable("roughness", 0.5));
+    check("preset:modified after edit", await pg((p: any) => p.presetModified()));
+    await pg((p: any) => p.selectPreset(""));
+    check("preset:back to saved values", (await hashes()) === base);
+
     // Fixture covering the other types: enum (numeric legacy type, restricted
     // and relabelled options), bool, gradient, curve, image and string.
     const png =

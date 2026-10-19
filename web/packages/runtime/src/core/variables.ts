@@ -300,6 +300,61 @@ function copyValue(value: VariableValue): VariableValue {
     return typeof value === "object" ? { ...value } : value;
 }
 
+/**
+ * A value in the JSON form node props use in the file (Prop::toJsonValue),
+ * as preset values are stored, read for this variable's type.
+ */
+export function valueFromJson(variable: TextureVariable, json: unknown): VariableValue {
+    switch (variable.type) {
+        case "float":
+            return getDouble(json, variable.value as number);
+        case "int":
+        case "enum":
+            return getTruncatedInt(json, variable.value as number);
+        case "bool":
+            return getBool(json, variable.value as boolean);
+        case "color":
+            return colorFromJson(json);
+        case "gradient":
+            return Gradient.fromJson(json);
+        case "curve":
+            return Curve.fromJson(json);
+        case "image":
+            return typeof json === "string" && json.includes(";base64,") ? json : "";
+        case "string":
+            return getString(json);
+    }
+}
+
+/** A named snapshot of every variable's value, keyed by variable id. */
+export interface VariablePreset {
+    id: string;
+    name: string;
+    /** Variable id -> value. Variables without an entry keep their value when applied. */
+    values: Record<string, VariableValue>;
+}
+
+export function loadPresets(json: unknown, variables: TextureVariable[]): VariablePreset[] {
+    const byId = new Map(variables.map((v) => [v.id, v]));
+    const ids = new Set<string>();
+    const presets: VariablePreset[] = [];
+    for (const item of Array.isArray(json) ? json : []) {
+        if (!isObject(item)) continue;
+        let id = getString(item.id) || cryptoId();
+        if (ids.has(id)) id = cryptoId();
+        ids.add(id);
+        const values: Record<string, VariableValue> = {};
+        const raw = isObject(item.values) ? item.values : {};
+        for (const [varId, value] of Object.entries(raw)) {
+            const variable = byId.get(varId);
+            // Values of variables that no longer exist are dropped.
+            if (variable) values[varId] = clampValue(variable, valueFromJson(variable, value));
+        }
+        presets.push({ id, name: getString(item.name) || "Preset", values });
+    }
+    return presets;
+}
+
 /** Write the variable's value into every linked prop. Returns the ids of the nodes it changed. */
 export function applyVariable(variable: TextureVariable, nodes: Map<string, TextureNode>): string[] {
     const changed: string[] = [];

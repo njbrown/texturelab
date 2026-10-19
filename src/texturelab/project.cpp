@@ -223,6 +223,12 @@ TextureProjectPtr Project::loadTextureFromJson(QJsonObject json,
                         });
     for (const auto& var : texture->variables)
         texture->applyVariable(var);
+    texture->variablePresets =
+        variables::presetsFromJson(json["variablePresets"].toArray());
+    texture->activePresetId = json["activePreset"].toString();
+    if (!texture->presetById(texture->activePresetId))
+        texture->activePresetId.clear();
+    texture->savedVariableValues = variables::captureValues(texture->variables);
 
     texture->library = lib;
 
@@ -345,6 +351,14 @@ QByteArray Project::saveTexture(TextureProjectPtr texture)
     // their node's "properties", so readers that ignore this key still render
     // the texture identically.
     json["variables"] = variables::toJson(texture->variables);
+    if (!texture->variablePresets.isEmpty()) {
+        json["variablePresets"] = variables::presetsToJson(
+            texture->variablePresets, texture->variables);
+        if (!texture->activePresetId.isEmpty())
+            json["activePreset"] = texture->activePresetId;
+    }
+    // What "Saved values" reverts to from now on.
+    texture->savedVariableValues = variables::captureValues(texture->variables);
 
     return QJsonDocument(json).toJson();
 }

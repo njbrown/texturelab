@@ -351,6 +351,26 @@ QProgressBar::chunk { background: {{accent}}; border-radius: {{radius.sm}}px; }
 #VariableLinkButton[linked="true"]:hover { background: {{accent.hover}}; }
 #VariableLinkButton::menu-indicator { image: none; width: 0; }
 
+/* Variables tab: one row per variable, a gear that reveals its settings,
+   and the preset bar on top. */
+#VariableRow { border-bottom: 1px solid {{border.subtle}}; }
+#VariableSettings {
+    background: {{bg.base}};
+    border-top: 1px solid {{border.subtle}};
+}
+#VariableSettingsButton {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: {{radius.sm}}px;
+    padding: 2px;
+    margin: 6px 6px 0 0;
+    min-height: 0;
+}
+#VariableSettingsButton:hover { background: {{ctrl.hover}}; border-color: {{border.subtle}}; }
+#VariableSettingsButton:checked { background: {{accent}}; }
+#VariablePresetBar { border-bottom: 1px solid {{border.subtle}}; }
+#VariablePresetModified { color: {{accent}}; font-weight: bold; min-width: 8px; }
+
 /* Variables tab: empty-state and "not linked" notes */
 #VariablesEmpty {
     color: {{text.disabled}};

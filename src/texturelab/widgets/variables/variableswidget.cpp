@@ -3,22 +3,29 @@
 #include "../../models.h"
 #include "../../props.h"
 #include "../../undo/variableschangecommand.h"
-#include "../properties/accordionwidget.h"
 #include "../properties/curvepropwidget.h"
 #include "../properties/propwidgets.h"
+#include "../themedicon.h"
 
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QFormLayout>
+#include <QGridLayout>
 #include <QHBoxLayout>
+#include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMenu>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QRegularExpressionValidator>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QSpinBox>
 #include <QTimer>
+#include <QToolButton>
+#include <QUuid>
 #include <QVBoxLayout>
 
 VariablesWidget::VariablesWidget(QWidget* parent) : QWidget(parent)
@@ -27,6 +34,50 @@ VariablesWidget::VariablesWidget(QWidget* parent) : QWidget(parent)
 
     auto layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+
+    // --- preset bar ---
+    presetBar = new QWidget(this);
+    presetBar->setObjectName("VariablePresetBar");
+    auto bar = new QHBoxLayout(presetBar);
+    bar->setContentsMargins(8, 6, 8, 6);
+    bar->setSpacing(6);
+    bar->addWidget(new QLabel("Preset"));
+    presetCombo = new QComboBox();
+    presetCombo->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+    bar->addWidget(presetCombo, 1);
+    presetModified = new QLabel("•");
+    presetModified->setObjectName("VariablePresetModified");
+    presetModified->setToolTip("The values differ from the selected preset.");
+    bar->addWidget(presetModified);
+    presetSave = new QPushButton("Save");
+    presetSave->setProperty("size", "small");
+    bar->addWidget(presetSave);
+    presetMenuButton = new QToolButton();
+    presetMenuButton->setText("⋯");
+    presetMenuButton->setPopupMode(QToolButton::InstantPopup);
+    auto menu = new QMenu(presetMenuButton);
+    menu->addAction("Save As New Preset…", this, [this]() { savePresetAs(); });
+    auto renameAction = menu->addAction("Rename Preset…", this, [this]() { renamePreset(); });
+    auto deleteAction = menu->addAction("Delete Preset", this, [this]() { deletePreset(); });
+    menu->addSeparator();
+    auto revertAction = menu->addAction("Revert to Preset", this, [this]() {
+        applyPreset(project ? project->activePresetId : QString());
+    });
+    connect(menu, &QMenu::aboutToShow, this, [=]() {
+        bool hasPreset = project && project->presetById(project->activePresetId);
+        renameAction->setEnabled(hasPreset);
+        deleteAction->setEnabled(hasPreset);
+        revertAction->setText(hasPreset ? "Revert to Preset" : "Revert to Saved Values");
+    });
+    presetMenuButton->setMenu(menu);
+    bar->addWidget(presetMenuButton);
+    layout->addWidget(presetBar);
+
+    connect(presetCombo, &QComboBox::activated, this, [this](int index) {
+        applyPreset(presetCombo->itemData(index).toString());
+    });
+    connect(presetSave, &QPushButton::clicked, this, [this]() { savePreset(); });
 
     emptyLabel = new QLabel(
         "No variables yet.\n\nUse the link button on a property to expose it "
@@ -40,13 +91,13 @@ VariablesWidget::VariablesWidget(QWidget* parent) : QWidget(parent)
     scroll = new QScrollArea(this);
     scroll->setWidgetResizable(true);
     scroll->setFrameShape(QFrame::NoFrame);
-    // Sections always fit the dock's width.
+    // Rows always fit the dock's width.
     scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    sectionsHost = new QWidget();
-    sectionsLayout = new QVBoxLayout(sectionsHost);
-    sectionsLayout->setContentsMargins(0, 0, 0, 0);
-    sectionsLayout->setSpacing(0);
-    scroll->setWidget(sectionsHost);
+    rowsHost = new QWidget();
+    rowsLayout = new QVBoxLayout(rowsHost);
+    rowsLayout->setContentsMargins(0, 0, 0, 0);
+    rowsLayout->setSpacing(0);
+    scroll->setWidget(rowsHost);
     layout->addWidget(scroll, 1);
 
     refresh();
@@ -55,12 +106,8 @@ VariablesWidget::VariablesWidget(QWidget* parent) : QWidget(parent)
 void VariablesWidget::setProject(const TextureProjectPtr& project)
 {
     this->project = project;
-    expanded.clear();
+    settingsOpen.clear();
     scrollToId.clear();
-    // A short list opens fully; a long one starts collapsed.
-    if (project && project->variables.size() <= 3)
-        for (const auto& var : project->variables)
-            expanded.insert(var->id);
     scroll->verticalScrollBar()->setValue(0);
     refresh();
 }
@@ -76,7 +123,9 @@ QString VariablesWidget::signature() const
             sig += link.nodeId + '/' + link.propName + ',';
         sig += ';';
     }
-    return sig;
+    for (const auto& preset : project->variablePresets)
+        sig += preset.id + '|' + preset.name + ';';
+    return sig + project->activePresetId;
 }
 
 void VariablesWidget::refreshIfChanged()
@@ -87,18 +136,9 @@ void VariablesWidget::refreshIfChanged()
 
 void VariablesWidget::selectVariable(const QString& id)
 {
-    expanded.insert(id);
+    settingsOpen.insert(id);
     scrollToId = id;
     refresh();
-}
-
-QString VariablesWidget::sectionTitle(const TextureVariablePtr& var) const
-{
-    QString links = var->links.isEmpty()
-                        ? "unlinked"
-                        : QString("%1 link%2").arg(var->links.size()).arg(var->links.size() == 1 ? "" : "s");
-    return QString("%1   ·   %2, %3")
-        .arg(var->displayName(), TextureVariable::typeLabel(var->type), links);
 }
 
 void VariablesWidget::refresh()
@@ -106,8 +146,8 @@ void VariablesWidget::refresh()
     builtSignature = signature();
     int scrollPos = scroll->verticalScrollBar()->value();
 
-    while (sectionsLayout->count() > 0) {
-        auto item = sectionsLayout->takeAt(0);
+    while (rowsLayout->count() > 0) {
+        auto item = rowsLayout->takeAt(0);
         if (auto w = item->widget()) {
             w->hide();
             w->deleteLater();
@@ -118,27 +158,30 @@ void VariablesWidget::refresh()
     bool any = project && !project->variables.isEmpty();
     emptyLabel->setVisible(!any);
     scroll->setVisible(any);
+    presetBar->setVisible(any);
     if (!any)
         return;
 
-    // Forget sections whose variable is gone.
+    rebuildPresetBar();
+
+    // Forget rows whose variable is gone.
     QSet<QString> ids;
     for (const auto& var : project->variables)
         ids.insert(var->id);
-    expanded.intersect(ids);
+    settingsOpen.intersect(ids);
 
     QWidget* target = nullptr;
     for (int i = 0; i < project->variables.size(); i++) {
         auto var = project->variables[i];
-        auto section = createSection(var, i);
-        sectionsLayout->addWidget(section);
+        auto row = createRow(var, i);
+        rowsLayout->addWidget(row);
         if (var->id == scrollToId)
-            target = section;
+            target = row;
     }
-    sectionsLayout->addStretch(1);
+    rowsLayout->addStretch(1);
 
-    // After layout: restore the scroll position, or bring the requested
-    // section into view.
+    // After layout: restore the scroll position, or bring the requested row
+    // into view.
     QTimer::singleShot(0, this, [this, scrollPos, target]() {
         if (target)
             scroll->ensureWidgetVisible(target, 0, 0);
@@ -148,25 +191,67 @@ void VariablesWidget::refresh()
     scrollToId.clear();
 }
 
-QWidget* VariablesWidget::createSection(const TextureVariablePtr& var, int index)
+QWidget* VariablesWidget::createRow(const TextureVariablePtr& var, int index)
 {
     const QString id = var->id;
-    auto accordion = new AccordionWidget(sectionTitle(var), !expanded.contains(id));
-    connect(accordion, &AccordionWidget::toggled, this, [this, id](bool collapsed) {
-        if (collapsed)
-            expanded.remove(id);
-        else
-            expanded.insert(id);
-    });
+    auto row = new QWidget();
+    row->setObjectName("VariableRow");
+    row->setAttribute(Qt::WA_StyledBackground);
+    auto layout = new QVBoxLayout(row);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
 
+    // The value editor, with the settings toggle overlaid at the right end
+    // of its label row (both in one grid cell, like the property panel's
+    // link button).
+    auto top = new QWidget();
+    auto grid = new QGridLayout(top);
+    grid->setContentsMargins(0, 0, 0, 0);
+    if (auto editor = createValueEditor(var)) {
+        // The widget points at editorProp; free them together.
+        Prop* owned = editorProp;
+        editorProp = nullptr;
+        connect(editor, &QObject::destroyed, [owned]() { delete owned; });
+        grid->addWidget(editor, 0, 0);
+    }
+
+    auto gear = new QToolButton(top);
+    gear->setObjectName("VariableSettingsButton");
+    gear->setIcon(themedToolIcon(":/icons/settings.svg"));
+    gear->setIconSize(QSize(12, 12));
+    gear->setCheckable(true);
+    gear->setChecked(settingsOpen.contains(id));
+    gear->setToolTip("Variable settings: name, bounds, options, links");
+    grid->addWidget(gear, 0, 0, Qt::AlignTop | Qt::AlignRight);
+    layout->addWidget(top);
+
+    auto settings = createSettings(var, index);
+    settings->setVisible(gear->isChecked());
+    layout->addWidget(settings);
+
+    connect(gear, &QToolButton::toggled, this, [this, id, settings](bool open) {
+        settings->setVisible(open);
+        if (open)
+            settingsOpen.insert(id);
+        else
+            settingsOpen.remove(id);
+    });
+    return row;
+}
+
+QWidget* VariablesWidget::createSettings(const TextureVariablePtr& var, int index)
+{
+    const QString id = var->id;
     auto body = new QWidget();
+    body->setObjectName("VariableSettings");
+    body->setAttribute(Qt::WA_StyledBackground);
     auto layout = new QVBoxLayout(body);
-    layout->setContentsMargins(8, 4, 12, 10);
+    layout->setContentsMargins(10, 6, 12, 10);
 
     // --- names ---
     auto names = new QWidget();
     auto form = new QFormLayout(names);
-    form->setContentsMargins(0, 4, 0, 0);
+    form->setContentsMargins(0, 0, 0, 0);
 
     auto displayEdit = new QLineEdit(var->displayName());
     form->addRow("Display Name", displayEdit);
@@ -177,6 +262,7 @@ QWidget* VariablesWidget::createSection(const TextureVariablePtr& var, int index
     nameEdit->setToolTip("Identifier used by the web runtime and API. Letters, "
                          "digits and underscores.");
     form->addRow("Name", nameEdit);
+    form->addRow("Type", new QLabel(TextureVariable::typeLabel(var->type)));
     layout->addWidget(names);
 
     connect(displayEdit, &QLineEdit::editingFinished, this, [=]() {
@@ -209,15 +295,6 @@ QWidget* VariablesWidget::createSection(const TextureVariablePtr& var, int index
         }
         editVariable(id, "Rename Variable", [&](TextureVariablePtr v) { v->prop->name = text; });
     });
-
-    // --- value ---
-    if (auto editor = createValueEditor(var)) {
-        // The widget points at editorProp; free them together.
-        Prop* owned = editorProp;
-        editorProp = nullptr;
-        connect(editor, &QObject::destroyed, [owned]() { delete owned; });
-        layout->addWidget(editor);
-    }
 
     // --- bounds / options ---
     auto addHeader = [&](const QString& text) {
@@ -259,9 +336,145 @@ QWidget* VariablesWidget::createSection(const TextureVariablePtr& var, int index
     connect(remove, &QPushButton::clicked, this, [this, id]() { deleteVariable(id); });
     layout->addLayout(actions);
 
-    accordion->addWidget(body);
-    return accordion;
+    return body;
 }
+
+// ---------------------------------------------------------------------------
+// Presets
+
+void VariablesWidget::rebuildPresetBar()
+{
+    QSignalBlocker block(presetCombo);
+    presetCombo->clear();
+    // "Saved values": what the file was loaded/saved with.
+    presetCombo->addItem("Saved values", QString());
+    presetCombo->setItemData(0, "The values the file was last opened or saved with",
+                             Qt::ToolTipRole);
+    int current = 0;
+    for (const auto& preset : project->variablePresets) {
+        presetCombo->addItem(preset.name, preset.id);
+        if (preset.id == project->activePresetId)
+            current = presetCombo->count() - 1;
+    }
+    presetCombo->setCurrentIndex(current);
+    updatePresetModified();
+}
+
+void VariablesWidget::updatePresetModified()
+{
+    if (!project)
+        return;
+    auto preset = project->presetById(project->activePresetId);
+    const auto& values = preset ? preset->values : project->savedVariableValues;
+    bool modified = !variables::valuesMatch(project->variables, values);
+    // Keep the label's space so the bar doesn't jump.
+    presetModified->setText(modified ? "•" : " ");
+    presetSave->setToolTip(preset ? QString("Overwrite \"%1\" with the current values").arg(preset->name)
+                                  : "Save the current values as a new preset");
+}
+
+void VariablesWidget::applyPreset(const QString& presetId)
+{
+    if (!project)
+        return;
+    auto preset = project->presetById(presetId);
+    QString name = preset ? preset->name : "Saved values";
+    auto values = preset ? preset->values : project->savedVariableValues;
+
+    VariablesEdit edit(project, renderer, QString("Apply Preset %1").arg(name));
+    for (const auto& var : project->variables)
+        edit.touchVariable(var);
+    for (const auto& var : variables::applyValues(project->variables, values))
+        project->applyVariable(var);
+    project->activePresetId = preset ? preset->id : QString();
+    if (undoStack)
+        undoStack->push(edit.finish());
+
+    QTimer::singleShot(0, this, [this]() { refresh(); });
+    emit valueChanged();
+    emit variablesChanged();
+}
+
+void VariablesWidget::savePreset()
+{
+    if (!project)
+        return;
+    auto preset = project->presetById(project->activePresetId);
+    if (!preset) {
+        savePresetAs();
+        return;
+    }
+    VariablesEdit edit(project, renderer, QString("Save Preset %1").arg(preset->name));
+    preset->values = variables::captureValues(project->variables);
+    if (undoStack)
+        undoStack->push(edit.finish());
+    updatePresetModified();
+}
+
+void VariablesWidget::savePresetAs()
+{
+    if (!project)
+        return;
+    bool ok = false;
+    auto name = QInputDialog::getText(
+                    this, "Save Preset", "Preset name:", QLineEdit::Normal,
+                    QString("Preset %1").arg(project->variablePresets.size() + 1), &ok)
+                    .trimmed();
+    if (!ok || name.isEmpty())
+        return;
+
+    VariablesEdit edit(project, renderer, QString("Save Preset %1").arg(name));
+    VariablePreset preset;
+    preset.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    preset.name = name;
+    preset.values = variables::captureValues(project->variables);
+    project->variablePresets.append(preset);
+    project->activePresetId = preset.id;
+    if (undoStack)
+        undoStack->push(edit.finish());
+    builtSignature = signature();
+    rebuildPresetBar();
+}
+
+void VariablesWidget::renamePreset()
+{
+    auto preset = project ? project->presetById(project->activePresetId) : nullptr;
+    if (!preset)
+        return;
+    bool ok = false;
+    auto name = QInputDialog::getText(this, "Rename Preset", "Preset name:",
+                                      QLineEdit::Normal, preset->name, &ok)
+                    .trimmed();
+    if (!ok || name.isEmpty() || name == preset->name)
+        return;
+
+    VariablesEdit edit(project, renderer, QString("Rename Preset %1").arg(name));
+    preset->name = name;
+    if (undoStack)
+        undoStack->push(edit.finish());
+    builtSignature = signature();
+    rebuildPresetBar();
+}
+
+void VariablesWidget::deletePreset()
+{
+    auto preset = project ? project->presetById(project->activePresetId) : nullptr;
+    if (!preset)
+        return;
+    QString id = preset->id;
+    VariablesEdit edit(project, renderer, QString("Delete Preset %1").arg(preset->name));
+    project->variablePresets.erase(
+        std::remove_if(project->variablePresets.begin(), project->variablePresets.end(),
+                       [&](const VariablePreset& p) { return p.id == id; }),
+        project->variablePresets.end());
+    project->activePresetId.clear();
+    if (undoStack)
+        undoStack->push(edit.finish());
+    builtSignature = signature();
+    rebuildPresetBar();
+}
+
+// ---------------------------------------------------------------------------
 
 void VariablesWidget::editVariable(
     const QString& id, const QString& text,
@@ -283,8 +496,10 @@ void VariablesWidget::editVariable(
     // Deferred: this may run inside a signal of a widget being rebuilt.
     if (rebuild)
         QTimer::singleShot(0, this, [this]() { refresh(); });
-    else
+    else {
         builtSignature = signature();
+        updatePresetModified();
+    }
     emit valueChanged();
     emit variablesChanged();
 }

@@ -271,6 +271,12 @@ button.small {
     font-size: 12px;
 }
 
+.preset-modified {
+    color: var(--accent);
+    font-weight: 700;
+    width: 10px;
+}
+
 .variables {
     display: flex;
     flex-direction: column;

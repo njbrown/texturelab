@@ -82,6 +82,11 @@ public:
 
     // Exposed texture variables, in display order. See variables.h.
     QList<TextureVariablePtr> variables;
+    // Named snapshots of the variables' values, and the one last applied.
+    QList<VariablePreset> variablePresets;
+    QString activePresetId;
+    // Variable values as of the last load/save ("Saved values" in the UI).
+    QMap<QString, QJsonValue> savedVariableValues;
 
     TextureNodePtr getNodeById(const QString& id);
     ConnectionPtr getConnectionById(const QString& id);
@@ -126,6 +131,7 @@ public:
     // Drops every variable link pointing at this node.
     void removeVariableLinksForNode(const QString& nodeId);
     QStringList variableNames() const;
+    VariablePreset* presetById(const QString& id);
 
     static TextureProjectPtr createEmpty(Library* library = nullptr);
 };

@@ -4,6 +4,7 @@ export {
     getVariable,
     setVariable,
     resetVariables,
+    applyPreset,
     libraryForVersion,
     TextureParseError,
     TEXTURE_CHANNELS,
@@ -40,6 +41,7 @@ export {
     type VariableValue,
     type VariableLink,
     type EnumOption,
+    type VariablePreset,
 } from "./variables.js";
 
 /** Library versions this runtime can render. */

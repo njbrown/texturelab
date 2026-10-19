@@ -8,7 +8,15 @@ import { getInt, getLong, isObject } from "./json.js";
 import type { Library } from "./libraries/library.js";
 import { createLibraryV2, createLibraryV3 } from "./libraries/registry.js";
 import type { TextureNode } from "./node.js";
-import { applyVariable, clampValue, loadVariables, type TextureVariable, type VariableValue } from "./variables.js";
+import {
+    applyVariable,
+    clampValue,
+    loadPresets,
+    loadVariables,
+    type TextureVariable,
+    type VariablePreset,
+    type VariableValue,
+} from "./variables.js";
 
 export type LibraryVersion = "v1" | "v2" | "v3";
 
@@ -41,6 +49,10 @@ export interface TextureDocument {
     skippedTypes: string[];
     /** Exposed variables, in display order. Their values are applied to the linked props. */
     variables: TextureVariable[];
+    /** Named snapshots of the variables' values. */
+    presets: VariablePreset[];
+    /** Id of the preset the file was saved with selected, if any. */
+    activePreset: string | null;
 }
 
 export interface ParseOptions {
@@ -189,6 +201,8 @@ export function parseTexture(input: string | object, options: ParseOptions = {})
 
     // Variables last: links are validated against the loaded nodes.
     const variables = loadVariables(json.variables, nodes);
+    const presets = loadPresets(json.variablePresets, variables);
+    const activeId = typeof json.activePreset === "string" ? json.activePreset : "";
 
     return {
         libraryVersion,
@@ -202,7 +216,27 @@ export function parseTexture(input: string | object, options: ParseOptions = {})
             typeof exportObj.filePattern === "string" ? exportObj.filePattern : "${project}_${name}",
         skippedTypes,
         variables,
+        presets,
+        activePreset: presets.some((p) => p.id === activeId) ? activeId : null,
     };
+}
+
+/**
+ * Apply a preset (by id or name): every variable it has a value for is set
+ * (clamped) and written into its linked props. Returns the ids of the nodes
+ * that changed; re-evaluate the document to see the result.
+ */
+export function applyPreset(doc: TextureDocument, idOrName: string): string[] {
+    const preset = doc.presets.find((p) => p.id === idOrName) ?? doc.presets.find((p) => p.name === idOrName);
+    if (!preset) throw new Error(`No preset "${idOrName}"`);
+    const changed = new Set<string>();
+    for (const variable of doc.variables) {
+        if (!(variable.id in preset.values)) continue;
+        variable.value = clampValue(variable, preset.values[variable.id]!);
+        for (const id of applyVariable(variable, doc.nodes)) changed.add(id);
+    }
+    doc.activePreset = preset.id;
+    return [...changed];
 }
 
 export function getVariable(doc: TextureDocument, name: string): TextureVariable | undefined {
@@ -223,6 +257,7 @@ export function setVariable(doc: TextureDocument, name: string, value: VariableV
 
 /** Put every variable back to the value it had in the file. */
 export function resetVariables(doc: TextureDocument): string[] {
+    doc.activePreset = null;
     const changed = new Set<string>();
     for (const variable of doc.variables) {
         variable.value = clampValue(variable, variable.defaultValue);

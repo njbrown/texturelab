@@ -224,6 +224,14 @@ void TextureProject::removeVariableLinksForNode(const QString& nodeId)
     }
 }
 
+VariablePreset* TextureProject::presetById(const QString& id)
+{
+    for (auto& preset : variablePresets)
+        if (preset.id == id)
+            return &preset;
+    return nullptr;
+}
+
 QStringList TextureProject::variableNames() const
 {
     QStringList names;

@@ -15,6 +15,8 @@ private slots:
     void roundTripsEveryType();
     void roundTripsRichTypes();
     void writesTypeAsString();
+    void presetsCaptureApplyAndMatch();
+    void presetsRoundTripAndDropStaleValues();
     void readsElectronFormat();
     void createFromPropCopiesValueAndBounds();
     void acceptsOnlyCompatibleProps();
@@ -187,6 +189,74 @@ void TestVariables::writesTypeAsString()
     QCOMPARE(TextureVariable::typeFromJson(QJsonValue(5)), VariableType::Color);
     QCOMPARE(TextureVariable::typeFromJson(QJsonValue(6)), VariableType::None);
     QCOMPARE(TextureVariable::typeFromJson(QJsonValue("nope")), VariableType::None);
+}
+
+void TestVariables::presetsCaptureApplyAndMatch()
+{
+    auto f = floatProp(0.5, 0, 1);
+    auto c = new ColorProp();
+    c->value = QColor::fromRgbF(0.55, 0.2, 0.1, 1);
+    QList<TextureVariablePtr> vars = {TextureVariable::createFromProp(f, "rough", "Rough"),
+                                      TextureVariable::createFromProp(c, "tint", "Tint")};
+    delete f;
+    delete c;
+
+    auto saved = variables::captureValues(vars);
+    QVERIFY(variables::valuesMatch(vars, saved));
+
+    // Hand-written preset values: 0.55 reads back from QColor as 0.5500076,
+    // which must still count as a match once applied.
+    QMap<QString, QJsonValue> preset;
+    preset[vars[0]->id] = 0.25;
+    QJsonObject color{{"r", 0.55}, {"g", 0.3}, {"b", 0.1}, {"a", 1.0}};
+    preset[vars[1]->id] = color;
+    preset["no-such-variable"] = 3; // ignored
+
+    QVERIFY(!variables::valuesMatch(vars, preset));
+    auto changed = variables::applyValues(vars, preset);
+    QCOMPARE(changed.size(), 2);
+    QCOMPARE(vars[0]->value().toDouble(), 0.25);
+    QVERIFY(variables::valuesMatch(vars, preset));
+
+    // Out-of-bounds preset values clamp.
+    preset[vars[0]->id] = 7.0;
+    variables::applyValues(vars, preset);
+    QCOMPARE(vars[0]->value().toDouble(), 1.0);
+
+    // A preset that leaves a variable out keeps its value, and doesn't match.
+    QMap<QString, QJsonValue> partial;
+    partial[vars[0]->id] = 0.5;
+    variables::applyValues(vars, partial);
+    QCOMPARE(vars[0]->value().toDouble(), 0.5);
+    QVERIFY(!variables::valuesMatch(vars, partial));
+}
+
+void TestVariables::presetsRoundTripAndDropStaleValues()
+{
+    auto f = floatProp(0.5, 0, 1);
+    QList<TextureVariablePtr> vars = {TextureVariable::createFromProp(f, "rough", "Rough")};
+    delete f;
+
+    VariablePreset preset;
+    preset.id = "p1";
+    preset.name = "Glossy";
+    preset.values[vars[0]->id] = 0.1;
+    preset.values["deleted-variable"] = 0.9;
+
+    auto json = variables::presetsToJson({preset}, vars);
+    auto loaded = variables::presetsFromJson(json);
+    QCOMPARE(loaded.size(), 1);
+    QCOMPARE(loaded[0].id, QString("p1"));
+    QCOMPARE(loaded[0].name, QString("Glossy"));
+    QCOMPARE(loaded[0].values.size(), 1); // stale entry dropped on save
+    QCOMPARE(loaded[0].values.value(vars[0]->id).toDouble(), 0.1);
+
+    // Duplicate ids and missing names are fixed on load.
+    auto dupes = variables::presetsFromJson(QJsonDocument::fromJson(
+        R"([{"id":"a","name":"One","values":{}},{"id":"a","values":{}}])").array());
+    QCOMPARE(dupes.size(), 2);
+    QVERIFY(dupes[0].id != dupes[1].id);
+    QCOMPARE(dupes[1].name, QString("Preset"));
 }
 
 void TestVariables::readsElectronFormat()

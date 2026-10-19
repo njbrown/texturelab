@@ -14,6 +14,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QList>
+#include <QMap>
 #include <QSharedPointer>
 #include <QString>
 #include <QVariant>
@@ -123,6 +124,18 @@ public:
     TextureVariablePtr clone() const;
 };
 
+// A named snapshot of every variable's value. Values are keyed by variable id
+// (so renames don't break presets) in the same JSON form node props use in
+// the file (Prop::toJsonValue).
+struct VariablePreset {
+    QString id;
+    QString name;
+    QMap<QString, QJsonValue> values;
+
+    QJsonObject toJson() const;
+    static VariablePreset fromJson(const QJsonObject& obj);
+};
+
 namespace variables {
 
 // An identifier ([a-zA-Z_][a-zA-Z0-9_]*) derived from a display name.
@@ -146,5 +159,20 @@ QJsonArray toJson(const QList<TextureVariablePtr>& vars);
 QList<TextureVariablePtr> fromJson(const QJsonArray& array);
 
 QList<TextureVariablePtr> cloneAll(const QList<TextureVariablePtr>& vars);
+
+// Every variable's current value.
+QMap<QString, QJsonValue> captureValues(const QList<TextureVariablePtr>& vars);
+// Set variables from `values` (clamped). Variables without an entry keep their
+// value; entries for unknown variables are ignored. Returns the variables
+// whose value changed.
+QList<TextureVariablePtr> applyValues(const QList<TextureVariablePtr>& vars,
+                                      const QMap<QString, QJsonValue>& values);
+// Whether every variable's current value equals its entry in `values`.
+bool valuesMatch(const QList<TextureVariablePtr>& vars,
+                 const QMap<QString, QJsonValue>& values);
+
+QJsonArray presetsToJson(const QList<VariablePreset>& presets,
+                         const QList<TextureVariablePtr>& vars);
+QList<VariablePreset> presetsFromJson(const QJsonArray& array);
 
 } // namespace variables

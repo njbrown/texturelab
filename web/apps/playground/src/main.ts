@@ -1,4 +1,5 @@
 import {
+    applyPreset,
     createRuntime,
     parseTexture,
     resetVariables,
@@ -61,7 +62,8 @@ const ui = {
     exposureValue: $<HTMLOutputElement>("exposure-value"),
     variablesGroup: $("variables-group"),
     variables: $("variables"),
-    resetVariables: $<HTMLButtonElement>("reset-variables"),
+    preset: $<HTMLSelectElement>("preset"),
+    presetModified: $("preset-modified"),
 };
 
 // State exposed for the smoke test (tests/smoke.ts).
@@ -82,9 +84,18 @@ const status: PlaygroundStatus = { state: "idle", warnings: [], channels: [] };
     setVariable: async (name: string, value: VariableValue) => {
         if (!currentDoc) throw new Error("no document");
         setVariable(currentDoc, name, value);
+        updatePresetModified();
         await requestRender({ preview: false, showProgress: false });
     },
     variables: () => currentDoc?.variables ?? [],
+    presets: () => currentDoc?.presets ?? [],
+    /** Pick a preset in the dropdown ("" = saved values) and wait for the render (smoke test). */
+    selectPreset: async (id: string) => {
+        ui.preset.value = id;
+        ui.preset.dispatchEvent(new Event("change"));
+        await requestRender({ preview: false, showProgress: false });
+    },
+    presetModified: () => ui.presetModified.textContent === "•",
     /** FNV-1a hash of a channel's pixels, to tell whether a render changed (smoke test). */
     channelHash: (channel: TextureChannel) => {
         const px = result?.readUint8(channel);
@@ -240,13 +251,43 @@ function renderVariables(doc: TextureDocument | null): void {
     const vars = doc?.variables ?? [];
     ui.variablesGroup.hidden = vars.length === 0;
     ui.variables.replaceChildren(...vars.map((v) => variableControl(v)));
+
+    // "Saved values" (what the file was saved with) plus the file's presets.
+    ui.preset.replaceChildren(
+        new Option("Saved values", ""),
+        ...(doc?.presets ?? []).map((p) => new Option(p.name, p.id)),
+    );
+    ui.preset.value = doc?.activePreset ?? "";
+    updatePresetModified();
 }
+
+/** Show • when the values differ from the selected preset (or the saved values). */
+function updatePresetModified(): void {
+    const doc = currentDoc;
+    if (!doc) return;
+    const preset = doc.presets.find((p) => p.id === doc.activePreset);
+    const key = (v: unknown) => JSON.stringify(v);
+    const modified = doc.variables.some((v) => {
+        const expected = preset ? preset.values[v.id] : v.defaultValue;
+        return expected !== undefined && key(expected) !== key(v.value);
+    });
+    ui.presetModified.textContent = modified ? "•" : "";
+}
+
+ui.preset.addEventListener("change", () => {
+    if (!currentDoc) return;
+    if (ui.preset.value) applyPreset(currentDoc, ui.preset.value);
+    else resetVariables(currentDoc);
+    renderVariables(currentDoc);
+    rerender();
+});
 
 /** A control for one variable. Sliders render at half resolution while dragged. */
 function variableControl(variable: TextureVariable): HTMLElement {
     const set = (value: VariableValue, preview: boolean) => {
         if (!currentDoc) return;
         setVariable(currentDoc, variable.name, value);
+        updatePresetModified();
         void requestRender({ preview, showProgress: false });
     };
 
@@ -490,12 +531,6 @@ function imageEditor(initial: string, set: SetValue): HTMLElement {
     return box;
 }
 
-ui.resetVariables.addEventListener("click", () => {
-    if (!currentDoc) return;
-    resetVariables(currentDoc);
-    renderVariables(currentDoc);
-    rerender();
-});
 
 // --- UI rendering ---------------------------------------------------------------
 

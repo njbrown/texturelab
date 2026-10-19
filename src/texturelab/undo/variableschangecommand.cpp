@@ -8,12 +8,32 @@ static QString propKey(const QString& nodeId, const QString& propName)
     return nodeId + "/" + propName;
 }
 
+QJsonObject variablesSnapshot(const TextureProjectPtr& project)
+{
+    QJsonObject state;
+    state["variables"] = variables::toJson(project->variables);
+    QJsonArray presets;
+    for (const auto& preset : project->variablePresets)
+        presets.append(preset.toJson());
+    state["presets"] = presets;
+    state["activePreset"] = project->activePresetId;
+    return state;
+}
+
+void restoreVariablesSnapshot(const TextureProjectPtr& project,
+                              const QJsonObject& state)
+{
+    project->variables = variables::fromJson(state["variables"].toArray());
+    project->variablePresets = variables::presetsFromJson(state["presets"].toArray());
+    project->activePresetId = state["activePreset"].toString();
+}
+
 VariablesChangeCommand::VariablesChangeCommand(TextureProjectPtr project,
                                                TextureRenderer* renderer,
                                                const QString& text,
                                                const QString& mergeKey,
-                                               QJsonArray before,
-                                               QJsonArray after,
+                                               QJsonObject before,
+                                               QJsonObject after,
                                                PropValues propsBefore,
                                                PropValues propsAfter)
     : QUndoCommand(text)
@@ -44,10 +64,10 @@ bool VariablesChangeCommand::mergeWith(const QUndoCommand* other)
     return true;
 }
 
-void VariablesChangeCommand::apply(const QJsonArray& vars,
+void VariablesChangeCommand::apply(const QJsonObject& state,
                                    const PropValues& props)
 {
-    _project->variables = variables::fromJson(vars);
+    restoreVariablesSnapshot(_project, state);
 
     for (auto it = props.begin(); it != props.end(); ++it) {
         auto slash = it.key().indexOf('/');
@@ -86,7 +106,7 @@ VariablesEdit::VariablesEdit(TextureProjectPtr project,
     , _renderer(renderer)
     , _text(text)
     , _mergeKey(mergeKey)
-    , _before(variables::toJson(project->variables))
+    , _before(variablesSnapshot(project))
 {}
 
 void VariablesEdit::touchProp(const QString& nodeId, const QString& propName)
@@ -116,7 +136,6 @@ VariablesChangeCommand* VariablesEdit::finish()
             after.insert(it.key(), prop->toJsonValue());
     }
     return new VariablesChangeCommand(_project, _renderer, _text, _mergeKey,
-                                      _before,
-                                      variables::toJson(_project->variables),
+                                      _before, variablesSnapshot(_project),
                                       _propsBefore, after);
 }

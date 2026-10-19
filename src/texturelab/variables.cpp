@@ -479,4 +479,112 @@ QList<TextureVariablePtr> cloneAll(const QList<TextureVariablePtr>& vars)
     return copies;
 }
 
+QMap<QString, QJsonValue> captureValues(const QList<TextureVariablePtr>& vars)
+{
+    QMap<QString, QJsonValue> values;
+    for (const auto& var : vars)
+        if (var && var->prop)
+            values.insert(var->id, var->prop->toJsonValue());
+    return values;
+}
+
+QList<TextureVariablePtr> applyValues(const QList<TextureVariablePtr>& vars,
+                                      const QMap<QString, QJsonValue>& values)
+{
+    QList<TextureVariablePtr> changed;
+    for (const auto& var : vars) {
+        if (!var || !var->prop || !values.contains(var->id))
+            continue;
+        auto before = var->prop->toJsonValue();
+        var->prop->fromJsonValue(values.value(var->id));
+        var->clampValue();
+        if (var->prop->toJsonValue() != before)
+            changed.append(var);
+    }
+    return changed;
+}
+
+bool valuesMatch(const QList<TextureVariablePtr>& vars,
+                 const QMap<QString, QJsonValue>& values)
+{
+    for (const auto& var : vars) {
+        if (!var || !var->prop)
+            continue;
+        if (!values.contains(var->id))
+            return false;
+        // Compare in the prop's own precision: a stored 0.55 reads back from
+        // a QColor as 0.5500076, and out-of-bounds values clamp.
+        auto probe = var->clone();
+        probe->prop->fromJsonValue(values.value(var->id));
+        probe->clampValue();
+        if (probe->prop->toJsonValue() != var->prop->toJsonValue())
+            return false;
+    }
+    return true;
+}
+
+QJsonArray presetsToJson(const QList<VariablePreset>& presets,
+                         const QList<TextureVariablePtr>& vars)
+{
+    QSet<QString> ids;
+    for (const auto& var : vars)
+        ids.insert(var->id);
+
+    QJsonArray array;
+    for (auto preset : presets) {
+        // Drop values of variables that no longer exist.
+        for (auto it = preset.values.begin(); it != preset.values.end();) {
+            if (ids.contains(it.key()))
+                ++it;
+            else
+                it = preset.values.erase(it);
+        }
+        array.append(preset.toJson());
+    }
+    return array;
+}
+
+QList<VariablePreset> presetsFromJson(const QJsonArray& array)
+{
+    QList<VariablePreset> presets;
+    QSet<QString> ids;
+    for (const auto& item : array) {
+        if (!item.isObject())
+            continue;
+        auto preset = VariablePreset::fromJson(item.toObject());
+        if (ids.contains(preset.id))
+            preset.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        ids.insert(preset.id);
+        presets.append(preset);
+    }
+    return presets;
+}
+
 } // namespace variables
+
+QJsonObject VariablePreset::toJson() const
+{
+    QJsonObject obj;
+    obj["id"] = id;
+    obj["name"] = name;
+    QJsonObject valuesObj;
+    for (auto it = values.begin(); it != values.end(); ++it)
+        valuesObj[it.key()] = it.value();
+    obj["values"] = valuesObj;
+    return obj;
+}
+
+VariablePreset VariablePreset::fromJson(const QJsonObject& obj)
+{
+    VariablePreset preset;
+    preset.id = jsonutils::getString(obj["id"]);
+    if (preset.id.isEmpty())
+        preset.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    preset.name = jsonutils::getString(obj["name"]);
+    if (preset.name.isEmpty())
+        preset.name = "Preset";
+    auto valuesObj = obj["values"].toObject();
+    for (auto key : valuesObj.keys())
+        preset.values.insert(key, valuesObj[key]);
+    return preset;
+}

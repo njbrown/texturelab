@@ -3,16 +3,18 @@
 #include "../models.h"
 #include "undocommandids.h"
 #include <QJsonArray>
+#include <QJsonObject>
 #include <QJsonValue>
 #include <QMap>
 #include <QUndoCommand>
 
 class TextureRenderer;
 
-// Any change to texture variables: create/delete, link/unlink, rename, bounds,
-// options, reorder, value. Restores a snapshot of the whole variables list
-// plus the values of every node prop the change wrote, which keeps variable
-// state and linked props consistent through undo/redo. Build one with
+// Any change to texture variables or their presets: create/delete,
+// link/unlink, rename, bounds, options, reorder, value, preset save/apply/
+// rename/delete. Restores a snapshot of the variables, presets and active
+// preset, plus the values of every node prop the change wrote, which keeps
+// variable state and linked props consistent through undo/redo. Build one with
 // VariablesEdit rather than directly.
 //
 // Value scrubs carry a merge key (the variable id) and merge like
@@ -26,8 +28,8 @@ public:
                            TextureRenderer* renderer,
                            const QString& text,
                            const QString& mergeKey,
-                           QJsonArray before,
-                           QJsonArray after,
+                           QJsonObject before,
+                           QJsonObject after,
                            PropValues propsBefore,
                            PropValues propsAfter);
 
@@ -41,13 +43,13 @@ public:
     void undo() override;
 
 private:
-    void apply(const QJsonArray& vars, const PropValues& props);
+    void apply(const QJsonObject& state, const PropValues& props);
 
     TextureProjectPtr _project;
     TextureRenderer* _renderer;
     QString _mergeKey;
-    QJsonArray _before;
-    QJsonArray _after;
+    QJsonObject _before;
+    QJsonObject _after;
     PropValues _propsBefore;
     PropValues _propsAfter;
     bool _firstRedo = true;
@@ -81,6 +83,11 @@ private:
     TextureRenderer* _renderer;
     QString _text;
     QString _mergeKey;
-    QJsonArray _before;
+    QJsonObject _before;
     VariablesChangeCommand::PropValues _propsBefore;
 };
+
+// The variables state a VariablesChangeCommand snapshots and restores.
+QJsonObject variablesSnapshot(const TextureProjectPtr& project);
+void restoreVariablesSnapshot(const TextureProjectPtr& project,
+                              const QJsonObject& state);

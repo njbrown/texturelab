@@ -54,6 +54,16 @@ const result = await runtime.evaluate(doc);   // re-render to see it
 resetVariables(doc);                  // back to the values in the file
 ```
 
+Presets are named snapshots of every variable's value:
+
+```ts
+import { applyPreset } from "@njbrown/texturelab-runtime";
+
+doc.presets.map((p) => p.name);        // e.g. ["Polished", "Worn"]
+applyPreset(doc, "Worn");              // by name or id; then re-evaluate
+doc.activePreset;                      // id of the applied preset, or null
+```
+
 The types and their value forms are:
 - `float` and `int`: a number, with `min`, `max` and `step`.
 - `bool`: a boolean.
