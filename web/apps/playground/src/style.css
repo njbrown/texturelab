@@ -296,6 +296,81 @@ input[type="color"] {
     background: var(--panel-2);
 }
 
+input[type="text"] {
+    font: inherit;
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 8px;
+}
+
+.gradient-editor,
+.curve-editor,
+.image-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.gradient-bar {
+    height: 18px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+}
+
+.gradient-stop {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 8px;
+    align-items: center;
+}
+
+.gradient-stop input[type="color"] {
+    height: 22px;
+}
+
+.curve-preview {
+    width: 100%;
+    aspect-ratio: 2;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+.curve-preview path {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2px;
+    vector-effect: non-scaling-stroke;
+}
+
+.curve-anchor {
+    display: grid;
+    grid-template-columns: 54px 1fr 1fr;
+    gap: 6px;
+    align-items: center;
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.curve-anchor > span + input:last-child {
+    grid-column: 2 / 4;
+}
+
+.image-editor img {
+    width: 96px;
+    height: 96px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: #000;
+}
+
+.image-editor button {
+    align-self: flex-start;
+}
+
 .warnings {
     list-style: none;
     margin: 0;

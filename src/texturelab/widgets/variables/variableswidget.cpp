@@ -3,6 +3,7 @@
 #include "../../models.h"
 #include "../../props.h"
 #include "../../undo/variableschangecommand.h"
+#include "../properties/curvepropwidget.h"
 #include "../properties/propwidgets.h"
 
 #include <QCheckBox>
@@ -379,6 +380,61 @@ QWidget* VariablesWidget::createValueEditor(const TextureVariablePtr& var)
         connect(w, &ColorPropWidget::valueChanged, this, [this](const QColor& color) {
             editSelected("Change Variable", [&](TextureVariablePtr v) { v->setValue(color); },
                          false, false);
+        });
+        return w;
+    }
+    case VariableType::Gradient: {
+        editorProp = var->prop->clone();
+        editorProp->displayName = var->displayName();
+        auto w = new GradientPropWidget();
+        w->setProp(static_cast<GradientProp*>(editorProp));
+        // Live while the picker is open; one undo step when it closes.
+        connect(w, &GradientPropWidget::valuePreviewed, this, [this](const Gradient& g) {
+            auto v = selected();
+            if (!v)
+                return;
+            v->setValue(QVariant::fromValue(g));
+            project->applyVariable(v);
+            emit valueChanged();
+        });
+        connect(w, &GradientPropWidget::valueChanged, this, [this](const Gradient& g) {
+            editSelected("Change Variable",
+                         [&](TextureVariablePtr v) { v->setValue(QVariant::fromValue(g)); },
+                         false, false);
+        });
+        return w;
+    }
+    case VariableType::Curve: {
+        editorProp = var->prop->clone();
+        editorProp->displayName = var->displayName();
+        auto w = new CurvePropWidget(static_cast<CurveProp*>(editorProp));
+        connect(w, &CurvePropWidget::valueChanged, this, [this](const Curve& c) {
+            editSelected("Change Variable",
+                         [&](TextureVariablePtr v) { v->setValue(QVariant::fromValue(c)); },
+                         true, false);
+        });
+        return w;
+    }
+    case VariableType::Image: {
+        editorProp = var->prop->clone();
+        editorProp->displayName = var->displayName();
+        static_cast<ImageProp*>(editorProp)->texture = nullptr;
+        auto w = new ImagePropWidget();
+        w->setProp(static_cast<ImageProp*>(editorProp));
+        connect(w, &ImagePropWidget::valueChanged, this, [this](const QImage& image) {
+            editSelected("Change Variable", [&](TextureVariablePtr v) { v->setValue(image); },
+                         false, false);
+        });
+        return w;
+    }
+    case VariableType::String: {
+        editorProp = var->prop->clone();
+        editorProp->displayName = var->displayName();
+        auto w = new StringPropWidget();
+        w->setProp(static_cast<StringProp*>(editorProp));
+        connect(w, &StringPropWidget::valueChanged, this, [this](const QString& text) {
+            editSelected("Change Variable", [&](TextureVariablePtr v) { v->setValue(text); },
+                         true, false);
         });
         return w;
     }

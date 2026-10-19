@@ -13,6 +13,8 @@ class TestVariables : public QObject {
 
 private slots:
     void roundTripsEveryType();
+    void roundTripsRichTypes();
+    void writesTypeAsString();
     void readsElectronFormat();
     void createFromPropCopiesValueAndBounds();
     void acceptsOnlyCompatibleProps();
@@ -112,6 +114,81 @@ void TestVariables::roundTripsEveryType()
     QVERIFY(qAbs(loaded[4]->value().value<QColor>().greenF() - 0.5f) < 1e-3f);
 }
 
+void TestVariables::roundTripsRichTypes()
+{
+    QList<TextureVariablePtr> vars;
+
+    auto g = new GradientProp();
+    g->value = Gradient();
+    g->value.addPoint(GradientPoint(0.0f, QColor(255, 0, 0)));
+    g->value.addPoint(GradientPoint(0.4f, QColor(0, 255, 0)));
+    g->value.addPoint(GradientPoint(1.0f, QColor(0, 0, 255)));
+    vars.append(TextureVariable::createFromProp(g, "ramp", "Ramp"));
+
+    auto c = new CurveProp();
+    c->value.addPoint(0.5f, 0.8f);
+    vars.append(TextureVariable::createFromProp(c, "shape", "Shape"));
+
+    auto img = new ImageProp();
+    QImage image(4, 2, QImage::Format_RGBA8888);
+    image.fill(QColor(10, 20, 30));
+    img->value = image;
+    vars.append(TextureVariable::createFromProp(img, "decal", "Decal"));
+
+    auto str = new StringProp();
+    str->value = "hello";
+    vars.append(TextureVariable::createFromProp(str, "label", "Label"));
+
+    auto text = QJsonDocument(variables::toJson(vars)).toJson();
+    auto loaded = variables::fromJson(QJsonDocument::fromJson(text).array());
+    QCOMPARE(loaded.size(), 4);
+
+    auto lg = loaded[0]->value().value<Gradient>();
+    QCOMPARE(loaded[0]->type, VariableType::Gradient);
+    QCOMPARE(lg.points.size(), 3);
+    QCOMPARE(lg.points[1].position, 0.4f);
+
+    QCOMPARE(loaded[1]->type, VariableType::Curve);
+    QCOMPARE(loaded[1]->value().value<Curve>().points.size(), 3);
+
+    QCOMPARE(loaded[2]->type, VariableType::Image);
+    auto li = loaded[2]->value().value<QImage>();
+    QCOMPARE(li.size(), QSize(4, 2));
+    QCOMPARE(QColor(li.pixel(1, 1)).green(), 20);
+    // The variable's copy never shares the node prop's GL texture.
+    QVERIFY(static_cast<ImageProp*>(vars[2]->prop)->texture == nullptr);
+
+    QCOMPARE(loaded[3]->type, VariableType::String);
+    QCOMPARE(loaded[3]->value().toString(), QString("hello"));
+
+    // A linked prop of the same type takes the value.
+    auto target = new GradientProp();
+    loaded[0]->writeTo(target);
+    QCOMPARE(target->value.points.size(), 3);
+
+    for (Prop* p : QList<Prop*>{g, c, img, str, target})
+        delete p;
+}
+
+void TestVariables::writesTypeAsString()
+{
+    auto f = floatProp(0.5, 0, 1);
+    auto var = TextureVariable::createFromProp(f, "x", "X");
+    delete f;
+    QCOMPARE(var->toJson()["type"].toString(), QString("float"));
+
+    for (int t = 1; t <= 9; t++) {
+        auto type = (VariableType)t;
+        auto name = TextureVariable::typeToString(type);
+        QVERIFY(!name.isEmpty());
+        QCOMPARE(TextureVariable::typeFromJson(QJsonValue(name)), type);
+    }
+    // Legacy numeric types: only Electron's 1-5.
+    QCOMPARE(TextureVariable::typeFromJson(QJsonValue(5)), VariableType::Color);
+    QCOMPARE(TextureVariable::typeFromJson(QJsonValue(6)), VariableType::None);
+    QCOMPARE(TextureVariable::typeFromJson(QJsonValue("nope")), VariableType::None);
+}
+
 void TestVariables::readsElectronFormat()
 {
     // What the Electron 0.3 app wrote: the Property object serialized as-is.
@@ -146,9 +223,9 @@ void TestVariables::createFromPropCopiesValueAndBounds()
     QVERIFY(var->prop != f);
     delete f;
 
+    // Every prop type the node libraries use can be exposed.
     auto s = new StringProp();
-    QVERIFY(!TextureVariable::createFromProp(s, "s", "S"));
-    QVERIFY(!TextureVariable::isExposable(s));
+    QVERIFY(TextureVariable::isExposable(s));
     delete s;
 }
 

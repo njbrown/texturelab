@@ -31,9 +31,59 @@ VariableType TextureVariable::typeForProp(const Prop* prop)
         return VariableType::Enum;
     case PropType::Color:
         return VariableType::Color;
+    case PropType::Gradient:
+        return VariableType::Gradient;
+    case PropType::Curve:
+        return VariableType::Curve;
+    case PropType::Image:
+        return VariableType::Image;
+    case PropType::String:
+        return VariableType::String;
     default:
         return VariableType::None;
     }
+}
+
+QString TextureVariable::typeToString(VariableType type)
+{
+    switch (type) {
+    case VariableType::Float:
+        return "float";
+    case VariableType::Int:
+        return "int";
+    case VariableType::Bool:
+        return "bool";
+    case VariableType::Enum:
+        return "enum";
+    case VariableType::Color:
+        return "color";
+    case VariableType::Gradient:
+        return "gradient";
+    case VariableType::Curve:
+        return "curve";
+    case VariableType::Image:
+        return "image";
+    case VariableType::String:
+        return "string";
+    default:
+        return QString();
+    }
+}
+
+VariableType TextureVariable::typeFromJson(const QJsonValue& value)
+{
+    if (value.isString()) {
+        auto str = value.toString().trimmed().toLower();
+        for (int t = (int)VariableType::Float; t <= (int)VariableType::String; t++)
+            if (typeToString((VariableType)t) == str)
+                return (VariableType)t;
+        return VariableType::None;
+    }
+    // Electron 0.3 files: numeric DesignerVariableType (1-5 only).
+    int number = jsonutils::getInt(value, 0);
+    if (number >= (int)VariableType::Float && number <= (int)VariableType::Color)
+        return (VariableType)number;
+    return VariableType::None;
 }
 
 QString TextureVariable::typeLabel(VariableType type)
@@ -49,6 +99,14 @@ QString TextureVariable::typeLabel(VariableType type)
         return "Enum";
     case VariableType::Color:
         return "Color";
+    case VariableType::Gradient:
+        return "Gradient";
+    case VariableType::Curve:
+        return "Curve";
+    case VariableType::Image:
+        return "Image";
+    case VariableType::String:
+        return "String";
     default:
         return "None";
     }
@@ -67,9 +125,29 @@ static Prop* createPropForType(VariableType type)
         return new EnumProp();
     case VariableType::Color:
         return new ColorProp();
+    case VariableType::Gradient:
+        return new GradientProp();
+    case VariableType::Curve:
+        return new CurveProp();
+    case VariableType::Image:
+        return new ImageProp();
+    case VariableType::String:
+        return new StringProp();
     default:
         return nullptr;
     }
+}
+
+// A copy of a prop for a variable to own. An ImageProp copy would share the
+// node's GL texture pointer; the variable never renders, so drop it.
+static Prop* cloneForVariable(const Prop* source)
+{
+    Prop* copy = source->clone();
+    if (auto image = dynamic_cast<ImageProp*>(copy)) {
+        image->texture = nullptr;
+        image->_textureDirty = true;
+    }
+    return copy;
 }
 
 TextureVariablePtr TextureVariable::createFromProp(const Prop* source,
@@ -83,7 +161,7 @@ TextureVariablePtr TextureVariable::createFromProp(const Prop* source,
     TextureVariablePtr var(new TextureVariable());
     var->id = QUuid::createUuid().toString(QUuid::WithoutBraces);
     var->type = type;
-    var->prop = source->clone();
+    var->prop = cloneForVariable(source);
     var->prop->name = name;
     var->prop->displayName = displayName;
     var->prop->order = 0;
@@ -186,7 +264,7 @@ QJsonObject TextureVariable::toJson() const
 {
     QJsonObject obj;
     obj["id"] = id;
-    obj["type"] = (int)type;
+    obj["type"] = typeToString(type);
 
     QJsonObject propObj = prop ? prop->toJson() : QJsonObject();
     propObj["name"] = name();
@@ -218,7 +296,7 @@ QJsonObject TextureVariable::toJson() const
 
 TextureVariablePtr TextureVariable::fromJson(const QJsonObject& obj)
 {
-    auto type = (VariableType)jsonutils::getInt(obj["type"], 0);
+    auto type = typeFromJson(obj["type"]);
     Prop* prop = createPropForType(type);
     if (!prop)
         return {};
@@ -260,7 +338,7 @@ TextureVariablePtr TextureVariable::clone() const
     TextureVariablePtr copy(new TextureVariable());
     copy->id = id;
     copy->type = type;
-    copy->prop = prop ? prop->clone() : nullptr;
+    copy->prop = prop ? cloneForVariable(prop) : nullptr;
     copy->options = options;
     copy->links = links;
     return copy;

@@ -47,7 +47,7 @@ void TestJsonUtils::roundsFloatsStoredForInts()
 void TestJsonUtils::readsBoolsInEveryFormThatWasWritten()
 {
     QCOMPARE(getBool(QJsonValue(true)), true);
-    // BoolProp::toJson still writes the string form.
+    // Older builds wrote bools as strings ("true"/"false").
     QCOMPARE(getBool(QJsonValue(QStringLiteral("true"))), true);
     QCOMPARE(getBool(QJsonValue(QStringLiteral("TRUE"))), true);
     QCOMPARE(getBool(QJsonValue(QStringLiteral("false"))), false);

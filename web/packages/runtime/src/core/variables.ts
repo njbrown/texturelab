@@ -4,15 +4,32 @@
 // validation. See docs/texture-variables-plan.md.
 
 import { colorFromJson, type Color } from "./color.js";
+import { Curve } from "./curve.js";
+import { Gradient } from "./gradient.js";
 import { getBool, getDouble, getString, getTruncatedInt, isObject } from "./json.js";
 import type { TextureNode } from "./node.js";
 import type { AnyProp } from "./props.js";
 
-export type VariableType = "float" | "int" | "bool" | "enum" | "color";
-export type VariableValue = number | boolean | Color;
+export type VariableType = "float" | "int" | "bool" | "enum" | "color" | "gradient" | "curve" | "image" | "string";
+/**
+ * float/int/enum: number (enum = option index). bool: boolean. color: Color.
+ * gradient: Gradient. curve: Curve. image: a data URL ("" for none). string: string.
+ */
+export type VariableValue = number | boolean | string | Color | Gradient | Curve;
 
-// Numeric types in the file (Electron's DesignerVariableType).
+const VARIABLE_TYPES: VariableType[] = ["float", "int", "bool", "enum", "color", "gradient", "curve", "image", "string"];
+
+// Files store the type as a string. Electron 0.3 files used its numeric
+// DesignerVariableType, which covered the first five.
 const TYPE_FROM_NUMBER: Record<number, VariableType> = { 1: "float", 2: "int", 3: "bool", 4: "enum", 5: "color" };
+
+function typeFromJson(value: unknown): VariableType | undefined {
+    if (typeof value === "string") {
+        const t = value.trim().toLowerCase() as VariableType;
+        return VARIABLE_TYPES.includes(t) ? t : undefined;
+    }
+    return TYPE_FROM_NUMBER[getTruncatedInt(value, 0)];
+}
 
 export interface VariableLink {
     nodeId: string;
@@ -62,17 +79,9 @@ function uniqueName(base: string, taken: Set<string>): string {
     for (let i = 2; ; i++) if (!taken.has(`${base}_${i}`)) return `${base}_${i}`;
 }
 
-const PROP_TYPE_FOR: Record<VariableType, AnyProp["type"]> = {
-    float: "float",
-    int: "int",
-    bool: "bool",
-    enum: "enum",
-    color: "color",
-};
-
 /** Whether `prop` can link to `variable`: same type, and for enums the same option list. */
 export function accepts(variable: TextureVariable, prop: AnyProp | undefined): boolean {
-    if (!prop || prop.type !== PROP_TYPE_FOR[variable.type]) return false;
+    if (!prop || prop.type !== variable.type) return false;
     if (prop.type === "enum") {
         const values = variable.values ?? [];
         return prop.values.length === values.length && prop.values.every((v, i) => v === values[i]);
@@ -108,6 +117,14 @@ export function clampValue(variable: TextureVariable, value: VariableValue): Var
             const ch = (x: unknown, d: number) => (typeof x === "number" && Number.isFinite(x) ? x : d);
             return { r: ch(c.r, 0), g: ch(c.g, 0), b: ch(c.b, 0), a: ch(c.a, 1) };
         }
+        case "gradient":
+            return value instanceof Gradient ? value.clone() : Gradient.fromJson(value);
+        case "curve":
+            return value instanceof Curve ? value.clone() : Curve.fromJson(value);
+        case "image":
+            return typeof value === "string" && (value === "" || value.startsWith("data:")) ? value : "";
+        case "string":
+            return typeof value === "string" ? value : String(value ?? "");
     }
 }
 
@@ -128,11 +145,21 @@ function writeTo(variable: TextureVariable, prop: AnyProp): void {
         case "color":
             prop.value = { ...(variable.value as Color) };
             break;
+        case "gradient":
+            prop.value = (variable.value as Gradient).clone();
+            break;
+        case "curve":
+            prop.value = (variable.value as Curve).clone();
+            break;
+        case "image":
+        case "string":
+            prop.value = variable.value as string;
+            break;
     }
 }
 
 function parseOne(obj: Record<string, unknown>): TextureVariable | null {
-    const type = TYPE_FROM_NUMBER[getTruncatedInt(obj.type, 0)];
+    const type = typeFromJson(obj.type);
     if (!type) return null;
 
     const prop = isObject(obj.property) ? obj.property : {};
@@ -172,6 +199,21 @@ function parseOne(obj: Record<string, unknown>): TextureVariable | null {
             break;
         case "color":
             variable.value = colorFromJson(prop.value);
+            break;
+        case "gradient":
+            // GradientProp::toJson writes "points" at the property's top level.
+            variable.value = Gradient.fromJson(prop);
+            break;
+        case "curve":
+            variable.value = Curve.fromJson(prop.value);
+            break;
+        case "image": {
+            const url = typeof prop.value === "string" ? prop.value : "";
+            variable.value = url.includes(";base64,") ? url : "";
+            break;
+        }
+        case "string":
+            variable.value = getString(prop.value);
             break;
     }
 
@@ -254,6 +296,7 @@ export function loadVariables(json: unknown, nodes: Map<string, TextureNode>): T
 }
 
 function copyValue(value: VariableValue): VariableValue {
+    if (value instanceof Gradient || value instanceof Curve) return value.clone();
     return typeof value === "object" ? { ...value } : value;
 }
 

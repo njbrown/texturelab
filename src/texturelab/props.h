@@ -212,7 +212,7 @@ public:
     QJsonObject toJson() override
     {
         auto obj = Prop::toJson();
-        obj["value"] = value ? "true" : "false";
+        obj["value"] = value;
         return obj;
     }
 

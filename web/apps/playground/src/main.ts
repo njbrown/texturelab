@@ -7,7 +7,9 @@ import {
     TextureParseError,
     type ChannelPixels,
     type Color,
+    Curve,
     type EvaluationResult,
+    Gradient,
     type TextureChannel,
     type TextureDocument,
     type TextureMaps,
@@ -316,8 +318,176 @@ function variableControl(variable: TextureVariable): HTMLElement {
             field.append(input);
             break;
         }
+        case "gradient":
+            field.append(gradientEditor(variable.value as Gradient, set));
+            break;
+        case "curve":
+            field.append(curveEditor(variable.value as Curve, set));
+            break;
+        case "image":
+            field.append(imageEditor(variable.value as string, set));
+            break;
+        case "string": {
+            const input = document.createElement("input");
+            input.type = "text";
+            input.value = variable.value as string;
+            input.addEventListener("change", () => set(input.value, false));
+            field.append(input);
+            break;
+        }
     }
     return field;
+}
+
+type SetValue = (value: VariableValue, preview: boolean) => void;
+
+const toHex = (c: Color) => {
+    const h = (x: number) => Math.round(Math.min(1, Math.max(0, x)) * 255).toString(16).padStart(2, "0");
+    return `#${h(c.r)}${h(c.g)}${h(c.b)}`;
+};
+const fromHex = (hex: string, a = 1): Color => ({
+    r: parseInt(hex.slice(1, 3), 16) / 255,
+    g: parseInt(hex.slice(3, 5), 16) / 255,
+    b: parseInt(hex.slice(5, 7), 16) / 255,
+    a,
+});
+
+/** Preview bar plus a color + position control per stop. */
+function gradientEditor(initial: Gradient, set: SetValue): HTMLElement {
+    const gradient = initial.clone();
+    const box = document.createElement("div");
+    box.className = "gradient-editor";
+    const bar = document.createElement("div");
+    bar.className = "gradient-bar";
+    const paint = () => {
+        const stops = [...gradient.points].sort((a, b) => a.position - b.position);
+        bar.style.background = stops.length
+            ? `linear-gradient(to right, ${stops.map((p) => `${toHex(p.color)} ${(p.position * 100).toFixed(1)}%`).join(", ")})`
+            : "#000";
+    };
+    paint();
+    box.append(bar);
+
+    gradient.points.forEach((point, i) => {
+        const row = document.createElement("div");
+        row.className = "gradient-stop";
+        const color = document.createElement("input");
+        color.type = "color";
+        color.value = toHex(point.color);
+        const pos = document.createElement("input");
+        pos.type = "range";
+        pos.min = "0";
+        pos.max = "1";
+        pos.step = "0.005";
+        pos.value = String(point.position);
+        const update = (preview: boolean) => {
+            gradient.points[i] = { position: Number(pos.value), color: fromHex(color.value, point.color.a) };
+            paint();
+            set(gradient.clone(), preview);
+        };
+        for (const input of [color, pos]) {
+            input.addEventListener("input", () => update(true));
+            input.addEventListener("change", () => update(false));
+        }
+        row.append(color, pos);
+        box.append(row);
+    });
+    return box;
+}
+
+/** SVG preview plus sliders for each anchor (interior anchors move in x too). */
+function curveEditor(initial: Curve, set: SetValue): HTMLElement {
+    const curve = initial.clone();
+    const box = document.createElement("div");
+    box.className = "curve-editor";
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("viewBox", "-0.02 -0.02 1.04 1.04");
+    svg.setAttribute("class", "curve-preview");
+    svg.setAttribute("preserveAspectRatio", "none");
+    const path = document.createElementNS(svgNS, "path");
+    svg.append(path);
+    const paint = () => {
+        // y up: flip.
+        const pt = (x: number, y: number) => `${x.toFixed(4)} ${(1 - y).toFixed(4)}`;
+        const p = curve.points;
+        let d = `M ${pt(p[0]!.x, p[0]!.y)}`;
+        for (let i = 0; i < p.length - 1; i++) {
+            const a = p[i]!;
+            const b = p[i + 1]!;
+            d += ` C ${pt(a.x + a.rx, a.y + a.ry)}, ${pt(b.x + b.lx, b.y + b.ly)}, ${pt(b.x, b.y)}`;
+        }
+        path.setAttribute("d", d);
+    };
+    paint();
+    box.append(svg);
+
+    curve.points.forEach((point, i) => {
+        const interior = i > 0 && i < curve.points.length - 1;
+        const row = document.createElement("div");
+        row.className = "curve-anchor";
+        const label = document.createElement("span");
+        label.textContent = `Point ${i + 1}`;
+        row.append(label);
+        const slider = (axis: "x" | "y") => {
+            const input = document.createElement("input");
+            input.type = "range";
+            input.min = "0";
+            input.max = "1";
+            input.step = "0.005";
+            input.value = String(point[axis]);
+            input.title = axis;
+            const update = (preview: boolean) => {
+                let v = Number(input.value);
+                if (axis === "x") {
+                    // Keep anchors ordered.
+                    v = Math.min(curve.points[i + 1]!.x - 0.01, Math.max(curve.points[i - 1]!.x + 0.01, v));
+                }
+                curve.points[i]![axis] = v;
+                paint();
+                set(curve.clone(), preview);
+            };
+            input.addEventListener("input", () => update(true));
+            input.addEventListener("change", () => update(false));
+            return input;
+        };
+        if (interior) row.append(slider("x"));
+        row.append(slider("y"));
+        box.append(row);
+    });
+    return box;
+}
+
+/** Thumbnail plus a file picker that replaces the image. */
+function imageEditor(initial: string, set: SetValue): HTMLElement {
+    const box = document.createElement("div");
+    box.className = "image-editor";
+    const img = document.createElement("img");
+    img.alt = "";
+    if (initial) img.src = initial;
+    const file = document.createElement("input");
+    file.type = "file";
+    file.accept = "image/*";
+    file.hidden = true;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "small";
+    button.textContent = initial ? "Replace…" : "Choose image…";
+    button.addEventListener("click", () => file.click());
+    file.addEventListener("change", () => {
+        const f = file.files?.[0];
+        if (!f) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const url = String(reader.result);
+            img.src = url;
+            button.textContent = "Replace…";
+            set(url, false);
+        };
+        reader.readAsDataURL(f);
+    });
+    box.append(img, button, file);
+    return box;
 }
 
 ui.resetVariables.addEventListener("click", () => {

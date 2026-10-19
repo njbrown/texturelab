@@ -269,15 +269,25 @@ if (variablesMode) {
     const steps = await pg((p) => p.variables().find((v) => v.name === "wear_steps")!.value);
     check("copper:clamp", steps === 12, `999 -> ${steps}`);
 
-    // Bool + enum fixture.
+    // Fixture covering the other types: enum (numeric legacy type, restricted
+    // and relabelled options), bool, gradient, curve, image and string.
+    const png =
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAG0lEQVR4nGNgYPj//z8Dw384jcJh+P+fgaAKACxQH+FG9T9gAAAAAElFTkSuQmCC";
     const fixture = JSON.stringify({
         libraryVersion: "v3",
         nodes: [
             { id: "g", typeName: "gradient", properties: {} },
+            { id: "gm", typeName: "gradientmap", properties: {} },
             { id: "c", typeName: "cell", properties: {} },
+            { id: "cv", typeName: "curve", properties: {} },
+            { id: "img", typeName: "image", properties: {} },
+            { id: "cp", typeName: "copy", properties: {} },
         ],
-        connections: [],
-        editor: { textureChannels: { albedo: "g", roughness: "c" } },
+        connections: [
+            { leftNodeId: "g", rightNodeId: "gm", rightNodeInput: "inputImage" },
+            { leftNodeId: "g", rightNodeId: "cv", rightNodeInput: "image" },
+        ],
+        editor: { textureChannels: { albedo: "gm", roughness: "c", height: "cv", normal: "img" } },
         variables: [
             {
                 id: "dir", type: 4,
@@ -285,22 +295,64 @@ if (variablesMode) {
                 options: [{ index: 0, label: "Horizontal" }, { index: 2, label: "Vertical" }],
                 linkedProperties: [{ nodeId: "g", name: "mode" }],
             },
-            { id: "inv", type: 3, property: { name: "invert", displayName: "Invert", value: false }, linkedProperties: [{ nodeId: "c", name: "invert" }] },
+            { id: "inv", type: "bool", property: { name: "invert", displayName: "Invert", value: false }, linkedProperties: [{ nodeId: "c", name: "invert" }] },
+            {
+                id: "ramp", type: "gradient",
+                property: { name: "ramp", displayName: "Ramp", points: [
+                    { t: 0, color: { r: 0, g: 0, b: 0, a: 1 } }, { t: 1, color: { r: 1, g: 1, b: 1, a: 1 } }] },
+                linkedProperties: [{ nodeId: "gm", name: "gradient" }],
+            },
+            { id: "shape", type: "curve", property: { name: "shape", displayName: "Shape" }, linkedProperties: [{ nodeId: "cv", name: "curve" }] },
+            { id: "decal", type: "image", property: { name: "decal", displayName: "Decal", value: "" }, linkedProperties: [{ nodeId: "img", name: "image" }] },
+            { id: "label", type: "string", property: { name: "label", displayName: "Label", value: "hello" }, linkedProperties: [{ nodeId: "cp", name: "name" }] },
         ],
     });
     await pg((p, a) => p.render("fixture", a), fixture);
     const fx = await pg((p) => p.variables());
-    check("fixture parsed", fx.length === 2 && fx[0]!.options!.length === 2, JSON.stringify(fx.map((v) => [v.name, v.type, v.value])));
-    const f0 = await hashes();
-    await pg((p) => p.setVariable("direction", 2));
-    const f1 = await hashes();
-    check("fixture:enum changes render", f1 !== f0);
+    check(
+        "fixture parsed",
+        fx.map((v) => v.type).join() === "enum,bool,gradient,curve,image,string" && fx.every((v: any) => v.links.length === 1),
+        fx.map((v) => v.type).join(),
+    );
+    let prev = await hashes();
+    const step = async (label: string, name: string, value: unknown) => {
+        await pg((p, a) => p.setVariable(a.name, a.value), { name, value });
+        const now = await hashes();
+        check(label, now !== prev);
+        prev = now;
+    };
+    await step("fixture:enum changes render", "direction", 2);
     await pg((p) => p.setVariable("direction", 1)); // hidden option -> first enabled
     const dir = await pg((p) => p.variables()[0]!.value);
     check("fixture:enum hidden option clamps", dir === 0, `1 -> ${dir}`);
-    await pg((p) => p.setVariable("invert", true));
-    const f2 = await hashes();
-    check("fixture:bool changes render", f2 !== f0);
+    prev = await hashes();
+    await step("fixture:bool changes render", "invert", true);
+    // Gradient/curve values are built in the page (the runtime's classes).
+    await pg(async (p) => {
+        const v = p.variables().find((x) => x.name === "ramp")! as any;
+        const g = v.value.clone();
+        g.points[0].color = { r: 1, g: 0, b: 0, a: 1 };
+        await p.setVariable("ramp", g);
+    });
+    let now = await hashes();
+    check("fixture:gradient changes render", now !== prev);
+    prev = now;
+    await pg(async (p) => {
+        const v = p.variables().find((x) => x.name === "shape")! as any;
+        const c = v.value.clone();
+        c.points[0].y = 1;
+        c.points[1].y = 0;
+        await p.setVariable("shape", c);
+    });
+    now = await hashes();
+    check("fixture:curve changes render", now !== prev);
+    prev = now;
+    await step("fixture:image changes render", "decal", png);
+    await pg((p) => p.setVariable("label", "renamed"));
+    const label = await pg((p) => p.variables().find((x) => x.name === "label")!.value);
+    check("fixture:string value set", label === "renamed");
+    await page.setViewportSize({ width: 1200, height: 1400 });
+    await page.screenshot({ path: join(outDir, "variables_fixture.png") });
 }
 
 if (unsupported.size) {

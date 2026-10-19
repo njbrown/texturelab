@@ -54,7 +54,15 @@ const result = await runtime.evaluate(doc);   // re-render to see it
 resetVariables(doc);                  // back to the values in the file
 ```
 
-The types are `float`, `int`, `bool`, `enum` and `color`. An enum's value is an index into the linked props' option list, and `options` lists the ones to offer, with their labels.
+The types and their value forms are:
+- `float` and `int`: a number, with `min`, `max` and `step`.
+- `bool`: a boolean.
+- `enum`: an index into the linked props' option list. `options` lists the ones to offer, with their labels.
+- `color`: a `{ r, g, b, a }` object.
+- `gradient`: a `Gradient`.
+- `curve`: a `Curve`.
+- `image`: a data URL.
+- `string`: a string.
 
 ### Viewer
 

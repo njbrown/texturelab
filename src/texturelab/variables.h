@@ -23,7 +23,9 @@ class Prop;
 class TextureVariable;
 typedef QSharedPointer<TextureVariable> TextureVariablePtr;
 
-// Numeric values match Electron's DesignerVariableType, which old files use.
+// Written to files as a string ("float", "gradient", ...). Files from the
+// Electron 0.3 app store a number instead; 1-5 match its DesignerVariableType
+// and are still read.
 enum class VariableType : int {
     None = 0,
     Float = 1,
@@ -31,6 +33,10 @@ enum class VariableType : int {
     Bool = 3,
     Enum = 4,
     Color = 5,
+    Gradient = 6,
+    Curve = 7,
+    Image = 8,
+    String = 9,
 };
 
 struct VariableLink {
@@ -59,8 +65,9 @@ class TextureVariable {
 public:
     QString id;
     VariableType type = VariableType::None;
-    // Owned. Holds value + bounds (Float/Int), option list (Enum), and the
-    // variable's identifier (prop->name) and display name (prop->displayName).
+    // Owned. Same class as the props it links to. Holds the value, bounds
+    // (Float/Int), option list (Enum), and the variable's identifier
+    // (prop->name) and display name (prop->displayName).
     Prop* prop = nullptr;
     // Enum only. Empty = every option of the prop, with its original label.
     QList<EnumOption> options;
@@ -81,6 +88,9 @@ public:
         return typeForProp(prop) != VariableType::None;
     }
     static QString typeLabel(VariableType type);
+    // "float", "int", ... as stored in the file; None for anything unknown.
+    static QString typeToString(VariableType type);
+    static VariableType typeFromJson(const QJsonValue& value);
 
     // A new variable (fresh id, no links) whose value and bounds start as the
     // prop's. Returns null if the prop can't be exposed.
