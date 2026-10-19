@@ -30,6 +30,7 @@ yarn typecheck
 yarn smoke                          # the 10 example graphs
 node tests/smoke.ts --nodes         # + per-node demo files
 node tests/smoke.ts --all-nodes     # compile + render every node type in v2 and v3
+node tests/smoke.ts --custom        # multi-pass + CPU nodes fed by generators (add --res=2048 to time them)
 ```
 
 The smoke test uses your installed Chrome. Set `CHROME_PATH` if it can't find it. Screenshots go to `tests/out/`.

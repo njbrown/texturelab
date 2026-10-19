@@ -9,6 +9,7 @@
 
 import { TEXTURE_CHANNELS, type TextureChannel, type TextureDocument } from "./document.js";
 import { GlContext, setSampling, type PooledTexture, type RenderTargetFormat } from "./gl/context.js";
+import { NodeRenderContext, RenderResourceCache, type NodeInputBinding } from "./gl/noderenderer.js";
 import { assembleFragmentShader, ProgramCache, ShaderCompileError, uniformLocation, type Program } from "./gl/program.js";
 import type { TextureNode } from "./node.js";
 import type { ImageProp } from "./props.js";
@@ -37,7 +38,13 @@ export interface EvaluateProgress {
     node?: string;
 }
 
-export type WarningKind = "unknown-node" | "unsupported-node" | "shader-error" | "missing-channel" | "image-decode";
+export type WarningKind =
+    | "unknown-node"
+    | "unsupported-node"
+    | "shader-error"
+    | "render-error"
+    | "missing-channel"
+    | "image-decode";
 
 export interface EvaluationWarning {
     kind: WarningKind;
@@ -139,6 +146,7 @@ export class TextureRuntime {
     readonly gl: WebGL2RenderingContext;
     private readonly ctx: GlContext;
     private readonly programs: ProgramCache;
+    private readonly cache: RenderResourceCache;
     private readonly maxResolution: number;
     private readonly imageCache = new Map<string, Promise<WebGLTexture | null>>();
     private copyProgram: Program | null = null;
@@ -160,6 +168,7 @@ export class TextureRuntime {
         this.gl = gl;
         this.ctx = new GlContext(gl);
         this.programs = new ProgramCache(gl);
+        this.cache = new RenderResourceCache(this.ctx);
         this.maxResolution = Math.min(options.maxResolution ?? 2048, this.ctx.maxTextureSize);
     }
 
@@ -236,7 +245,7 @@ export class TextureRuntime {
                 });
                 continue;
             }
-            this.programs.request(assembleFragmentShader(node));
+            if (!usesCustomRenderer(node)) this.programs.request(assembleFragmentShader(node));
             for (const prop of node.props.values()) {
                 if (prop.type !== "image" || !(prop as ImageProp).value) continue;
                 const url = (prop as ImageProp).value;
@@ -269,21 +278,26 @@ export class TextureRuntime {
                 outputs.set(node.id, target);
                 this.ctx.bindTarget(target);
 
-                const program = node.unsupportedReason ? null : this.programs.get(assembleFragmentShader(node));
-                if (program instanceof ShaderCompileError) {
-                    warnings.push({
-                        kind: "shader-error",
-                        nodeId: node.id,
-                        typeName: node.typeName,
-                        message: `"${node.title}" (${node.typeName}) failed to compile; it renders black.\n${program.message}`,
-                    });
-                }
-
-                if (!program || program instanceof ShaderCompileError) {
+                if (node.unsupportedReason) {
                     gl.clearColor(0, 0, 0, 1);
                     gl.clear(gl.COLOR_BUFFER_BIT);
+                } else if (usesCustomRenderer(node)) {
+                    const error = this.renderCustom(node, target, doc, size, inputsOf.get(node.id), outputs);
+                    if (error) warnings.push(error);
                 } else {
-                    this.drawNode(node, program, doc, size, inputsOf.get(node.id), outputs, imageTextures);
+                    const program = this.programs.get(assembleFragmentShader(node));
+                    if (program instanceof ShaderCompileError) {
+                        warnings.push({
+                            kind: "shader-error",
+                            nodeId: node.id,
+                            typeName: node.typeName,
+                            message: `"${node.title}" (${node.typeName}) failed to compile; it renders black.\n${program.message}`,
+                        });
+                        gl.clearColor(0, 0, 0, 1);
+                        gl.clear(gl.COLOR_BUFFER_BIT);
+                    } else {
+                        this.drawNode(node, program, doc, size, inputsOf.get(node.id), outputs, imageTextures);
+                    }
                 }
 
                 // Release inputs nobody else needs.
@@ -317,6 +331,57 @@ export class TextureRuntime {
         for (const [channel, id] of targets) channelTextures.set(channel, outputs.get(id)!);
 
         return new EvaluationResult(this, size, size, channelTextures, warnings, performance.now() - start, done);
+    }
+
+    /**
+     * Multi-pass (createRenderer) and CPU (cpuProcess) nodes. Returns a
+     * warning if the node failed; its output is then black.
+     */
+    private renderCustom(
+        node: TextureNode,
+        target: PooledTexture,
+        doc: TextureDocument,
+        size: number,
+        inputs: Map<string, string> | undefined,
+        outputs: Map<string, PooledTexture>,
+    ): EvaluationWarning | null {
+        const gl = this.gl;
+        // Connected inputs in declaration order.
+        const bindings: NodeInputBinding[] = [];
+        for (const name of node.inputs) {
+            const leftId = inputs?.get(name);
+            const tex = leftId ? outputs.get(leftId) : undefined;
+            if (tex) bindings.push({ name, texture: tex.texture });
+        }
+        const ctx = new NodeRenderContext(
+            this.ctx,
+            this.cache,
+            target.texture,
+            size,
+            size,
+            doc.randomSeed + node.randomSeed,
+            bindings,
+        );
+
+        try {
+            const renderer = node.createRenderer?.();
+            if (renderer) renderer.render(ctx, node.createRenderData?.());
+            else node.cpuProcess!(ctx);
+            return null;
+        } catch (e) {
+            ctx.clearOutput(0, 0, 0, 1);
+            const isShader = e instanceof ShaderCompileError;
+            return {
+                kind: isShader ? "shader-error" : "render-error",
+                nodeId: node.id,
+                typeName: node.typeName,
+                message: `"${node.title}" (${node.typeName}) failed${isShader ? " to compile" : ""}; it renders black.\n${(e as Error).message}`,
+            };
+        } finally {
+            // Leave GL state as single-pass nodes expect it.
+            gl.disable(gl.BLEND);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        }
     }
 
     private drawNode(
@@ -502,12 +567,17 @@ void main() { fragColor = texture(src, v_texCoord); }
     dispose(): void {
         const gl = this.gl;
         this.programs.dispose();
+        this.cache.dispose();
         this.ctx.dispose();
         if (this.uint8Target) gl.deleteTexture(this.uint8Target.texture8);
         for (const p of this.imageCache.values()) p.then((t) => t && gl.deleteTexture(t));
         this.imageCache.clear();
         gl.getExtension("WEBGL_lose_context")?.loseContext();
     }
+}
+
+function usesCustomRenderer(node: TextureNode): boolean {
+    return typeof node.createRenderer === "function" || (node.usesCpuProcessing && typeof node.cpuProcess === "function");
 }
 
 function clampResolution(requested: number, max: number): number {

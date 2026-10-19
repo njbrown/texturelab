@@ -30,10 +30,15 @@ export class GlContext {
         this.gl = gl;
         this.maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
 
-        // Desktop renders into RGBA32F. Fall back when the GPU can't render
-        // to float targets (some mobile GPUs).
-        if (gl.getExtension("EXT_color_buffer_float")) this.format = "rgba32f";
-        else if (gl.getExtension("EXT_color_buffer_half_float")) this.format = "rgba16f";
+        // Desktop renders into RGBA32F. Multi-pass nodes also sample their
+        // intermediates with LINEAR filtering (and Fast AO builds mipmaps),
+        // which RGBA32F only supports with OES_texture_float_linear; RGBA16F
+        // is always filterable. Fall back further when the GPU can't render
+        // to float targets at all (some mobile GPUs).
+        const colorBufferFloat = !!gl.getExtension("EXT_color_buffer_float");
+        const floatLinear = !!gl.getExtension("OES_texture_float_linear");
+        if (colorBufferFloat && floatLinear) this.format = "rgba32f";
+        else if (colorBufferFloat || gl.getExtension("EXT_color_buffer_half_float")) this.format = "rgba16f";
         else this.format = "rgba8";
 
         this.framebuffer = gl.createFramebuffer()!;
@@ -70,10 +75,16 @@ export class GlContext {
      * the desktop node FBO textures.
      */
     acquire(width: number, height: number): PooledTexture {
-        const idx = this.free.findIndex((t) => t.width === width && t.height === height);
-        if (idx >= 0) return this.free.splice(idx, 1)[0]!;
-
         const gl = this.gl;
+        const idx = this.free.findIndex((t) => t.width === width && t.height === height);
+        if (idx >= 0) {
+            // Reset sampling: CPU nodes leave their output LINEAR.
+            const tex = this.free.splice(idx, 1)[0]!;
+            gl.bindTexture(gl.TEXTURE_2D, tex.texture);
+            setSampling(gl, gl.NEAREST, gl.REPEAT);
+            return tex;
+        }
+
         const texture = gl.createTexture()!;
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texStorage2D(gl.TEXTURE_2D, 1, FORMATS[this.format].internal, width, height);
@@ -89,6 +100,11 @@ export class GlContext {
     trim(): void {
         for (const t of this.free) this.gl.deleteTexture(t.texture);
         this.free.length = 0;
+    }
+
+    /** Internal format + upload type of render targets in this context. */
+    get formatInfo(): { internal: number; type: number } {
+        return FORMATS[this.format];
     }
 
     bindTarget(tex: PooledTexture): void {

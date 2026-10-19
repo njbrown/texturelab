@@ -2,6 +2,7 @@
 // this and fill it in from init(), using the same add*Prop calls as the C++.
 
 import type { Color } from "./color.js";
+import type { NodeRenderContext, NodeTextureRenderer } from "./gl/noderenderer.js";
 import type { Gradient } from "./gradient.js";
 import {
     BoolProp,
@@ -37,14 +38,26 @@ export class TextureNode {
 
     /**
      * Non-null when this node needs a renderer the web runtime doesn't have
-     * yet (multi-pass or CPU nodes). Evaluation reports these up front instead
-     * of rendering something wrong.
+     * yet. Evaluation reports these up front instead of rendering something
+     * wrong.
      */
     get unsupportedReason(): string | null {
-        return this.usesCpuProcessing ? "CPU-processed node is not ported to the web runtime yet" : null;
+        if (this.usesCpuProcessing && !this.cpuProcess) return "CPU-processed node is not ported to the web runtime yet";
+        return null;
     }
 
     init(): void {}
+
+    // Override to provide a custom renderer for multi-pass or non-standard
+    // rendering. Nodes without one render their shaderSource in one pass.
+    createRenderer?(): NodeTextureRenderer<any>;
+
+    // Override to provide render-time data (plain values) for the renderer.
+    createRenderData?(): unknown;
+
+    // CPU path for nodes with usesCpuProcessing (v2 bevel/floodfill). Must
+    // write its result to ctx.outputTexture.
+    cpuProcess?(ctx: NodeRenderContext): void;
 
     addInput(inputName: string): void {
         this.inputs.push(inputName);
@@ -137,9 +150,10 @@ export class TextureNode {
 }
 
 /**
- * Base for nodes the desktop app renders with a custom multi-pass
+ * Base the port-node scaffolder gives nodes whose C++ class has a custom
  * NodeTextureRenderer. Their init() (inputs/props) is ported so files load and
- * validate; the renderer itself is not ported yet.
+ * validate; once the renderer is ported, extend TextureNode and implement
+ * createRenderer()/createRenderData() instead.
  */
 export class MultiPassNode extends TextureNode {
     override get unsupportedReason(): string | null {

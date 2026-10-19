@@ -51,12 +51,18 @@ result.dispose();
 
 ## Status
 
-- **Node coverage:** every single-pass node in the v1/v2/v3 libraries is ported. The multi-pass nodes are not ported yet: autolevels, blurhq, fastao, distancetransform, bevelv2, spread, floodfillv2, and v2's bevel/floodfill. They render black and are reported in `result.warnings`.
+- **Node coverage:** every node in the v1/v2/v3 libraries is ported.
+  - Multi-pass nodes (autolevels, blurhq, fastao, distancetransform, bevelv2, spread) use the same passes and GLSL as the desktop renderers.
+  - CPU nodes (floodfillv2, and v2's bevel/floodfill) run the same algorithms in JS on read-back pixels. They take about 1 s at 2048 and currently run on the main thread.
 - **Rendering:** files render with the library version they were saved with. They are never migrated.
 
 ## Development
 
-Node classes in `src/core/libraries/` are ported from `src/texturelab/libraries/` in this repo. When a C++ node changes, change its `.ts` twin too. The registry (`registry.ts`) is generated from `library.cpp`:
+Node classes in `src/core/libraries/` are ported from `src/texturelab/libraries/` in this repo. When a C++ node changes, change its `.ts` twin too.
+
+- **Single-pass nodes** are scaffolded by `scripts/port-node.ts`.
+- **Multi-pass and CPU nodes** are hand ports against `src/core/gl/noderenderer.ts`, which mirrors `graphics/noderenderer.h`. They implement `createRenderer()` / `createRenderData()` or `cpuProcess()`.
+- **The registry** (`registry.ts`) is generated from `library.cpp`.
 
 ```sh
 yarn --cwd web port-nodes        # scaffold .ts for new C++ nodes + regenerate registry.ts

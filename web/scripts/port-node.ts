@@ -1,7 +1,7 @@
 // Scaffolds TS node classes from the C++ node libraries.
 //
 //   node scripts/port-node.ts            # port every node that has no .ts yet
-//   node scripts/port-node.ts --force    # overwrite existing .ts files too
+//   node scripts/port-node.ts --force    # overwrite existing scaffolds too (never hand ports)
 //   node scripts/port-node.ts v3/swirl   # port one file (relative to libraries/)
 //
 // For each src/texturelab/libraries/vN/<file>.cpp it writes
@@ -239,7 +239,10 @@ function portFile(version: string, cppFile: string): PortedClass[] {
     const base = multiPass ? "MultiPassNode" : "TextureNode";
 
     const out = join(tsRoot, `${rel}.ts`);
-    if (!existsSync(out) || force) {
+    // --force only replaces files that are still untouched scaffolds; hand
+    // ports (multi-pass/CPU nodes) drop the "by scripts/port-node.ts" header.
+    const isScaffold = existsSync(out) && readFileSync(out, "utf8").includes("by scripts/port-node.ts.");
+    if (!existsSync(out) || (force && isScaffold)) {
         const imports = [`import { ${base} } from "../../node.js";`];
         if (usesHelpers.has("QColor")) imports.push(`import { QColor } from "../../color.js";`);
         if (usesHelpers.has("Gradient")) imports.push(`import { Gradient } from "../../gradient.js";`);

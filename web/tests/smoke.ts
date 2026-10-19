@@ -4,6 +4,7 @@
 //   node tests/smoke.ts                  # the 10 example graphs
 //   node tests/smoke.ts --nodes          # the per-node demo files too
 //   node tests/smoke.ts --all-nodes      # compile + render every node type (v2 and v3)
+//   node tests/smoke.ts --custom         # multi-pass and CPU nodes, fed by generators
 //   node tests/smoke.ts --headed         # watch it
 //
 // Screenshots land in tests/out/. Needs Chrome/Chromium installed; set
@@ -24,6 +25,7 @@ const port = 5198; // not 5199, so it can run alongside `yarn dev`
 const args = process.argv.slice(2);
 const includeNodes = args.includes("--nodes");
 const allNodes = args.includes("--all-nodes");
+const customNodes = args.includes("--custom");
 const headed = args.includes("--headed");
 const res = args.find((a) => a.startsWith("--res="))?.slice(6) ?? "512";
 
@@ -43,7 +45,7 @@ const list = (dir: string) =>
         .map((f) => f.replace(/\.texture$/, ""))
         .sort();
 
-const cases: { param: string; name: string }[] = allNodes ? [] : [
+const cases: { param: string; name: string }[] = allNodes || customNodes ? [] : [
     ...list("examples").map((name) => ({ param: `example=${encodeURIComponent(name)}`, name })),
     ...(includeNodes ? list("nodes").map((name) => ({ param: `node=${encodeURIComponent(name)}`, name: `node:${name}` })) : []),
 ];
@@ -164,6 +166,64 @@ if (allNodes) {
             }
             for (const e of consoleErrors) console.log(`       console: ${e.slice(0, 300)}`);
         }
+    }
+}
+
+// Multi-pass and CPU nodes with real inputs: generator -> node [-> viewer node].
+if (customNodes) {
+    type Chain = { version: string; name: string; nodes: [string, Record<string, unknown>][]; links: [number, number, string][] };
+    const chains: Chain[] = [
+        { version: "v3", name: "blurhq", nodes: [["checkerboard", {}], ["blurhq", { radius: 8 }]], links: [[0, 1, "image"]] },
+        { version: "v3", name: "autolevels", nodes: [["fractalnoise", {}], ["autolevels", {}]], links: [[0, 1, "image"]] },
+        { version: "v3", name: "distancetransform", nodes: [["polygon", { radius: 0.5 }], ["distancetransform", {}]], links: [[0, 1, "mask"]] },
+        {
+            version: "v3",
+            name: "spread",
+            nodes: [["fractalnoise", {}], ["brickgenerator", {}], ["spread", { threshold: 0.5 }]],
+            links: [[0, 2, "color"], [1, 2, "mask"]],
+        },
+        { version: "v3", name: "bevelv2", nodes: [["polygon", { radius: 0.5 }], ["bevelv2", { distance: 40 }]], links: [[0, 1, "image"]] },
+        { version: "v3", name: "fastao", nodes: [["brickgenerator", {}], ["fastao", { radius: 0.05 }]], links: [[0, 1, "height"]] },
+        {
+            version: "v3",
+            name: "floodfillv2",
+            nodes: [["brickgenerator", {}], ["floodfillv2", {}], ["floodfillv2torandomcolor", {}]],
+            links: [[0, 1, "image"], [1, 2, "floodfill"]],
+        },
+        { version: "v2", name: "bevel", nodes: [["polygon", { radius: 0.5 }], ["bevel", { distance: 20 }]], links: [[0, 1, "image"]] },
+        {
+            version: "v2",
+            name: "floodfill",
+            nodes: [["brickgenerator", {}], ["floodfill", {}], ["floodfilltorandomcolor", {}]],
+            links: [[0, 1, "image"], [1, 2, "floodfill"]],
+        },
+    ];
+
+    await page.goto(`http://localhost:${port}/?res=${res}`);
+    await page.waitForFunction(() => (window as unknown as { __playground?: unknown }).__playground);
+    for (const chain of chains) {
+        const doc = JSON.stringify({
+            libraryVersion: chain.version,
+            nodes: chain.nodes.map(([typeName, properties], i) => ({ id: `n${i}`, typeName, properties })),
+            connections: chain.links.map(([l, r, input]) => ({ leftNodeId: `n${l}`, rightNodeId: `n${r}`, rightNodeInput: input })),
+            editor: { textureChannels: { albedo: `n${chain.nodes.length - 1}`, height: `n${chain.nodes.length - 1}` } },
+        });
+        consoleErrors.length = 0;
+        const status = (await page.evaluate(async ([name, text]) => {
+            const pg = (window as unknown as { __playground: Status & { render(n: string, t: string): Promise<void> } }).__playground;
+            await pg.render(name, text);
+            return JSON.parse(JSON.stringify(pg)) as Status;
+        }, [`${chain.version}:${chain.name}`, doc] as const)) as Status;
+        await page.waitForTimeout(150);
+        await page.screenshot({ path: join(outDir, `custom_${chain.version}_${chain.name}.png`) });
+        const problems = status.warnings.filter((w) => w.kind !== "missing-channel");
+        const ok = status.state === "done" && problems.length === 0;
+        if (!ok) failures++;
+        cases.push({ param: "", name: chain.name });
+        console.log(`${ok ? "ok  " : "FAIL"} ${`${chain.version}:${chain.name}`.padEnd(28)} ${Math.round(status.timeMs ?? 0)} ms`);
+        for (const w of problems) console.log(`       ${w.kind}: ${w.message.split("\n").slice(0, 8).join("\n         ")}`);
+        if (status.error) console.log(`       ${status.error}`);
+        for (const e of consoleErrors) console.log(`       console: ${e.slice(0, 300)}`);
     }
 }
 
