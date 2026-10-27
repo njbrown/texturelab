@@ -152,6 +152,8 @@ Mesh* createCube(QOpenGLFunctions* gl, float width, float height, float depth,
     mesh->indexByteOffset = 0;
     mesh->indexType       = GL_UNSIGNED_INT;
     mesh->primitiveMode   = GL_TRIANGLES;
+    mesh->attribs = {VertexUsage::Position, VertexUsage::Normal,
+                     VertexUsage::TexCoord0, VertexUsage::Tangent};
 
     return mesh;
 }

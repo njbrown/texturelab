@@ -292,6 +292,26 @@ Mesh* loadMeshFromRc(const QString& path)
 
 // https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/glTF-WebGL-PBR/mesh.js#L113
 // https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/master/source/Renderer/renderer.js
+// Re-sends the enable state of every attribute array a mesh uses, right after
+// its VAO is bound for a draw.
+//
+// On NVIDIA 535 (Linux) the GPU-side enable bit of an attribute of this VAO
+// can go stale while glGetVertexAttribiv still reports it enabled. It happens
+// when Qt's OpenGL paint engine, which drives the graph and 2D views in their
+// own contexts on this thread and reserves attribute 2 for its opacity array,
+// draws between two frames of ours in a particular interleaving (easy to hit
+// while a project loads). The sphere then samples every map at the corner
+// texel and renders as one flat colour. A disable/enable pair forces the
+// state out again; a plain re-enable, a glVertexAttribPointer re-spec or a
+// VAO rebind is elided as redundant and does not fix it.
+static void reassertAttribArrays(QOpenGLFunctions* gl, const Mesh* mesh)
+{
+    for (VertexUsage usage : mesh->attribs) {
+        gl->glDisableVertexAttribArray((int)usage);
+        gl->glEnableVertexAttribArray((int)usage);
+    }
+}
+
 void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
                               const QVector3D& camPos,
                               const QMatrix4x4& worldMatrix,
@@ -460,6 +480,7 @@ void Renderer::renderGltfMesh(Mesh* mesh, Material* material,
 
     // render mesh
     mesh->vao->bind();
+    reassertAttribArrays(gl, mesh);
     // tinygltf::Primitive primitive = mesh->primitive;
     // tinygltf::Accessor indexAccessor = mesh->indexAccessor;
 
@@ -562,6 +583,7 @@ void Renderer::renderSkybox(Mesh* mesh, const QMatrix4x4& viewMatrix,
 
     // Render the skybox mesh
     mesh->vao->bind();
+    reassertAttribArrays(gl, mesh);
     mesh->indexBuffer->bind();
 
     gl->glDrawElements(mesh->primitiveMode, mesh->numElements, mesh->indexType,

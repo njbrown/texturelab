@@ -157,6 +157,8 @@ Mesh* createSphere(QOpenGLFunctions* gl, float radius, int widthSegments,
     mesh->indexByteOffset = 0;
     mesh->indexType     = GL_UNSIGNED_INT;
     mesh->primitiveMode = GL_TRIANGLES;
+    mesh->attribs = {VertexUsage::Position, VertexUsage::Normal,
+                     VertexUsage::TexCoord0, VertexUsage::Tangent};
 
     return mesh;
 }
