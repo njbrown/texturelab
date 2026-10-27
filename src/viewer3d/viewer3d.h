@@ -71,6 +71,8 @@ class Viewer3D : public QOpenGLWidget {
 
     bool leftMouseDown = false;
     bool middleMouseDown = false;
+    // Shift + right drag: rotates the environment instead of the camera.
+    bool envDragActive = false;
 
     IblSampler* iblSampler;
     ShaderCache* shaderCache;

@@ -219,6 +219,10 @@ void Viewer3D::mousePressEvent(QMouseEvent* e)
     if (e->button() == Qt::MiddleButton) {
         middleMouseDown = true;
     }
+    if (e->button() == Qt::RightButton &&
+        (e->modifiers() & Qt::ShiftModifier)) {
+        envDragActive = true;
+    }
 }
 void Viewer3D::mouseReleaseEvent(QMouseEvent* e)
 {
@@ -228,16 +232,30 @@ void Viewer3D::mouseReleaseEvent(QMouseEvent* e)
     if (e->button() == Qt::MiddleButton) {
         middleMouseDown = false;
     }
+    if (e->button() == Qt::RightButton) {
+        envDragActive = false;
+    }
 }
 void Viewer3D::mouseMoveEvent(QMouseEvent* e)
 {
-    if (leftMouseDown) {
-        auto diff = e->pos() - prevPos;
+    auto diff = e->pos() - prevPos;
+    prevPos = e->pos();
 
+    if (envDragActive) {
+        // Spin the environment about the up axis, in the same sense the
+        // scene appears to turn during a camera orbit, so dragging feels
+        // like grabbing the sky itself.
+        if (renderer) {
+            renderer->setEnvironmentRotation(renderer->envRotation +
+                                             diff.x() * dragSpeed);
+            this->repaint();
+        }
+        return;
+    }
+
+    if (leftMouseDown) {
         yaw += -diff.x() * dragSpeed;
         pitch += diff.y() * dragSpeed;
-
-        prevPos = e->pos();
 
         this->repaint();
     }
