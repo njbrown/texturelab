@@ -29,10 +29,22 @@ AccordionWidget::AccordionWidget(const QString& title, bool startCollapsed,
     contentWidget->setVisible(!_collapsed);
 
     connect(headerButton, &QPushButton::clicked, this, [this]() {
-        _collapsed = !_collapsed;
-        updateHeader();
-        contentWidget->setVisible(!_collapsed);
+        setCollapsed(!_collapsed);
+        emit toggled(_collapsed);
     });
+}
+
+void AccordionWidget::setTitle(const QString& title)
+{
+    _title = title;
+    updateHeader();
+}
+
+void AccordionWidget::setCollapsed(bool collapsed)
+{
+    _collapsed = collapsed;
+    updateHeader();
+    contentWidget->setVisible(!_collapsed);
 }
 
 void AccordionWidget::updateHeader()

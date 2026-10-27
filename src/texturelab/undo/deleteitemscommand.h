@@ -60,4 +60,8 @@ private:
     // Texture-channel (Albedo/Normal/…) assignments that pointed at a deleted
     // node; captured so redo() can drop them and undo() can restore them.
     QMap<TextureChannel, QString> _channelAssignments;
+
+    // Variable links (variable id, link) on deleted nodes' props; dropped in
+    // redo() and restored in undo(), like _channelAssignments.
+    QList<QPair<QString, VariableLink>> _variableLinks;
 };

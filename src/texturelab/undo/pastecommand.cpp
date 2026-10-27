@@ -17,7 +17,8 @@ PasteCommand::PasteCommand(TextureProjectPtr project,
     , _renderer(renderer)
 {
     if (!Clipboard::pasteItems(project, viewCenter,
-                               _nodes, _connections, _comments, _frames))
+                               _nodes, _connections, _comments, _frames,
+                               &_variableLinks))
         return;
 
     int total = _nodes.size() + _frames.size() + _comments.size();
@@ -85,6 +86,21 @@ void PasteCommand::redo()
             gf->setSize(frame->size.x(), frame->size.y());
         _scene->addFrame(gf);
         gf->setSelected(true);
+    }
+
+    // Re-link props to variables that exist here (same project, or one with a
+    // variable of the same id that accepts the prop). Linked props take the
+    // variable's value. Others keep their pasted value, unlinked. Undo needs
+    // nothing extra: removeNode() drops the links.
+    for (const auto& pasted : _variableLinks) {
+        auto var = _project->getVariableById(pasted.variableId);
+        auto prop = _project->resolveProp(pasted.link.nodeId, pasted.link.propName);
+        if (!var || !prop || !var->accepts(prop) ||
+            _project->variableForProp(pasted.link.nodeId, pasted.link.propName))
+            continue;
+        var->links.append(pasted.link);
+        var->writeTo(prop);
+        _project->markNodeAsDirty(_project->getNodeById(pasted.link.nodeId));
     }
 
     Telemetry::breadcrumb("graph.node", "nodes pasted",

@@ -1,0 +1,109 @@
+// Ported from src/texturelab/libraries/v3/curvature.cpp by scripts/port-node.ts.
+// Keep the GLSL and props in sync with the C++ when either changes.
+
+import { TextureNode } from "../../node.js";
+
+export class CurvatureNode extends TextureNode {
+    override init(): void {
+        this.title = "Curvature";
+        this.addInput("height");
+        const typeProp = this.addEnumProp("type", "Type", ["Mix", "Sharp", "Medium", "Smooth"]);
+        typeProp.index = 3;
+        this.addFloatProp("intensity", "Intensity", 1.0, 0.0, 2.0, 0.1);
+        this.addFloatProp("angle", "Angle", 0.5, -1.0, 1.0, 0.1);
+        this.addIntProp("samples", "Samples", 12, 1, 32, 1);
+        const advancedProps = this.createGroup("Advanced");
+        advancedProps.add( this.addFloatProp("sh_c", "Sharp Curvature", 0.5, 0.0, 1.0, 0.1));
+        advancedProps.add( this.addFloatProp("me_c", "Medium Curvature", 1.5, 0.0, 3.0, 0.1));
+        advancedProps.add( this.addFloatProp("sm_c", "Smooth Curvature", 3.0, 0.0, 4.0, 0.1));
+        const source = /* glsl */ `
+        #define LAPLACIAN_CENTER_WEIGHT 2.0
+        #define RADIUS_SCALE 0.01
+        #define SHARP_WEIGHT 8.0
+        #define MEDIUM_WEIGHT 3.0
+        #define SMOOTH_WEIGHT 1.5
+
+        #define TYPE_MIX 0
+        #define TYPE_SHARP 1
+        #define TYPE_MEDIUM 2
+        #define TYPE_SMOOTH 3
+
+        float HeightMap(vec2 p)
+        {
+            return texture(height, p).x;
+        }
+
+        float _curveSample(vec2 p, vec2 o)
+        {
+            float a = HeightMap(p + o);
+            float b = HeightMap(p - o);
+            return -a - b;
+        }
+
+        // Taps per pixel this draw can afford: ~1e10 texture fetches per draw keeps a
+        // maxed-out node under the Windows GPU watchdog (TDR, 2 s) on modest GPUs.
+        // At 1024x1024 that's 10000 taps, so nothing changes at or below 1K; at 4K it's
+        // ~600. Large kernels keep their radius and sigma and sample with a stride
+        // instead, so the look is preserved apart from some coarseness.
+        // Mix runs three kernels, so each gets a third.
+        float curvatureMaxSamples()
+        {
+            float passes = prop_type == TYPE_MIX ? 3.0 : 1.0;
+            float tapBudget = 1.0e10 / (_textureSize.x * _textureSize.y * passes);
+            return max(1.0, floor(sqrt(tapBudget) * 0.5));
+        }
+
+        float CurvatureMap(vec2 p, float r)
+        {
+            // Zero radius (intensity or a curvature slider at 0) has no
+            // neighbourhood; the weights below would divide by zero.
+            if (r <= 0.0)
+                return 0.0;
+
+            // Fewer, wider-spaced taps over the same radius at high res.
+            float q = min(float(prop_samples), curvatureMaxSamples());
+            float s = r / q;
+            float H = HeightMap(p) * LAPLACIAN_CENTER_WEIGHT;
+            float v = 0.0;
+
+            for (float ox = -q; ox < q; ox++)
+            for (float oy = -q; oy < q; oy++)
+            {
+                vec2 o = vec2(ox, oy);
+                float c = _curveSample(p, o * s);
+                v += (H + c) * ((r - length(o * s)) / r);
+            }
+
+            return v / (q * q);
+        }
+
+        vec4 process(vec2 uv)
+        {
+            if (!height_connected)
+                return vec4(0.0, 0.0, 0.0, 1.0);
+
+            float i = prop_intensity;
+            float c = 0.0;
+
+            if (prop_type == TYPE_MIX) {
+                c += CurvatureMap(uv, i * prop_sh_c * RADIUS_SCALE) * SHARP_WEIGHT;
+                c += CurvatureMap(uv, i * prop_me_c * RADIUS_SCALE) * MEDIUM_WEIGHT;
+                c += CurvatureMap(uv, i * prop_sm_c * RADIUS_SCALE) * SMOOTH_WEIGHT;
+            } else if (prop_type == TYPE_SHARP) {
+                c += CurvatureMap(uv, i * prop_sh_c * RADIUS_SCALE) * SHARP_WEIGHT;
+            } else if (prop_type == TYPE_MEDIUM) {
+                c += CurvatureMap(uv, i * prop_me_c * RADIUS_SCALE) * MEDIUM_WEIGHT;
+            } else if (prop_type == TYPE_SMOOTH) {
+                c += CurvatureMap(uv, i * prop_sm_c * RADIUS_SCALE) * SMOOTH_WEIGHT;
+            }
+
+            vec4 color;
+            color.rgb = vec3(prop_angle + c);
+            color.a = 1.0;
+
+            return color;
+        }
+    `;
+        this.setShaderSource(source);
+    }
+}

@@ -198,6 +198,8 @@ set(PROJECT_SOURCES
         ./project.cpp
         ./props.h
         ./props.cpp
+        ./variables.h
+        ./variables.cpp
         ./libraries/libv2.h
         ./libraries/libv3.h
         ./libraries/library.h
@@ -216,6 +218,10 @@ set(PROJECT_SOURCES
         ./widgets/properties/propertieswidget.cpp
         ./widgets/properties/propwidgets.h
         ./widgets/properties/propwidgets.cpp
+        ./widgets/themedicon.h
+        ./widgets/themedicon.cpp
+        ./widgets/variables/variableswidget.h
+        ./widgets/variables/variableswidget.cpp
         ./widgets/properties/curvepropwidget.h
         ./widgets/properties/curvepropwidget.cpp
         ./widgets/properties/accordionwidget.h
@@ -254,6 +260,8 @@ set(PROJECT_SOURCES
         ./undo/pastecommand.cpp
         ./undo/texturechannelassigncommand.h
         ./undo/texturechannelassigncommand.cpp
+        ./undo/variableschangecommand.h
+        ./undo/variableschangecommand.cpp
         ./widgets/aboutdialog.h
         ./widgets/aboutdialog.cpp
         ./widgets/crashconsentdialog.h

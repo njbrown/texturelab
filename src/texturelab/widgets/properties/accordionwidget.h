@@ -19,4 +19,11 @@ public:
     AccordionWidget(const QString& title, bool startCollapsed = false,
                     QWidget* parent = nullptr);
     void addWidget(QWidget* widget);
+    void setTitle(const QString& title);
+    bool isCollapsed() const { return _collapsed; }
+    void setCollapsed(bool collapsed);
+
+signals:
+    // The user opened or closed the section.
+    void toggled(bool collapsed);
 };

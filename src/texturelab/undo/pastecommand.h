@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../clipboard.h"
 #include "../models.h"
 #include <QPointF>
 #include <QUndoCommand>
@@ -34,4 +35,5 @@ private:
     QList<ConnectionPtr> _connections;
     QList<CommentPtr> _comments;
     QList<FramePtr> _frames;
+    QList<PastedVariableLink> _variableLinks;
 };

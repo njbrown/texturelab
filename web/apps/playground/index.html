@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>TextureLab Playground</title>
+        <link rel="icon" href="data:," />
+        <link rel="stylesheet" href="/src/style.css" />
+    </head>
+    <body>
+        <main class="app">
+            <section class="stage" id="stage">
+                <div class="viewer" id="viewer"></div>
+
+                <div class="empty" id="empty">
+                    <div class="empty-card">
+                        <h1>Drop a <code>.texture</code> file</h1>
+                        <p>It's evaluated on your GPU and previewed on a sphere.</p>
+                        <button type="button" class="primary" id="open-empty">Choose file…</button>
+                    </div>
+                </div>
+
+                <div class="progress" id="progress" hidden>
+                    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+                    <span id="progress-text">Rendering…</span>
+                </div>
+
+                <div class="drop-overlay" id="drop-overlay" hidden>
+                    <div>Drop to render</div>
+                </div>
+            </section>
+
+            <aside class="panel">
+                <header class="panel-header">
+                    <span class="brand">TextureLab <span class="muted">web</span></span>
+                </header>
+
+                <div class="group">
+                    <div class="row">
+                        <button type="button" class="primary grow" id="open">Open .texture…</button>
+                        <input type="file" id="file" accept=".texture,application/json" hidden />
+                    </div>
+                    <label class="field">
+                        <span>Example</span>
+                        <select id="example"></select>
+                    </label>
+                    <label class="field">
+                        <span>Node demo</span>
+                        <select id="node-demo"></select>
+                    </label>
+                </div>
+
+                <div class="group" id="variables-group" hidden>
+                    <h2>Variables</h2>
+                    <div class="row heading-row">
+                        <select class="grow" id="preset" title="Preset"></select>
+                        <span class="preset-modified" id="preset-modified" title="The values differ from the selected preset"></span>
+                    </div>
+                    <div class="variables" id="variables"></div>
+                </div>
+
+                <div class="group" id="info-group" hidden>
+                    <div class="file-name" id="file-name"></div>
+                    <dl class="stats" id="stats"></dl>
+                    <div class="channels" id="channels"></div>
+                    <ul class="warnings" id="warnings"></ul>
+                </div>
+
+                <div class="group">
+                    <h2>Render</h2>
+                    <label class="field">
+                        <span>Resolution</span>
+                        <select id="resolution">
+                            <option value="file">From file</option>
+                            <option value="256">256</option>
+                            <option value="512">512</option>
+                            <option value="1024">1024</option>
+                            <option value="2048">2048</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="group">
+                    <h2>Preview</h2>
+                    <label class="field">
+                        <span>Mesh</span>
+                        <select id="mesh">
+                            <option value="sphere">Sphere</option>
+                            <option value="cube">Cube</option>
+                            <option value="plane">Plane</option>
+                            <option value="cylinder">Cylinder</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>Environment</span>
+                        <select id="environment"></select>
+                    </label>
+                    <label class="field">
+                        <span>Background</span>
+                        <select id="background">
+                            <option value="blurred">Blurred environment</option>
+                            <option value="environment">Environment</option>
+                            <option value="#1e1f22">Dark</option>
+                            <option value="#8a8d92">Grey</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>Normals</span>
+                        <select id="normals">
+                            <option value="opengl">OpenGL (Y+)</option>
+                            <option value="directx">DirectX (Y−)</option>
+                        </select>
+                    </label>
+                    <label class="field slider">
+                        <span>Displacement <output id="displacement-value"></output></span>
+                        <input type="range" id="displacement" min="0" max="0.2" step="0.0025" value="0.05" />
+                    </label>
+                    <label class="field slider">
+                        <span>Tiling <output id="tiling-value"></output></span>
+                        <input type="range" id="tiling" min="1" max="8" step="1" value="1" />
+                    </label>
+                    <label class="field slider">
+                        <span>Exposure <output id="exposure-value"></output></span>
+                        <input type="range" id="exposure" min="0.2" max="3" step="0.05" value="1" />
+                    </label>
+                </div>
+            </aside>
+        </main>
+        <script type="module" src="/src/main.ts"></script>
+    </body>
+</html>

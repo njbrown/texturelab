@@ -14,4 +14,5 @@
 #include "randomseedchangecommand.h"
 #include "removeconnectioncommand.h"
 #include "texturechannelassigncommand.h"
+#include "variableschangecommand.h"
 #include "undocommandids.h"

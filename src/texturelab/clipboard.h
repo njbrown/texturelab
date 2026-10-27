@@ -3,6 +3,13 @@
 #include "models.h"
 #include <QList>
 
+// A variable link on a pasted node's prop, re-established on paste only if
+// the variable exists in the target project and accepts the prop.
+struct PastedVariableLink {
+    QString variableId;
+    VariableLink link; // with the pasted node's new id
+};
+
 class Clipboard {
 public:
     static void copyItems(TextureProjectPtr project,
@@ -15,7 +22,8 @@ public:
                            QList<TextureNodePtr>& outNodes,
                            QList<ConnectionPtr>& outConnections,
                            QList<CommentPtr>& outComments,
-                           QList<FramePtr>& outFrames);
+                           QList<FramePtr>& outFrames,
+                           QList<PastedVariableLink>* outLinks = nullptr);
 
     static bool hasData();
 

@@ -41,6 +41,14 @@ void Clipboard::copyItems(TextureProjectPtr project,
             props[key] = node->props[key]->toJsonValue();
         obj["properties"] = props;
 
+        // propName -> variable id, for props linked to a variable
+        QJsonObject links;
+        for (auto key : node->props.keys())
+            if (auto var = project->variableForProp(node->id, key))
+                links[key] = var->id;
+        if (!links.isEmpty())
+            obj["variableLinks"] = links;
+
         nodeArray.append(obj);
     }
     root["nodes"] = nodeArray;
@@ -104,7 +112,8 @@ bool Clipboard::pasteItems(TextureProjectPtr project,
                            QList<TextureNodePtr>& outNodes,
                            QList<ConnectionPtr>& outConnections,
                            QList<CommentPtr>& outComments,
-                           QList<FramePtr>& outFrames)
+                           QList<FramePtr>& outFrames,
+                           QList<PastedVariableLink>* outLinks)
 {
     if (!project || !project->library)
         return false;
@@ -180,6 +189,12 @@ bool Clipboard::pasteItems(TextureProjectPtr project,
             auto prop = node->getProp(key);
             if (prop)
                 prop->fromJsonValue(propObj[key]);
+        }
+
+        if (outLinks) {
+            auto links = obj["variableLinks"].toObject();
+            for (auto key : links.keys())
+                outLinks->append({links[key].toString(), {node->id, key}});
         }
 
         outNodes.append(node);

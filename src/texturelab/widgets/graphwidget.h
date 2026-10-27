@@ -48,6 +48,10 @@ public:
     void syncFrameToScene(const FramePtr& frame);
     void syncCommentToScene(const CommentPtr& comment);
 
+    // Select a node (which shows it in the property panel) and centre the
+    // view on it.
+    void selectNode(const QString& nodeId);
+
     nodegraph::NodeGraph* graph;
     // Library* library;
     nodegraph::ScenePtr scene;

@@ -81,7 +81,18 @@ public:
 
 private:
     void addBasePropsToLayout();
+    // The prop's editor, wrapped with a variable link button when the prop
+    // can be exposed.
     QWidget* createPropWidget(Prop* prop, const TextureNodePtr& node);
+    QWidget* createPropEditor(Prop* prop, const TextureNodePtr& node);
+    QWidget* wrapWithVariableLink(QWidget* editor, Prop* prop,
+                                  const TextureNodePtr& node);
+
+    // Variable actions from a prop's link menu. Each is one undo step.
+    void exposeProp(const TextureNodePtr& node, Prop* prop);
+    void linkProp(const TextureNodePtr& node, Prop* prop,
+                  const QString& variableId);
+    void unlinkProp(const TextureNodePtr& node, Prop* prop);
 
     // Returns the value the prop held before this edit and records newValue
     // as the baseline for the next one.
@@ -93,4 +104,8 @@ signals:
                                const TextureNodePtr& node);
     void framePropertyChanged(const FramePtr& frame);
     void commentPropertyChanged(const CommentPtr& comment);
+    // A prop was exposed/linked/unlinked: variables and prop values changed.
+    void variablesChanged();
+    // "Go to variable" / the link chip: show this variable.
+    void variableActivated(const QString& variableId);
 };
