@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(texturelab VERSION 0.4.0 LANGUAGES CXX)
+project(texturelab VERSION 0.4.1 LANGUAGES CXX)
 
 # Release channel this build belongs to: "stable" or "beta". It is part of the
 # build's identity, not of its version — the version above stays purely numeric,
